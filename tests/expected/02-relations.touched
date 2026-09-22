@@ -1,0 +1,8 @@
+touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[2]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[3]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/Type[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[4]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[4]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[5]/IsNull[1]: removed (was "false")

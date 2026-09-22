@@ -1,0 +1,5 @@
+touched: /Project/Tasks[1]/Task[1]/Type[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[2]/Type[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[2]/IsNull[1]: removed (was "false")
+touched: /Project/Resources[1]/Resource[3]/Type[1]: removed (was "0")

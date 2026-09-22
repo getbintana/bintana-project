@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 07-extended-attrs.xml: ida y vuelta de campos personalizados + hyperlink.
+     Text1 (FieldID 188743731) con Alias "External_ID" viaja en dos tareas,
+     HyperlinkAddress lleva una URL, y una tercera tarea no tiene valor: ese
+     caso (creada en Project) es tan válido como los otros. Reglas: UID/WBS/
+     OutlineNumber NO son identidad (Project los reasigna al anexar/combinar);
+     IsNull y resúmenes se ignoran. -->
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>Release 2026-10</Name>
+  <ScheduleFromStart>true</ScheduleFromStart>
+  <StartDate>2026-10-01T08:00:00</StartDate>
+  <FinishDate>2026-10-05T17:00:00</FinishDate>
+  <FYStartDate>1</FYStartDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbol>$</CurrencySymbol>
+  <CurrencyCode>USD</CurrencyCode>
+  <CurrencySymbolPosition>0</CurrencySymbolPosition>
+  <CalendarUID>1</CalendarUID>
+  <MinutesPerDay>480</MinutesPerDay><MinutesPerWeek>2400</MinutesPerWeek><DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>1</DefaultTaskType><DurationFormat>7</DurationFormat><WorkFormat>2</WorkFormat>
+  <WeekStartDay>1</WeekStartDay>
+  <ExtendedAttributes>
+    <ExtendedAttribute>
+      <FieldID>188743731</FieldID><FieldName>Text1</FieldName><Alias>External_ID</Alias>
+    </ExtendedAttribute>
+  </ExtendedAttributes>
+  <Calendars>
+    <Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>true</IsBaseCalendar></Calendar>
+  </Calendars>
+  <Tasks>
+    <Task>
+      <UID>0</UID><ID>0</ID><Name>Release 2026-10</Name><Type>1</Type><IsNull>false</IsNull>
+      <CreateDate>2026-10-01T08:00:00</CreateDate>
+      <OutlineNumber>0</OutlineNumber><OutlineLevel>0</OutlineLevel>
+      <Priority>500</Priority><Start>2026-10-01T08:00:00</Start><Finish>2026-10-05T17:00:00</Finish>
+      <Duration>PT32H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT0H0M0S</Work>
+      <Summary>true</Summary><Critical>true</Critical>
+      <CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Deploy web</Name><Type>1</Type><IsNull>false</IsNull>
+      <CreateDate>2026-10-01T08:00:00</CreateDate>
+      <OutlineNumber>1</OutlineNumber><OutlineLevel>1</OutlineLevel>
+      <Priority>500</Priority><Start>2026-10-01T17:00:00</Start><Finish>2026-10-01T17:00:00</Finish>
+      <Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT0H0M0S</Work>
+      <Milestone>true</Milestone>
+      <PercentComplete>100</PercentComplete>
+      <CalendarUID>1</CalendarUID>
+      <Hyperlink>true</Hyperlink>
+      <HyperlinkAddress>https://example.com/issues/4821</HyperlinkAddress>
+      <ExtendedAttribute>
+        <FieldID>188743731</FieldID><Value>4821</Value>
+      </ExtendedAttribute>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Migrate DB</Name><Type>1</Type><IsNull>false</IsNull>
+      <CreateDate>2026-10-01T08:00:00</CreateDate>
+      <OutlineNumber>2</OutlineNumber><OutlineLevel>1</OutlineLevel>
+      <Priority>500</Priority><Start>2026-10-02T08:00:00</Start><Finish>2026-10-02T08:00:00</Finish>
+      <Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT0H0M0S</Work>
+      <Milestone>true</Milestone>
+      <PercentComplete>50</PercentComplete>
+      <CalendarUID>1</CalendarUID>
+      <Hyperlink>true</Hyperlink>
+      <HyperlinkAddress>https://example.com/issues/4822</HyperlinkAddress>
+      <PredecessorLink>
+        <PredecessorUID>1</PredecessorUID><Type>1</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+      </PredecessorLink>
+      <ExtendedAttribute>
+        <FieldID>188743731</FieldID><Value>4822</Value>
+      </ExtendedAttribute>
+    </Task>
+    <Task>
+      <UID>3</UID><ID>3</ID><Name>Docs (created in Project)</Name><Type>1</Type><IsNull>false</IsNull>
+      <CreateDate>2026-10-03T08:00:00</CreateDate>
+      <OutlineNumber>3</OutlineNumber><OutlineLevel>1</OutlineLevel>
+      <Priority>500</Priority><Start>2026-10-05T08:00:00</Start><Finish>2026-10-05T17:00:00</Finish>
+      <Duration>PT8H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT8H0M0S</Work>
+      <CalendarUID>1</CalendarUID>
+      <PredecessorLink>
+        <PredecessorUID>2</PredecessorUID><Type>1</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+      </PredecessorLink>
+    </Task>
+  </Tasks>
+</Project>

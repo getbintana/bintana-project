@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 03-resources-assignments.xml: 2 recursos work + 1 material, 2 asignaciones con unidades y work. -->
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>Resources</Name>
+  <ScheduleFromStart>true</ScheduleFromStart>
+  <StartDate>2026-09-01T08:00:00</StartDate>
+  <FinishDate>2026-09-05T17:00:00</FinishDate>
+  <FYStartDate>1</FYStartDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbol>$</CurrencySymbol>
+  <CurrencyCode>USD</CurrencyCode>
+  <CurrencySymbolPosition>0</CurrencySymbolPosition>
+  <CalendarUID>1</CalendarUID>
+  <MinutesPerDay>480</MinutesPerDay><MinutesPerWeek>2400</MinutesPerWeek><DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>0</DefaultTaskType>
+  <DefaultStandardRate>50</DefaultStandardRate><DefaultOvertimeRate>75</DefaultOvertimeRate>
+  <DurationFormat>7</DurationFormat><WorkFormat>2</WorkFormat>
+  <WeekStartDay>1</WeekStartDay>
+  <Calendars>
+    <Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>true</IsBaseCalendar></Calendar>
+  </Calendars>
+  <Tasks>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Build wall</Name><Type>0</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start><Finish>2026-09-03T17:00:00</Finish>
+      <Duration>PT16H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT24H0M0S</Work><PercentComplete>50</PercentComplete><CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Deliver bricks</Name><Type>0</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start><Finish>2026-09-01T17:00:00</Finish>
+      <Duration>PT8H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Work>PT0H0M0S</Work><CalendarUID>1</CalendarUID>
+    </Task>
+  </Tasks>
+  <Resources>
+    <Resource>
+      <UID>1</UID><ID>1</ID><Name>Ana Gómez</Name><Type>1</Type><IsNull>false</IsNull>
+      <Initials>AG</Initials><Group>Crew A</Group>
+      <MaxUnits>1</MaxUnits><StandardRate>50</StandardRate><OvertimeRate>75</OvertimeRate>
+      <CalendarUID>1</CalendarUID>
+    </Resource>
+    <Resource>
+      <UID>2</UID><ID>2</ID><Name>Bruno Díaz</Name><Type>1</Type><IsNull>false</IsNull>
+      <Initials>BD</Initials><Group>Crew A</Group>
+      <MaxUnits>0.5</MaxUnits><StandardRate>40</StandardRate><OvertimeRate>60</OvertimeRate>
+      <CalendarUID>1</CalendarUID>
+    </Resource>
+    <Resource>
+      <UID>3</UID><ID>3</ID><Name>Bricks</Name><Type>0</Type><IsNull>false</IsNull>
+      <MaterialLabel>pallets</MaterialLabel><MaxUnits>1</MaxUnits><StandardRate>120</StandardRate>
+    </Resource>
+  </Resources>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID><TaskUID>1</TaskUID><ResourceUID>1</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>1</Units><Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>2</UID><TaskUID>1</TaskUID><ResourceUID>2</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>0.5</Units><Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>3</UID><TaskUID>2</TaskUID><ResourceUID>3</ResourceUID>
+      <Finish>2026-09-01T17:00:00</Finish>
+      <RegularWork>PT0H0M0S</RegularWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>2</Units><Work>PT0H0M0S</Work>
+    </Assignment>
+  </Assignments>
+</Project>

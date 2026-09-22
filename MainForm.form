@@ -1,0 +1,107 @@
+{
+  "format": "bintana-form/1",
+  "class": "MainForm",
+  "properties": {
+    "Text": "bintana-project",
+    "Icon": "x-office-calendar-symbolic",
+    "Arrangement": "Vertical",
+    "Spacing": 10,
+    "Padding": "12",
+    "Width": 900,
+    "Height": 600
+  },
+  "children": [
+    {
+      "type": "Panel",
+      "name": "Bar",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnOpen",
+          "properties": {
+            "Text": "Open XML",
+            "Icon": "document-open-symbolic",
+            "Width": 120
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSave",
+          "properties": {
+            "Text": "Save",
+            "Icon": "document-save-symbolic",
+            "Width": 104
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblFile",
+          "properties": {
+            "Ellipsize": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "TableView",
+      "name": "Tasks",
+      "properties": {
+        "Columns": [
+          {
+            "Text": "Task",
+            "Width": 0
+          },
+          {
+            "Text": "Start",
+            "Width": 130
+          },
+          {
+            "Text": "Finish",
+            "Width": 130
+          },
+          {
+            "Text": "Attr",
+            "Width": 90,
+            "Alignment": "Right"
+          }
+        ],
+        "Expand": true,
+        "MinHeight": 200,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "DrawingArea",
+      "name": "Gantt",
+      "properties": {
+        "Height": 240,
+        "MinHeight": 160,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "TextEditor",
+      "name": "Log",
+      "properties": {
+        "ReadOnly": true,
+        "Height": 140,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "Label",
+      "name": "LblStatus",
+      "properties": {
+        "Wrap": true,
+        "Lines": 2,
+        "HAlign": "Fill"
+      }
+    }
+  ]
+}

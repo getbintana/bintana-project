@@ -1,0 +1,11 @@
+{
+  "name": "bintana-project",
+  "startup": "MainForm",
+  "sources": [
+    "Mspdi.js",
+    "Gantt.js",
+    "MainForm.js"
+  ],
+  "version": "0.1.0",
+  "description": "MS Project interchange (MSPDI XML): read, round-trip and Gantt"
+}

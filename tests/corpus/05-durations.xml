@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 05-durations.xml: resumen + hito + formatos de duración (min/h/d/w/mo, estimadas) + tarea nula. -->
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>Durations</Name>
+  <ScheduleFromStart>true</ScheduleFromStart>
+  <StartDate>2026-09-01T08:00:00</StartDate>
+  <FinishDate>2026-11-30T17:00:00</FinishDate>
+  <FYStartDate>1</FYStartDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbol>$</CurrencySymbol>
+  <CurrencyCode>USD</CurrencyCode>
+  <CurrencySymbolPosition>0</CurrencySymbolPosition>
+  <CalendarUID>1</CalendarUID>
+  <MinutesPerDay>480</MinutesPerDay><MinutesPerWeek>2400</MinutesPerWeek><DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>1</DefaultTaskType><DurationFormat>7</DurationFormat><WorkFormat>2</WorkFormat>
+  <WeekStartDay>1</WeekStartDay>
+  <Calendars>
+    <Calendar><UID>1</UID><Name>Standard</Name><IsBaseCalendar>true</IsBaseCalendar></Calendar>
+  </Calendars>
+  <Tasks>
+    <Task>
+      <UID>0</UID><ID>0</ID><Name>Release</Name><Type>1</Type><IsNull>false</IsNull>
+      <OutlineLevel>0</OutlineLevel><Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start><Finish>2026-11-30T17:00:00</Finish>
+      <Duration>PT480H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Summary>true</Summary><Critical>true</Critical><CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>1</UID><ID>1</ID><Name>Quick fix (30 min)</Name><Type>1</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start><Finish>2026-09-01T08:30:00</Finish>
+      <Duration>PT30M0S</Duration><DurationFormat>3</DurationFormat><CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>2</UID><ID>2</ID><Name>Design (2 w)</Name><Type>1</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start><Finish>2026-09-12T17:00:00</Finish>
+      <Duration>PT80H0M0S</Duration><DurationFormat>9</DurationFormat><CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>3</UID><ID>3</ID><Name>Beta (1 mo estimated)</Name><Type>1</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-10-01T08:00:00</Start><Finish>2026-10-31T17:00:00</Finish>
+      <Duration>PT160H0M0S</Duration><DurationFormat>43</DurationFormat>
+      <Estimated>true</Estimated><CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>4</UID><ID>4</ID><Name>Ship (milestone)</Name><Type>1</Type><IsNull>false</IsNull>
+      <OutlineLevel>1</OutlineLevel><Priority>500</Priority>
+      <Start>2026-11-30T17:00:00</Start><Finish>2026-11-30T17:00:00</Finish>
+      <Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Milestone>true</Milestone><CalendarUID>1</CalendarUID>
+      <PredecessorLink>
+        <PredecessorUID>3</PredecessorUID><Type>1</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+      </PredecessorLink>
+    </Task>
+    <Task>
+      <UID>5</UID><ID>5</ID><Name></Name><Type>1</Type><IsNull>true</IsNull>
+      <OutlineLevel>1</OutlineLevel>
+    </Task>
+  </Tasks>
+</Project>
