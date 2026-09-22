@@ -131,7 +131,7 @@
     <Task>
       <UID>1</UID>
       <ID>1</ID>
-      <Name>Analyse</Name>
+      <Name>Analyse II</Name>
       <Type>1</Type>
       <CreateDate>2026-09-01T08:00:00</CreateDate>
       <WBS>1</WBS>
@@ -140,13 +140,34 @@
       <Priority>500</Priority>
       <Start>2026-09-01T08:00:00</Start>
       <Finish>2026-09-02T17:00:00</Finish>
-      <Duration>PT8H0M0S</Duration>
+      <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
-      <PercentComplete>100</PercentComplete>
+      <Summary>true</Summary>
+      <Critical>true</Critical>
+      <PercentComplete>75</PercentComplete>
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-02T17:00:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>3</UID>
+      <ID>3</ID>
+      <Name>New task</Name>
+      <OutlineLevel>2</OutlineLevel>
+      <Priority>500</Priority>
+      <Duration>PT0H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
+      <Work>PT0H0M0S</Work>
+      <ConstraintType>4</ConstraintType>
+      <CalendarUID>1</CalendarUID>
+      <ConstraintDate>2026-09-04T08:00</ConstraintDate>
+      <Notes>Edited in the harness</Notes>
+      <PredecessorLink>
+        <PredecessorUID>2</PredecessorUID>
+        <Type>1</Type>
+        <LagFormat>7</LagFormat>
+      </PredecessorLink>
     </Task>
     <Task>
       <UID>2</UID>
@@ -163,6 +184,7 @@
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
+      <Critical>true</Critical>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>

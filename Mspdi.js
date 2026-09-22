@@ -9,10 +9,11 @@
  * bin. `SaveXml` writes back into the tree it was handed and touches only
  * what the shape models -- which is what an interchange round trip needs.
  *
- * What is deliberately **not** modelled yet: calendars beyond UID/Name
- * (WeekDays/Exceptions are reported, not taken), baselines, timephased data,
- * resources' rates beyond the two shown. Each of those is a field away, and
- * `Problems` says exactly which file asked for one.
+ * What is deliberately **not** modelled yet: baselines, timephased data,
+ * resources' rates beyond the two shown, and the monthly/yearly recurrences of
+ * a calendar exception -- the dates a file writes are what the engine reads.
+ * Each of those is a field away, and `Problems` says exactly which file asked
+ * for one.
  *
  * Custom fields are generic here: `ExtendedAttribute` defs and values are
  * modelled by FieldID and nothing assumes what a file puts in them. UID/WBS/
@@ -76,8 +77,12 @@ class MspTask extends Record {
         Summary:          Field.Bool(),
         Critical:         Field.Bool(),
         PercentComplete:  Field.Int(),
+        ConstraintType:   Field.Int(),
         CalendarUID:      Field.Int(),
+        ConstraintDate:   Field.DateTime(),
+        Deadline:         Field.DateTime(),
         HyperlinkAddress: Field.Text(),
+        Notes:            Field.Text(),
         Links:            Field.List(MspLink),
         Attributes:       Field.List(MspFieldValue),
     };
@@ -112,11 +117,60 @@ class MspAssignment extends Record {
     };
 }
 
+/* <WorkingTime>: a span of the day that is worked, `HH:MM[:SS]`. */
+class MspWorkingTime extends Record {
+    static Xml = { Root: "WorkingTime" };
+    static Fields = {
+        FromTime: Field.Time(),
+        ToTime:   Field.Time(),
+    };
+}
+
+/* One day of the week. MSPDI's `DayType` is 1 Sunday through 7 Saturday. */
+class MspWeekDay extends Record {
+    static Xml = { Root: "WeekDay" };
+    static Fields = {
+        DayType:      Field.Int(),
+        DayWorking:   Field.Bool(),
+        WorkingTimes: Field.List(MspWorkingTime, { in: "WorkingTimes" }),
+    };
+}
+
+/* The dates an exception covers, inclusive. */
+class MspTimePeriod extends Record {
+    static Xml = { Root: "TimePeriod" };
+    static Fields = {
+        FromDate: Field.DateTime(),
+        ToDate:   Field.DateTime(),
+    };
+}
+
+/* A calendar exception: a holiday (`DayWorking` false) or a special working
+ * day. The monthly and yearly recurrences are not modelled; the dates a file
+ * writes are what the engine reads. */
+class MspException extends Record {
+    static Xml = { Root: "Exception" };
+    static Fields = {
+        EnteredByOccurrences: Field.Bool(),
+        TimePeriod:           Field.Record(MspTimePeriod),
+        Name:                 Field.Text(),
+        Type:                 Field.Int(),
+        Period:               Field.Int(),
+        DaysOfWeek:           Field.Int(),
+        DayWorking:           Field.Bool(),
+        WorkingTimes:         Field.List(MspWorkingTime, { in: "WorkingTimes" }),
+    };
+}
+
 class MspCalendar extends Record {
     static Xml = { Root: "Calendar" };
     static Fields = {
-        UID:  Field.Int({ key: true }),
-        Name: Field.Text(),
+        UID:             Field.Int({ key: true }),
+        Name:            Field.Text(),
+        IsBaseCalendar:  Field.Bool(),
+        BaseCalendarUID: Field.Int(),
+        WeekDays:        Field.List(MspWeekDay, { in: "WeekDays" }),
+        Exceptions:      Field.List(MspException, { in: "Exceptions" }),
     };
 }
 
@@ -127,16 +181,26 @@ class MspProject extends Record {
                    Namespace: ["http://schemas.microsoft.com/project",
                                "http://schemas.microsoft.com/project/2007"] };
     static Fields = {
-        SaveVersion:  Field.Int(),
-        Name:         Field.Text(),
-        StartDate:    Field.DateTime(),
-        FinishDate:   Field.DateTime(),
-        CalendarUID:  Field.Int(),
-        FieldDefs:    Field.List(MspFieldDef, { in: "ExtendedAttributes" }),
-        Calendars:    Field.List(MspCalendar, { in: "Calendars" }),
-        Tasks:        Field.List(MspTask, { in: "Tasks" }),
-        Resources:    Field.List(MspResource, { in: "Resources" }),
-        Assignments:  Field.List(MspAssignment, { in: "Assignments" }),
+        SaveVersion:       Field.Int(),
+        Name:              Field.Text(),
+        ScheduleFromStart: Field.Bool(),
+        StartDate:         Field.DateTime(),
+        FinishDate:        Field.DateTime(),
+        CalendarUID:       Field.Int(),
+        DefaultStartTime:  Field.Time(),
+        DefaultFinishTime: Field.Time(),
+        MinutesPerDay:     Field.Int(),
+        MinutesPerWeek:    Field.Int(),
+        DaysPerMonth:      Field.Int(),
+        DefaultTaskType:   Field.Int(),
+        DurationFormat:    Field.Int(),
+        WorkFormat:        Field.Int(),
+        WeekStartDay:      Field.Int(),
+        FieldDefs:         Field.List(MspFieldDef, { in: "ExtendedAttributes" }),
+        Calendars:         Field.List(MspCalendar, { in: "Calendars" }),
+        Tasks:             Field.List(MspTask, { in: "Tasks" }),
+        Resources:         Field.List(MspResource, { in: "Resources" }),
+        Assignments:       Field.List(MspAssignment, { in: "Assignments" }),
     };
 };
 
@@ -153,6 +217,16 @@ function mspdiMinutes(text) {
            (m[2] ? Number(m[2]) * 60 : 0) +
            (m[3] ? Number(m[3]) : 0) +
            (m[4] ? Number(m[4]) / 60 : 0);
+}
+
+/* Minutes back into the `PT…S` spelling, hours and minutes the way Project
+ * writes them: PT16H0M0S, PT30M0S. */
+function mspdiDuration(minutes) {
+    const h = Math.floor(minutes / 60), m = minutes % 60;
+    if (minutes === 0) return "PT0H0M0S";
+    if (h === 0) return `PT${m}M0S`;
+    if (m === 0) return `PT${h}H0M0S`;
+    return `PT${h}H${m}M0S`;
 }
 
 /* The first custom-field value a task carries, or "" when it carries none.
@@ -188,5 +262,8 @@ function readMspdi(path) {
 }
 
 function writeMspdi(path, holder) {
-    File.SaveXml(path, holder.project.SaveXml(holder.doc.Root));
+    holder.project.SaveXml(holder.doc.Root);
+    /* The whole document, not just the root: a comment before it is a node in
+     * the tree too, and `Xml.Stringify` takes a document. */
+    File.SaveXml(path, holder.doc);
 }

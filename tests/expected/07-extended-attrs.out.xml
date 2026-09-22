@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 07-extended-attrs.xml: ida y vuelta de campos personalizados + hyperlink.
+     Text1 (FieldID 188743731) con Alias "External_ID" viaja en dos tareas,
+     HyperlinkAddress lleva una URL, y una tercera tarea no tiene valor: ese
+     caso (creada en Project) es tan válido como los otros. Reglas: UID/WBS/
+     OutlineNumber NO son identidad (Project los reasigna al anexar/combinar);
+     IsNull y resúmenes se ignoran. -->
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Release 2026-10</Name>
@@ -35,8 +41,10 @@
   </Calendars>
   <Tasks>
     <Task>
+      <UID>0</UID>
       <Name>Release 2026-10</Name>
       <Type>1</Type>
+      <CreateDate>2026-10-01T08:00:00</CreateDate>
       <OutlineNumber>0</OutlineNumber>
       <Priority>500</Priority>
       <Start>2026-10-01T08:00:00</Start>

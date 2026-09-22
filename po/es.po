@@ -1,0 +1,191 @@
+# Spanish for bintana-project.
+#
+# The form's own texts are translated when the form is built; the strings the
+# code builds go through `Text(...)`, and `Message.*`'s first argument is a
+# text position. The Log's diagnostics stay in English on purpose: they name
+# elements of the format.
+msgid ""
+msgstr ""
+"Project-Id-Version: bintana-project\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Open"
+msgstr "Abrir"
+
+msgid "Save"
+msgstr "Guardar"
+
+msgid "Save As"
+msgstr "Guardar como"
+
+msgid "Undo"
+msgstr "Deshacer"
+
+msgid "Redo"
+msgstr "Rehacer"
+
+msgid "Recalculate"
+msgstr "Recalcular"
+
+msgid "Task"
+msgstr "Tarea"
+
+msgid "Duration"
+msgstr "Duración"
+
+msgid "Start"
+msgstr "Inicio"
+
+msgid "Finish"
+msgstr "Fin"
+
+msgid "Attr"
+msgstr "Campo"
+
+msgid "Timescale"
+msgstr "Escala"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Day"
+msgstr "Día"
+
+msgid "Week"
+msgstr "Semana"
+
+msgid "Month"
+msgstr "Mes"
+
+msgid "No task selected"
+msgstr "Ninguna tarea seleccionada"
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Complete"
+msgstr "Avance"
+
+msgid "Milestone"
+msgstr "Hito"
+
+msgid "Apply"
+msgstr "Aplicar"
+
+msgid "Add"
+msgstr "Agregar"
+
+msgid "Delete"
+msgstr "Eliminar"
+
+msgid "Outdent"
+msgstr "Quitar nivel"
+
+msgid "Indent"
+msgstr "Indentar"
+
+msgid "Predecessors"
+msgstr "Predecesoras"
+
+msgid "Type"
+msgstr "Tipo"
+
+msgid "Lag"
+msgstr "Retardo"
+
+msgid "Choose…"
+msgstr "Elegir…"
+
+msgid "Lag (min)"
+msgstr "Retardo (min)"
+
+msgid "Link"
+msgstr "Enlazar"
+
+msgid "Unlink"
+msgstr "Desenlazar"
+
+msgid "Constraint"
+msgstr "Restricción"
+
+msgid "Constraint date"
+msgstr "Fecha de restricción"
+
+msgid "Deadline"
+msgstr "Fecha límite"
+
+msgid "Notes"
+msgstr "Notas"
+
+msgid "Export"
+msgstr "Exportar"
+
+msgid "Export the chart"
+msgstr "Exportar el gráfico"
+
+msgid "PNG image"
+msgstr "Imagen PNG"
+
+msgid "PDF document"
+msgstr "Documento PDF"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+msgid "OK"
+msgstr "Aceptar"
+
+msgid "New task"
+msgstr "Nueva tarea"
+
+msgid "No tasks"
+msgstr "Sin tareas"
+
+msgid "No dated tasks"
+msgstr "Sin tareas con fechas"
+
+msgid "Delete task"
+msgstr "Eliminar tarea"
+
+msgid "Delete \"{0}\"?"
+msgstr "¿Eliminar \"{0}\"?"
+
+msgid "Unsaved changes"
+msgstr "Cambios sin guardar"
+
+msgid "Save changes to {0} before closing?"
+msgstr "¿Guardar los cambios de {0} antes de cerrar?"
+
+msgid "Discard"
+msgstr "Descartar"
+
+msgid "Cannot open {0}: {1}"
+msgstr "No se puede abrir {0}: {1}"
+
+msgid "Cannot save {0}: {1}"
+msgstr "No se puede guardar {0}: {1}"
+
+msgid "Cannot open the sample: {0}"
+msgstr "No se puede abrir el ejemplo: {0}"
+
+msgid "Nothing to schedule: the project has no start date."
+msgstr "No hay nada que planificar: el proyecto no tiene fecha de inicio."
+
+msgid "Pick a predecessor first."
+msgstr "Elegí una predecesora primero."
+
+msgid "{0} is not a duration -- try 2d, 8h or 30m"
+msgstr "{0} no es una duración -- probá 2d, 8h o 30m"
+
+msgid "Cannot apply: {0}"
+msgstr "No se puede aplicar: {0}"
+
+msgid "{0} tasks, {1} milestones, {2} with attributes, {3} links"
+msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces"
+
+msgid "{0} tasks, {1} milestones, {2} with attributes, {3} links -- {4} not modelled (see log)"
+msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces -- {4} sin modelar (ver log)"

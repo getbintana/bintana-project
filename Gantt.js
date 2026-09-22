@@ -2,15 +2,20 @@
  * Gantt: the project as bars on a timescale. Pure drawing over `Mspdi.js`.
  *
  * One deliberate simplification runs through it: the chart lays out its own
- * rows (every non-summary task, in file order) and never tries to line up
- * with the `TableView` beside it. Two controls sharing one row height is a
- * coupling that breaks on every theme; a chart that owns its geometry is a
- * `Save()` away from a PNG and a `Dump()` away from an assertion.
+ * rows (every task, in file order) and never tries to line up with the
+ * `TableView` beside it. Two controls sharing one row height is a coupling
+ * that breaks on every theme; a chart that owns its geometry is a `Save()`
+ * away from a PNG and a `Dump()` away from an assertion. The two views share
+ * **identity** instead: the selected UID tints a row here. Its size is its own
+ * too -- as tall as its rows and as wide as the timescale asks -- and a
+ * `Scroller` around it shows the difference.
  *
- * Dates are instants (`new Date("2026-10-01T17:00:00")` reads local, which
- * is what a plan drawn on this machine means); durations never enter, only
- * Start/Finish. The header step adapts: days while they fit, weeks below
- * 16 px a day, months below 6.
+ * A summary is a bracket over its dates, a critical task is red and the rest
+ * blue, which is the reading Project taught. Dates are instants
+ * (`new Date("2026-10-01T17:00:00")` reads local, which is what a plan drawn
+ * on this machine means); durations never enter, only Start/Finish. The
+ * header step adapts: days while they fit, weeks below 16 px a day, months
+ * below 6.
  */
 "use strict";
 
@@ -19,12 +24,12 @@ const HEADER = 24;    // the timescale's own row
 const ROW_H  = 24;
 const BAR_H  = 12;
 
-/* What gets drawn, in file order. Summaries are structure and blank rows
- * are nothing: neither is a bar. */
+/* What gets drawn, in file order: every task the tree shows, summaries
+ * included, and no blank row -- IsNull is nothing. */
 function ganttRows(project) {
     const rows = [];
     for (const task of project.Tasks) {
-        if (task.IsNull || task.Summary) continue;
+        if (task.IsNull) continue;
         rows.push(task);
     }
     return rows;
@@ -50,15 +55,15 @@ function ganttRange(rows) {
     return { from: from - day, to: to + day };
 }
 
-function drawGantt(p, width, height, project) {
+function drawGantt(p, width, height, project, selected, step) {
     const rows = project ? ganttRows(project) : [];
     if (!rows.length) {
-        p.Text("No tasks", 12, 12);
+        p.Text(Locale.Text("No tasks"), 12, 12);
         return;
     }
     const range = ganttRange(rows);
     if (!range) {
-        p.Text("No dated tasks", 12, 12);
+        p.Text(Locale.Text("No dated tasks"), 12, 12);
         return;
     }
 
@@ -66,19 +71,26 @@ function drawGantt(p, width, height, project) {
     const ink   = dark ? "#eeeeec" : "#2e3436";
     const grid  = dark ? "#3d3d3d" : "#d6d6d6";
     const bar   = dark ? "#78aeed" : "#1c71d8";
+    const late  = dark ? "#f66151" : "#c01c28";   // critical, as Project reads
     const done  = dark ? "#1c71d8" : "#0b4ea2";
     const link  = dark ? "#9a9996" : "#5e5c64";
     const today = "#e01b24";
+    const band  = dark ? "#2f2f2f" : "#eaeaea";
 
     const plotX = GUTTER, plotW = Math.max(width - GUTTER - 8, 50);
     const x = (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW;
     const cy = (i) => HEADER + i * ROW_H + ROW_H / 2;
 
-    /* The grid and its labels, stepped to what fits. */
+    /* By UID, for the dependency elbows and the selection below. */
+    const rowOf = {};
+    for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
+
+    /* The grid and its labels. `step` is the timescale control's choice in
+     * days; without one it steps to what fits. */
     const dayMs = 24 * 3600 * 1000;
     const spanDays = (range.to - range.from) / dayMs;
     const dayW = plotW / spanDays;
-    const step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
+    if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
     p.Color = grid;
     p.LineWidth = 1;
     const t0 = Math.floor(range.from / dayMs) * dayMs;
@@ -96,14 +108,23 @@ function drawGantt(p, width, height, project) {
         if (n > 400) break;   // a corrupt range must not hang the frame
     }
 
-    /* By UID, for the dependency elbows below. */
-    const rowOf = {};
-    for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
+    /* The selected row, behind its bar: the table and the chart share the UID
+     * and nothing else. */
+    const selRow = selected === null || selected === undefined
+                 ? undefined : rowOf[selected];
+    if (selRow !== undefined) {
+        p.Color = band;
+        p.Rectangle(0, HEADER + selRow * ROW_H, width, ROW_H);
+        p.Fill();
+    }
 
-    /* The bars: a milestone is a diamond, a zero span a tick, the rest a
-     * bar with its PercentComplete painted over in a darker shade. */
+    /* The bars: a summary is a bracket over its dates, a milestone a diamond,
+     * a zero span a tick, the rest a bar with its PercentComplete painted over
+     * in a darker shade. Critical is red and the rest blue, as Project reads
+     * a plan. */
     for (let i = 0; i < rows.length; i++) {
         const task = rows[i];
+        const colour = task.Critical ? late : bar;
         const s = whenMs(task.Start), f = whenMs(task.Finish);
         const y = HEADER + i * ROW_H + (ROW_H - BAR_H) / 2;
 
@@ -117,15 +138,24 @@ function drawGantt(p, width, height, project) {
         if (s === null || f === null) continue;
         const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
 
+        if (task.Summary) {
+            const top = y + 2;
+            p.Color = colour;
+            p.LineWidth = 2;
+            p.Polyline([x0, top, x0, top + 8, x1, top + 8, x1, top]);
+            p.Stroke();
+            p.LineWidth = 1;
+            continue;
+        }
         if (task.Milestone) {
             const cx = x(s), midY = cy(i), r = 7;
-            p.Color = bar;
+            p.Color = colour;
             p.Polygon([cx, midY - r, cx + r, midY, cx, midY + r, cx - r, midY]);
             p.Fill();
             continue;
         }
         if (x1 - x0 < 2) {
-            p.Color = bar;
+            p.Color = colour;
             p.LineWidth = 3;
             p.MoveTo(x0, y);
             p.LineTo(x0, y + BAR_H);
@@ -133,12 +163,15 @@ function drawGantt(p, width, height, project) {
             p.LineWidth = 1;
             continue;
         }
-        p.Color = bar;
+        p.Color = colour;
         p.Rectangle(x0, y, x1 - x0, BAR_H);
         p.Fill();
+        /* The progress is a thinner band inside the bar, not a repaint of it:
+         * at 100% a critical task is still visibly critical. */
         if (task.PercentComplete > 0) {
+            const band = 4, by = y + (BAR_H - band) / 2;
             p.Color = done;
-            p.Rectangle(x0, y, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, BAR_H);
+            p.Rectangle(x0, by, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
             p.Fill();
         }
     }

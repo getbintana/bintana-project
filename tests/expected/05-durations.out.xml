@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 05-durations.xml: resumen + hito + formatos de duración (min/h/d/w/mo, estimadas) + tarea nula. -->
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Durations</Name>
@@ -28,6 +29,7 @@
   </Calendars>
   <Tasks>
     <Task>
+      <UID>0</UID>
       <Name>Release</Name>
       <Type>1</Type>
       <Priority>500</Priority>

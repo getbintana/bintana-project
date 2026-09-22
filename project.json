@@ -3,7 +3,10 @@
   "startup": "MainForm",
   "sources": [
     "Mspdi.js",
+    "Schedule.js",
+    "Edit.js",
     "Gantt.js",
+    "ConfirmForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

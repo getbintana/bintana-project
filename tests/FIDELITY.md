@@ -3,19 +3,27 @@
 Medido el 2026-09-22 sobre los ocho fixtures de `tests/corpus/`, con el runtime
 de Bintana en `../bintana`. El harness es `tests/run.sh`: por cada archivo
 corre `check` (que imprime el informe `touched`), guarda el XML de salida y
-compara ambos contra `tests/expected/`. Un golden es una foto del
-comportamiento **actual**, no del deseado; `run.sh --update` los reescribe
-cuando un cambio es deliberado, nunca por accidente.
+compara ambos contra `tests/expected/`. La corrida completa juega además una
+ronda guiada de los comandos de edición sobre `01-minimal` (`check-edit`,
+goldens `edit-01-minimal.*`). Un golden es una foto del comportamiento
+**actual**, no del deseado; `run.sh --update` los reescribe cuando un cambio es
+deliberado, nunca por accidente.
+
+Re-medido el mismo día tras el arreglo de la clave XML en default en Bintana:
+los `problems` in→out quedaron iguales en los ocho. Tercera medición, con el
+header de Project y los calendarios modelados (fase 2): los `problems` bajan,
+los defaults de calendario entran a la lista deliberada, y los counts siguen
+iguales in→out.
 
 | Fixture | tasks | hitos | attrs | links | problems in→out | touched |
 |---|---|---|---|---|---|---|
-| 01-minimal | 2 | 0 | 0 | 1 | 26 → 25 | 10 |
-| 02-relations | 5 | 0 | 0 | 4 | 15 → 15 | 8 |
-| 03-resources-assignments | 2 | 0 | 0 | 0 | 25 → 25 | 5 |
-| 04-calendars | 1 | 0 | 0 | 0 | 22 → 22 | 1 |
-| 05-durations | 4 | 1 | 0 | 1 | 16 → 16 | 10 |
-| 06-timephased-custom | 1 | 0 | 1 | 0 | 26 → 26 | 2 |
-| 07-extended-attrs | 3 | 2 | 2 | 2 | 21 → 20 | 10 |
+| 01-minimal | 2 | 0 | 0 | 1 | 14 → 14 | 10 |
+| 02-relations | 5 | 0 | 0 | 4 | 6 → 6 | 8 |
+| 03-resources-assignments | 2 | 0 | 0 | 0 | 16 → 16 | 6 |
+| 04-calendars | 1 | 0 | 0 | 0 | 8 → 8 | 7 |
+| 05-durations | 4 | 1 | 0 | 1 | 7 → 7 | 9 |
+| 06-timephased-custom | 1 | 0 | 1 | 0 | 17 → 17 | 3 |
+| 07-extended-attrs | 3 | 2 | 2 | 2 | 12 → 12 | 8 |
 | 08-namespace-2007 | 1 | 0 | 0 | 0 | 0 → 0 | 1 |
 
 Los counts de tareas, links y attrs se conservan en los ocho; el Gantt dibuja
@@ -23,11 +31,10 @@ todos (el `check` lo afirma). Lo que sigue es lo que **cambia** en el archivo.
 
 ## A. Serialización (esperado)
 
-- **El comentario antes del root se pierde en los ocho.** `writeMspdi` escribe
-  `doc.Root`, así que todo lo que está fuera del elemento raíz queda fuera de
-  la escritura. Los comentarios *dentro* del root sí se conservan. Decisión
-  pendiente: escribir el documento entero (si `File.SaveXml` acepta un nodo
-  documento) o aceptarlo y documentarlo.
+- **Los comentarios se conservan, dentro y fuera del root.** `writeMspdi`
+  escribe el documento entero (`File.SaveXml` acepta un nodo documento), así
+  que el comentario de cabecera de cada fixture viaja de ida y vuelta
+  (arreglado el 2026-09-22; antes se perdía).
 - **La forma canónica** (indentación de dos, un newline final) reescribe el
   archivo entero; es invisible en el informe `touched` y está en los goldens.
 
@@ -35,43 +42,31 @@ todos (el `check` lo afirma). Lo que sigue es lo que **cambia** en el archivo.
 
 `SaveXml` borra un elemento modelado cuyo valor es el default del campo. En el
 corpus eso toca: `IsNull=false`, `Type=0` (tarea y `PredecessorLink`),
-`LinkLag=0`, `OutlineLevel=0`, `PercentComplete=0`, `<Name></Name>` vacío y
-`UID`/`ID` 0 de la tarea resumen. Cada uno aparece en `touched` como
-`removed`.
+`LinkLag=0`, `OutlineLevel=0`, `PercentComplete=0`, `<Name></Name>` vacío,
+`ID` 0 de la tarea resumen, y -- desde que el header y los calendarios se
+modelan -- `DefaultTaskType=0` y los defaults de calendario:
+`DayWorking=false` (día no laborable), `IsBaseCalendar=false` (calendario de
+recurso), `EnteredByOccurrences=false`, `Period=0` y `DaysOfWeek=0`. Cada uno
+aparece en `touched` como `removed`. `ID` no es clave en el shape y su
+ausencia es posicional para Project.
 
-¿Project los tolera? Es la pregunta que contesta el archivo real. Salvo por
-`UID=0` (ver C), son defaults del esquema y la ausencia debería ser
-equivalente; queda pendiente medirlo.
+Una clave, en cambio, no es un default: `UID 0` se escribe siempre (arreglado
+en Bintana el 2026-09-22), así que no aparece en `touched`.
 
-## C. Bug de runtime: la clave en default reemplaza el elemento (Bintana)
+¿Project tolera estos defaults? Es la pregunta que contesta el archivo real:
+son defaults del esquema y la ausencia debería ser equivalente; queda
+pendiente medirlo.
 
-En `rad.js`, `Record.#xmlKeyText` (línea ~2532) devuelve `null` cuando el valor
-de la clave está en su default. `#xmlSaveList` usa ese `null` como "sin clave",
-no matchea el elemento existente y crea uno nuevo; después borra el viejo. Con
-`UID=0` (la tarea resumen, un UID **real**) el `<Task>` se reemplaza y con él
-se pierden todos los hijos no modelados: `CreateDate`, `ActualStart`,
-`ActualFinish`. Por eso 01 y 07 bajan un `problem` cada uno.
+## C. Lo que sí se conserva
 
-Repro: `tests/run.sh 01-minimal.xml` y mirar el primer `<Task>` de
-`01-minimal.out.xml`: no tiene `CreateDate`, y los otros dos sí. El golden
-actual **codifica el bug**; cuando se arregle en Bintana hay que correr
-`--update` y actualizar la tabla de arriba (los problems vuelven a 26 y 21).
-
-Arreglo propuesto en Bintana: una clave nunca es "default" -- su texto se
-escribe aunque valga 0. Con eso el match por `UID` encuentra el elemento y solo
-se tocan los campos modelados.
-
-## D. Lo que sí se conserva
-
-Todo lo no modelado sobrevive fuera del caso C: header de Project, `WeekDays`
-y `Exceptions` de calendarios, `Baseline`, `TimephasedData`, `ActualStart/Finish`,
-`Hyperlink`, `Estimated`, `OvertimeRate`, `SecondaryPID`/`AutoRollDown`/`Ltuid`.
-Los `problem-in` y `problem-out` son idénticos en los ocho (salvo el
-`CreateDate` que C se lleva).
+Todo lo no modelado sobrevive: header de Project, `WeekDays` y `Exceptions` de
+calendarios, `Baseline`, `TimephasedData`, `ActualStart/Finish`, `Hyperlink`,
+`Estimated`, `OvertimeRate`, `SecondaryPID`/`AutoRollDown`/`Ltuid`, y el
+`CreateDate` de la tarea resumen. Los `problem-in` y `problem-out` son idénticos
+en los ocho.
 
 ## Qué sigue
 
-1. Reportar C a Bintana con este repro (es el primer hallazgo del corpus).
-2. Decidir A: ¿escribir el documento entero para conservar el comentario?
-3. Conseguir el `Save As → XML` real y abrirlo en Project: eso convierte estos
+1. Decidir A: ¿escribir el documento entero para conservar el comentario?
+2. Conseguir el `Save As → XML` real y abrirlo en Project: eso convierte estos
    fixtures en dorado y contesta B.

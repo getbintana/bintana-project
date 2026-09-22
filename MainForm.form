@@ -7,8 +7,9 @@
     "Arrangement": "Vertical",
     "Spacing": 10,
     "Padding": "12",
-    "Width": 900,
-    "Height": 600
+    "Width": 1100,
+    "Height": 700,
+    "AcceptFiles": true
   },
   "children": [
     {
@@ -23,9 +24,9 @@
           "type": "Button",
           "name": "BtnOpen",
           "properties": {
-            "Text": "Open XML",
+            "Text": "Open",
             "Icon": "document-open-symbolic",
-            "Width": 120
+            "Width": 100
           }
         },
         {
@@ -34,7 +35,50 @@
           "properties": {
             "Text": "Save",
             "Icon": "document-save-symbolic",
-            "Width": 104
+            "Shortcut": "<Control>s",
+            "Width": 96
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSaveAs",
+          "properties": {
+            "Text": "Save As",
+            "Icon": "document-save-as-symbolic",
+            "Shortcut": "<Control><Shift>s",
+            "Width": 110
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnUndo",
+          "properties": {
+            "Text": "Undo",
+            "Icon": "edit-undo-symbolic",
+            "Shortcut": "<Control>z",
+            "Enabled": false,
+            "Width": 96
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnRedo",
+          "properties": {
+            "Text": "Redo",
+            "Icon": "edit-redo-symbolic",
+            "Shortcut": "<Control><Shift>z",
+            "Enabled": false,
+            "Width": 96
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnRecalc",
+          "properties": {
+            "Text": "Recalculate",
+            "Icon": "view-refresh-symbolic",
+            "Shortcut": "F5",
+            "Width": 124
           }
         },
         {
@@ -49,50 +93,561 @@
       ]
     },
     {
-      "type": "TableView",
-      "name": "Tasks",
+      "type": "Split",
+      "name": "Body",
       "properties": {
-        "Columns": [
-          {
-            "Text": "Task",
-            "Width": 0
+        "Arrangement": "Horizontal",
+        "Position": 700,
+        "Grows": "End",
+        "Expand": true
+      },
+      "children": [
+        {
+          "type": "Panel",
+          "name": "Left",
+          "properties": {
+            "Arrangement": "Vertical",
+            "Spacing": 8,
+            "HAlign": "Fill"
           },
-          {
-            "Text": "Start",
-            "Width": 130
+          "children": [
+            {
+              "type": "TableView",
+              "name": "Tasks",
+              "properties": {
+                "Columns": [
+                  {
+                    "Text": "Task",
+                    "Width": 0
+                  },
+                  {
+                    "Text": "Duration",
+                    "Width": 84,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Start",
+                    "Width": 130
+                  },
+                  {
+                    "Text": "Finish",
+                    "Width": 130
+                  },
+                  {
+                    "Text": "Attr",
+                    "Width": 90,
+                    "Alignment": "Right"
+                  }
+                ],
+                "Expand": true,
+                "MinHeight": 180,
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "Panel",
+              "name": "GanttBar",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 8
+              },
+              "children": [
+                {
+                  "type": "Label",
+                  "name": "LblScale",
+                  "properties": {
+                    "Text": "Timescale"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbScale",
+                  "properties": {
+                    "Items": [
+                      "Auto",
+                      "Day",
+                      "Week",
+                      "Month"
+                    ],
+                    "Index": 0,
+                    "Width": 140
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnExport",
+                  "properties": {
+                    "Text": "Export",
+                    "Icon": "document-save-as-symbolic",
+                    "Width": 110
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Scroller",
+              "name": "GanttScroll",
+              "properties": {
+                "Height": 220,
+                "MinHeight": 140,
+                "HAlign": "Fill",
+                "Scrollbars": "Both"
+              },
+              "children": [
+                {
+                  "type": "DrawingArea",
+                  "name": "Gantt",
+                  "properties": {
+                    "Width": 600,
+                    "Height": 240
+                  }
+                }
+              ]
+            },
+            {
+              "type": "TextEditor",
+              "name": "Log",
+              "properties": {
+                "ReadOnly": true,
+                "Height": 110,
+                "HAlign": "Fill"
+              }
+            }
+          ]
+        },
+        {
+          "type": "Scroller",
+          "name": "PropsScroll",
+          "properties": {
+            "HAlign": "Fill",
+            "VAlign": "Fill",
+            "Scrollbars": "Vertical"
           },
-          {
-            "Text": "Finish",
-            "Width": 130
-          },
-          {
-            "Text": "Attr",
-            "Width": 90,
-            "Alignment": "Right"
-          }
-        ],
-        "Expand": true,
-        "MinHeight": 200,
-        "HAlign": "Fill"
-      }
-    },
-    {
-      "type": "DrawingArea",
-      "name": "Gantt",
-      "properties": {
-        "Height": 240,
-        "MinHeight": 160,
-        "HAlign": "Fill"
-      }
-    },
-    {
-      "type": "TextEditor",
-      "name": "Log",
-      "properties": {
-        "ReadOnly": true,
-        "Height": 140,
-        "HAlign": "Fill"
-      }
+          "children": [
+            {
+              "type": "Panel",
+              "name": "Props",
+              "properties": {
+                "Arrangement": "Vertical",
+                "Spacing": 8,
+                "Padding": "0 0 0 12",
+                "MinWidth": 260,
+                "HAlign": "Fill"
+              },
+              "children": [
+            {
+              "type": "Label",
+              "name": "LblTask",
+              "properties": {
+                "Text": "No task selected",
+                "Style": "heading",
+                "Ellipsize": true,
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "Grid",
+              "name": "Fields",
+              "properties": {
+                "Columns": 2,
+                "RowSpacing": 6,
+                "ColumnSpacing": 8
+              },
+              "children": [
+                {
+                  "type": "Label",
+                  "name": "LblName",
+                  "properties": {
+                    "Text": "Name",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtName",
+                  "properties": {
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblStart",
+                  "properties": {
+                    "Text": "Start",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtStart",
+                  "properties": {
+                    "Placeholder": "YYYY-MM-DD HH:MM",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblFinish",
+                  "properties": {
+                    "Text": "Finish",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtFinish",
+                  "properties": {
+                    "Placeholder": "YYYY-MM-DD HH:MM",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblDuration",
+                  "properties": {
+                    "Text": "Duration",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtDuration",
+                  "properties": {
+                    "Placeholder": "2d, 8h, 30m",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblPercent",
+                  "properties": {
+                    "Text": "Complete",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpinPercent",
+                  "properties": {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 0,
+                    "HAlign": "Start"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkMilestone",
+                  "properties": {
+                    "Text": "Milestone",
+                    "ColumnSpan": 2,
+                    "HAlign": "Start"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblConstraint",
+                  "properties": {
+                    "Text": "Constraint",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbConstraint",
+                  "properties": {
+                    "Items": [
+                      "ASAP",
+                      "ALAP",
+                      "MSO",
+                      "MFO",
+                      "SNET",
+                      "SNLT",
+                      "FNET",
+                      "FNLT"
+                    ],
+                    "Index": 0,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblConstraintDate",
+                  "properties": {
+                    "Text": "Constraint date",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtConstraint",
+                  "properties": {
+                    "Placeholder": "YYYY-MM-DD HH:MM",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblDeadline",
+                  "properties": {
+                    "Text": "Deadline",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtDeadline",
+                  "properties": {
+                    "Placeholder": "YYYY-MM-DD HH:MM",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblNotes",
+                  "properties": {
+                    "Text": "Notes",
+                    "ColumnSpan": 2,
+                    "HAlign": "Start"
+                  }
+                },
+                {
+                  "type": "TextEditor",
+                  "name": "TxtNotes",
+                  "properties": {
+                    "ColumnSpan": 2,
+                    "Height": 80,
+                    "Wrap": true,
+                    "HAlign": "Fill"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Button",
+              "name": "BtnApply",
+              "properties": {
+                "Text": "Apply",
+                "Icon": "document-save-symbolic",
+                "Enabled": false,
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "Separator",
+              "name": "Rule",
+              "properties": {}
+            },
+            {
+              "type": "Panel",
+              "name": "TaskButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnAdd",
+                  "properties": {
+                    "Text": "Add",
+                    "Icon": "list-add-symbolic",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnDelete",
+                  "properties": {
+                    "Text": "Delete",
+                    "Icon": "user-trash-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Panel",
+              "name": "OutlineButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnOutdent",
+                  "properties": {
+                    "Text": "Outdent",
+                    "Icon": "format-indent-less-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnIndent",
+                  "properties": {
+                    "Text": "Indent",
+                    "Icon": "format-indent-more-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Separator",
+              "name": "Rule2",
+              "properties": {}
+            },
+            {
+              "type": "Label",
+              "name": "LblPreds",
+              "properties": {
+                "Text": "Predecessors",
+                "Style": "heading",
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "TableView",
+              "name": "Links",
+              "properties": {
+                "Columns": [
+                  {
+                    "Text": "Task",
+                    "Width": 0
+                  },
+                  {
+                    "Text": "Type",
+                    "Width": 56
+                  },
+                  {
+                    "Text": "Lag",
+                    "Width": 64,
+                    "Alignment": "Right"
+                  }
+                ],
+                "Height": 90,
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "Grid",
+              "name": "LinkFields",
+              "properties": {
+                "Columns": 2,
+                "RowSpacing": 6,
+                "ColumnSpacing": 8
+              },
+              "children": [
+                {
+                  "type": "Label",
+                  "name": "LblPred",
+                  "properties": {
+                    "Text": "Task",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbPred",
+                  "properties": {
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblType",
+                  "properties": {
+                    "Text": "Type",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbType",
+                  "properties": {
+                    "Items": [
+                      "FS",
+                      "SS",
+                      "FF",
+                      "SF"
+                    ],
+                    "Index": 0,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblLag",
+                  "properties": {
+                    "Text": "Lag (min)",
+                    "HAlign": "End"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpinLag",
+                  "properties": {
+                    "Min": -24000,
+                    "Max": 24000,
+                    "Value": 0,
+                    "Step": 5,
+                    "HAlign": "Start"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Panel",
+              "name": "LinkButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnLinkAdd",
+                  "properties": {
+                    "Text": "Link",
+                    "Icon": "list-add-symbolic",
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnLinkDel",
+                  "properties": {
+                    "Text": "Unlink",
+                    "Icon": "list-remove-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+          ]
+        }
+      ]
     },
     {
       "type": "Label",

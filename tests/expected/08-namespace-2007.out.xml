@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 08-namespace-2007.xml: el namespace que declara el XSD oficial
+     (http://schemas.microsoft.com/project/2007). Project escribe sin /2007 y
+     el lector acepta ambos; este fixture ejercita el que el corpus no usaba. -->
 <Project xmlns="http://schemas.microsoft.com/project/2007">
   <SaveVersion>14</SaveVersion>
   <Name>Namespace 2007</Name>

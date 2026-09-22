@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- 03-resources-assignments.xml: 2 recursos work + 1 material, 2 asignaciones con unidades y work. -->
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Resources</Name>
@@ -15,7 +16,6 @@
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
-  <DefaultTaskType>0</DefaultTaskType>
   <DefaultStandardRate>50</DefaultStandardRate>
   <DefaultOvertimeRate>75</DefaultOvertimeRate>
   <DurationFormat>7</DurationFormat>

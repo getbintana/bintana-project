@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
-# Fidelity harness over tests/corpus.
+# The fidelity harness over tests/corpus, and the scripted editing round trip.
 #
 #   tests/run.sh [--update] [file]
 #
 # For every fixture the app round-trips the file (`check`, see MainForm.js) and
-# reports what SaveXml touched; this script holds both the saved output and the
-# touched report against the goldens in tests/expected/. A golden is a snapshot
-# of **current** behaviour, not of desired behaviour -- tests/FIDELITY.md says
-# what in it is deliberate and what is a known upstream bug. `--update`
-# rewrites the goldens after a deliberate change, never by accident.
+# reports what SaveXml touched; the full run also plays one scripted round of
+# the editing commands over 01-minimal (`check-edit`). Both the saved output
+# and the touched report are held against the goldens in tests/expected/. A
+# golden is a snapshot of **current** behaviour, not of desired behaviour --
+# tests/FIDELITY.md says what in it is deliberate and what is known to be
+# upstream. `--update` rewrites the goldens after a deliberate change, never by
+# accident.
 #
 # BINTANA_ROOT points at the runtime checkout (default: ../bintana); BINTANA
 # overrides the binary inside it; OUT is where the round-trip scratch lands
@@ -24,66 +26,87 @@ TRY=$BINTANA_ROOT/tests/try.sh
 [[ -x $TRY ]] || { echo "run.sh: no try.sh at $TRY -- set BINTANA_ROOT" >&2; exit 1; }
 export BINTANA=${BINTANA:-$BINTANA_ROOT/build/bintana}
 
+# The app is translated, so the harness pins the language: a golden written
+# under one catalogue is not the golden of another. `LANGUAGE=en` picks the
+# msgids (there is no `po/en.po`).
+export LC_ALL=C LANGUAGE=en
+
 OUT=${OUT:-/tmp/bintana-project-check}
 EXPECTED=$PWD/tests/expected
 mkdir -p "$OUT" "$EXPECTED"
 
-if [[ $# -ge 1 ]]; then
-    files=("tests/corpus/$1")
-else
-    files=(tests/corpus/*.xml)
-fi
+# One road, one name: the app is told the command and the file, and this holds
+# what it wrote and what it reported against the goldens of that name.
+run_one() {
+    local name=$1; shift
+    local report="$OUT/$name.report"
+    local out
 
-fail=0
-for f in "${files[@]}"; do
-    base=$(basename "$f"); name=${base%.xml}
-    report="$OUT/$base.report"
-    "$TRY" "$PWD" check "$PWD/$f" "$OUT" dump-touched > "$report" 2>&1
-    status=$?
-    out="$OUT/bintana-project-check-$base"
-    grep '^touched:' "$report" > "$OUT/$base.touched"
+    "$TRY" "$PWD" "$@" "$OUT" dump-touched > "$report" 2>&1
+    local status=$?
+    out=$(grep '^out=' "$report" | head -1 | cut -d= -f2-)
+    grep '^touched:' "$report" > "$OUT/$name.touched"
 
     if [[ $status -ne 0 ]]; then
-        echo "check $base: FAILED (app exit $status)"
-        grep -E '^(file=|roundtrip|check )' "$report"
-        fail=1
-        continue
+        echo "check $name: FAILED (app exit $status)"
+        grep -E '^(file=|roundtrip|check |wiring)' "$report"
+        return 1
     fi
-    if [[ ! -f $out ]]; then
-        echo "check $base: NO OUTPUT"
-        fail=1
-        continue
+    if [[ -z $out || ! -f $out ]]; then
+        echo "check $name: NO OUTPUT"
+        return 1
     fi
 
     if [[ $UPDATE -eq 1 ]]; then
         cp "$out" "$EXPECTED/$name.out.xml"
-        cp "$OUT/$base.touched" "$EXPECTED/$name.touched"
-        echo "update $base: goldens written"
-        continue
+        cp "$OUT/$name.touched" "$EXPECTED/$name.touched"
+        echo "update $name: goldens written"
+        return 0
     fi
-
     if [[ ! -f $EXPECTED/$name.out.xml ]]; then
-        echo "check $base: NO GOLDEN -- run with --update"
-        fail=1
-        continue
+        echo "check $name: NO GOLDEN -- run with --update"
+        return 1
     fi
 
+    local fail=0
     if cmp -s "$out" "$EXPECTED/$name.out.xml"; then
-        echo "check $base: output ok"
+        echo "check $name: output ok"
     else
-        echo "check $base: OUTPUT CHANGED"
+        echo "check $name: OUTPUT CHANGED"
         diff -u "$EXPECTED/$name.out.xml" "$out" | head -30
         fail=1
     fi
-
-    if cmp -s "$OUT/$base.touched" "$EXPECTED/$name.touched"; then
-        echo "check $base: touched ok ($(wc -l < "$OUT/$base.touched") lines)"
+    if cmp -s "$OUT/$name.touched" "$EXPECTED/$name.touched"; then
+        echo "check $name: touched ok ($(wc -l < "$OUT/$name.touched") lines)"
     else
-        echo "check $base: TOUCHED CHANGED"
-        diff -u "$EXPECTED/$name.touched" "$OUT/$base.touched" | head -30
+        echo "check $name: TOUCHED CHANGED"
+        diff -u "$EXPECTED/$name.touched" "$OUT/$name.touched" | head -30
         fail=1
     fi
-done
+    return $fail
+}
+
+fail=0
+if [[ $# -ge 1 ]]; then
+    base=$(basename "$1"); name=${base%.xml}
+    run_one "$name" check "$PWD/tests/corpus/$base" || fail=1
+else
+    for f in tests/corpus/*.xml; do
+        base=$(basename "$f"); name=${base%.xml}
+        run_one "$name" check "$PWD/$f" || fail=1
+    done
+    run_one "edit-01-minimal" check-edit "$PWD/tests/corpus/01-minimal.xml" || fail=1
+
+    # The engine's own arithmetic, asserted inside the app -- no golden,
+    # because the values are the assertion.
+    if "$TRY" "$PWD" check-cpm > "$OUT/cpm.report" 2>&1; then
+        echo "check cpm: $(grep -c '^cpm ' "$OUT/cpm.report") assertions ok"
+    else
+        echo "check cpm: FAILED"
+        grep 'FAILED' "$OUT/cpm.report"
+        fail=1
+    fi
+fi
 
 if [[ $fail -eq 0 ]]; then
     echo "HARNESS-OK"
