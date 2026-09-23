@@ -63,7 +63,6 @@
       <ID>1</ID>
       <Name>Ana Gómez</Name>
       <Type>1</Type>
-      <IsNull>false</IsNull>
       <Initials>AG</Initials>
       <Group>Crew A</Group>
       <MaxUnits>1</MaxUnits>
@@ -76,7 +75,6 @@
       <ID>2</ID>
       <Name>Bruno Díaz</Name>
       <Type>1</Type>
-      <IsNull>false</IsNull>
       <Initials>BD</Initials>
       <Group>Crew A</Group>
       <MaxUnits>0.5</MaxUnits>
@@ -88,7 +86,6 @@
       <UID>3</UID>
       <ID>3</ID>
       <Name>Bricks</Name>
-      <IsNull>false</IsNull>
       <MaterialLabel>pallets</MaterialLabel>
       <MaxUnits>1</MaxUnits>
       <StandardRate>120</StandardRate>

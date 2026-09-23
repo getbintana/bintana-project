@@ -5,3 +5,4 @@ touched: /Project/Calendars[1]/Calendar[1]/Exceptions[1]/Exception[1]/Period[1]:
 touched: /Project/Calendars[1]/Calendar[1]/Exceptions[1]/Exception[1]/DaysOfWeek[1]: removed (was "0")
 touched: /Project/Calendars[1]/Calendar[2]/IsBaseCalendar[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
+touched: /Project/Resources[1]/Resource[1]/IsNull[1]: removed (was "false")

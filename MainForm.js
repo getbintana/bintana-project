@@ -38,9 +38,11 @@ class MainForm extends Form {
     selectedUID = null;
 
     /* The chart's timescale: `dayW` is pixels a day and `step` the header's
-     * step in days, both null/0 for Auto -- fit the view. */
+     * step in days, both null/0 for Auto -- fit the view. `drag` is the
+     * gesture in flight: the model is not touched until the button is up. */
     dayW = null;
     step = 0;
+    drag = null;
 
     /* The selected task's links, parallel to the `Links` table by index, and
      * the predecessors the combo offers in the same order. */
@@ -52,8 +54,15 @@ class MainForm extends Form {
     forceClose = false;
 
     /* Settings are read and written only on the window's road: a headless
-     * check must not touch what the user chose. */
+     * check must not touch what the user chose. `fieldID` is the custom field
+     * the list shows (empty is the first) and `unit` the unit a bare duration
+     * is read in (empty is the task's own). */
     settingsReady = false;
+    fieldID = "";
+    unit    = "";
+
+    /* The files the menu offers, parallel to its entries by index. */
+    recentPaths = [];
 
     Form_Open() {
         try {
@@ -63,6 +72,10 @@ class MainForm extends Form {
             }
             if (Application.Arguments.indexOf("check-cpm") >= 0) {
                 this.checkCpm();
+                return;
+            }
+            if (Application.Arguments.indexOf("check-drag") >= 0) {
+                this.checkDrag();
                 return;
             }
             if (Application.Arguments.indexOf("check-edit") >= 0) {
@@ -100,15 +113,58 @@ class MainForm extends Form {
         this.applySettings();
     }
 
-    /* What the last run left. Only the timescale is read here: the folder is
-     * read where the dialog opens and written when a file does. */
+    /* What the last run left. The folder is read where the dialog opens and
+     * written when a file does; these three are read here. */
     applySettings() {
-        const scale = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
+        const scale  = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
+        this.fieldID = Settings.Get("bintana-project.field", "");
+        this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.CmbScale.Index !== scale) {
             this.CmbScale.Index = scale;
             this.CmbScale_Select();
         }
+        this.showRecent(Settings.Get("bintana-project.recent", []));
     }
+
+    /* The recent list: the file just opened goes to the front, the list is
+     * trimmed, and the menu follows it. */
+    rememberRecent(path) {
+        const kept = Settings.Get("bintana-project.recent", [])
+                           .filter((p) => p !== path);
+        kept.unshift(path);
+        const recent = kept.slice(0, 8);
+        Settings.Set("bintana-project.recent", recent);
+        this.showRecent(recent);
+    }
+
+    /* A flat menu, assigned whole: a `dynamic` item would be a submenu, and a
+     * second level for eight names is a click nobody needs. Each entry has its
+     * own name, so each needs its own one-line handler below. */
+    showRecent(recent) {
+        this.recentPaths = recent;
+        this.BtnRecent.Menu = recent.map((p, i) => ({ name: `MnuRecent${i}`,
+                                                      text: File.Name(p) }));
+        this.BtnRecent.Enabled = recent.length > 0;
+    }
+
+    openRecent(i) {
+        const path = this.recentPaths[i];
+        if (!path) return;
+        try {
+            this.load(path);
+        } catch (e) {
+            Message.Error("Cannot open {0}: {1}", path, e.message);
+        }
+    }
+
+    MnuRecent0_Click() { this.openRecent(0); }
+    MnuRecent1_Click() { this.openRecent(1); }
+    MnuRecent2_Click() { this.openRecent(2); }
+    MnuRecent3_Click() { this.openRecent(3); }
+    MnuRecent4_Click() { this.openRecent(4); }
+    MnuRecent5_Click() { this.openRecent(5); }
+    MnuRecent6_Click() { this.openRecent(6); }
+    MnuRecent7_Click() { this.openRecent(7); }
 
     /* The bundled sample, so an empty first screen is never the question. */
     openSample() {
@@ -132,8 +188,10 @@ class MainForm extends Form {
         this.edit   = new Edit(this.holder);
         this.forceClose = false;
         this.fill();
-        if (this.settingsReady)
+        if (this.settingsReady) {
             Settings.Set("bintana-project.folder", File.Directory(path));
+            this.rememberRecent(path);
+        }
     }
 
     /* The table as the WBS it is: a tree keyed by UID, summaries included and
@@ -174,6 +232,8 @@ class MainForm extends Form {
                  `${s.milestones} milestones, ${s.links} dependencies.`);
         for (const p of this.holder.problems) this.log(`not modelled: ${p}`);
 
+        this.fillResources();
+
         /* The data changed: the chart is a frame behind until asked, and its
          * own size depends on how many rows there now are. */
         this.syncGanttSize();
@@ -190,7 +250,26 @@ class MainForm extends Form {
     cells(task) {
         const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
         return [name, durationText(task), shortDate(task.Start),
-                shortDate(task.Finish), firstAttr(task)];
+                shortDate(task.Finish), attrOf(task, this.fieldID)];
+    }
+
+    /* The plan's resources, with the cost of their assignments added up.
+     * Read-only for now: an assignment is a record the panel does not edit
+     * yet, and the file's own `Cost` wins where it has one. */
+    fillResources() {
+        this.Resources.Clear();
+        const project = this.holder ? this.holder.project : null;
+        if (!project) return;
+
+        for (const resource of project.Resources) {
+            if (resource.IsNull) continue;
+            this.Resources.Add([
+                resource.Name,
+                String(resource.MaxUnits),
+                String(resource.StandardRate),
+                Locale.Number(resourceCost(project, resource), 2),
+            ]);
+        }
     }
 
     selectedTask() {
@@ -209,7 +288,9 @@ class MainForm extends Form {
         this.TxtStart.Text    = has ? shortDate(task.Start) : "";
         this.TxtFinish.Text   = has ? shortDate(task.Finish) : "";
         this.TxtDuration.Text = has ? durationText(task) : "";
-        this.ChkMilestone.Active = has ? task.Milestone : false;
+        this.ChkMilestone.Active    = has ? task.Milestone : false;
+        this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
+        this.ChkEstimated.Active    = has ? task.Estimated : false;
         this.SpinPercent.Value   = has ? task.PercentComplete : 0;
         this.CmbConstraint.Index = has ? (task.ConstraintType || 0) : 0;
         this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
@@ -220,12 +301,14 @@ class MainForm extends Form {
         /* A summary's dates, duration and completion are what Project
          * derives from its children; only its name is the user's. */
         for (const w of [this.TxtStart, this.TxtFinish, this.TxtDuration,
-                         this.ChkMilestone, this.SpinPercent,
+                         this.ChkMilestone, this.ChkEffortDriven,
+                         this.ChkEstimated, this.SpinPercent,
                          this.CmbConstraint, this.TxtConstraint,
                          this.TxtDeadline])
             w.Enabled = editable;
         for (const w of [this.BtnApply, this.BtnDelete,
-                         this.BtnIndent, this.BtnOutdent, this.TxtNotes,
+                         this.BtnIndent, this.BtnOutdent,
+                         this.BtnUp, this.BtnDown, this.TxtNotes,
                          this.CmbPred, this.CmbType, this.SpinLag,
                          this.BtnLinkAdd])
             w.Enabled = has;
@@ -279,6 +362,123 @@ class MainForm extends Form {
         if (this.selectedTask()) this.TxtName.SetFocus();
     }
 
+    /* --- the chart's pointer ------------------------------------------- */
+
+    ganttWidth()  { const b = this.Gantt.Bounds(); return b.Width  || this.Gantt.Width; }
+    ganttHeight() { const b = this.Gantt.Bounds(); return b.Height || this.Gantt.Height; }
+
+    /* Which task, and which part of its bar, is under the pointer. */
+    ganttHit(x, y) {
+        const project = this.holder ? this.holder.project : null;
+        if (!project) return null;
+
+        const g = ganttGeometry(project, this.ganttWidth(), this.ganttHeight(),
+                                this.step);
+        const i = g.rowAt(y);
+        if (i < 0 || x < g.plotX) return null;
+
+        const task = g.rows[i];
+        const s = whenMs(task.Start), f = whenMs(task.Finish);
+        if (s === null || f === null) return null;
+
+        const x0 = g.x(Math.min(s, f)), x1 = g.x(Math.max(s, f));
+        const edge = task.Milestone ? 9 : 5;
+        if (x < x0 - edge || x > x1 + edge) return null;
+        return { task, zone: !task.Milestone && x >= x1 - edge ? "end" : "bar" };
+    }
+
+    /* The button goes down: a drag starts. Ctrl draws a dependency; otherwise
+     * the bar moves, and its last pixels resize. Nothing is written until the
+     * button is let go, so one gesture is one undo. */
+    Gantt_MouseDown(x, y, button, ctrl, shift) {
+        const hit = this.ganttHit(x, y);
+        if (!hit || button !== 1) return;
+
+        if (ctrl) {
+            this.drag = { mode: "link", uid: hit.task.UID, px: x, py: y, to: null };
+            return;
+        }
+        const start = whenMs(hit.task.Start), finish = whenMs(hit.task.Finish);
+        if (start === null || finish === null) return;
+
+        this.drag = { mode: hit.zone === "end" ? "resize" : "move",
+                      uid: hit.task.UID, x0: x, px: x, py: y,
+                      originStart: start, originFinish: finish,
+                      start, finish };
+
+        /* The chart selects too, so the panel follows the bar. */
+        if (this.Tasks.Exists(String(hit.task.UID))) {
+            this.Tasks.Key = String(hit.task.UID);
+            this.Tasks_Select();
+        }
+        this.Gantt.Redraw();
+    }
+
+    Gantt_MouseMove(x, y) {
+        const drag = this.drag;
+        if (!drag) return;
+        drag.px = x;
+        drag.py = y;
+
+        if (drag.mode === "link") {
+            const hit = this.ganttHit(x, y);
+            drag.to = hit && hit.task.UID !== drag.uid ? hit.task.UID : null;
+            this.Gantt.Redraw();
+            return;
+        }
+
+        const g = ganttGeometry(this.holder.project, this.ganttWidth(),
+                                this.ganttHeight(), this.step);
+        if (!g.dayW) return;
+        const days = Math.round((x - drag.x0) / g.dayW);
+        if (drag.mode === "move") {
+            drag.start  = drag.originStart  + days * DAY_MS;
+            drag.finish = drag.originFinish + days * DAY_MS;
+        } else {
+            drag.finish = Math.max(drag.originStart,
+                                   drag.originFinish + days * DAY_MS);
+        }
+        this.Gantt.Redraw();
+    }
+
+    Gantt_MouseUp() {
+        const drag = this.drag;
+        this.drag = null;
+        if (!drag) return;
+
+        if (drag.mode === "link") {
+            if (drag.to !== null && drag.to !== undefined) {
+                const succ  = this.edit.task(drag.to);
+                const links = succ.Links.filter((l) => l.PredecessorUID !== drag.uid);
+                links.push(new MspLink({ PredecessorUID: drag.uid, Type: 1,
+                                         LinkLag: 0, LagFormat: 3 }));
+                if (this.edit.setLinks(succ.UID, links)) this.fill(succ.UID);
+                else this.Gantt.Redraw();
+            } else {
+                this.Gantt.Redraw();
+            }
+            return;
+        }
+
+        const task = this.edit.task(drag.uid);
+        if (!task) { this.Gantt.Redraw(); return; }
+
+        const values = { Start: isoLocal(drag.start),
+                         Finish: isoLocal(drag.finish) };
+        if (drag.mode === "resize")
+            values.Duration = mspdiDuration(
+                this.workingMinutes(task, drag.start, drag.finish));
+        this.edit.setFields(task.UID, values);
+        this.fill(task.UID);
+    }
+
+    /* The working time between two dates on the task's own calendar, which is
+     * the duration a resize leaves. */
+    workingMinutes(task, start, finish) {
+        const calendar = new WorkCalendar(this.holder.project, task.CalendarUID);
+        return Math.round(calendar.between(start, finish));
+    }
+
     log(line) {
         this.Log.Append(line + "\n");
     }
@@ -286,7 +486,7 @@ class MainForm extends Form {
     /* Every frame is drawn from the data; there is nothing to keep. */
     Gantt_Draw(p, width, height) {
         drawGantt(p, width, height, this.holder ? this.holder.project : null,
-                  this.selectedUID, this.step);
+                  this.selectedUID, this.step, this.drag);
     }
 
     /*
@@ -314,6 +514,15 @@ class MainForm extends Form {
 
     /* The window changed size: Auto means the chart fits it again. */
     Form_Resize() { this.syncGanttSize(); }
+
+    /* The one dialog that edits the settings the app reads; what it writes is
+     * re-read here, so nothing needs a restart. */
+    BtnSettings_Click() {
+        SettingsForm.open(() => {
+            this.applySettings();
+            this.fill(this.selectedUID);
+        });
+    }
 
     /* The chart as a file to send: PNG by the dialog's filter, PDF when the
      * name says so, at the chart's own size so nothing is cropped. */
@@ -366,7 +575,8 @@ class MainForm extends Form {
 
         /* A summary is what Project derives it from: only the name is read. */
         if (!task.Summary) {
-            const duration = parseDuration(this.TxtDuration.Text, task.DurationFormat);
+            const duration = parseDuration(this.TxtDuration.Text, task.DurationFormat,
+                                            this.unit);
             if (duration === null) {
                 Message.Error("{0} is not a duration -- try 2d, 8h or 30m",
                               this.TxtDuration.Text);
@@ -377,6 +587,8 @@ class MainForm extends Form {
             values.Duration        = mspdiDuration(duration.minutes);
             values.DurationFormat  = duration.format;
             values.Milestone       = this.ChkMilestone.Active;
+            values.EffortDriven    = this.ChkEffortDriven.Active;
+            values.Estimated       = this.ChkEstimated.Active;
             values.PercentComplete = Math.round(this.SpinPercent.Value);
 
             /* ASAP and ALAP carry no date; the rest need one. */
@@ -423,6 +635,16 @@ class MainForm extends Form {
         const task = this.selectedTask();
         if (!task) return;
         if (this.edit.indent(task.UID, delta)) this.fill(task.UID);
+    }
+
+    /* Up and Down swap the task with its sibling, subtree and all. */
+    BtnUp_Click()   { this.move(-1); }
+    BtnDown_Click() { this.move(1); }
+
+    move(delta) {
+        const task = this.selectedTask();
+        if (!task) return;
+        if (this.edit.moveTask(task.UID, delta)) this.fill(task.UID);
     }
 
     /* The plan-wide command: place every task from its links. It is one undo
@@ -518,6 +740,8 @@ class MainForm extends Form {
                 }
             });
     }
+
+    BtnRecent_Click() { this.BtnRecent.PopupMenu(0, 0); }
 
     BtnSave_Click() { this.save(); }
 
@@ -699,6 +923,39 @@ class MainForm extends Form {
                     "2026-09-09T13:00:00..2026-09-10T12:00:00") && ok;
             ok = eq("ALAP kept", c.Tasks[4].Start, "") && ok;
 
+            /* An elapsed duration counts calendar time: two elapsed days from
+             * Monday 08:00 is Wednesday 08:00, the holiday in between and
+             * all. Working time would have put it six days out. */
+            const e = projectOf([
+                task(1, "PT48H0M0S", [], { DurationFormat: 8 }),
+            ]);
+            recalculate(e);
+            ok = eq("elapsed", `${e.Tasks[0].Start}..${e.Tasks[0].Finish}`,
+                    "2026-09-07T08:00:00..2026-09-09T08:00:00") && ok;
+
+            /* The cost of an assignment: a work resource by the hours, a
+             * material by the units plus its cost per use, and the file's own
+             * number when it wrote one. */
+            const r = projectOf([task(1, "PT8H0M0S")]);
+            r.Resources = [
+                new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                  MaxUnits: 1, StandardRate: 50 }),
+                new MspResource({ UID: 2, Name: "Bricks", Type: 0,
+                                  MaxUnits: 1, StandardRate: 120, CostPerUse: 10 }),
+            ];
+            r.Assignments = [
+                new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                    Units: 1, Work: "PT8H0M0S" }),
+                new MspAssignment({ UID: 2, TaskUID: 1, ResourceUID: 2,
+                                    Units: 2, Work: "PT0H0M0S" }),
+                new MspAssignment({ UID: 3, TaskUID: 1, ResourceUID: 1,
+                                    Units: 1, Work: "PT8H0M0S", Cost: 123 }),
+            ];
+            ok = eq("work cost", assignmentCost(r, r.Assignments[0]), 400) && ok;
+            ok = eq("material cost", assignmentCost(r, r.Assignments[1]), 250) && ok;
+            ok = eq("file cost", assignmentCost(r, r.Assignments[2]), 123) && ok;
+            ok = eq("resource total", resourceCost(r, r.Resources[0]), 523) && ok;
+
             /* The backward pass: the chain is critical and the parallel task
              * has the Wednesday to slip -- the Tuesday is the holiday. */
             const q = projectOf([
@@ -729,6 +986,77 @@ class MainForm extends Form {
             Application.Quit(ok ? 0 : 1);
         } catch (e) {
             print(`cpm ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /*
+     * The chart's pointer, headless: the same handlers a drag calls, with the
+     * coordinates the chart's own geometry gives, so a moved bar is a moved
+     * date and a resize is a duration.
+     */
+    checkDrag() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`drag ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        try {
+            this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
+            const edit = this.edit;
+
+            /* Where the first task's bar is, from the chart's own geometry. */
+            const g = ganttGeometry(this.holder.project, this.ganttWidth(),
+                                    this.ganttHeight(), this.step);
+            const task = edit.task(1);
+            const y    = HEADER + g.rows.indexOf(task) * ROW_H + ROW_H / 2;
+            const mid  = g.x((whenMs(task.Start) + whenMs(task.Finish)) / 2);
+            const end  = g.x(whenMs(task.Finish));
+
+            /* Move it two days: both dates travel, the duration does not. */
+            this.Gantt_MouseDown(mid, y, 1, false, false);
+            this.Gantt_MouseMove(mid + 2 * g.dayW, y);
+            this.Gantt_MouseUp();
+            ok = eq("move start", edit.task(1).Start, "2026-09-03T08:00:00") && ok;
+            ok = eq("move finish", edit.task(1).Finish, "2026-09-04T17:00:00") && ok;
+            ok = eq("move duration", edit.task(1).Duration, "PT8H0M0S") && ok;
+            edit.undo();
+            ok = eq("move undone", edit.task(1).Start, "2026-09-01T08:00:00") && ok;
+
+            /* The end edge resizes: the duration follows the finish. The
+             * fixture's calendar works Saturday too, so the day after the
+             * second is two working days. */
+            this.Gantt_MouseDown(end, y, 1, false, false);
+            this.Gantt_MouseMove(end + g.dayW, y);
+            this.Gantt_MouseUp();
+            ok = eq("resize finish", edit.task(1).Finish, "2026-09-03T17:00:00") && ok;
+            ok = eq("resize duration", edit.task(1).Duration, "PT24H0M0S") && ok;
+            edit.undo();
+
+            /* Ctrl from one bar to another draws an FS link on the target.
+             * The undo replaced the records, so the geometry is taken again
+             * from the plan as it is now. */
+            const g2   = ganttGeometry(this.holder.project, this.ganttWidth(),
+                                       this.ganttHeight(), this.step);
+            const one  = edit.task(1), two = edit.task(2);
+            const oy   = HEADER + g2.rows.indexOf(two) * ROW_H + ROW_H / 2;
+            const omid = g2.x((whenMs(two.Start) + whenMs(two.Finish)) / 2);
+            const y1   = HEADER + g2.rows.indexOf(one) * ROW_H + ROW_H / 2;
+            const mid1 = g2.x((whenMs(one.Start) + whenMs(one.Finish)) / 2);
+            this.Gantt_MouseDown(omid, oy, 1, true, false);
+            this.Gantt_MouseMove(mid1, y1);
+            this.Gantt_MouseUp();
+            ok = eq("link count", edit.task(1).Links.length, 1) && ok;
+            ok = eq("link predecessor", edit.task(1).Links[0].PredecessorUID, 2) && ok;
+            edit.undo();
+
+            print(ok ? "CHECK-OK" : "CHECK-FAILED");
+            Application.Quit(ok ? 0 : 1);
+        } catch (e) {
+            print(`drag ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
@@ -820,11 +1148,12 @@ class MainForm extends Form {
             const edit = this.edit;
             let ok = this.checkWiring();
 
-            /* The close question's form parses and opens: a broken `.form`
-             * would fail here, not the first time somebody closes with
-             * unsaved work. Nothing is clicked, so nothing runs. */
+            /* The dialogs' forms parse and open: a broken `.form` would fail
+             * here, not the first time somebody closes with unsaved work or
+             * opens the settings. Nothing is clicked, so nothing runs. */
             ConfirmForm.ask("check-edit", "The dialog opens and closes.", "OK",
                             () => {}).Close();
+            SettingsForm.open(() => {}).Close();
 
             /* The panel's own road: select UID 1, type, Apply. */
             this.Tasks.Key = "1";
@@ -916,6 +1245,21 @@ class MainForm extends Form {
                  edit.task(3).Notes === "Edited in the harness" && ok;
             print(`edit notes="${edit.task(3).Notes}"`);
 
+            /* The estimate flag through the panel: the duration field keeps
+             * its value and the row shows the `?`. */
+            this.ChkEstimated.Active = true;
+            ok = this.applyFields() && edit.task(3).Estimated === true && ok;
+            print(`edit estimated=${edit.task(3).Estimated}`);
+
+            /* Reorder: UID 2 moves above UID 1 and comes back, so the order
+             * is the outline's and the subtree travels with the task. */
+            const order = () => edit.holder.project.Tasks.map((t) => t.UID).join(",");
+            const was = order();
+            ok = edit.moveTask(2, -1) && order() === "0,2,1,3" && ok;
+            edit.undo();
+            ok = order() === was && ok;
+            print(`edit reorder ${was} -> ${order()}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -943,6 +1287,7 @@ class MainForm extends Form {
                  saved[2].OutlineLevel === 2 && saved[3].UID === 2 &&
                  saved[2].Links.length === 1 &&
                  saved[2].ConstraintType === 4 &&
+                 saved[2].Estimated === true &&
                  saved[2].Notes === "Edited in the harness" && ok;
 
             print(`check-edit ${name}: ${ok ? "ok" : "FAILED"}`);
@@ -961,13 +1306,17 @@ class MainForm extends Form {
      * afternoon after a rewrite. The check names the pairs the window needs.
      */
     checkWiring() {
-        const wanted = ["BtnOpen", "BtnSave", "BtnSaveAs", "BtnUndo", "BtnRedo",
-                        "BtnRecalc", "BtnExport", "BtnApply", "BtnAdd",
-                        "BtnDelete", "BtnIndent", "BtnOutdent", "BtnLinkAdd",
-                        "BtnLinkDel"]
+        const wanted = ["BtnOpen", "BtnRecent", "BtnSave", "BtnSaveAs",
+                        "BtnUndo", "BtnRedo", "BtnRecalc", "BtnExport",
+                        "BtnSettings", "BtnApply", "BtnAdd", "BtnDelete",
+                        "BtnIndent", "BtnOutdent", "BtnUp", "BtnDown",
+                        "BtnLinkAdd", "BtnLinkDel",
+                        "MnuRecent0", "MnuRecent1", "MnuRecent2", "MnuRecent3",
+                        "MnuRecent4", "MnuRecent5", "MnuRecent6", "MnuRecent7"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
-                     "Links_Select"]);
+                     "Links_Select", "Gantt_MouseDown", "Gantt_MouseMove",
+                     "Gantt_MouseUp"]);
 
         let ok = true;
         for (const member of wanted) {
@@ -1077,23 +1426,17 @@ function shortDate(when) {
 }
 
 /*
- * The duration as the file's own DurationFormat reads it: 3 minutes, 5 hours,
- * 7 days, 9 weeks, 11 and 43 months -- 43 is the estimated spelling, which
- * Project writes with a question mark. The divisors are the schema's defaults
- * (480 minutes a day, 20 days a month) because `MinutesPerDay` is not
- * modelled yet.
+ * The duration as the file's own DurationFormat reads it, with an `e` when it
+ * counts elapsed time and a `?` when it is estimated -- the field's own flag
+ * or the format's spelling, whichever says so.
  */
 function durationText(task) {
     const minutes = mspdiMinutes(task.Duration);
     if (minutes === null) return task.Duration || "";
-    switch (task.DurationFormat) {
-        case 3:  return `${minutes}m`;
-        case 5:  return `${minutes / 60}h`;
-        case 9:  return `${minutes / 2400}w`;
-        case 11: return `${minutes / 9600}mo`;
-        case 43: return `${minutes / 9600}mo?`;
-        default: return `${minutes / 480}d`;
-    }
+    const format = durationFormat(task.DurationFormat);
+    const estimated = task.Estimated || format.estimated;
+    return `${minutes / format.per}${format.elapsed ? "e" : ""}${format.unit}` +
+           (estimated ? "?" : "");
 }
 
 /* "2026-10-01 08:00" is how a plan is read; `Field.DateTime` wants the T.
@@ -1104,20 +1447,23 @@ function parseMoment(text) {
 }
 
 /*
- * "2d", "8h", "30m", "1mo", or a bare number in the task's own unit. A unit
- * written wins and moves `DurationFormat` with it; a bare number keeps the
- * format it had -- 43, the estimated month, included.
+ * "2d", "8h", "30m", "1mo", "2ed" -- elapsed -- or a bare number in `unit`
+ * (the setting) or in the task's own unit. A unit written wins, then the
+ * setting, and the format moves with whichever was said; a bare number with
+ * neither keeps the format it had, estimated months included.
  */
-function parseDuration(text, format) {
-    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(mo|m|h|d|w)?\s*$/.exec(String(text || ""));
+function parseDuration(text, format, unit) {
+    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*$/.exec(String(text || ""));
     if (!m) return null;
 
-    const units = { m: [1, 3], h: [60, 5], d: [480, 7], w: [2400, 9], mo: [9600, 11] };
-    const unit = m[2] || (format === 3 ? "m" : format === 5 ? "h" :
-                          format === 9 ? "w" :
-                          (format === 11 || format === 43) ? "mo" : "d");
-    const minutes = Math.round(Number(m[1].replace(",", ".")) * units[unit][0]);
-    return { minutes, format: m[2] ? units[unit][1] : format };
+    const typed = m[3] ? m[2] + m[3] : "";
+    let chosen = format;
+    if (typed)     chosen = formatOfUnit(typed);
+    else if (unit) chosen = formatOfUnit(unit);
+
+    const minutes = Math.round(Number(m[1].replace(",", ".")) *
+                               durationFormat(chosen).per);
+    return { minutes, format: (typed || unit) ? chosen : format };
 }
 
 /*

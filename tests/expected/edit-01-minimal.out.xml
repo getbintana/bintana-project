@@ -159,6 +159,7 @@
       <Duration>PT0H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT0H0M0S</Work>
+      <Estimated>true</Estimated>
       <ConstraintType>4</ConstraintType>
       <CalendarUID>1</CalendarUID>
       <ConstraintDate>2026-09-04T08:00</ConstraintDate>

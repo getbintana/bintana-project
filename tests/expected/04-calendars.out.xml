@@ -143,7 +143,6 @@
       <ID>1</ID>
       <Name>Night operator</Name>
       <Type>1</Type>
-      <IsNull>false</IsNull>
       <Initials>NO</Initials>
       <MaxUnits>1</MaxUnits>
       <StandardRate>30</StandardRate>

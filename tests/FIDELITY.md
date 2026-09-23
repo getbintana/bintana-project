@@ -11,18 +11,19 @@ deliberado, nunca por accidente.
 
 Re-medido el mismo día tras el arreglo de la clave XML en default en Bintana:
 los `problems` in→out quedaron iguales en los ocho. Tercera medición, con el
-header de Project y los calendarios modelados (fase 2): los `problems` bajan,
-los defaults de calendario entran a la lista deliberada, y los counts siguen
-iguales in→out.
+header de Project, los calendarios, `Estimated`/`EffortDriven` y los recursos y
+asignaciones modelados: los `problems` bajan (05 pierde el de `Estimated`, 03 y
+04 los de `OvertimeRate`/`ID`/`IsNull` de recurso), los defaults entran a la
+lista deliberada, y los counts siguen iguales in→out.
 
 | Fixture | tasks | hitos | attrs | links | problems in→out | touched |
 |---|---|---|---|---|---|---|
 | 01-minimal | 2 | 0 | 0 | 1 | 14 → 14 | 10 |
 | 02-relations | 5 | 0 | 0 | 4 | 6 → 6 | 8 |
-| 03-resources-assignments | 2 | 0 | 0 | 0 | 16 → 16 | 6 |
-| 04-calendars | 1 | 0 | 0 | 0 | 8 → 8 | 7 |
-| 05-durations | 4 | 1 | 0 | 1 | 7 → 7 | 9 |
-| 06-timephased-custom | 1 | 0 | 1 | 0 | 17 → 17 | 3 |
+| 03-resources-assignments | 2 | 0 | 0 | 0 | 8 → 8 | 9 |
+| 04-calendars | 1 | 0 | 0 | 0 | 6 → 6 | 8 |
+| 05-durations | 4 | 1 | 0 | 1 | 6 → 6 | 9 |
+| 06-timephased-custom | 1 | 0 | 1 | 0 | 15 → 15 | 4 |
 | 07-extended-attrs | 3 | 2 | 2 | 2 | 12 → 12 | 8 |
 | 08-namespace-2007 | 1 | 0 | 0 | 0 | 0 → 0 | 1 |
 
@@ -43,12 +44,12 @@ todos (el `check` lo afirma). Lo que sigue es lo que **cambia** en el archivo.
 `SaveXml` borra un elemento modelado cuyo valor es el default del campo. En el
 corpus eso toca: `IsNull=false`, `Type=0` (tarea y `PredecessorLink`),
 `LinkLag=0`, `OutlineLevel=0`, `PercentComplete=0`, `<Name></Name>` vacío,
-`ID` 0 de la tarea resumen, y -- desde que el header y los calendarios se
-modelan -- `DefaultTaskType=0` y los defaults de calendario:
-`DayWorking=false` (día no laborable), `IsBaseCalendar=false` (calendario de
-recurso), `EnteredByOccurrences=false`, `Period=0` y `DaysOfWeek=0`. Cada uno
-aparece en `touched` como `removed`. `ID` no es clave en el shape y su
-ausencia es posicional para Project.
+`ID` 0 de la tarea resumen, `IsNull=false` de un recurso, y -- desde que el
+header y los calendarios se modelan -- `DefaultTaskType=0` y los defaults de
+calendario: `DayWorking=false` (día no laborable), `IsBaseCalendar=false`
+(calendario de recurso), `EnteredByOccurrences=false`, `Period=0` y
+`DaysOfWeek=0`. Cada uno aparece en `touched` como `removed`. `ID` no es clave
+en el shape y su ausencia es posicional para Project.
 
 Una clave, en cambio, no es un default: `UID 0` se escribe siempre (arreglado
 en Bintana el 2026-09-22), así que no aparece en `touched`.

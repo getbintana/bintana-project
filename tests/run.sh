@@ -97,15 +97,17 @@ else
     done
     run_one "edit-01-minimal" check-edit "$PWD/tests/corpus/01-minimal.xml" || fail=1
 
-    # The engine's own arithmetic, asserted inside the app -- no golden,
-    # because the values are the assertion.
-    if "$TRY" "$PWD" check-cpm > "$OUT/cpm.report" 2>&1; then
-        echo "check cpm: $(grep -c '^cpm ' "$OUT/cpm.report") assertions ok"
-    else
-        echo "check cpm: FAILED"
-        grep 'FAILED' "$OUT/cpm.report"
-        fail=1
-    fi
+    # The engine's arithmetic and the chart's pointer, asserted inside the
+    # app -- no golden, because the values are the assertion.
+    for what in cpm drag; do
+        if "$TRY" "$PWD" "check-$what" > "$OUT/$what.report" 2>&1; then
+            echo "check $what: $(grep -c "^$what " "$OUT/$what.report") assertions ok"
+        else
+            echo "check $what: FAILED"
+            grep 'FAILED' "$OUT/$what.report"
+            fail=1
+        fi
+    done
 fi
 
 if [[ $fail -eq 0 ]]; then

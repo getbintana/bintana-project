@@ -55,17 +55,47 @@ function ganttRange(rows) {
     return { from: from - day, to: to + day };
 }
 
-function drawGantt(p, width, height, project, selected, step) {
-    const rows = project ? ganttRows(project) : [];
+/*
+ * The layout a frame and a pointer share: the rows, the range and the mapping
+ * between pixels and instants. `drawGantt` paints from it and the mouse
+ * handlers hit-test with it, so a bar is exactly where the pointer thinks it
+ * is -- two spellings of the geometry would drift.
+ */
+function ganttGeometry(project, width, height, step) {
+    const rows  = project ? ganttRows(project) : [];
+    const range = ganttRange(rows);
+    if (!rows.length || !range) {
+        return { rows, range: null, plotX: 0, plotW: 0, dayW: 0,
+                 x: () => 0, msAt: () => 0, rowAt: () => -1 };
+    }
+
+    const plotX = GUTTER, plotW = Math.max(width - GUTTER - 8, 50);
+    const spanDays = (range.to - range.from) / DAY_MS;
+    const dayW = plotW / spanDays;
+
+    return {
+        rows, range, plotX, plotW, dayW,
+        x: (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW,
+        msAt: (px) => range.from + (px - plotX) / plotW * (range.to - range.from),
+        rowAt: (py) => {
+            const i = Math.floor((py - HEADER) / ROW_H);
+            return i >= 0 && i < rows.length ? i : -1;
+        },
+    };
+}
+
+function drawGantt(p, width, height, project, selected, step, drag) {
+    const g = ganttGeometry(project, width, height, step);
+    const rows = g.rows;
     if (!rows.length) {
         p.Text(Locale.Text("No tasks"), 12, 12);
         return;
     }
-    const range = ganttRange(rows);
-    if (!range) {
+    if (!g.range) {
         p.Text(Locale.Text("No dated tasks"), 12, 12);
         return;
     }
+    const range = g.range;
 
     const dark  = p.Dark;
     const ink   = dark ? "#eeeeec" : "#2e3436";
@@ -77,8 +107,8 @@ function drawGantt(p, width, height, project, selected, step) {
     const today = "#e01b24";
     const band  = dark ? "#2f2f2f" : "#eaeaea";
 
-    const plotX = GUTTER, plotW = Math.max(width - GUTTER - 8, 50);
-    const x = (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW;
+    const plotX = g.plotX, plotW = g.plotW;
+    const x = g.x;
     const cy = (i) => HEADER + i * ROW_H + ROW_H / 2;
 
     /* By UID, for the dependency elbows and the selection below. */
@@ -87,9 +117,8 @@ function drawGantt(p, width, height, project, selected, step) {
 
     /* The grid and its labels. `step` is the timescale control's choice in
      * days; without one it steps to what fits. */
-    const dayMs = 24 * 3600 * 1000;
-    const spanDays = (range.to - range.from) / dayMs;
-    const dayW = plotW / spanDays;
+    const dayMs = DAY_MS;
+    const dayW = g.dayW;
     if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
     p.Color = grid;
     p.LineWidth = 1;
@@ -173,6 +202,41 @@ function drawGantt(p, width, height, project, selected, step) {
             p.Color = done;
             p.Rectangle(x0, by, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
             p.Fill();
+        }
+
+        /* What the pointer is doing: an outline where the bar would land. The
+         * model is not touched until the button is let go, so this is the
+         * whole of the feedback and the whole of the undo. */
+        if (drag && drag.uid === task.UID && drag.mode !== "link") {
+            const px0 = x(Math.min(drag.start, drag.finish));
+            const px1 = x(Math.max(drag.start, drag.finish));
+            p.Color = ink;
+            p.LineWidth = 2;
+            p.Rectangle(px0, y - 2, Math.max(px1 - px0, 2), BAR_H + 4);
+            p.Stroke();
+            p.LineWidth = 1;
+        }
+    }
+
+    /* A dependency being drawn: an elbow from the dragged bar to the pointer,
+     * and the row it would land on outlined. */
+    if (drag && drag.mode === "link") {
+        const from = rowOf[drag.uid];
+        if (from !== undefined) {
+            const f = whenMs(rows[from].Finish);
+            if (f !== null) {
+                p.Color = link;
+                p.LineWidth = 2;
+                p.Polyline([x(f), cy(from), drag.px, cy(from), drag.px, drag.py]);
+                p.Stroke();
+                p.LineWidth = 1;
+            }
+        }
+        if (drag.to !== null && drag.to !== undefined &&
+            rowOf[drag.to] !== undefined) {
+            p.Color = ink;
+            p.Rectangle(GUTTER, HEADER + rowOf[drag.to] * ROW_H, width - GUTTER, ROW_H);
+            p.Stroke();
         }
     }
 

@@ -73,6 +73,12 @@ msgstr "Avance"
 msgid "Milestone"
 msgstr "Hito"
 
+msgid "Effort driven"
+msgstr "Condicionada por esfuerzo"
+
+msgid "Estimated"
+msgstr "Estimada"
+
 msgid "Apply"
 msgstr "Aplicar"
 
@@ -90,6 +96,18 @@ msgstr "Indentar"
 
 msgid "Predecessors"
 msgstr "Predecesoras"
+
+msgid "Resources"
+msgstr "Recursos"
+
+msgid "Max"
+msgstr "Máx"
+
+msgid "Rate"
+msgstr "Tasa"
+
+msgid "Cost"
+msgstr "Costo"
 
 msgid "Type"
 msgstr "Tipo"
@@ -120,6 +138,51 @@ msgstr "Fecha límite"
 
 msgid "Notes"
 msgstr "Notas"
+
+msgid "Settings"
+msgstr "Configuración"
+
+msgid "Recent"
+msgstr "Recientes"
+
+msgid "Up"
+msgstr "Subir"
+
+msgid "Down"
+msgstr "Bajar"
+
+msgid "Folder"
+msgstr "Carpeta"
+
+msgid "Where the dialog opens"
+msgstr "Dónde abre el diálogo"
+
+msgid "Custom field"
+msgstr "Campo personalizado"
+
+msgid "FieldID, empty for the first"
+msgstr "FieldID, vacío para el primero"
+
+msgid "Duration unit"
+msgstr "Unidad de duración"
+
+msgid "Task's own"
+msgstr "La de la tarea"
+
+msgid "Minutes"
+msgstr "Minutos"
+
+msgid "Hours"
+msgstr "Horas"
+
+msgid "Days"
+msgstr "Días"
+
+msgid "Weeks"
+msgstr "Semanas"
+
+msgid "Months"
+msgstr "Meses"
 
 msgid "Export"
 msgstr "Exportar"

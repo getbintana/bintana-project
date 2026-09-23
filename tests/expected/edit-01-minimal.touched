@@ -26,6 +26,7 @@ touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/PredecessorUID[1]: "1" -> 
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[2]/Summary[1]: added ("true")
 touched: /Project/Tasks[1]/Task[2]/Critical[1]: added ("true")
+touched: /Project/Tasks[1]/Task[3]/Estimated[1]: added ("true")
 touched: /Project/Tasks[1]/Task[3]/ConstraintType[1]: added ("4")
 touched: /Project/Tasks[1]/Task[3]/ConstraintDate[1]: added ("2026-09-04T08:00")
 touched: /Project/Tasks[1]/Task[3]/Notes[1]: added ("Edited in the harness")

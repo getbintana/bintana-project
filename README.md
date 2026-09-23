@@ -25,16 +25,26 @@ independently, which is the same simplification as their geometry. **Export**
 writes the chart at its own size as a PNG or a PDF, which is how it reaches
 somebody who does not run the app.
 
+The pointer edits too: click a bar to select it, **drag** it to move the task,
+drag its **end** to resize (the duration follows, measured in working time on
+the task's own calendar), and **Ctrl-drag** from one bar to another to draw an
+FS dependency. Nothing is written until the button is let go, so one gesture is
+one undo; a task with no dates is only reachable from the table.
+
 ## Editing
 
 The panel on the right is a view of the selected row: type a name, a moment
-(`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, or a bare number in the
-task's own unit), a percentage, the milestone tick, a constraint (`ASAP`
-through `FNLT`, with its date), a deadline or notes, and Apply writes them as
-one command -- one undo. **Add** puts a new task after the selected one and its
+(`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, `2ed` for elapsed, or a
+bare number in the task's own unit), a percentage, the milestone, estimated and
+effort-driven ticks, a constraint (`ASAP` through `FNLT`, with its date), a
+deadline or notes, and Apply writes them as one command -- one undo. **Add** puts a new task after the selected one and its
 subtree, **Delete** takes that subtree and every link into it, and
 **Indent**/**Outdent** move a task a level, recomputing which tasks are
-summaries. **Predecessors** lists the selected task's links: pick a task, a
+summaries, and **Up**/**Down** swap it with its sibling, subtree and all.
+**Recent** drops the last eight files. **Resources** lists the plan's
+resources with their rate and the cost of their assignments -- a work resource
+by the hours, a material by the units, the file's own `Cost` where it wrote
+one -- read-only for now: editing an assignment is the next step. **Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
 schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place
@@ -71,10 +81,12 @@ trip an interchange and not a rewrite; `Mspdi.js` carries the argument.
 
 ## What is modelled (cut 1)
 
-Tasks (identity, dates, durations as text, milestone/summary/critical flags,
-predecessor links, custom-field values), resources, assignments, calendars as
-UID/Name, and the `ExtendedAttribute` definitions and values -- custom fields
-are generic here, nothing in the app assumes what a file puts in them.
+Tasks (identity, dates, durations as text, the milestone/summary/critical/
+estimated/effort-driven flags, constraints and deadline, notes, predecessor
+links, custom-field values), resources with their rates and costs, assignments
+with their work and cost, the Project header, full calendars, and the
+`ExtendedAttribute` definitions and values -- custom fields are generic here,
+nothing in the app assumes what a file puts in them.
 UID/WBS/OutlineNumber are display, never identity: Project reassigns UIDs when
 appending/merging and WBS is positional.
 
@@ -102,12 +114,13 @@ through XML. The corpus measures the road to it; see `ROADMAP.md`.
 
 ## Settings and translation
 
-Two things are remembered, both under `bintana-project.*` in `Settings` (the
+Five things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
-folder the last file came from, and the timescale. A headless check never
-touches them. The rest -- which custom field the list shows, the unit a bare
-duration is read in -- still waits for the caller that wants them, and for the
-single settings dialog that would edit the same keys the code reads.
+folder the last file came from, the timescale, which custom field the list
+shows (by `FieldID`, empty for the first), the unit a bare duration is read in,
+and the recent list. **Settings** in the bar is the one dialog that edits them, and it edits the
+same keys the code reads -- what it writes takes effect on Save, and a headless
+check never touches any of it.
 
 The interface is translated: form texts when the form is built, the strings
 the code composes through `Locale.Text(...)`, and `Message.*`'s first argument.

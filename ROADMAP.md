@@ -49,13 +49,13 @@ panel lateral edita la tarea seleccionada y solo el nombre de un resumen
 (Project deriva lo demás). El harness corre además un round trip de edición
 guiado (`check-edit`) con su golden.
 
-- `Settings` bajo `bintana-project.*`: carpeta del último archivo y timescale,
-  leídos y escritos solo por la ventana (un check no toca nada). i18n: los
-  textos de los forms se traducen al construirse, los del código van por
-  `Locale.Text`, y `po/es.po` es el catálogo que viaja. El harness fija
-  `LANGUAGE=en` para que los goldens no dependan del idioma.
-- Queda: el diálogo único de settings, el campo personalizado que muestra la
-  lista y la unidad de una duración sin sufijo.
+- `Settings` bajo `bintana-project.*`: carpeta, timescale, campo personalizado
+  que muestra la lista y unidad de una duración sin sufijo; los edita el
+  diálogo **Settings** de la barra, y solo la ventana los lee o escribe (un
+  check no toca nada). i18n: los textos de los forms se traducen al
+  construirse, los del código van por `Locale.Text`, y `po/es.po` es el
+  catálogo que viaja. El harness fija `LANGUAGE=en` para que los goldens no
+  dependan del idioma.
 - Sin CPM todavía: las fechas se editan a mano, y `OutlineNumber`/`WBS` quedan
   como estaban -- Project los deriva.
 
@@ -76,7 +76,13 @@ qué calcular. `ConstraintType`/`ConstraintDate`/`Deadline` están modelados y
 el forward pass honra las duras (MSO/MFO/SNET/FNET); ALAP/SNLT/FNLT dejan las
 fechas del archivo y el deadline solo se cuenta en el log.
 
-- Falta: Task Types y effort-driven, elapsed, y el calendario de recurso.
+**Ampliado** (2026-09-22): `Estimated` y `EffortDriven` están modelados (y en
+el panel), y las duraciones elapsed (`ed`, `eh`, …) se leen, se escriben y se
+planifican en tiempo calendario -- el caso en `check-cpm` lo distingue del
+laborable. `Type` (Fixed Units/Duration/Work) se modela, pero su semántica
+necesita asignaciones: queda con recursos.
+
+- Falta: la semántica de Task Types con recursos, y el calendario de recurso.
 - **El oráculo es Project**: mismo archivo, comparar `Start`/`Finish`/slack por
   tarea. La fidelidad se mide, no se argumenta. El corpus sintético no es
   CPM-consistente (sus fechas están escritas a mano), así que la validación
@@ -87,25 +93,37 @@ fechas del archivo y el deadline solo se cuenta en el log.
 
 ### 3 — Editor completo
 
-**Adelantado** (2026-09-22): el panel ya edita nombre, fechas, duración,
-avance, hito, restricción, deadline, notas y los vínculos; el cierre con
-cambios pregunta; `OutlineNumber`/`WBS` los deriva Project.
+**Hecha** (2026-09-22): el panel edita nombre, fechas, duración, avance, hito,
+restricción, deadline, notas y los vínculos; Up/Down reordenan con el subárbol;
+Recent guarda los últimos ocho archivos; el cierre con cambios pregunta;
+`OutlineNumber`/`WBS` los deriva Project.
 
-- Queda: reordenar filas, la lista de recientes, y el pulido del panel.
+- Queda: el pulido del panel (agrupaciones, atajos de teclado propios).
 
 ### 4 — Gantt interactivo
 
-- Selección sincronizada con la tabla; doble clic edita.
-- Arrastrar barras (mueve), estirar extremos (cambia duración), dibujar y
-  borrar dependencias.
-- Zoom/timescale manual, scroll, ruta crítica, línea base fantasma.
-- `Save()`/`Dump()` siguen siendo la prueba.
+**Hecha** (2026-09-22): selección sincronizada con la tabla, arrastrar una
+barra para mover la tarea, su extremo para estirar (la duración sale del
+tiempo laborable del calendario de la tarea) y Ctrl-arrastrar de una barra a
+otra para dibujar un FS; nada se escribe hasta soltar, así que un gesto es un
+undo. Zoom/timescale manual, scroll y ruta crítica ya estaban. `check-drag`
+afirma los tres gestos con la geometría del propio gráfico.
+
+- Queda: barras fantasma de línea base, elegir el tipo de vínculo al dibujarlo
+  (hoy FS), y dibujar desde el extremo para enlazar en vez de redimensionar.
 
 ### 5 — Recursos y costos
 
-- Work/material/cost, tasas con tabla temporal, calendario del recurso,
-  asignaciones con unidades/trabajo, totales.
-- Nivelación queda afuera por ahora.
+**A medias** (2026-09-22): recursos (tipo, unidades máximas, tasas estándar y
+extra, costo por uso, calendario) y asignaciones (unidades, trabajo, costo)
+modelados; el costo se calcula -- trabajo por la tasa en un recurso work,
+unidades por la tasa en uno material, más el costo por uso, y el `Cost` del
+archivo manda si lo trae -- y el panel muestra la tabla de recursos con su
+total. `check-cpm` afirma los cuatro casos.
+
+- Falta: editar asignaciones (alta/baja y unidades), tablas de tasas por fecha,
+  contornos de trabajo y el costo a nivel tarea/proyecto. Nivelación queda
+  afuera por ahora.
 
 ### 6 — Distribución
 

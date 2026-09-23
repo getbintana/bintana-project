@@ -86,6 +86,39 @@ class Edit {
         return true;
     }
 
+    /* A task and its subtree, moved past the sibling before or after it: the
+     * outline does not change, only the order within one parent. */
+    moveTask(uid, delta) {
+        const tasks = this.holder.project.Tasks;
+        const i = tasks.findIndex((t) => t.UID === uid);
+        if (i < 0) return false;
+
+        const level = tasks[i].OutlineLevel;
+        let end = i + 1;
+        while (end < tasks.length && tasks[end].OutlineLevel > level) end++;
+        const block = tasks.slice(i, end);
+
+        if (delta < 0) {
+            /* The sibling above, wherever its own subtree ended. */
+            let at = i - 1;
+            while (at >= 0 && tasks[at].OutlineLevel > level) at--;
+            if (at < 0 || tasks[at].OutlineLevel !== level) return false;
+            tasks.splice(i, block.length);
+            for (let k = 0; k < block.length; k++) tasks.splice(at + k, 0, block[k]);
+        } else {
+            /* After the next sibling's whole subtree, which is what makes the
+             * move a swap and not an insert into somebody's children. */
+            if (end >= tasks.length || tasks[end].OutlineLevel !== level) return false;
+            let after = end;
+            while (after < tasks.length && tasks[after].OutlineLevel > level) after++;
+            tasks.splice(i, block.length);
+            const at = after - block.length;
+            for (let k = 0; k < block.length; k++) tasks.splice(at + k, 0, block[k]);
+        }
+        this.commit();
+        return true;
+    }
+
     /* The whole link list in one step: the panel adds, updates and removes
      * through here, so each of those is one undo. Equal lists are no step. */
     setLinks(uid, links) {

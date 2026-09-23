@@ -83,7 +83,6 @@
       <ID>1</ID>
       <Name>Crew</Name>
       <Type>1</Type>
-      <IsNull>false</IsNull>
       <Initials>CR</Initials>
       <MaxUnits>1</MaxUnits>
       <StandardRate>35</StandardRate>

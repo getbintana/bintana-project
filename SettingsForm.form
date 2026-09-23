@@ -1,0 +1,139 @@
+{
+  "format": "bintana-form/1",
+  "class": "SettingsForm",
+  "properties": {
+    "Text": "Settings",
+    "Arrangement": "Vertical",
+    "Spacing": 12,
+    "Padding": "16",
+    "Width": 460,
+    "Height": 300,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "name": "Fields",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 8,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblFolder",
+          "properties": {
+            "Text": "Folder",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtFolder",
+          "properties": {
+            "Placeholder": "Where the dialog opens",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblScale",
+          "properties": {
+            "Text": "Timescale",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbScale",
+          "properties": {
+            "Items": [
+              "Auto",
+              "Day",
+              "Week",
+              "Month"
+            ],
+            "Index": 0,
+            "Width": 160,
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblField",
+          "properties": {
+            "Text": "Custom field",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtField",
+          "properties": {
+            "Placeholder": "FieldID, empty for the first",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblUnit",
+          "properties": {
+            "Text": "Duration unit",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbUnit",
+          "properties": {
+            "Items": [
+              "Task's own",
+              "Minutes",
+              "Hours",
+              "Days",
+              "Weeks",
+              "Months"
+            ],
+            "Index": 0,
+            "Width": 160,
+            "HAlign": "Start"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Text": "Cancel",
+            "Cancel": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSave",
+          "properties": {
+            "Text": "Save",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

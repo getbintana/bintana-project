@@ -73,6 +73,8 @@ class MspTask extends Record {
         Duration:         Field.Text(),
         DurationFormat:   Field.Int(),
         Work:             Field.Text(),
+        EffortDriven:     Field.Bool(),
+        Estimated:        Field.Bool(),
         Milestone:        Field.Bool(),
         Summary:          Field.Bool(),
         Critical:         Field.Bool(),
@@ -91,29 +93,48 @@ class MspTask extends Record {
 class MspResource extends Record {
     static Xml = { Root: "Resource" };
     static Fields = {
-        UID:           Field.Int({ key: true }),
-        Name:          Field.Text(),
-        Type:          Field.Int(),
-        Initials:      Field.Text(),
-        Group:         Field.Text(),
-        MaterialLabel: Field.Text(),
-        MaxUnits:      Field.Number(),
-        StandardRate:  Field.Number(),
-        CalendarUID:   Field.Int(),
+        UID:                Field.Int({ key: true }),
+        ID:                 Field.Int(),
+        Name:               Field.Text(),
+        Type:               Field.Int(),
+        IsNull:             Field.Bool(),
+        Initials:           Field.Text(),
+        Group:              Field.Text(),
+        MaterialLabel:      Field.Text(),
+        MaxUnits:           Field.Number(),
+        AccrueAt:           Field.Int(),
+        PercentWorkComplete: Field.Int(),
+        StandardRate:       Field.Number(),
+        StandardRateFormat: Field.Int(),
+        Cost:               Field.Number(),
+        OvertimeRate:       Field.Number(),
+        OvertimeRateFormat: Field.Int(),
+        OvertimeCost:       Field.Number(),
+        CostPerUse:         Field.Number(),
+        CalendarUID:        Field.Int(),
+        Notes:              Field.Text(),
     };
 }
 
 class MspAssignment extends Record {
     static Xml = { Root: "Assignment" };
     static Fields = {
-        UID:          Field.Int({ key: true }),
-        TaskUID:      Field.Int(),
-        ResourceUID:  Field.Int(),
-        Units:        Field.Number(),
-        Work:         Field.Text(),
-        RegularWork:  Field.Text(),
-        Start:        Field.DateTime(),
-        Finish:       Field.DateTime(),
+        UID:                 Field.Int({ key: true }),
+        TaskUID:             Field.Int(),
+        ResourceUID:         Field.Int(),
+        PercentWorkComplete: Field.Int(),
+        ActualCost:          Field.Number(),
+        Cost:                Field.Number(),
+        CostRateTable:       Field.Int(),
+        Finish:              Field.DateTime(),
+        OvertimeCost:        Field.Number(),
+        OvertimeWork:        Field.Text(),
+        RegularWork:         Field.Text(),
+        RemainingWork:       Field.Text(),
+        Start:               Field.DateTime(),
+        Units:               Field.Number(),
+        Work:                Field.Text(),
+        WorkContour:         Field.Int(),
     };
 }
 
@@ -219,6 +240,55 @@ function mspdiMinutes(text) {
            (m[4] ? Number(m[4]) / 60 : 0);
 }
 
+/*
+ * `DurationFormat`'s units, by MSPDI's own numbering: the elapsed half of the
+ * family counts calendar time -- weekends and nights included -- and the `?`
+ * half is the estimated spelling. 19/20/51/52 are percent, not a duration.
+ */
+const DURATION_FORMATS = {
+    3:  { unit: "m",  per: 1,     elapsed: false, estimated: false },
+    4:  { unit: "m",  per: 1,     elapsed: true,  estimated: false },
+    5:  { unit: "h",  per: 60,    elapsed: false, estimated: false },
+    6:  { unit: "h",  per: 60,    elapsed: true,  estimated: false },
+    7:  { unit: "d",  per: 480,   elapsed: false, estimated: false },
+    8:  { unit: "d",  per: 1440,  elapsed: true,  estimated: false },
+    9:  { unit: "w",  per: 2400,  elapsed: false, estimated: false },
+    10: { unit: "w",  per: 10080, elapsed: true,  estimated: false },
+    11: { unit: "mo", per: 9600,  elapsed: false, estimated: false },
+    12: { unit: "mo", per: 43200, elapsed: true,  estimated: false },
+    35: { unit: "m",  per: 1,     elapsed: false, estimated: true },
+    36: { unit: "m",  per: 1,     elapsed: true,  estimated: true },
+    37: { unit: "h",  per: 60,    elapsed: false, estimated: true },
+    38: { unit: "h",  per: 60,    elapsed: true,  estimated: true },
+    39: { unit: "d",  per: 480,   elapsed: false, estimated: true },
+    40: { unit: "d",  per: 1440,  elapsed: true,  estimated: true },
+    41: { unit: "w",  per: 2400,  elapsed: false, estimated: true },
+    42: { unit: "w",  per: 10080, elapsed: true,  estimated: true },
+    43: { unit: "mo", per: 9600,  elapsed: false, estimated: true },
+    44: { unit: "mo", per: 43200, elapsed: true,  estimated: true },
+};
+
+/* The units a duration is read and written in; a format outside the table is
+ * the schema's own default, working days. */
+function durationFormat(format) {
+    return DURATION_FORMATS[format] || DURATION_FORMATS[7];
+}
+
+function isElapsed(format) {
+    return durationFormat(format).elapsed;
+}
+
+/* The format a typed unit names: "d" is working days, "ed" elapsed days. */
+function formatOfUnit(unit) {
+    const name = unit.replace(/^e/, "");
+    const elapsed = unit.charAt(0) === "e";
+    for (const code in DURATION_FORMATS) {
+        const f = DURATION_FORMATS[code];
+        if (f.unit === name && f.elapsed === elapsed) return Number(code);
+    }
+    return 7;
+}
+
 /* Minutes back into the `PT…S` spelling, hours and minutes the way Project
  * writes them: PT16H0M0S, PT30M0S. */
 function mspdiDuration(minutes) {
@@ -229,9 +299,51 @@ function mspdiDuration(minutes) {
     return `PT${h}H${m}M0S`;
 }
 
-/* The first custom-field value a task carries, or "" when it carries none.
- * Only the list shows this today; the field's meaning is the file's. */
-function firstAttr(task) {
+/* MSPDI's resource types: 0 material, 1 work, 2 cost. */
+const RESOURCE_TYPES = ["Material", "Work", "Cost"];
+
+function resourceOf(project, uid) {
+    for (const resource of project.Resources)
+        if (resource.UID === uid) return resource;
+    return null;
+}
+
+/*
+ * What an assignment costs: the file's own number when it has one, and
+ * otherwise the resource's standard rate applied the way its type says -- a
+ * material by the units assigned, a work resource by the hours worked -- plus
+ * its cost per use. Overtime, rate tables and accrual are not modelled, so a
+ * file that means them keeps the `Cost` Project wrote.
+ */
+function assignmentCost(project, assignment) {
+    if (assignment.Cost) return assignment.Cost;
+    const resource = resourceOf(project, assignment.ResourceUID);
+    if (!resource) return 0;
+
+    const rate = resource.StandardRate || 0;
+    const cost = resource.Type === 0
+               ? (assignment.Units || 0) * rate
+               : (mspdiMinutes(assignment.Work) || 0) / 60 * rate;
+    return cost + (resource.CostPerUse || 0);
+}
+
+/* Every assignment of one resource, added up. */
+function resourceCost(project, resource) {
+    let total = 0;
+    for (const assignment of project.Assignments)
+        if (assignment.ResourceUID === resource.UID)
+            total += assignmentCost(project, assignment);
+    return total;
+}
+
+/* A custom-field value by `FieldID`, or the first one when no field is asked
+ * for; "" when the task carries none. The field's meaning is the file's. */
+function attrOf(task, fieldID) {
+    if (fieldID) {
+        for (const attr of task.Attributes)
+            if (attr.FieldID === fieldID) return attr.Value;
+        return "";
+    }
     return task.Attributes.length ? task.Attributes[0].Value : "";
 }
 

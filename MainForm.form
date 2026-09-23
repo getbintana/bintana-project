@@ -31,6 +31,15 @@
         },
         {
           "type": "Button",
+          "name": "BtnRecent",
+          "properties": {
+            "Text": "Recent",
+            "Icon": "document-open-recent-symbolic",
+            "Width": 110
+          }
+        },
+        {
+          "type": "Button",
           "name": "BtnSave",
           "properties": {
             "Text": "Save",
@@ -79,6 +88,15 @@
             "Icon": "view-refresh-symbolic",
             "Shortcut": "F5",
             "Width": 124
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSettings",
+          "properties": {
+            "Text": "Settings",
+            "Icon": "preferences-system-symbolic",
+            "Width": 110
           }
         },
         {
@@ -349,6 +367,24 @@
                   }
                 },
                 {
+                  "type": "CheckButton",
+                  "name": "ChkEffortDriven",
+                  "properties": {
+                    "Text": "Effort driven",
+                    "ColumnSpan": 2,
+                    "HAlign": "Start"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkEstimated",
+                  "properties": {
+                    "Text": "Estimated",
+                    "ColumnSpan": 2,
+                    "HAlign": "Start"
+                  }
+                },
+                {
                   "type": "Label",
                   "name": "LblConstraint",
                   "properties": {
@@ -468,6 +504,38 @@
                   "properties": {
                     "Text": "Delete",
                     "Icon": "user-trash-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Panel",
+              "name": "MoveButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnUp",
+                  "properties": {
+                    "Text": "Up",
+                    "Icon": "go-up-symbolic",
+                    "Enabled": false,
+                    "HExpand": true,
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnDown",
+                  "properties": {
+                    "Text": "Down",
+                    "Icon": "go-down-symbolic",
                     "Enabled": false,
                     "HExpand": true,
                     "HAlign": "Fill"
@@ -642,6 +710,49 @@
                   }
                 }
               ]
+            },
+            {
+              "type": "Separator",
+              "name": "Rule3",
+              "properties": {}
+            },
+            {
+              "type": "Label",
+              "name": "LblRes",
+              "properties": {
+                "Text": "Resources",
+                "Style": "heading",
+                "HAlign": "Fill"
+              }
+            },
+            {
+              "type": "TableView",
+              "name": "Resources",
+              "properties": {
+                "Columns": [
+                  {
+                    "Text": "Name",
+                    "Width": 0
+                  },
+                  {
+                    "Text": "Max",
+                    "Width": 50,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Rate",
+                    "Width": 60,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Cost",
+                    "Width": 70,
+                    "Alignment": "Right"
+                  }
+                ],
+                "Height": 100,
+                "HAlign": "Fill"
+              }
             }
           ]
         }

@@ -97,6 +97,16 @@ class WorkCalendar {
             }
         }
         for (let d = 1; d <= 7; d++) if (!this.days[d]) this.days[d] = [];
+
+        /* A calendar that declares no working day at all -- a base calendar
+         * the file left empty -- gets the schema's own week: Monday to
+         * Friday, 08:00 to 17:00. Without this there is no working moment to
+         * advance to and the arithmetic would spin. */
+        let any = false;
+        for (let d = 1; d <= 7; d++) if (this.days[d].length) any = true;
+        if (!any)
+            for (let d = 1; d <= 7; d++)
+                this.days[d] = d === 1 || d === 7 ? [] : [[480, 1020]];
     }
 
     /* `minutes` of work after `start`. An instant at the end of a span has no
@@ -281,6 +291,14 @@ function recalculate(project) {
 
             const work = workOf(task.CalendarUID);
             const duration = mspdiMinutes(task.Duration) || 0;
+
+            /* An elapsed duration counts calendar time -- weekends and nights
+             * included -- where `work.add`/`work.subtract` count working
+             * time. The span is the same in minutes either way. */
+            const elapsed = isElapsed(task.DurationFormat);
+            const span = duration * MIN_MS;
+            const startBefore = (finish) => elapsed ? finish - span
+                                                    : work.subtract(finish, duration);
             let ready = true;
 
             /* FS and SS bound the start; FF and SF bound the finish. A task
@@ -320,7 +338,7 @@ function recalculate(project) {
                     startFloor = at;
                 } else if (type === CONSTRAINT_MFO) {
                     if (finishFloor === null || at > finishFloor) finishFloor = at;
-                    const implied = work.subtract(at, duration);
+                    const implied = startBefore(at);
                     if (startFloor === null || implied > startFloor) startFloor = implied;
                 } else if (type === CONSTRAINT_SNET) {
                     if (startFloor === null || at > startFloor) startFloor = at;
@@ -332,7 +350,7 @@ function recalculate(project) {
             if (startFloor === null && finishFloor === null) startFloor = start;
 
             if (finishFloor !== null) {
-                const implied = work.subtract(finishFloor, duration);
+                const implied = startBefore(finishFloor);
                 if (startFloor === null || implied > startFloor) startFloor = implied;
             }
             if (startFloor === null) startFloor = start;
@@ -342,7 +360,8 @@ function recalculate(project) {
              * it on the finish date, not the morning after. */
             const from = duration > 0 ? work.startAfter(startFloor)
                                       : work.add(startFloor, 0);
-            let   to   = duration > 0 ? work.add(from, duration) : from;
+            let   to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
+                                      : from;
             if (finishFloor !== null && to < finishFloor) to = finishFloor;
 
             task.Start  = isoLocal(from);
