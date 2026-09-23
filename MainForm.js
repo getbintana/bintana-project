@@ -767,11 +767,27 @@ class MainForm extends Form {
 
     /* The row moved: mark the same task in the chart. The two views share
      * identity and never geometry. */
+    /* A double click on a row -- or Enter -- is "edit this one": the panel's
+     * name field takes the keyboard, which is where a rename starts. */
+    /* Ctrl+F: the filter field takes the keyboard. */
+    ActFilter_Click() {
+        this.TxtFilter.SetFocus();
+    }
+
+    Tasks_Activate() {
+        if (this.selectedTask()) this.TxtName.SetFocus();
+    }
+
     Tasks_Select() {
         const key = this.Tasks.Key;
         this.selectedUID = key === "" ? null : Number(key);
         this.showTask(this.selectedTask());
         this.Gantt.Redraw();
+    }
+
+    /* Ctrl+F: the filter field takes the keyboard. */
+    ActFilter_Click() {
+        this.TxtFilter.SetFocus();
     }
 
     Tasks_Activate() {
@@ -808,6 +824,13 @@ class MainForm extends Form {
      * button is let go, so one gesture is one undo. */
     Gantt_MouseDown(x, y, button, ctrl, shift) {
         const hit = this.ganttHit(x, y);
+        if (hit && button === 3) {
+            if (this.Tasks.Exists(String(hit.task.UID))) {
+                this.Tasks.Key = String(hit.task.UID);
+                this.Tasks_Select();
+            }
+            return;
+        }
         if (!hit || button !== 1) return;
 
         if (ctrl) {
@@ -828,6 +851,11 @@ class MainForm extends Form {
             this.Tasks_Select();
         }
         this.Gantt.Redraw();
+    }
+
+    Gantt_DblClick(x, y, button, ctrl, shift) {
+        if (button !== 1 || !this.selectedTask()) return;
+        this.TxtName.SetFocus();
     }
 
     Gantt_MouseMove(x, y) {
@@ -2240,7 +2268,7 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
-                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport",
+                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter",
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
@@ -2252,7 +2280,8 @@ class MainForm extends Form {
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "Calendars_Select", "CmbAttr_Select", "TxtFilter_Change",
                      "TxtFilter_IconClick",
-                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp"]);
+                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp",
+                     "Tasks_Activate", "Gantt_DblClick"]);
 
         let ok = true;
         for (const member of wanted) {

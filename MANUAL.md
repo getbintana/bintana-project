@@ -25,7 +25,13 @@ que cuestan las asignaciones de la tarea: unidades por tarifa del recurso, o el
 costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
-coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro.
+coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
+`Ctrl+F` lleva el cursor ahí.
+
+**Clic derecho** sobre una fila abre el menú de la tarea —agregar, eliminar,
+indentar, quitar nivel, subir y bajar—, y **doble clic** (o Enter) deja el
+cursor en el nombre, listo para renombrar. En el Gantt el clic derecho también
+elige la tarea que está bajo el puntero.
 
 ## Editar una tarea
 

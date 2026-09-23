@@ -837,3 +837,12 @@ msgstr "_Proyecto"
 
 msgid "There are no calendars."
 msgstr "No hay calendarios."
+
+msgid "Dates"
+msgstr "Fechas"
+
+msgid "Tracking"
+msgstr "Seguimiento"
+
+msgid "Planning"
+msgstr "Planificación"

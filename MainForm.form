@@ -126,6 +126,12 @@
       "name": "ActCalendar",
       "text": "Calendar\u2026",
       "icon": "x-office-calendar-symbolic"
+    },
+    {
+      "name": "ActFilter",
+      "text": "Filter tasks",
+      "icon": "edit-find-symbolic",
+      "shortcut": "<Control>f"
     }
   ],
   "menus": [
@@ -223,6 +229,12 @@
           "name": "MnuLog",
           "text": "Show log",
           "check": true
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActFilter"
         }
       ]
     },
@@ -529,7 +541,30 @@
                     ],
                     "Expand": true,
                     "MinHeight": 160,
-                    "HAlign": "Fill"
+                    "HAlign": "Fill",
+                    "Menu": [
+                      {
+                        "action": "ActAdd"
+                      },
+                      {
+                        "action": "ActDelete"
+                      },
+                      {
+                        "separator": true
+                      },
+                      {
+                        "action": "ActIndent"
+                      },
+                      {
+                        "action": "ActOutdent"
+                      },
+                      {
+                        "action": "ActUp"
+                      },
+                      {
+                        "action": "ActDown"
+                      }
+                    ]
                   }
                 },
                 {
@@ -601,7 +636,30 @@
                       "name": "Gantt",
                       "properties": {
                         "Width": 600,
-                        "Height": 240
+                        "Height": 240,
+                        "Menu": [
+                          {
+                            "action": "ActAdd"
+                          },
+                          {
+                            "action": "ActDelete"
+                          },
+                          {
+                            "separator": true
+                          },
+                          {
+                            "action": "ActIndent"
+                          },
+                          {
+                            "action": "ActOutdent"
+                          },
+                          {
+                            "action": "ActUp"
+                          },
+                          {
+                            "action": "ActDown"
+                          }
+                        ]
                       }
                     }
                   ]
@@ -701,6 +759,16 @@
                                 },
                                 {
                                   "type": "Label",
+                                  "name": "LblSecDates",
+                                  "properties": {
+                                    "Text": "Dates",
+                                    "Style": "heading",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
                                   "name": "LblStart",
                                   "properties": {
                                     "Text": "Start",
@@ -748,6 +816,16 @@
                                     "Placeholder": "2d, 8h, 30m, 2ed",
                                     "HExpand": true,
                                     "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblSecTracking",
+                                  "properties": {
+                                    "Text": "Tracking",
+                                    "Style": "heading",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
                                   }
                                 },
                                 {
@@ -800,6 +878,16 @@
                                   "name": "ChkManual",
                                   "properties": {
                                     "Text": "Manually scheduled",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblSecPlanning",
+                                  "properties": {
+                                    "Text": "Planning",
+                                    "Style": "heading",
                                     "ColumnSpan": 2,
                                     "HAlign": "Start"
                                   }
@@ -887,6 +975,16 @@
                                 },
                                 {
                                   "type": "Label",
+                                  "name": "LblSecCustom",
+                                  "properties": {
+                                    "Text": "Custom field",
+                                    "Style": "heading",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
                                   "name": "LblAttr",
                                   "properties": {
                                     "Text": "Custom field",
@@ -914,6 +1012,16 @@
                                   "properties": {
                                     "HExpand": true,
                                     "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblSecNotes",
+                                  "properties": {
+                                    "Text": "Notes",
+                                    "Style": "heading",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
                                   }
                                 },
                                 {
