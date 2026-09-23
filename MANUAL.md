@@ -97,7 +97,10 @@ mitad cuando llega otra).
 
 El costo sale del trabajo por la tasa en un recurso de trabajo, de las
 unidades por la tasa en uno material, más el costo por uso; si el archivo trae
-su propio costo, ese manda.
+su propio costo, ese manda. Si el recurso trae **tasas por fecha** (tablas A–E
+del archivo), el trabajo se reparte sobre el tiempo laborable de la asignación
+y cada período cobra la parte que le toca: la asignación elige la tabla, y el
+panel edita la tasa base, no los períodos (esos se conservan como están).
 
 ## Proyecto y calendarios
 

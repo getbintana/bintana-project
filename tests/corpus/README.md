@@ -19,6 +19,7 @@ por Project).
 | `07-extended-attrs.xml` | Campos extendidos + `HyperlinkAddress`: 2 tareas con Text1 (`External_ID`), 1 sin valor (creada en Project) |
 | `08-namespace-2007.xml` | El namespace que declara el XSD oficial (`/2007`), que Project no escribe; el lector debe aceptar ambos |
 | `09-defaults.xml` | Los defaults del XSD que no se pueden borrar: `ScheduleFromStart=false`, `DefaultTaskType=0`, `Type=0` de tarea y de vínculo (FF), `MaxUnits` ausente |
+| `10-rates.xml` | Tablas de tasas por fecha: dos períodos en la tabla A y uno en la B, asignaciones sin `Cost` y la B elegida por `CostRateTable` |
 
 ## Convenciones usadas
 

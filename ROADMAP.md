@@ -195,8 +195,17 @@ tarea (`taskCost`, vacía cuando la tarea no cuesta nada), la pestaña Proyecto
 muestra el **costo total** del plan (`projectCost`) y el informe usa la misma
 cuenta. Nada de esto se guarda: el `Cost` del archivo manda donde lo trae.
 
-- Falta: tablas de tasas por fecha, contornos de trabajo y calendario de
-  recurso. Nivelación queda afuera por ahora.
+**Tasas por fecha** (2026-09-23): `Resource.Rates` modelado (hasta 25 períodos
+por tabla, las cinco tablas A–E) y `assignmentCost` reparte el trabajo sobre el
+tiempo laborable de la asignación: cada período toma la parte que le toca y el
+costo por uso es el del período en que el trabajo arranca; `CostRateTable` de
+la asignación elige la tabla. El `Cost` del archivo sigue mandando. El editor
+todavía no edita las tablas (se conservan tal cual), así que la tasa base que
+edita el panel es la de un recurso sin períodos. `10-rates` lo fija sin `Cost`
+y `check-cpm` afirma el reparto.
+
+- Falta: contornos de trabajo y calendario de recurso, y editar las tablas de
+  tasas desde la UI. Nivelación queda afuera por ahora.
 
 ### 6 — Distribución
 

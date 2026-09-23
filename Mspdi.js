@@ -114,6 +114,24 @@ class MspTask extends Record {
     };
 }
 
+/* One period of a resource's rates: `RatesFrom` inclusive, `RatesTo` the last
+ * date it holds, and `RateTable` which of the five tables (0 A .. 4 E) the row
+ * belongs to. The schema makes the two dates required, so every row has a
+ * period and there is no open end to guess at. */
+class MspRate extends Record {
+    static Xml = { Root: "Rate" };
+    static Fields = {
+        RatesFrom:          Field.DateTime(),
+        RatesTo:            Field.DateTime(),
+        RateTable:          Field.Int(),
+        StandardRate:       Field.Number(),
+        StandardRateFormat: Field.Int(),
+        OvertimeRate:       Field.Number(),
+        OvertimeRateFormat: Field.Int(),
+        CostPerUse:         Field.Number(),
+    };
+}
+
 class MspResource extends Record {
     static Xml = { Root: "Resource" };
     static Fields = {
@@ -140,6 +158,9 @@ class MspResource extends Record {
         CostPerUse:         Field.Number(),
         CalendarUID:        Field.Int(),
         Notes:              Field.Text(),
+        /* After Notes and before TimephasedData, as the schema orders it: the
+         * resource's rates over time, all five tables in one list. */
+        Rates:              Field.List(MspRate, { in: "Rates" }),
     };
 }
 
@@ -374,23 +395,87 @@ function resourceOf(project, uid) {
     return null;
 }
 
+function taskOf(project, uid) {
+    for (const task of project.Tasks)
+        if (task.UID === uid) return task;
+    return null;
+}
+
+/* The rows of one rate table (0 A .. 4 E), in date order. A row with no
+ * `RateTable` is table A, which is the one Project writes and the one an
+ * assignment uses until it says otherwise. */
+function rateRows(resource, table) {
+    const rows = [];
+    for (const rate of resource.Rates)
+        if ((rate.RateTable || 0) === table) rows.push(rate);
+    rows.sort((a, b) => whenMs(a.RatesFrom) - whenMs(b.RatesFrom));
+    return rows;
+}
+
+/* The row in effect at an instant: the last one whose `RatesFrom` has come,
+ * the first when the instant is before all of them, null with no rows. */
+function rateAt(rows, when) {
+    let picked = null;
+    for (const row of rows) {
+        const from = whenMs(row.RatesFrom);
+        if (from === null || from <= when) picked = row;
+    }
+    return picked || rows[0] || null;
+}
+
 /*
  * What an assignment costs: the file's own number when it has one, and
  * otherwise the resource's standard rate applied the way its type says -- a
  * material by the units assigned, a work resource by the hours worked -- plus
- * its cost per use. Overtime, rate tables and accrual are not modelled, so a
- * file that means them keeps the `Cost` Project wrote.
+ * its cost per use. A work resource may carry a rate table: the work is spread
+ * evenly over the assignment's working time and each rate period takes the
+ * share that happens inside it, which is what a date in the middle of a task
+ * means. Overtime and accrual are not modelled, so a file that means them
+ * keeps the `Cost` Project wrote.
  */
 function assignmentCost(project, assignment) {
     if (assignment.Cost) return assignment.Cost;
     const resource = resourceOf(project, assignment.ResourceUID);
     if (!resource) return 0;
 
-    const rate = resource.StandardRate || 0;
-    const cost = resource.Type === 0
-               ? (assignment.Units || 0) * rate
-               : (mspdiMinutes(assignment.Work) || 0) / 60 * rate;
-    return cost + (resource.CostPerUse || 0);
+    const hours = (mspdiMinutes(assignment.Work) || 0) / 60;
+    const base  = resource.StandardRate || 0;
+
+    if (resource.Type === 0)
+        return (assignment.Units || 0) * base + (resource.CostPerUse || 0);
+
+    let rows = rateRows(resource, assignment.CostRateTable || 0);
+    if (!rows.length)
+        return hours * base + (resource.CostPerUse || 0);
+
+    const task = taskOf(project, assignment.TaskUID);
+    let start = whenMs(assignment.Start), finish = whenMs(assignment.Finish);
+    if (start === null && task) start = whenMs(task.Start);
+    if (finish === null && task) finish = whenMs(task.Finish);
+    if (start === null || finish === null || finish <= start)
+        return hours * base + (resource.CostPerUse || 0);
+
+    const work = new WorkCalendar(project, (task && task.CalendarUID) ||
+                                           project.CalendarUID);
+    const span = work.between(start, finish);
+    if (span <= 0) return hours * base + (resource.CostPerUse || 0);
+
+    let cost = 0, covered = 0;
+    for (const row of rows) {
+        const from = whenMs(row.RatesFrom), to = whenMs(row.RatesTo);
+        const a = Math.max(start, from === null ? start : from);
+        const b = Math.min(finish, to === null ? finish : to);
+        if (b <= a) continue;
+
+        const share = work.between(a, b) / span;
+        const rate  = row.StandardRate || base;
+        cost += hours * share * rate;
+        covered += share;
+    }
+    if (covered < 1) cost += hours * (1 - covered) * base;   // a gap in the table
+
+    const at = rateAt(rows, start);
+    return cost + ((at ? at.CostPerUse : resource.CostPerUse) || 0);
 }
 
 /*
@@ -403,9 +488,7 @@ function resourcePeak(project, resource) {
     for (const assignment of project.Assignments) {
         if (assignment.ResourceUID !== resource.UID) continue;
 
-        let task = null;
-        for (const candidate of project.Tasks)
-            if (candidate.UID === assignment.TaskUID) { task = candidate; break; }
+        const task = taskOf(project, assignment.TaskUID);
         if (!task) continue;
 
         const from = whenMs(task.Start), to = whenMs(task.Finish);

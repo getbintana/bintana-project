@@ -1549,6 +1549,41 @@ class MainForm extends Form {
             ok = eq("task total", taskCost(r, r.Tasks[0]), 773) && ok;
             ok = eq("plan total", projectCost(r), 773) && ok;
 
+            /* A rate table: the work is spread over the assignment's working
+             * time and each period takes the share that happens inside it,
+             * plus the cost per use of the period the work starts in. Table B
+             * is picked by the assignment's `CostRateTable` (1).
+             *
+             * Task 1 runs Monday to Wednesday, 16h across three working days,
+             * with the rate changing at Wednesday midnight: two thirds of the
+             * work at 50 and one third at 70, and the raise's cost per use is
+             * not the one that applies -- the work starts under the old row. */
+            const tb = projectOf([task(1, "PT16H0M0S")]);
+            recalculate(tb);
+            tb.Resources = [new MspResource({
+                UID: 1, Name: "Ana", Type: 1, MaxUnits: 1, StandardRate: 50,
+                CostPerUse: 5,
+                Rates: [
+                    new MspRate({ RatesFrom: "2026-01-01T00:00:00",
+                                  RatesTo: "2026-09-08T23:59:00", RateTable: 0,
+                                  StandardRate: 50, CostPerUse: 10 }),
+                    new MspRate({ RatesFrom: "2026-09-09T00:00:00",
+                                  RatesTo: "2026-12-31T23:59:00", RateTable: 0,
+                                  StandardRate: 70, CostPerUse: 20 }),
+                    new MspRate({ RatesFrom: "2026-01-01T00:00:00",
+                                  RatesTo: "2026-12-31T23:59:00", RateTable: 1,
+                                  StandardRate: 100, CostPerUse: 1 }),
+                ] })];
+            tb.Assignments = [new MspAssignment({
+                UID: 1, TaskUID: 1, ResourceUID: 1, Units: 1,
+                Work: "PT16H0M0S", Start: tb.Tasks[0].Start,
+                Finish: tb.Tasks[0].Finish })];
+            ok = eq("rate table split",
+                    Math.round(assignmentCost(tb, tb.Assignments[0])), 970) && ok;
+            tb.Assignments[0].CostRateTable = 1;
+            ok = eq("rate table B",
+                    Math.round(assignmentCost(tb, tb.Assignments[0])), 1601) && ok;
+
             /* Two tasks that overlap add their units at the overlap: that is
              * what the Peak column shows and the log counts. */
             const o = projectOf([task(1, "PT8H0M0S"), task(2, "PT8H0M0S")]);
