@@ -236,6 +236,20 @@ class Edit {
         return true;
     }
 
+    /* The plan as it stands, kept as baseline 0: every task's dates and work
+     * into its own `Baseline`, which is what Project's Set Baseline does. */
+    setBaseline() {
+        for (const task of this.holder.project.Tasks) {
+            if (task.IsNull) continue;
+            const kept = task.Baselines.filter((b) => b.Number !== 0);
+            kept.push(new MspBaseline({ Number: 0, Start: task.Start,
+                                        Finish: task.Finish, Work: task.Work }));
+            task.Baselines = kept;
+        }
+        this.commit();
+        return true;
+    }
+
     /* A custom-field value on a task: empty takes the record out, since a
      * value with no text is a value the file does not carry. */
     setFieldValue(taskUID, fieldID, value) {

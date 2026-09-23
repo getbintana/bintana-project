@@ -92,6 +92,13 @@ chart paints critical tasks red and shows completion as a band inside the bar,
 so neither hides the other. `CriticalSlackLimit` is not modelled, so the limit
 is zero.
 
+**Save Baseline** (Edit menu) keeps the plan as it stands -- every task's dates
+and work into its own `Baseline` -- and the chart draws that baseline as a thin
+gray bar under the task's own, which is what a slip is read against. The
+percentage in the panel moves the actual dates the way Project reads them:
+above zero the task has an `ActualStart`, at a hundred it has an
+`ActualFinish`, and back at zero it has neither.
+
 ## The rule that makes it an interchange
 
 `SaveXml` writes into the tree it was handed and touches only what the shapes
@@ -103,8 +110,9 @@ trip an interchange and not a rewrite; `Mspdi.js` carries the argument.
 ## What is modelled (cut 1)
 
 Tasks (identity, dates, durations as text, the milestone/summary/critical/
-estimated/effort-driven flags, constraints and deadline, notes, predecessor
-links, custom-field values), resources with their rates and costs, assignments
+estimated/effort-driven flags, actual dates and baselines, constraints and
+deadline, notes, predecessor links, custom-field values), resources with their
+rates and costs, assignments
 with their work and cost, the Project header, full calendars, and the
 `ExtendedAttribute` definitions and values -- custom fields are generic here,
 nothing in the app assumes what a file puts in them.

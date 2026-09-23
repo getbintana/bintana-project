@@ -881,6 +881,20 @@ class MainForm extends Form {
             values.Estimated       = this.ChkEstimated.Active;
             values.PercentComplete = Math.round(this.SpinPercent.Value);
 
+            /* A percentage moves the actual dates the way Project reads them:
+             * started above zero, finished at a hundred, and back to none. */
+            const start = values.Start || task.Start;
+            if (values.PercentComplete > 0 && task.ActualStart === "")
+                values.ActualStart = start;
+            if (values.PercentComplete >= 100) {
+                if (values.ActualStart === "") values.ActualStart = start;
+                values.ActualFinish = values.Finish || task.Finish;
+            }
+            if (values.PercentComplete === 0) {
+                values.ActualStart  = "";
+                values.ActualFinish = "";
+            }
+
             /* ASAP and ALAP carry no date; the rest need one. */
             values.ConstraintType  = Math.max(this.CmbConstraint.Index, 0);
             values.ConstraintDate  = values.ConstraintType > 1
@@ -1000,6 +1014,14 @@ class MainForm extends Form {
         if (!task || !link) return;
         const links = task.Links.filter((l) => l.PredecessorUID !== link.PredecessorUID);
         if (this.edit.setLinks(task.UID, links)) this.fill(task.UID);
+    }
+
+    /* The plan as it stands, kept so a later date can be compared with it.
+     * It is one undo like any other command. */
+    ActBaseline_Click() {
+        this.edit.setBaseline();
+        this.fill(this.selectedUID);
+        this.log(Locale.Text("Baseline saved."));
     }
 
     ActUndo_Click() {
@@ -1457,9 +1479,11 @@ class MainForm extends Form {
             const task = edit.task(1);
             ok = task.Name === "Analyse II" && task.Duration === "PT16H0M0S" &&
                  task.Start === "2026-09-01T09:00" &&
-                 task.PercentComplete === 75 && ok;
+                 task.PercentComplete === 75 &&
+                 task.ActualStart === "2026-09-01T08:00:00" && ok;   // the file's own
             print(`edit fields name="${task.Name}" duration=${task.Duration} ` +
-                  `start=${task.Start} percent=${task.PercentComplete}`);
+                  `start=${task.Start} percent=${task.PercentComplete} ` +
+                  `actual=${task.ActualStart}`);
 
             /* The forward pass as one undo: UID 1 is 2d from the project
              * start and UID 2 follows it. Before the indent, because a
@@ -1596,6 +1620,20 @@ class MainForm extends Form {
                  attrOf(edit.task(2), "188743731") === "4821" && ok;
             print(`edit custom field=${attrOf(edit.task(2), "188743731")}`);
 
+            /* The baseline keeps the plan as it stands, and a hundred per
+             * cent finishes the task: the actual dates follow. */
+            ok = edit.setBaseline() && edit.task(2).Baselines.length === 1 &&
+                 edit.task(2).Baselines[0].Start === edit.task(2).Start && ok;
+            print(`edit baseline start=${edit.task(2).Baselines[0].Start}`);
+
+            this.fill(2);
+            this.SpinPercent.Value = 100;
+            ok = this.applyFields() &&
+                 edit.task(2).ActualStart !== "" &&
+                 edit.task(2).ActualFinish === edit.task(2).Finish && ok;
+            print(`edit progress actual=${edit.task(2).ActualStart}..` +
+                  `${edit.task(2).ActualFinish}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1630,7 +1668,9 @@ class MainForm extends Form {
                  second.project.Assignments[0].Work === "PT8H0M0S" &&
                  second.project.FieldDefs.length === 1 &&
                  saved[3].Attributes.length === 1 &&
-                 saved[3].Attributes[0].Value === "4821" && ok;
+                 saved[3].Attributes[0].Value === "4821" &&
+                 saved[3].Baselines.length === 1 &&
+                 saved[3].ActualFinish !== "" && ok;
 
             print(`check-edit ${name}: ${ok ? "ok" : "FAILED"}`);
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
@@ -1651,7 +1691,8 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
-                        "ActRecalc", "ActSettings", "BtnApply", "BtnLinkAdd",
+                        "ActRecalc", "ActSettings", "ActBaseline", "BtnApply",
+                        "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel",
                         "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",

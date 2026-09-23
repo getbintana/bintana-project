@@ -14,18 +14,19 @@ los `problems` in→out quedaron iguales en los ocho. Tercera medición, con el
 header de Project (moneda incluida), los calendarios, `Estimated`/
 `EffortDriven` y los recursos y asignaciones modelados: los `problems` bajan
 (05 pierde el de `Estimated`, 03 y 04 los de `OvertimeRate`/`ID`/`IsNull` de
-recurso, y el header pierde `CurrencyDigits`/`CurrencySymbol`/`CurrencyCode`/
-`CurrencySymbolPosition`), los defaults entran a la lista deliberada, y los
-counts siguen iguales in→out.
+recurso, el header pierde `CurrencyDigits`/`CurrencySymbol`/`CurrencyCode`/
+`CurrencySymbolPosition`, y 01 y 06 los de `ActualStart`/`ActualFinish` y
+`Baseline`), los defaults entran a la lista deliberada, y los counts siguen
+iguales in→out.
 
 | Fixture | tasks | hitos | attrs | links | problems in→out | touched |
 |---|---|---|---|---|---|---|
-| 01-minimal | 2 | 0 | 0 | 1 | 10 → 10 | 11 |
+| 01-minimal | 2 | 0 | 0 | 1 | 8 → 8 | 11 |
 | 02-relations | 5 | 0 | 0 | 4 | 2 → 2 | 9 |
 | 03-resources-assignments | 2 | 0 | 0 | 0 | 4 → 4 | 10 |
 | 04-calendars | 1 | 0 | 0 | 0 | 2 → 2 | 9 |
 | 05-durations | 4 | 1 | 0 | 1 | 2 → 2 | 10 |
-| 06-timephased-custom | 1 | 0 | 1 | 0 | 11 → 11 | 5 |
+| 06-timephased-custom | 1 | 0 | 1 | 0 | 10 → 10 | 5 |
 | 07-extended-attrs | 3 | 2 | 2 | 2 | 8 → 8 | 9 |
 | 08-namespace-2007 | 1 | 0 | 0 | 0 | 0 → 0 | 1 |
 

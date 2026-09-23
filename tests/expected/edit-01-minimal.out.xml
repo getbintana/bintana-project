@@ -140,6 +140,12 @@
       <Summary>true</Summary>
       <Critical>true</Critical>
       <CalendarUID>1</CalendarUID>
+      <Baseline>
+        <Number>0</Number>
+        <Start>2026-09-01T08:00:00</Start>
+        <Finish>2026-09-03T17:00:00</Finish>
+        <Work>PT16H0M0S</Work>
+      </Baseline>
     </Task>
     <Task>
       <UID>1</UID>
@@ -162,6 +168,12 @@
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-02T17:00:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
+      <Baseline>
+        <Number>0</Number>
+        <Start>2026-09-01T08:00:00</Start>
+        <Finish>2026-09-02T17:00:00</Finish>
+        <Work>PT8H0M0S</Work>
+      </Baseline>
     </Task>
     <Task>
       <UID>3</UID>
@@ -182,6 +194,10 @@
         <Type>1</Type>
         <LagFormat>7</LagFormat>
       </PredecessorLink>
+      <Baseline>
+        <Number>0</Number>
+        <Work>PT0H0M0S</Work>
+      </Baseline>
     </Task>
     <Task>
       <UID>2</UID>
@@ -199,6 +215,9 @@
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
       <Critical>true</Critical>
+      <PercentComplete>100</PercentComplete>
+      <ActualStart>2026-09-03T08:00</ActualStart>
+      <ActualFinish>2026-09-03T17:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>
@@ -209,6 +228,12 @@
         <FieldID>188743731</FieldID>
         <Value>4821</Value>
       </ExtendedAttribute>
+      <Baseline>
+        <Number>0</Number>
+        <Start>2026-09-03T08:00</Start>
+        <Finish>2026-09-03T17:00</Finish>
+        <Work>PT8H0M0S</Work>
+      </Baseline>
     </Task>
   </Tasks>
   <Resources>

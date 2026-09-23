@@ -101,6 +101,11 @@
       "name": "ActSettings",
       "text": "Settings\u2026",
       "icon": "preferences-system-symbolic"
+    },
+    {
+      "name": "ActBaseline",
+      "text": "Save Baseline",
+      "icon": "document-save-symbolic"
     }
   ],
   "menus": [
@@ -178,6 +183,12 @@
         },
         {
           "action": "ActRecalc"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActBaseline"
         }
       ]
     },

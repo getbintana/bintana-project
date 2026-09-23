@@ -127,8 +127,15 @@ otra para dibujar un FS; nada se escribe hasta soltar, así que un gesto es un
 undo. Zoom/timescale manual, scroll y ruta crítica ya estaban. `check-drag`
 afirma los tres gestos con la geometría del propio gráfico.
 
-- Queda: barras fantasma de línea base, elegir el tipo de vínculo al dibujarlo
-  (hoy FS), y dibujar desde el extremo para enlazar en vez de redimensionar.
+**Línea base y seguimiento** (2026-09-22): `Baseline`, `ActualStart` y
+`ActualFinish` modelados (01 y 06 dejan de reportarlos en `Problems`); **Save
+Baseline** en el menú Editar guarda el plan como está en un undo, el Gantt
+dibuja la línea base como barra fina debajo de la tarea, y el porcentaje mueve
+las fechas reales como las lee Project (arriba de cero hay inicio real, al
+ciento hay fin real, en cero no hay ninguno).
+
+- Queda: elegir el tipo de vínculo al dibujarlo (hoy FS), dibujar desde el
+  extremo para enlazar en vez de redimensionar, y varias líneas base.
 
 ### 5 — Recursos y costos
 

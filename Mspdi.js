@@ -33,6 +33,19 @@ class MspLink extends Record {
     };
 }
 
+/* One baseline: the plan as it was when it was saved. `Number` says which
+ * baseline it is; 0 is the one Project's "Set Baseline" writes. */
+class MspBaseline extends Record {
+    static Xml = { Root: "Baseline" };
+    static Fields = {
+        Number: Field.Int({ key: true }),
+        Start:  Field.DateTime(),
+        Finish: Field.DateTime(),
+        Work:   Field.Text(),
+        Cost:   Field.Number(),
+    };
+}
+
 /* A custom-field value on a task: FieldID + Value, nothing else. The
  * ValueGUID/Ltuid half belongs to lookup-table fields, which a plain text
  * custom field is not. */
@@ -79,6 +92,8 @@ class MspTask extends Record {
         Summary:          Field.Bool(),
         Critical:         Field.Bool(),
         PercentComplete:  Field.Int(),
+        ActualStart:      Field.DateTime(),
+        ActualFinish:     Field.DateTime(),
         ConstraintType:   Field.Int(),
         CalendarUID:      Field.Int(),
         ConstraintDate:   Field.DateTime(),
@@ -87,6 +102,7 @@ class MspTask extends Record {
         Notes:            Field.Text(),
         Links:            Field.List(MspLink),
         Attributes:       Field.List(MspFieldValue),
+        Baselines:        Field.List(MspBaseline),
     };
 }
 
@@ -350,6 +366,14 @@ function resourceCost(project, resource) {
         if (assignment.ResourceUID === resource.UID)
             total += assignmentCost(project, assignment);
     return total;
+}
+
+/* The baseline a task carries (number 0, the one Set Baseline writes), or
+ * null when it has none. */
+function baselineOf(task) {
+    for (const baseline of task.Baselines)
+        if (baseline.Number === 0) return baseline;
+    return null;
 }
 
 /* A custom-field value by `FieldID`, or the first one when no field is asked

@@ -167,6 +167,19 @@ function drawGantt(p, width, height, project, selected, step, drag) {
         if (s === null || f === null) continue;
         const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
 
+        /* The baseline, when the file carries one: a thin gray bar under the
+         * task's own, which is what Project shows a slip against. */
+        const baseline = baselineOf(task);
+        if (baseline) {
+            const bs = whenMs(baseline.Start), bf = whenMs(baseline.Finish);
+            if (bs !== null && bf !== null) {
+                const gx0 = x(Math.min(bs, bf)), gx1 = x(Math.max(bs, bf));
+                p.Color = link;
+                p.Rectangle(gx0, y + BAR_H + 1, Math.max(gx1 - gx0, 2), 3);
+                p.Fill();
+            }
+        }
+
         if (task.Summary) {
             const top = y + 2;
             p.Color = colour;
