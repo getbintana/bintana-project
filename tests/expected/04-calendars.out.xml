@@ -3,7 +3,6 @@
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Calendars</Name>
-  <ScheduleFromStart>true</ScheduleFromStart>
   <StartDate>2026-12-20T08:00:00</StartDate>
   <FinishDate>2026-12-31T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
@@ -15,7 +14,6 @@
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
-  <DefaultTaskType>1</DefaultTaskType>
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
@@ -143,7 +141,6 @@
       <Name>Night operator</Name>
       <Type>1</Type>
       <Initials>NO</Initials>
-      <MaxUnits>1</MaxUnits>
       <StandardRate>30</StandardRate>
       <CalendarUID>2</CalendarUID>
     </Resource>

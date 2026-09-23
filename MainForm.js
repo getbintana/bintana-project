@@ -638,7 +638,7 @@ class MainForm extends Form {
         this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
         this.ChkEstimated.Active    = has ? task.Estimated : false;
         this.CmbTaskType.Index = has
-            ? Math.min(Math.max(task.Type || 0, 0), 2) : 0;
+            ? taskKind(this.holder.project, task) : 0;
         this.SpinPercent.Value   = has ? task.PercentComplete : 0;
         this.CmbConstraint.Index = has ? (task.ConstraintType || 0) : 0;
         this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
@@ -718,7 +718,7 @@ class MainForm extends Form {
                 this.linkRows.push(link);
                 this.Links.Add([
                     pred ? pred.Name : `UID ${link.PredecessorUID}`,
-                    LINK_NAMES[link.Type] || String(link.Type),
+                    LINK_NAMES[linkKind(link)],
                     String((link.LinkLag || 0) / 10),
                 ]);
             }
@@ -1098,7 +1098,7 @@ class MainForm extends Form {
         if (!link) return;
         const at = this.predChoices.indexOf(link.PredecessorUID);
         if (at >= 0) this.CmbPred.Index = at;
-        this.CmbType.Index = LINK_INDEX[link.Type] || 0;
+        this.CmbType.Index = LINK_INDEX[linkKind(link)];
         this.SpinLag.Value = (link.LinkLag || 0) / 10;
     }
 
@@ -1383,14 +1383,30 @@ class MainForm extends Form {
             const link = (pred, type, lag) => new MspLink({
                 PredecessorUID: pred, Type: type, LinkLag: lag || 0, LagFormat: 7 });
 
+            /* Where the shapes start, taken from the XSD: the two `Type`
+             * fields have no default and start below every real value, so a
+             * file's own 0 is kept; the project's default task type and a
+             * resource's units are the schema's 1; and a missing Type reads
+             * as the project says (FS for a link). */
+            const fresh = new MspProject({ Name: "Fresh" });
+            ok = eq("fresh defaults",
+                    [fresh.ScheduleFromStart, fresh.DefaultTaskType,
+                     new MspTask({}).Type, new MspLink({}).Type,
+                     new MspResource({}).MaxUnits].join(","),
+                    "true,1,-1,-1,1") && ok;
+            ok = eq("a missing link type is FS", linkKind(new MspLink({})), 1) && ok;
+            ok = eq("a missing task type inherits",
+                    taskKind(new MspProject({ DefaultTaskType: 0 }),
+                             new MspTask({})), 0) && ok;
+
             /* 2026-09-07 is a Monday and the 8th is the holiday. */
             const p = projectOf([
                 task(1, "PT8H0M0S"),                // A
                 task(2, "PT8H0M0S", [link(1, 1)]),  // B: FS from A
-                task(3, "PT8H0M0S", [link(1, 0)]),  // C: SS from A
-                task(4, "PT8H0M0S", [link(2, 2)]),  // D: FF from B
+                task(3, "PT8H0M0S", [link(1, 3)]),  // C: SS from A
+                task(4, "PT8H0M0S", [link(2, 0)]),  // D: FF from B
                 task(5, "PT0H0M0S", [link(2, 1)]),  // M: milestone FS from B
-                task(6, "PT8H0M0S", [link(1, 3)]),  // E: SF from A
+                task(6, "PT8H0M0S", [link(1, 2)]),  // E: SF from A
             ]);
             const work = new WorkCalendar(p, 1);
             const mon = whenMs("2026-09-07T08:00:00");
@@ -1520,16 +1536,16 @@ class MainForm extends Form {
             /* The work identity: effort-driven halves the duration when the
              * units double, Fixed Duration ignores the flag, and without it
              * the duration stands and the work grows. */
-            ok = eq("effort driven", assignmentDuration(
+            ok = eq("effort driven", assignmentDuration(null,
                     { Duration: "PT8H0M0S", EffortDriven: true, Type: 0 }, 1, 2),
                     240) && ok;
-            ok = eq("effort, two already", assignmentDuration(
+            ok = eq("effort, two already", assignmentDuration(null,
                     { Duration: "PT8H0M0S", EffortDriven: true, Type: 0 }, 2, 3),
                     320) && ok;
-            ok = eq("fixed duration", assignmentDuration(
+            ok = eq("fixed duration", assignmentDuration(null,
                     { Duration: "PT8H0M0S", EffortDriven: true, Type: 1 }, 1, 2),
                     480) && ok;
-            ok = eq("not effort driven", assignmentDuration(
+            ok = eq("not effort driven", assignmentDuration(null,
                     { Duration: "PT8H0M0S", EffortDriven: false, Type: 0 }, 1, 2),
                     480) && ok;
 
@@ -2112,11 +2128,11 @@ class MainForm extends Form {
     }
 }
 
-/* The four link types, in MSPDI's own numbering (0 SS, 1 FS, 2 FF, 3 SF) and
- * in the order the panel's combo shows them. */
-const LINK_NAMES = ["SS", "FS", "FF", "SF"];
-const LINK_ORDER = [1, 0, 2, 3];   // combo index -> MSPDI type
-const LINK_INDEX = { 0: 1, 1: 0, 2: 2, 3: 3 };
+/* The four link types, in MSPDI's own numbering (0 FF, 1 FS, 2 SF, 3 SS) and
+ * in the order the panel's combo shows them: FS, SS, FF, SF. */
+const LINK_NAMES = ["FF", "FS", "SF", "SS"];
+const LINK_ORDER = [1, 3, 0, 2];   // combo index -> MSPDI type
+const LINK_INDEX = { 0: 2, 1: 0, 2: 3, 3: 1 };
 
 /* What the timescale control means, by the combo's index (its items are
  * translated, so the text is not a key): pixels a day, and the header step in

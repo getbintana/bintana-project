@@ -90,6 +90,16 @@ crecer el trabajo (`assignmentDuration`) -- y la misma identidad aplicada por
 `trabajo / unidades`, o deriva el trabajo de la duración si es Fixed Duration),
 con ocho aserciones en `check-cpm`. Falta el calendario de recurso.
 
+**La numeración de los vínculos** (2026-09-23): el motor leía `Type` 0=SS,
+2=FF, 3=SF; el XSD dice 0=FF, 1=FS, 2=SF, 3=SS, y el corpus sintético lo
+repetía. Se corrigieron las dos pasadas, el combo, la tabla y los fixtures, y
+de paso los defaults del shape se alinearon al XSD: `Type` (tarea y vínculo)
+no tiene default, así que arranca en -1 y un 0 presente se escribe -- antes se
+borraba y un FF volvía como FS --; `DefaultTaskType` es 1, `ScheduleFromStart`
+es true y `MaxUnits` es 1, que es lo que la ausencia significa. El fixture
+`09-defaults` fija el lado que no se puede perder y `check-cpm` sube a 49
+aserciones con los defaults del shape.
+
 - **El oráculo es Project**: mismo archivo, comparar `Start`/`Finish`/slack por
   tarea. La fidelidad se mide, no se argumenta. El corpus sintético no es
   CPM-consistente (sus fechas están escritas a mano), así que la validación

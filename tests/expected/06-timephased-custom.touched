@@ -1,5 +1,5 @@
+touched: /Project/ScheduleFromStart[1]: removed (was "true")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
-touched: /Project/DefaultTaskType[1]: removed (was "0")
-touched: /Project/Tasks[1]/Task[1]/Type[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
 touched: /Project/Resources[1]/Resource[1]/IsNull[1]: removed (was "false")
+touched: /Project/Resources[1]/Resource[1]/MaxUnits[1]: removed (was "1")

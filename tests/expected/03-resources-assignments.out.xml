@@ -3,7 +3,6 @@
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Resources</Name>
-  <ScheduleFromStart>true</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-05T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
@@ -15,6 +14,7 @@
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>0</DefaultTaskType>
   <DefaultStandardRate>50</DefaultStandardRate>
   <DefaultOvertimeRate>75</DefaultOvertimeRate>
   <DurationFormat>7</DurationFormat>
@@ -32,6 +32,7 @@
       <UID>1</UID>
       <ID>1</ID>
       <Name>Build wall</Name>
+      <Type>0</Type>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
       <Start>2026-09-01T08:00:00</Start>
@@ -46,6 +47,7 @@
       <UID>2</UID>
       <ID>2</ID>
       <Name>Deliver bricks</Name>
+      <Type>0</Type>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
       <Start>2026-09-01T08:00:00</Start>
@@ -64,7 +66,6 @@
       <Type>1</Type>
       <Initials>AG</Initials>
       <Group>Crew A</Group>
-      <MaxUnits>1</MaxUnits>
       <StandardRate>50</StandardRate>
       <OvertimeRate>75</OvertimeRate>
       <CalendarUID>1</CalendarUID>
@@ -86,7 +87,6 @@
       <ID>3</ID>
       <Name>Bricks</Name>
       <MaterialLabel>pallets</MaterialLabel>
-      <MaxUnits>1</MaxUnits>
       <StandardRate>120</StandardRate>
     </Resource>
   </Resources>

@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 02-relations.xml: los 4 tipos de dependencia (FS=1,SS=0,FF=2,SF=3) + lag positivo/negativo. -->
+<!-- 02-relations.xml: los 4 tipos de dependencia (FF=0,FS=1,SF=2,SS=3) + lag positivo/negativo. -->
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Relations</Name>
-  <ScheduleFromStart>true</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-10T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
@@ -15,7 +14,6 @@
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
-  <DefaultTaskType>1</DefaultTaskType>
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
@@ -73,6 +71,7 @@
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>2</PredecessorUID>
+        <Type>3</Type>
         <LagFormat>7</LagFormat>
       </PredecessorLink>
     </Task>
@@ -90,7 +89,7 @@
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>3</PredecessorUID>
-        <Type>2</Type>
+        <Type>0</Type>
         <LagFormat>7</LagFormat>
       </PredecessorLink>
     </Task>
@@ -108,7 +107,7 @@
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>4</PredecessorUID>
-        <Type>3</Type>
+        <Type>2</Type>
         <LinkLag>-240</LinkLag>
         <LagFormat>5</LagFormat>
       </PredecessorLink>

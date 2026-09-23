@@ -22,12 +22,17 @@
  */
 "use strict";
 
-/* <PredecessorLink>, repeated bare under its task (no wrapper). */
+/* <PredecessorLink>, repeated bare under its task (no wrapper).
+ *
+ * `Type` is one of the few fields the schema gives no default: there is no
+ * value an absent one can be taken to mean, so the shape starts at -1 ("the
+ * file did not say") and a present 0 -- one of the four real values --
+ * survives the round trip. */
 class MspLink extends Record {
     static Xml = { Root: "PredecessorLink" };
     static Fields = {
         PredecessorUID: Field.Int({ key: true }),
-        Type:           Field.Int(),
+        Type:           Field.Int({ def: -1 }),
         LinkLag:        Field.Int(),
         LagFormat:      Field.Int(),
     };
@@ -75,7 +80,10 @@ class MspTask extends Record {
         UID:              Field.Int({ key: true }),
         ID:               Field.Int(),
         Name:             Field.Text(),
-        Type:             Field.Int(),
+        /* 0 Fixed Units, 1 Fixed Duration, 2 Fixed Work -- and -1 for a file
+         * that left it out, which the schema says means the project's
+         * `DefaultTaskType`, not Fixed Units. */
+        Type:             Field.Int({ def: -1 }),
         IsNull:           Field.Bool(),
         WBS:              Field.Text(),
         OutlineNumber:    Field.Text(),
@@ -117,7 +125,10 @@ class MspResource extends Record {
         Initials:           Field.Text(),
         Group:              Field.Text(),
         MaterialLabel:      Field.Text(),
-        MaxUnits:           Field.Number(),
+        /* 1.0 is the schema's own default: an absent MaxUnits is one unit,
+         * not none, and a file that wrote 1 loses only the number it already
+         * meant. */
+        MaxUnits:           Field.Number({ def: 1 }),
         AccrueAt:           Field.Int(),
         PercentWorkComplete: Field.Int(),
         StandardRate:       Field.Number(),
@@ -220,7 +231,10 @@ class MspProject extends Record {
     static Fields = {
         SaveVersion:       Field.Int(),
         Name:              Field.Text(),
-        ScheduleFromStart: Field.Bool(),
+        /* true, as the schema says: a file that means to schedule from the
+         * finish writes `false`, and that is what is kept. `Field.Bool` takes
+         * its default as the argument, not as an option. */
+        ScheduleFromStart: Field.Bool(true),
         StartDate:         Field.DateTime(),
         FinishDate:        Field.DateTime(),
         CurrencyDigits:    Field.Int(),
@@ -233,7 +247,10 @@ class MspProject extends Record {
         MinutesPerDay:     Field.Int(),
         MinutesPerWeek:    Field.Int(),
         DaysPerMonth:      Field.Int(),
-        DefaultTaskType:   Field.Int(),
+        /* The schema's default is 1 (Fixed Duration), not 0: an absent one
+         * means Fixed Duration and a file that wrote 0 (Fixed Units) keeps
+         * its own word. */
+        DefaultTaskType:   Field.Int({ def: 1 }),
         DurationFormat:    Field.Int(),
         WorkFormat:        Field.Int(),
         WeekStartDay:      Field.Int(),
@@ -329,6 +346,23 @@ function mspdiDuration(minutes) {
     if (h === 0) return `PT${m}M0S`;
     if (m === 0) return `PT${h}H0M0S`;
     return `PT${h}H${m}M0S`;
+}
+
+/* MSPDI's link types: 0 FF, 1 FS, 2 SF, 3 SS. A file that left `Type` out
+ * gets FS, the relation a reader assumes and the one Project draws. */
+function linkKind(link) {
+    const type = link ? link.Type : -1;
+    return type >= 0 && type <= 3 ? type : 1;
+}
+
+/* A task's type (0 Fixed Units, 1 Fixed Duration, 2 Fixed Work). A file that
+ * left it out falls back to the project's `DefaultTaskType`, which is what
+ * the schema makes of an absent `Type`. */
+function taskKind(project, task) {
+    const type = task ? task.Type : -1;
+    if (type >= 0 && type <= 2) return type;
+    const fallback = project ? project.DefaultTaskType : 0;
+    return fallback >= 0 && fallback <= 2 ? fallback : 0;
 }
 
 /* MSPDI's resource types: 0 material, 1 work, 2 cost. */

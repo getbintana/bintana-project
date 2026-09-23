@@ -11,20 +11,22 @@ por Project).
 | Fichero | Cubre |
 |---|---|
 | `01-minimal.xml` | Proyecto mínimo válido: resumen + 2 tareas + 1 dependencia FS |
-| `02-relations.xml` | Los 4 tipos (FS=1, SS=0, FF=2, SF=3) + lag positivo y lead negativo |
+| `02-relations.xml` | Los 4 tipos (FF=0, FS=1, SF=2, SS=3) + lag positivo y lead negativo |
 | `03-resources-assignments.xml` | Recursos work (unidades 1 y 0.5) + material, 3 asignaciones |
 | `04-calendars.xml` | Calendario base, excepción (feriado 25-dic), calendario de recurso nocturno |
 | `05-durations.xml` | Duraciones min/h/d/w/mo, estimada (`43`), hito, resumen, tarea nula (`IsNull`) |
 | `06-timephased-custom.xml` | `TimephasedData` en tarea y asignación, `ExtendedAttribute` Text1, baseline |
 | `07-extended-attrs.xml` | Campos extendidos + `HyperlinkAddress`: 2 tareas con Text1 (`External_ID`), 1 sin valor (creada en Project) |
 | `08-namespace-2007.xml` | El namespace que declara el XSD oficial (`/2007`), que Project no escribe; el lector debe aceptar ambos |
+| `09-defaults.xml` | Los defaults del XSD que no se pueden borrar: `ScheduleFromStart=false`, `DefaultTaskType=0`, `Type=0` de tarea y de vínculo (FF), `MaxUnits` ausente |
 
 ## Convenciones usadas
 
 - Namespace `http://schemas.microsoft.com/project`, `SaveVersion=14` (Project 2010+, generación vigente). `08` usa `/2007` a propósito.
 - `dateTime` ISO `YYYY-MM-DDTHH:MM:SS`, duraciones `xsd:duration`. El corpus usa la forma `PT…S` y `P8D` (`04`); evita `P2W`/`P1M`, que el tipo `xsd:duration` de libxml2 rechaza.
 - `DurationFormat`: 3=m, 5=h, 7=d, 9=w, 11=mo, 43=mo estimada. `Type` tarea: 0=Fixed Units, 1=Fixed Duration.
-- `Type` dependencia: 0=SS, 1=FS, 2=FF, 3=SF. `LinkLag` en décimas de minuto con `LagFormat`.
+- `Type` dependencia: 0=FF, 1=FS, 2=SF, 3=SS (el XSD de MSPDI, verificado
+  2026-09-23). `LinkLag` en décimas de minuto con `LagFormat`.
 
 ## Validación
 

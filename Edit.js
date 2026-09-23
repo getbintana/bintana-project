@@ -223,7 +223,7 @@ class Edit {
         const after  = existing > 0 ? existing - replaced + adds : 1 + adds;
 
         const minutes  = mspdiMinutes(task.Duration) || 0;
-        const duration = assignmentDuration(task, before, after);
+        const duration = assignmentDuration(project, task, before, after);
         const work = resource.Type === 0 ? "PT0H0M0S"
                    : mspdiDuration(Math.round(duration * units));
 

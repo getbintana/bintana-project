@@ -251,9 +251,9 @@ class WorkCalendar {
  * add up; Fixed Duration (1) ignores the flag, because its duration is the
  * point, and every other type keeps the duration and lets the work grow.
  */
-function assignmentDuration(task, before, after) {
+function assignmentDuration(project, task, before, after) {
     const minutes = mspdiMinutes(task.Duration) || 0;
-    const effort  = task.EffortDriven && (task.Type || 0) !== 1;
+    const effort  = task.EffortDriven && taskKind(project, task) !== 1;
     return effort && minutes > 0 ? Math.round(minutes * before / after) : minutes;
 }
 
@@ -279,7 +279,7 @@ function workDuration(project, task, minutes, mine) {
     }
     if (units <= 0) return minutes;
 
-    if ((task.Type || 0) === 1) work = Math.round(minutes * units);   // Fixed Duration
+    if (taskKind(project, task) === 1) work = Math.round(minutes * units);   // Fixed Duration
     else if (work > 0)          minutes = Math.round(work / units);
     else                        work = Math.round(minutes * units);
 
@@ -382,14 +382,14 @@ function recalculate(project) {
 
                 /* `LinkLag` is tenths of a minute, and the lag is working
                  * time on the successor's own calendar. */
-                const lag = (link.LinkLag || 0) / 10;
-                if (link.Type === 2 || link.Type === 3) {
-                    const target = work.add(link.Type === 2 ? pf : ps, lag);
+                const lag  = (link.LinkLag || 0) / 10;
+                const kind = linkKind(link);
+                if (kind === 0 || kind === 2) {
+                    const target = work.add(kind === 0 ? pf : ps, lag);
                     if (finishFloor === null || target > finishFloor) finishFloor = target;
                 } else {
-                    const base = link.Type === 0 ? ps : pf;
-                    const raw = work.add(base, lag);
-                    const candidate = duration > 0 ? work.startAfter(raw) : raw;
+                    const base = work.add(kind === 1 ? pf : ps, lag);
+                    const candidate = duration > 0 ? work.startAfter(base) : base;
                     if (startFloor === null || candidate > startFloor) startFloor = candidate;
                 }
             }
@@ -501,16 +501,17 @@ function recalculate(project) {
                     lf = finish;
                 } else {
                     for (const { link, succ } of links) {
-                        const L = late[succ.UID];
-                        const lag = (link.LinkLag || 0) / 10;
+                        const L    = late[succ.UID];
+                        const lag  = (link.LinkLag || 0) / 10;
+                        const kind = linkKind(link);
                         let v;
-                        if (link.Type === 1) {          // FS bounds the finish
+                        if (kind === 1) {               // FS bounds the finish
                             v = work.subtract(L.ls, lag);
                             if (lf === null || v < lf) lf = v;
-                        } else if (link.Type === 0) {   // SS bounds the start
+                        } else if (kind === 3) {        // SS bounds the start
                             v = work.subtract(L.ls, lag);
                             if (ls === null || v < ls) ls = v;
-                        } else if (link.Type === 2) {   // FF bounds the finish
+                        } else if (kind === 0) {        // FF bounds the finish
                             v = work.subtract(L.lf, lag);
                             if (lf === null || v < lf) lf = v;
                         } else {                        // SF bounds the start

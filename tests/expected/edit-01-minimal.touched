@@ -1,6 +1,8 @@
+touched: /Project/ScheduleFromStart[1]: removed (was "true")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/MinutesPerDay[1]: "480" -> "420"
 touched: /Project/MinutesPerWeek[1]: "2400" -> "2100"
+touched: /Project/DefaultTaskType[1]: removed (was "1")
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: "false" -> "true"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[7]/DayWorking[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/ID[1]: removed (was "0")
@@ -14,7 +16,6 @@ touched: /Project/Tasks[1]/Task[2]/PercentComplete[1]: "100" -> "75"
 touched: /Project/Tasks[1]/Task[3]/UID[1]: "2" -> "3"
 touched: /Project/Tasks[1]/Task[3]/ID[1]: "2" -> "3"
 touched: /Project/Tasks[1]/Task[3]/Name[1]: "Build" -> "New task"
-touched: /Project/Tasks[1]/Task[3]/Type[1]: removed (was "1")
 touched: /Project/Tasks[1]/Task[3]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[3]/CreateDate[1]: removed (was "2026-09-01T08:00:00")
 touched: /Project/Tasks[1]/Task[3]/WBS[1]: removed (was "2")
@@ -51,6 +52,7 @@ touched: /Project/Tasks[1]/Task[3]/Baseline[1]/Work[1]: added ("PT0H0M0S")
 touched: /Project/Tasks[1]/Task[4]/UID[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/ID[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/Name[1]: added ("Build")
+touched: /Project/Tasks[1]/Task[4]/Type[1]: added ("0")
 touched: /Project/Tasks[1]/Task[4]/CreateDate[1]: added ("2026-09-01T08:00:00")
 touched: /Project/Tasks[1]/Task[4]/WBS[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/OutlineNumber[1]: added ("2")
@@ -80,14 +82,12 @@ touched: /Project/Resources[1]/Resource[1]/UID[1]: added ("1")
 touched: /Project/Resources[1]/Resource[1]/ID[1]: added ("1")
 touched: /Project/Resources[1]/Resource[1]/Name[1]: added ("Ana")
 touched: /Project/Resources[1]/Resource[1]/Type[1]: added ("1")
-touched: /Project/Resources[1]/Resource[1]/MaxUnits[1]: added ("1")
 touched: /Project/Resources[1]/Resource[1]/StandardRate[1]: added ("50")
 touched: /Project/Resources[1]/Resource[1]/CalendarUID[1]: added ("1")
 touched: /Project/Resources[1]/Resource[2]/UID[1]: added ("2")
 touched: /Project/Resources[1]/Resource[2]/ID[1]: added ("2")
 touched: /Project/Resources[1]/Resource[2]/Name[1]: added ("Bruno")
 touched: /Project/Resources[1]/Resource[2]/Type[1]: added ("1")
-touched: /Project/Resources[1]/Resource[2]/MaxUnits[1]: added ("1")
 touched: /Project/Resources[1]/Resource[2]/StandardRate[1]: added ("40")
 touched: /Project/Resources[1]/Resource[2]/CalendarUID[1]: added ("1")
 touched: /Project/Assignments[1]/Assignment[1]/UID[1]: added ("1")

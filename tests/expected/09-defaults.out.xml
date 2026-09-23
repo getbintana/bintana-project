@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 09-defaults.xml: los defaults del XSD del lado que no se puede perder:
+     ScheduleFromStart=false, DefaultTaskType=0, Type=0 de tarea y de vínculo
+     (FF, Type 0), y un recurso sin MaxUnits (que vale 1 sin escribirse). -->
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>Defaults</Name>
+  <ScheduleFromStart>false</ScheduleFromStart>
+  <StartDate>2026-09-01T08:00:00</StartDate>
+  <FinishDate>2026-09-02T17:00:00</FinishDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbol>$</CurrencySymbol>
+  <CurrencyCode>USD</CurrencyCode>
+  <CalendarUID>1</CalendarUID>
+  <DefaultStartTime>08:00:00</DefaultStartTime>
+  <DefaultFinishTime>17:00:00</DefaultFinishTime>
+  <MinutesPerDay>480</MinutesPerDay>
+  <MinutesPerWeek>2400</MinutesPerWeek>
+  <DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>0</DefaultTaskType>
+  <DurationFormat>7</DurationFormat>
+  <WorkFormat>2</WorkFormat>
+  <WeekStartDay>1</WeekStartDay>
+  <Calendars>
+    <Calendar>
+      <UID>1</UID>
+      <Name>Standard</Name>
+      <IsBaseCalendar>true</IsBaseCalendar>
+    </Calendar>
+  </Calendars>
+  <Tasks>
+    <Task>
+      <UID>1</UID>
+      <ID>1</ID>
+      <Name>Start from the finish</Name>
+      <Type>0</Type>
+      <OutlineLevel>1</OutlineLevel>
+      <Priority>500</Priority>
+      <Start>2026-09-02T08:00:00</Start>
+      <Finish>2026-09-02T17:00:00</Finish>
+      <Duration>PT8H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
+      <CalendarUID>1</CalendarUID>
+    </Task>
+    <Task>
+      <UID>2</UID>
+      <ID>2</ID>
+      <Name>Finish together (FF)</Name>
+      <Type>0</Type>
+      <OutlineLevel>1</OutlineLevel>
+      <Priority>500</Priority>
+      <Start>2026-09-02T13:00:00</Start>
+      <Finish>2026-09-02T17:00:00</Finish>
+      <Duration>PT4H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
+      <CalendarUID>1</CalendarUID>
+      <PredecessorLink>
+        <PredecessorUID>1</PredecessorUID>
+        <Type>0</Type>
+        <LagFormat>7</LagFormat>
+      </PredecessorLink>
+    </Task>
+  </Tasks>
+  <Resources>
+    <Resource>
+      <UID>1</UID>
+      <ID>1</ID>
+      <Name>Ana</Name>
+      <Type>1</Type>
+      <StandardRate>50</StandardRate>
+      <CalendarUID>1</CalendarUID>
+    </Resource>
+  </Resources>
+</Project>

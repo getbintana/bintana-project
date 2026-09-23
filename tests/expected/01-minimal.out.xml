@@ -4,7 +4,6 @@
   <SaveVersion>14</SaveVersion>
   <Name>Minimal</Name>
   <Title>Minimal sample</Title>
-  <ScheduleFromStart>true</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-03T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
@@ -18,7 +17,6 @@
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
-  <DefaultTaskType>1</DefaultTaskType>
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>

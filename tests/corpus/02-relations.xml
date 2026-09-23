@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- 02-relations.xml: los 4 tipos de dependencia (FS=1,SS=0,FF=2,SF=3) + lag positivo/negativo. -->
+<!-- 02-relations.xml: los 4 tipos de dependencia (FF=0,FS=1,SF=2,SS=3) + lag positivo/negativo. -->
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Relations</Name>
@@ -41,7 +41,7 @@
       <Start>2026-09-04T08:00:00</Start><Finish>2026-09-07T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration><DurationFormat>7</DurationFormat><CalendarUID>1</CalendarUID>
       <PredecessorLink>
-        <PredecessorUID>2</PredecessorUID><Type>0</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+        <PredecessorUID>2</PredecessorUID><Type>3</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
       </PredecessorLink>
     </Task>
     <Task>
@@ -50,7 +50,7 @@
       <Start>2026-09-07T08:00:00</Start><Finish>2026-09-07T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration><DurationFormat>7</DurationFormat><CalendarUID>1</CalendarUID>
       <PredecessorLink>
-        <PredecessorUID>3</PredecessorUID><Type>2</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
+        <PredecessorUID>3</PredecessorUID><Type>0</Type><LinkLag>0</LinkLag><LagFormat>7</LagFormat>
       </PredecessorLink>
     </Task>
     <Task>
@@ -59,7 +59,7 @@
       <Start>2026-09-07T13:00:00</Start><Finish>2026-09-10T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration><DurationFormat>7</DurationFormat><CalendarUID>1</CalendarUID>
       <PredecessorLink>
-        <PredecessorUID>4</PredecessorUID><Type>3</Type><LinkLag>-240</LinkLag><LagFormat>5</LagFormat>
+        <PredecessorUID>4</PredecessorUID><Type>2</Type><LinkLag>-240</LinkLag><LagFormat>5</LagFormat>
       </PredecessorLink>
     </Task>
   </Tasks>

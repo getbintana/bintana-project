@@ -4,7 +4,6 @@
   <SaveVersion>14</SaveVersion>
   <Name>Minimal</Name>
   <Title>Minimal sample</Title>
-  <ScheduleFromStart>true</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-03T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
@@ -18,7 +17,6 @@
   <MinutesPerDay>420</MinutesPerDay>
   <MinutesPerWeek>2100</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
-  <DefaultTaskType>1</DefaultTaskType>
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
@@ -179,6 +177,7 @@
       <UID>3</UID>
       <ID>3</ID>
       <Name>New task</Name>
+      <Type>1</Type>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
       <Duration>PT0H0M0S</Duration>
@@ -203,6 +202,7 @@
       <UID>2</UID>
       <ID>2</ID>
       <Name>Build</Name>
+      <Type>0</Type>
       <CreateDate>2026-09-01T08:00:00</CreateDate>
       <WBS>2</WBS>
       <OutlineNumber>2</OutlineNumber>
@@ -242,7 +242,6 @@
       <ID>1</ID>
       <Name>Ana</Name>
       <Type>1</Type>
-      <MaxUnits>1</MaxUnits>
       <StandardRate>50</StandardRate>
       <CalendarUID>1</CalendarUID>
     </Resource>
@@ -251,7 +250,6 @@
       <ID>2</ID>
       <Name>Bruno</Name>
       <Type>1</Type>
-      <MaxUnits>1</MaxUnits>
       <StandardRate>40</StandardRate>
       <CalendarUID>1</CalendarUID>
     </Resource>
