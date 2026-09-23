@@ -120,6 +120,13 @@ seleccionada se resalta.
 - **Exportar** (barra o menú Archivo) escribe el gráfico como PNG o PDF, para
   mandárselo a quien no corre la app.
 
+## Informes
+
+**Archivo → Informe…** arma un documento con todas las tareas —inicio, fin,
+duración, avance, criticidad y costo— con el total al pie, en A4 apaisado, y lo
+guarda como PDF. Las columnas se repiten en cada página y el título lleva el
+nombre del proyecto y la ruta del archivo.
+
 ## Atajos
 
 | | |

@@ -12,5 +12,8 @@
     "MainForm.js"
   ],
   "version": "0.1.0",
+  "uses": [
+    "report"
+  ],
   "description": "MS Project interchange (MSPDI XML): read, round-trip and Gantt"
 }

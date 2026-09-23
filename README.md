@@ -34,9 +34,11 @@ chart, which draws summaries as brackets and critical tasks in red.
 The chart owns its size: as tall as its rows and as wide as the **Timescale**
 combo asks -- `Auto` fits the view, `Day`/`Week`/`Month` set a day width and the
 scroller beside them shows what does not fit. The table and the chart scroll
-independently, which is the same simplification as their geometry. **Export**
-writes the chart at its own size as a PNG or a PDF, which is how it reaches
-somebody who does not run the app.
+independently, which is the same simplification as their geometry. **Export
+Chart…** writes the chart at its own size as a PNG or a PDF, and **Report…**
+(File menu, over `lib/report`) writes the plan as a banded document -- tasks
+with dates, duration, progress and cost, totalled -- which is how any of it
+reaches somebody who does not run the app.
 
 The pointer edits too: click a bar to select it, **drag** it to move the task,
 drag its **end** to resize (the duration follows, measured in working time on

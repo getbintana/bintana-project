@@ -175,8 +175,10 @@ de su máximo); no se nivela.
 
 ### 6 — Distribución
 
-**Adelantado**: export del gráfico a PNG/PDF, que es lo que un compañero sin la
-app puede abrir.
+**Adelantado**: export del gráfico a PNG/PDF y **Archivo → Informe…**, que
+arma con `lib/report` el plan como documento paginado (tareas con fechas,
+duración, avance y costo, con total) y lo guarda en PDF. Es lo que un
+compañero sin la app puede abrir.
 
 - Windows primero: los compañeros van a usar la app, no solo recibir XML.
 - Seguir el port de Bintana (zip portable sin verificar en un desktop real),

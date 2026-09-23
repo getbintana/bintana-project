@@ -37,6 +37,18 @@ msgstr "Guardar como…"
 msgid "Export Chart…"
 msgstr "Exportar gráfico…"
 
+msgid "Report…"
+msgstr "Informe…"
+
+msgid "Save the report"
+msgstr "Guardar el informe"
+
+msgid "Critical"
+msgstr "Crítica"
+
+msgid "Total"
+msgstr "Total"
+
 msgid "Quit"
 msgstr "Salir"
 

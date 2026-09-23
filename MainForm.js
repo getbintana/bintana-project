@@ -1127,6 +1127,107 @@ class MainForm extends Form {
         if (this.edit.setLinks(task.UID, links)) this.fill(task.UID);
     }
 
+    /*
+     * The plan as a document: a banded report of the tasks -- dates, duration,
+     * progress, cost -- that leaves as one PDF. The bands are declared here,
+     * which is what keeps the totals from drifting from the rows.
+     */
+    ActReport_Click() {
+        const base = File.BaseName(this.path) || "plan";
+        Dialog.SaveFile(Locale.Text("Save the report"),
+            { Folder: File.Directory(this.path), Name: `${base}-report.pdf`,
+              Filters: [[Locale.Text("PDF document"), "*.pdf"]] },
+            (path) => {
+                try {
+                    this.buildReport();
+                    this.Plan.SavePdf(path);
+                    this.log(`Reported ${path}.`);
+                } catch (e) {
+                    Message.Error("Cannot save {0}: {1}", path, e.message);
+                }
+            });
+    }
+
+    buildReport() {
+        const project = this.holder.project;
+        const rows = [];
+        for (const task of project.Tasks) {
+            if (task.IsNull || task.Summary) continue;
+
+            let cost = 0;
+            for (const assignment of project.Assignments)
+                if (assignment.TaskUID === task.UID)
+                    cost += assignmentCost(project, assignment);
+
+            rows.push({
+                Task:     task.Name,
+                Start:    String(task.Start || "").slice(0, 10),
+                Finish:   String(task.Finish || "").slice(0, 10),
+                Duration: durationText(task, project),
+                Complete: `${task.PercentComplete}%`,
+                Critical: task.Critical ? Locale.Text("Critical") : "",
+                Cost:     cost,
+            });
+        }
+
+        const money = (x, y, w) => ({ Kind: "Total", Field: "Cost", Op: "Sum",
+                                      Format: "Money", X: x, Y: y, Width: w,
+                                      Align: "Right" });
+        const head = (text, x, w, align) => ({ Kind: "Text", Text: text, X: x,
+                                               Y: 30, Width: w,
+                                               Align: align || "Left",
+                                               Font: "Bold 9" });
+        const cell = (field, x, w, align, format) => ({ Kind: "Field",
+                                                        Field: field, X: x, Y: 0,
+                                                        Width: w,
+                                                        Align: align || "Left",
+                                                        Format: format || "" });
+
+        this.Plan.Paper       = "A4";
+        this.Plan.Orientation = "Landscape";
+        this.Plan.Sections = {
+            /* The page header sits at the top of every page and the rest of
+             * the bands flow under it, so the title belongs here with the
+             * captions -- and it repeats with them, which a plan across
+             * pages wants anyway. */
+            PageHeader: { Height: 48, Elements: [
+                { Kind: "Text", Text: project.Name || File.Name(this.path),
+                  X: 0, Y: 0, Font: "Bold 12" },
+                { Kind: "Text", Text: this.path, X: 0, Y: 16, Font: "8" },
+                head(Locale.Text("Task"), 0, 240),
+                head(Locale.Text("Start"), 248, 70),
+                head(Locale.Text("Finish"), 322, 70),
+                head(Locale.Text("Duration"), 396, 60, "Right"),
+                head(Locale.Text("Complete"), 460, 60, "Right"),
+                head(Locale.Text("Critical"), 524, 60),
+                head(Locale.Text("Cost"), 588, 80, "Right"),
+                { Kind: "Line", Y1: 46, X2: 668, Y2: 46, Color: "#999999" },
+            ]},
+            Detail: { Height: 15, Elements: [
+                cell("Task", 0, 240),
+                cell("Start", 248, 70),
+                cell("Finish", 322, 70),
+                cell("Duration", 396, 60, "Right"),
+                cell("Complete", 460, 60, "Right"),
+                cell("Critical", 524, 60),
+                cell("Cost", 588, 80, "Right", "Money"),
+            ]},
+            PageFooter: { Height: 16, Elements: [
+                { Kind: "Field", Field: "@Page", X: 600, Y: 0, Width: 30,
+                  Align: "Right", Font: "8" },
+                { Kind: "Text", Text: "/", X: 632, Y: 0, Font: "8" },
+                { Kind: "Field", Field: "@Pages", X: 640, Y: 0, Width: 30,
+                  Font: "8" },
+            ]},
+            ReportFooter: { Height: 22, Elements: [
+                { Kind: "Text", Text: Locale.Text("Total"), X: 480, Y: 4,
+                  Width: 100, Align: "Right", Font: "Bold 9" },
+                money(588, 4, 80),
+            ]},
+        };
+        this.Plan.Data = rows;
+    }
+
     /* The plan as it stands, kept so a later date can be compared with it.
      * It is one undo like any other command. */
     ActBaseline_Click() {
@@ -1842,6 +1943,16 @@ class MainForm extends Form {
             this.TxtFilter_Change();
             ok = this.Tasks.Count === 4 && ok;
 
+            /* The report: the bands are declared, the rows are the plan, and
+             * the PDF is what a colleague who does not run the app opens. */
+            this.buildReport();
+            const report = File.Join(out, "bintana-project-report.pdf");
+            this.Plan.SavePdf(report);
+            const paper = File.Info(report);
+            ok = this.Plan.PageCount >= 1 && paper && paper.Size > 0 && ok;
+            print(`edit report pages=${this.Plan.PageCount} ` +
+                  `pdf=${paper ? paper.Size : -1}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1899,8 +2010,8 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
-                        "ActRecalc", "ActSettings", "ActBaseline", "BtnApply",
-                        "BtnLinkAdd",
+                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport",
+                        "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel",
                         "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",
