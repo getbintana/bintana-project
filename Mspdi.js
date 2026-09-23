@@ -430,6 +430,14 @@ function mspdiDuration(minutes) {
     return `PT${h}H${m}M0S`;
 }
 
+/* Minutes from midnight as "HH:MM:SS", which is how a working time reads in
+ * the file and in the calendar dialog. */
+function clockText(minutes) {
+    const h = String(Math.floor(minutes / 60)).padStart(2, "0");
+    const m = String(Math.round(minutes % 60)).padStart(2, "0");
+    return `${h}:${m}:00`;
+}
+
 /* MSPDI's link types: 0 FF, 1 FS, 2 SF, 3 SS. A file that left `Type` out
  * gets FS, the relation a reader assumes and the one Project draws. */
 function linkKind(link) {

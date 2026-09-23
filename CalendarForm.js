@@ -12,7 +12,7 @@
 
 class CalendarForm extends Form {
 
-    static open(calendar, onSaved) {
+    static open(project, calendar, onSaved) {
         const dlg = new CalendarForm();
 
         dlg.uid     = calendar.UID;
@@ -20,15 +20,19 @@ class CalendarForm extends Form {
         dlg.Modal   = true;
         dlg.TxtName.Text = calendar.Name;
 
+        /* The week the calendar *really* has, its base's included: what the
+         * dialog edits and what a derived calendar would otherwise show as
+         * blank. Saving writes it as the calendar's own. */
+        const work = new WorkCalendar(project, calendar.UID);
         dlg.week = [];
         for (let day = 1; day <= 7; day++) {
-            let found = null;
-            for (const wd of calendar.WeekDays)
-                if (wd.DayType === day) { found = wd; break; }
-
-            dlg["ChkDay" + day].Active = found ? found.DayWorking : false;
-            dlg["TxtDay" + day].Text = found && found.DayWorking
-                                     ? spansText(found.WorkingTimes) : "";
+            const spans = work.days[day] || [];
+            dlg["ChkDay" + day].Active = spans.length > 0;
+            dlg["TxtDay" + day].Text = spans.length
+                                     ? spansText(spans.map(([from, to]) =>
+                                           new MspWorkingTime({ FromTime: clockText(from),
+                                                                ToTime: clockText(to) })))
+                                     : "";
             dlg.week.push({ day });
         }
 

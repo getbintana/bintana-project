@@ -160,6 +160,13 @@ ganado. Las banderas que escribe Project (externally edited, actuals in sync,
 remove file properties, admin project) quedan modeladas sin diálogo. Los
 `problems` del corpus caen a cero en ocho de los diez fixtures.
 
+**Varios calendarios** (2026-09-23): la pestaña Proyecto administra la lista
+--**Nuevo…** copia la semana real del elegido (o del proyecto) y abre el
+diálogo, **Eliminar** borra uno que no sea el del proyecto y devuelve sus
+referencias al default--. `CalendarForm` ahora muestra la semana **efectiva**
+(la herencia del base incluida, vía `WorkCalendar`) y al aceptar la escribe
+como propia del calendario; `Edit.addCalendar`/`removeCalendar` son un undo.
+
 **Autosave y recuperación** (2026-09-23): mientras hay cambios sin guardar se
 escribe una copia cada minuto en el directorio de config (nunca al lado del
 plan, que puede ser de solo lectura); al abrir, una copia más nueva que el

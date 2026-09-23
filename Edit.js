@@ -375,6 +375,60 @@ class Edit {
         return true;
     }
 
+    /* A new calendar, as a copy of one already there: the week it really has
+     * -- its base's included, which is what the dialog shows -- and its own
+     * exceptions, under a fresh UID. Project's "create a calendar" starts
+     * from a copy too; without a source, every day is off. */
+    addCalendar(name, fromUID) {
+        const project = this.holder.project;
+        let maxUID = 0;
+        for (const calendar of project.Calendars)
+            if (calendar.UID > maxUID) maxUID = calendar.UID;
+
+        const source = fromUID ? this.calendar(fromUID) : null;
+        const week = [];
+        const work = source ? new WorkCalendar(project, source.UID) : null;
+        for (let day = 1; day <= 7; day++) {
+            const spans = work ? (work.days[day] || []) : [];
+            week.push(new MspWeekDay({
+                DayType:      day,
+                DayWorking:   spans.length > 0,
+                WorkingTimes: spans.map(([from, to]) => new MspWorkingTime({
+                    FromTime: clockText(from), ToTime: clockText(to) })),
+            }));
+        }
+
+        const calendar = new MspCalendar({
+            UID:            maxUID + 1,
+            Name:           name || `Calendar ${maxUID + 1}`,
+            IsBaseCalendar: true,
+            WeekDays:       week,
+            Exceptions:     source ? source.Exceptions.slice() : [],
+        });
+        project.Calendars = project.Calendars.concat([calendar]);
+        this.commit();
+        return calendar;
+    }
+
+    /* A calendar nobody runs on: the project's own is the plan's, and a task
+     * or a resource that named it falls back to the project's. */
+    removeCalendar(uid) {
+        const project = this.holder.project;
+        if (uid === project.CalendarUID) return false;
+
+        const kept = project.Calendars.filter((c) => c.UID !== uid);
+        if (kept.length === project.Calendars.length) return false;
+
+        project.Calendars = kept;
+        for (const task of project.Tasks)
+            if (task.CalendarUID === uid) task.CalendarUID = -1;
+        for (const resource of project.Resources)
+            if (resource.CalendarUID === uid) resource.CalendarUID = -1;
+
+        this.commit();
+        return true;
+    }
+
     /* A task after `afterUID`'s whole subtree, a sibling of it; without one,
      * at the end, level 1. It carries no dates: an invented start would be a
      * lie, and the form is where they are typed. */

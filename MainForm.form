@@ -1660,11 +1660,29 @@
                                 },
                                 {
                                   "type": "Button",
+                                  "name": "BtnCalNew",
+                                  "properties": {
+                                    "Text": "New\u2026",
+                                    "Icon": "list-add-symbolic",
+                                    "Width": 90
+                                  }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnCalDel",
+                                  "properties": {
+                                    "Text": "Delete",
+                                    "Icon": "user-trash-symbolic",
+                                    "Width": 90
+                                  }
+                                },
+                                {
+                                  "type": "Button",
                                   "name": "BtnCalEdit",
                                   "properties": {
                                     "Text": "Edit\u2026",
                                     "Icon": "document-properties-symbolic",
-                                    "Width": 110
+                                    "Width": 100
                                   }
                                 }
                               ]

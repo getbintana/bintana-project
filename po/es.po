@@ -846,3 +846,15 @@ msgstr "Seguimiento"
 
 msgid "Planning"
 msgstr "Planificación"
+
+msgid "Calendar {0}"
+msgstr "Calendario {0}"
+
+msgid "The project's own calendar cannot be deleted."
+msgstr "El calendario del proyecto no se puede eliminar."
+
+msgid "Delete calendar"
+msgstr "Eliminar calendario"
+
+msgid "Delete "{0}"?"
+msgstr "¿Eliminar "{0}"?"

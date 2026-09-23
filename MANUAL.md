@@ -133,6 +133,12 @@ Deshacer. Abajo, **Costo total** es lo que suman las asignaciones del plan y
 Los tres diálogos están también en el menú **Proyecto**; **Calendario…** abre
 el elegido en la lista, o el del proyecto si no hay ninguno elegido.
 
+**Nuevo…** crea un calendario copiando la semana real del elegido (o del
+proyecto) y abre el diálogo para ponerle nombre; **Eliminar** borra uno que no
+sea el del proyecto, y las tareas o recursos que lo usaban vuelven al del
+proyecto. El diálogo muestra la semana **efectiva** —con lo que herede de su
+calendario base— y al aceptar la deja escrita en el calendario.
+
 **Editar…** abre el calendario elegido: los días laborables con sus tramos
 como texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y
 las excepciones, que es como se cargan los feriados.

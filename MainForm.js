@@ -478,10 +478,44 @@ class MainForm extends Form {
     openCalendar(uid) {
         const calendar = uid === null ? null : this.edit.calendar(uid);
         if (!calendar) return;
-        CalendarForm.open(calendar, (values) => {
+        CalendarForm.open(this.holder.project, calendar, (values) => {
             this.edit.setCalendar(calendar.UID, values);
             this.fill(this.selectedUID);
         });
+    }
+
+    /* A new calendar, as a copy of the picked one (or of the project's), and
+     * the dialog opens on it so it gets a name and a week. */
+    BtnCalNew_Click() {
+        const source = this.selectedCalUID !== null
+                     ? this.selectedCalUID : this.holder.project.CalendarUID;
+        let maxUID = 0;
+        for (const calendar of this.holder.project.Calendars)
+            if (calendar.UID > maxUID) maxUID = calendar.UID;
+
+        const calendar = this.edit.addCalendar(
+            Locale.Text("Calendar {0}", maxUID + 1), source);
+        this.fill(this.selectedUID);
+        const at = this.calRows.findIndex((c) => c.UID === calendar.UID);
+        if (at >= 0) { this.Calendars.Select(at); this.Calendars_Select(); }
+        this.openCalendar(calendar.UID);
+    }
+
+    BtnCalDel_Click() {
+        if (this.selectedCalUID === null) return;
+        const calendar = this.edit.calendar(this.selectedCalUID);
+        if (!calendar) return;
+        if (this.selectedCalUID === this.holder.project.CalendarUID) {
+            Message.Warning(Locale.Text("The project's own calendar cannot be deleted."));
+            return;
+        }
+        ConfirmForm.ask(Locale.Text("Delete calendar"),
+            Locale.Text('Delete "{0}"?', calendar.Name),
+            Locale.Text("Delete"), () => {
+                this.edit.removeCalendar(calendar.UID);
+                this.selectedCalUID = null;
+                this.fill(this.selectedUID);
+            });
     }
 
     BtnCalEdit_Click() {
@@ -2155,6 +2189,20 @@ class MainForm extends Form {
             ok = edit.setCalendar(1, { WeekDays: week }) && ok;
             ok = edit.calendar(1).WeekDays[0].DayWorking === true && ok;
             print(`edit calendar sunday=${edit.calendar(1).WeekDays[0].DayWorking}`);
+
+            /* A calendar of its own: a copy of the one there -- its real
+             * week, Sunday included -- with a fresh UID, and it can go while
+             * the project's stays. */
+            const calendars = edit.holder.project.Calendars.length;
+            const copy = edit.addCalendar("Copia", 1);
+            ok = edit.holder.project.Calendars.length === calendars + 1 &&
+                 copy.UID !== 1 && copy.WeekDays.length === 7 &&
+                 copy.WeekDays[0].DayWorking === true &&
+                 edit.removeCalendar(copy.UID) &&
+                 edit.holder.project.Calendars.length === calendars &&
+                 !edit.removeCalendar(1) && ok;
+            print(`edit calendars copy=${copy.UID} ` +
+                  `then=${edit.holder.project.Calendars.length}`);
 
             /* A custom field through the panel: the file gets the definition,
              * the task gets the value. */
