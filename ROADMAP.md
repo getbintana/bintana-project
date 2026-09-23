@@ -89,10 +89,15 @@ crecer el trabajo (`assignmentDuration`) -- y la misma identidad aplicada por
 `recalculate` a todo el plan (`workDuration`: la tarea se planifica en
 `trabajo / unidades`, o deriva el trabajo de la duración si es Fixed Duration),
 con ocho aserciones en `check-cpm`. Falta el calendario de recurso.
+
 - **El oráculo es Project**: mismo archivo, comparar `Start`/`Finish`/slack por
   tarea. La fidelidad se mide, no se argumenta. El corpus sintético no es
   CPM-consistente (sus fechas están escritas a mano), así que la validación
   real espera el archivo de Project.
+- **Constraints blandas** (2026-09-23): SNLT/FNLT no pinchan nada -- la tarea
+  se planifica ASAP y `notMet` cuenta las fechas que pasó, leídas contra la
+  fecha cruda (un feriado en el medio no corre la promesa); ALAP conserva las
+  fechas del archivo porque colocarla tarde es el backward pass de Project.
 - Decisión abierta que el archivo real define: si Project tolera los defaults
   de calendario que `SaveXml` borra (`DayWorking=false`, `IsBaseCalendar=false`,
   `EnteredByOccurrences=false`, `Period=0`, `DaysOfWeek=0`).

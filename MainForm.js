@@ -1078,8 +1078,10 @@ class MainForm extends Form {
         this.log(`Recalculated ${result.placed} tasks, ${critical} critical` +
                  (late ? `, ${late} past deadline` : "") +
                  (over ? `, ${over} over-allocated` : "") +
+                 (result.notMet
+                    ? `, ${result.notMet} constraints not met` : "") +
                  (result.skipped
-                    ? `, ${result.skipped} kept (constraint not scheduled here)`
+                    ? `, ${result.skipped} kept (ALAP)`
                     : "") + ".");
     }
 
@@ -1345,6 +1347,25 @@ class MainForm extends Form {
             ok = eq("FNET", `${c.Tasks[3].Start}..${c.Tasks[3].Finish}`,
                     "2026-09-09T13:00:00..2026-09-10T12:00:00") && ok;
             ok = eq("ALAP kept", c.Tasks[4].Start, "") && ok;
+            ok = eq("nothing violated", constrained.notMet, 0) && ok;
+
+            /* The soft constraints never pin: the task is scheduled as early
+             * as its links allow, and the date it passed is a violation. */
+            const c2 = projectOf([
+                task(1, "PT8H0M0S"),
+                task(2, "PT8H0M0S", [link(1, 1)],
+                     { ConstraintType: 5,
+                       ConstraintDate: "2026-09-08T08:00:00" }),
+            ]);
+            const late2 = recalculate(c2);
+            ok = eq("SNLT not met", late2.notMet, 1) && ok;
+            ok = eq("SNLT scheduled ASAP", c2.Tasks[1].Start,
+                    "2026-09-09T08:00:00") && ok;
+
+            const c3 = projectOf([task(1, "PT8H0M0S", [],
+                     { ConstraintType: 7,
+                       ConstraintDate: "2026-09-07T12:00:00" })]);
+            ok = eq("FNLT not met", recalculate(c3).notMet, 1) && ok;
 
             /* An elapsed duration counts calendar time: two elapsed days from
              * Monday 08:00 is Wednesday 08:00, the holiday in between and

@@ -14,8 +14,11 @@
  * predecessor's latest dates back and zero slack marks a task critical; and
  * then a summary is the span of the deeper tasks that follow it. A `Deadline`
  * is a target and not a constraint: it is modelled and never schedules
- * anything. ALAP, SNLT and FNLT keep the dates the file wrote. Task types and
- * resource calendars are not here yet.
+ * anything, and the same is true of the two "no later than" constraints --
+ * those tasks are scheduled as early as their links allow and `notMet` counts
+ * the dates they passed. ALAP keeps the dates the file wrote, because placing
+ * it late is Project's backward pass and not this one. Resource calendars are
+ * not here yet.
  */
 "use strict";
 
@@ -329,18 +332,19 @@ function recalculate(project) {
     }
 
     const done = {};
-    let placed = 0, skipped = 0, guard = 0;
+    let placed = 0, skipped = 0, notMet = 0, guard = 0;
     while (placed + skipped < roots && guard++ <= tasks.length + 1) {
         let moved = false;
         for (const task of tasks) {
             if (task.Summary || done[task.UID]) continue;
 
-            /* ALAP and the two "no later than" constraints are what Project
-             * places with the backward pass; here the task keeps the dates the
-             * file wrote, and its successors link to those. */
+            /* ALAP is what Project places with the backward pass; here the
+             * task keeps the dates the file wrote, and its successors link to
+             * those. The two "no later than" constraints are soft -- they do
+             * not pin anything -- so those tasks are scheduled like any other
+             * and the dates are checked against them afterwards. */
             const type = task.ConstraintType || 0;
-            if (type === CONSTRAINT_ALAP || type === CONSTRAINT_SNLT ||
-                type === CONSTRAINT_FNLT) {
+            if (type === CONSTRAINT_ALAP) {
                 done[task.UID] = true;
                 skipped++;
                 moved = true;
@@ -395,8 +399,10 @@ function recalculate(project) {
              * to a working instant: MSO pins the start, MFO the finish, SNET
              * a floor under the start and FNET one under the finish. */
             const when = whenMs(task.ConstraintDate);
+            let atConstraint = null;
             if (when !== null) {
                 const at = work.add(when, 0);
+                atConstraint = at;
                 if (type === CONSTRAINT_MSO) {
                     startFloor = at;
                 } else if (type === CONSTRAINT_MFO) {
@@ -426,6 +432,19 @@ function recalculate(project) {
             let   to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
                                       : from;
             if (finishFloor !== null && to < finishFloor) to = finishFloor;
+
+            /* A constraint the schedule did not meet. The two "no later than"
+             * ones are the soft half -- they never pin anything, and this is
+             * what Project shows as a violation -- and MSO/MFO can lose to a
+             * link, which is a conflict in the file and not a bug here. */
+            if (atConstraint !== null) {
+                /* The "no later than" pair is read against the date itself:
+                 * a holiday in between does not move the promise. */
+                if (type === CONSTRAINT_MSO && from !== atConstraint) notMet++;
+                else if (type === CONSTRAINT_MFO && to !== atConstraint) notMet++;
+                else if (type === CONSTRAINT_SNLT && from > when) notMet++;
+                else if (type === CONSTRAINT_FNLT && to > when) notMet++;
+            }
 
             task.Start  = isoLocal(from);
             task.Finish = isoLocal(to);
@@ -536,5 +555,5 @@ function recalculate(project) {
             tasks[i].Finish = isoLocal(to);
         }
     }
-    return { placed, skipped };
+    return { placed, skipped, notMet };
 }

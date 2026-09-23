@@ -98,10 +98,12 @@ SS, FF and SF, with the lag in working time on the task's own calendar -- the
 hard constraints are applied (`MSO` pins the start, `MFO` the finish, `SNET`
 and `FNET` put a floor under each), a summary becomes the span of its
 children, and a backward pass marks as `Critical` every task whose slack
-against the project finish is zero. `ALAP`, `SNLT` and `FNLT` need Project's
-own backward scheduling, so a task carrying one keeps the dates the file
-wrote; a `Deadline` is a target and never schedules anything, but the log
-counts the tasks past theirs. It is one undo, like any other command; the
+against the project finish is zero. `SNLT` and `FNLT` are the soft half: they
+never pin anything -- the task is scheduled as early as its links allow, and
+the log counts the dates it passed. `ALAP` needs Project's own backward
+scheduling, so a task carrying one keeps the dates the file wrote. A `Deadline`
+is a target and never schedules anything, but the log counts the tasks past
+theirs. It is one undo, like any other command; the
 chart paints critical tasks red and shows completion as a band inside the bar,
 so neither hides the other. `CriticalSlackLimit` is not modelled, so the limit
 is zero. A task past its deadline gets a small red arrow over its bar where the
