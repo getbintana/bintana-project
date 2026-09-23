@@ -76,8 +76,10 @@ class MainForm extends Form {
     calChoices     = [];
     selectedCalUID = null;
 
-    /* The custom fields the Task page offers, by FieldID. */
+    /* The custom fields the Task page offers, by FieldID, and what the table
+     * is filtered to. */
     attrChoices = [];
+    filter = "";
 
     Form_Open() {
         try {
@@ -223,8 +225,7 @@ class MainForm extends Form {
 
         this.Tasks.Clear();
         const stack = [];
-        for (const task of project.Tasks) {
-            if (task.IsNull) continue;
+        for (const task of this.visibleTasks(project)) {
             const key = String(task.UID);
             this.byUID[key] = task;
             while (stack.length && stack[stack.length - 1].level >= task.OutlineLevel)
@@ -263,6 +264,38 @@ class MainForm extends Form {
             this.showTask(null);
         }
         this.updateTitle();
+    }
+
+    /* What the filter lets through: the tasks whose name matches it and the
+     * ancestors that give them their place in the outline. An empty filter is
+     * the whole plan. */
+    visibleTasks(project) {
+        const tasks = [];
+        for (const task of project.Tasks) if (!task.IsNull) tasks.push(task);
+        if (!this.filter) return tasks;
+
+        const shown = {};
+        const ancestors = [];
+        for (const task of tasks) {
+            while (ancestors.length &&
+                   ancestors[ancestors.length - 1].OutlineLevel >= task.OutlineLevel)
+                ancestors.pop();
+            ancestors.push(task);
+            if (Locale.Matches(task.Name, this.filter))
+                for (const a of ancestors) shown[a.UID] = true;
+        }
+        return tasks.filter((task) => shown[task.UID]);
+    }
+
+    /* One keystroke, one rebuilt table; the magnifier in the field clears. */
+    TxtFilter_Change() {
+        this.filter = this.TxtFilter.Text;
+        this.fill(this.selectedUID);
+    }
+
+    TxtFilter_IconClick() {
+        this.TxtFilter.Text = "";
+        this.TxtFilter_Change();
     }
 
     cells(task) {
@@ -1634,6 +1667,15 @@ class MainForm extends Form {
             print(`edit progress actual=${edit.task(2).ActualStart}..` +
                   `${edit.task(2).ActualFinish}`);
 
+            /* The filter: the matches and the ancestors that place them. */
+            this.TxtFilter.Text = "Analyse";
+            this.TxtFilter_Change();
+            ok = this.Tasks.Count === 2 && ok;
+            print(`edit filter rows=${this.Tasks.Count}`);
+            this.TxtFilter.Text = "";
+            this.TxtFilter_Change();
+            ok = this.Tasks.Count === 4 && ok;
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1700,7 +1742,8 @@ class MainForm extends Form {
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
-                     "Calendars_Select", "CmbAttr_Select",
+                     "Calendars_Select", "CmbAttr_Select", "TxtFilter_Change",
+                     "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp"]);
 
         let ok = true;

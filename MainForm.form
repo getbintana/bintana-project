@@ -399,6 +399,20 @@
           }
         },
         {
+          "type": "Separator",
+          "name": "Sep5",
+          "properties": {}
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtFilter",
+          "properties": {
+            "Placeholder": "Filter tasks",
+            "Icon": "edit-find-symbolic",
+            "Width": 220
+          }
+        },
+        {
           "type": "Label",
           "name": "LblFile",
           "properties": {

@@ -55,6 +55,9 @@ msgstr "Bajar"
 msgid "Settings…"
 msgstr "Configuración…"
 
+msgid "Filter tasks"
+msgstr "Filtrar tareas"
+
 msgid "Open Recent"
 msgstr "Abrir reciente"
 

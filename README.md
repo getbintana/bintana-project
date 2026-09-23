@@ -23,8 +23,10 @@ Project XML dragged onto the window opens too.
 
 The list is the WBS as a tree
 keyed by UID -- summaries fold, IsNull rows are skipped, durations read in the
-unit the file's `DurationFormat` says. Selecting a row marks the same task in
-the chart, which draws summaries as brackets and critical tasks in red.
+unit the file's `DurationFormat` says -- and the field in the toolbar filters
+it: a task whose name matches, and the ancestors that give it its place, with
+the magnifier clearing the filter. Selecting a row marks the same task in the
+chart, which draws summaries as brackets and critical tasks in red.
 
 The chart owns its size: as tall as its rows and as wide as the **Timescale**
 combo asks -- `Auto` fits the view, `Day`/`Week`/`Month` set a day width and the

@@ -116,7 +116,10 @@ texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y
 excepciones (feriados). Los minutos por día ahora mandan: es lo que significa
 un `1d` tipeado. El recálculo automático es una opción, apagada por defecto.
 Los campos personalizados que el archivo define se editan en la pestaña Tarea
-(por `FieldID`, el mismo que puede mostrar la columna de la lista).
+(por `FieldID`, el mismo que puede mostrar la columna de la lista). La barra
+tiene un filtro por nombre --el match y sus ancestros, con la lupa para
+limpiar-- y el menú Editar, **Save Baseline**, con la línea base dibujada como
+barra fina debajo de cada tarea.
 
 ### 4 — Gantt interactivo
 
