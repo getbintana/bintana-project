@@ -124,7 +124,7 @@
     },
     {
       "name": "ActCalendar",
-      "text": "Calendar\u2026",
+      "text": "Calendars\u2026",
       "icon": "x-office-calendar-symbolic"
     },
     {
@@ -820,6 +820,24 @@
                                 },
                                 {
                                   "type": "Label",
+                                  "name": "LblTaskCalendar",
+                                  "properties": {
+                                    "Text": "Calendar",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbTaskCalendar",
+                                  "properties": {
+                                    "Items": [],
+                                    "Index": 0,
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
                                   "name": "LblSecTracking",
                                   "properties": {
                                     "Text": "Tracking",
@@ -1342,6 +1360,24 @@
                                     "HExpand": true,
                                     "HAlign": "Fill"
                                   }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblResCalendar",
+                                  "properties": {
+                                    "Text": "Calendar",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbResCalendar",
+                                  "properties": {
+                                    "Items": [],
+                                    "Index": 0,
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
                                 }
                               ]
                             },
@@ -1632,6 +1668,24 @@
                                       }
                                     }
                                   ]
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjDefault",
+                                  "properties": {
+                                    "Text": "Default calendar",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbProjDefault",
+                                  "properties": {
+                                    "Items": [],
+                                    "Index": 0,
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
                                 }
                               ]
                             },
@@ -1639,71 +1693,6 @@
                               "type": "Separator",
                               "name": "RuleProj",
                               "properties": {}
-                            },
-                            {
-                              "type": "Panel",
-                              "name": "CalHead",
-                              "properties": {
-                                "Arrangement": "Horizontal",
-                                "Spacing": 8
-                              },
-                              "children": [
-                                {
-                                  "type": "Label",
-                                  "name": "LblCalendars",
-                                  "properties": {
-                                    "Text": "Calendars",
-                                    "Style": "heading",
-                                    "HExpand": true,
-                                    "HAlign": "Start"
-                                  }
-                                },
-                                {
-                                  "type": "Button",
-                                  "name": "BtnCalNew",
-                                  "properties": {
-                                    "Text": "New\u2026",
-                                    "Icon": "list-add-symbolic",
-                                    "Width": 90
-                                  }
-                                },
-                                {
-                                  "type": "Button",
-                                  "name": "BtnCalDel",
-                                  "properties": {
-                                    "Text": "Delete",
-                                    "Icon": "user-trash-symbolic",
-                                    "Width": 90
-                                  }
-                                },
-                                {
-                                  "type": "Button",
-                                  "name": "BtnCalEdit",
-                                  "properties": {
-                                    "Text": "Edit\u2026",
-                                    "Icon": "document-properties-symbolic",
-                                    "Width": 100
-                                  }
-                                }
-                              ]
-                            },
-                            {
-                              "type": "TableView",
-                              "name": "Calendars",
-                              "properties": {
-                                "Columns": [
-                                  {
-                                    "Text": "Name",
-                                    "Width": 0
-                                  },
-                                  {
-                                    "Text": "Base",
-                                    "Width": 120
-                                  }
-                                ],
-                                "Height": 70,
-                                "HAlign": "Fill"
-                              }
                             }
                           ]
                         }

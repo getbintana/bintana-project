@@ -858,3 +858,15 @@ msgstr "Eliminar calendario"
 
 msgid "Delete "{0}"?"
 msgstr "¿Eliminar "{0}"?"
+
+msgid "Close"
+msgstr "Cerrar"
+
+msgid "Calendars…"
+msgstr "Calendarios…"
+
+msgid "Project default"
+msgstr "Del proyecto"
+
+msgid "Default calendar changed."
+msgstr "Calendario por defecto cambiado."

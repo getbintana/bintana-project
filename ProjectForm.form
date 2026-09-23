@@ -270,24 +270,6 @@
             "HAlign": "Fill",
             "Placeholder": "YYYY-MM-DD HH:MM"
           }
-        },
-        {
-          "type": "Label",
-          "name": "LblProjCalendar",
-          "properties": {
-            "Text": "Default calendar",
-            "HAlign": "End"
-          }
-        },
-        {
-          "type": "ComboBox",
-          "name": "CmbProjCalendar",
-          "properties": {
-            "HExpand": true,
-            "HAlign": "Fill",
-            "Items": [],
-            "Index": 0
-          }
         }
       ]
     },

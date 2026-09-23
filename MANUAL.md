@@ -119,29 +119,30 @@ tabla y el período en que arranca el trabajo fija el costo por uso.
 
 ## Proyecto y calendarios
 
-La pestaña **Proyecto** selecciona y abre diálogos: **Datos del proyecto…**
-edita la identidad y la información (nombre, título, asunto, autor, gerente,
+La pestaña **Proyecto** asigna y abre diálogos: **Datos del proyecto…** edita
+la identidad y la información (nombre, título, asunto, autor, gerente,
 compañía, categoría, revisión, fecha de creación y último guardado —esos dos
-de solo lectura—, fecha de inicio, fecha de estado, calendario por defecto y
-la moneda), y **Opciones del proyecto…** los valores por defecto y los
-switches del archivo (tipo de tarea, tasas y formato de trabajo, minutos por
-día y por semana —lo que significa un `1d` tipeado—, holgura crítica, año
-fiscal, respetar restricciones, valor ganado y demás). Cada uno es un solo
-Deshacer. Abajo, **Costo total** es lo que suman las asignaciones del plan y
-**Línea base** elige cuál se guarda y se dibuja.
+de solo lectura—, fecha de inicio, fecha de estado y la moneda), y
+**Opciones del proyecto…** los valores por defecto y los switches del archivo
+(tipo de tarea, tasas y formato de trabajo, minutos por día y por semana —lo
+que significa un `1d` tipeado—, holgura crítica, año fiscal, respetar
+restricciones, valor ganado y demás). Cada uno es un solo Deshacer. En el
+panel se **asigna** el **Calendario por defecto** del plan; abajo, **Costo
+total** es lo que suman las asignaciones y **Línea base** elige cuál se guarda
+y se dibuja.
 
-Los tres diálogos están también en el menú **Proyecto**; **Calendario…** abre
-el elegido en la lista, o el del proyecto si no hay ninguno elegido.
+Los calendarios se **administran** desde el menú **Proyecto → Calendarios…**:
+la lista con **Nuevo…** (copia el elegido, o el del proyecto, y abre el
+diálogo para ponerle nombre), **Editar…** y **Eliminar** (borra uno que no sea
+el del proyecto, y las tareas o recursos que lo usaban vuelven al default).
 
-**Nuevo…** crea un calendario copiando la semana real del elegido (o del
-proyecto) y abre el diálogo para ponerle nombre; **Eliminar** borra uno que no
-sea el del proyecto, y las tareas o recursos que lo usaban vuelven al del
-proyecto. El diálogo muestra la semana **efectiva** —con lo que herede de su
-calendario base— y al aceptar la deja escrita en el calendario.
+El diálogo de un calendario edita los días laborables con sus tramos como
+texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y las
+excepciones, que es como se cargan los feriados. Muestra la semana **efectiva**
+—con lo que herede de su calendario base— y al aceptar la deja escrita.
 
-**Editar…** abre el calendario elegido: los días laborables con sus tramos
-como texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y
-las excepciones, que es como se cargan los feriados.
+En la pestaña **Tarea** y en el editor de recursos, **Calendario** elige cuál
+rige para esa tarea o ese recurso: **Del proyecto** o uno en particular.
 
 ## El Gantt
 

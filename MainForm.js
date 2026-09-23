@@ -74,9 +74,7 @@ class MainForm extends Form {
     assignRows    = [];
 
     /* The Project page: its calendars and the one picked. */
-    calRows        = [];
     calChoices     = [];
-    selectedCalUID = null;
 
     /* The custom fields the Task page offers, by FieldID, and what the table
      * is filtered to. */
@@ -423,26 +421,44 @@ class MainForm extends Form {
         }
         this.CmbAssignRes.Items = items;
         this.CmbAssignRes.Index = items.length ? 0 : -1;
+
+        /* The calendars a task or a resource may name, with the plan's own in
+         * front, and the plan's, which is assigned and not chosen. */
+        this.calChoices = [];
+        this.workCalChoices = [-1];
+        const calNames = [], workNames = [Locale.Text("Project default")];
+        for (const calendar of project.Calendars) {
+            this.calChoices.push(calendar.UID);
+            calNames.push(calendar.Name);
+            this.workCalChoices.push(calendar.UID);
+            workNames.push(calendar.Name);
+        }
+        this.CmbProjDefault.Items  = calNames;
+        this.CmbTaskCalendar.Items = workNames;
+        this.CmbResCalendar.Items  = workNames;
+        const at = this.calChoices.indexOf(project.CalendarUID);
+        this.CmbProjDefault.Index = at >= 0 ? at : (calNames.length ? 0 : -1);
     }
 
-    /* The project's own settings and its calendars. */
+    /* The project's own settings: the default calendar, assigned here, and
+     * the total. The calendars themselves are administered from the menu. */
     fillProject() {
         const project = this.holder ? this.holder.project : null;
         if (!project) return;
 
         const cost = projectCost(project);
         this.TxtProjCost.Text = cost ? Locale.Number(cost, 2) : "";
+    }
 
-        this.Calendars.Clear();
-        this.calRows = [];
-        for (const calendar of project.Calendars) {
-            this.calRows.push(calendar);
-            const base = calendar.BaseCalendarUID
-                       ? (this.edit.calendar(calendar.BaseCalendarUID) || {}).Name || ""
-                       : "";
-            this.Calendars.Add([calendar.Name, base]);
-        }
-        this.BtnCalEdit.Enabled = false;
+    /* Assigning the plan's calendar: the choice is the edit, one undo. */
+    CmbProjDefault_Select() {
+        const combo = this.CmbProjDefault;
+        if (!combo) return;            // the event fires while the form is built
+        const uid = this.calChoices[combo.Index];
+        if (uid === undefined || uid === this.holder.project.CalendarUID) return;
+        if (!this.edit.setProject({ CalendarUID: uid })) return;
+        this.fill(this.selectedUID);
+        this.log(Locale.Text("Default calendar changed."));
     }
 
     /* The project's data -- the document's metadata, the scheduling settings
@@ -467,71 +483,39 @@ class MainForm extends Form {
         });
     }
 
-    Calendars_Select() {
-        this.selectedCalUID = this.Calendars.Index >= 0
-                            ? this.calRows[this.Calendars.Index].UID : null;
-        this.BtnCalEdit.Enabled = this.selectedCalUID !== null;
-    }
-
     /* The calendar's own dialog: it hands the whole shape back, and the edit
      * is one undo like any other. */
-    openCalendar(uid) {
+    openCalendar(uid, done) {
         const calendar = uid === null ? null : this.edit.calendar(uid);
         if (!calendar) return;
         CalendarForm.open(this.holder.project, calendar, (values) => {
             this.edit.setCalendar(calendar.UID, values);
             this.fill(this.selectedUID);
+            if (done) done();
         });
     }
 
-    /* A new calendar, as a copy of the picked one (or of the project's), and
-     * the dialog opens on it so it gets a name and a week. */
-    BtnCalNew_Click() {
-        const source = this.selectedCalUID !== null
-                     ? this.selectedCalUID : this.holder.project.CalendarUID;
-        let maxUID = 0;
-        for (const calendar of this.holder.project.Calendars)
-            if (calendar.UID > maxUID) maxUID = calendar.UID;
-
-        const calendar = this.edit.addCalendar(
-            Locale.Text("Calendar {0}", maxUID + 1), source);
-        this.fill(this.selectedUID);
-        const at = this.calRows.findIndex((c) => c.UID === calendar.UID);
-        if (at >= 0) { this.Calendars.Select(at); this.Calendars_Select(); }
-        this.openCalendar(calendar.UID);
-    }
-
-    BtnCalDel_Click() {
-        if (this.selectedCalUID === null) return;
-        const calendar = this.edit.calendar(this.selectedCalUID);
-        if (!calendar) return;
-        if (this.selectedCalUID === this.holder.project.CalendarUID) {
-            Message.Warning(Locale.Text("The project's own calendar cannot be deleted."));
-            return;
-        }
-        ConfirmForm.ask(Locale.Text("Delete calendar"),
-            Locale.Text('Delete "{0}"?', calendar.Name),
-            Locale.Text("Delete"), () => {
-                this.edit.removeCalendar(calendar.UID);
-                this.selectedCalUID = null;
-                this.fill(this.selectedUID);
-            });
-    }
-
-    BtnCalEdit_Click() {
-        if (this.selectedCalUID !== null) this.openCalendar(this.selectedCalUID);
-    }
-
-    /* From the menu: the calendar picked in the list, or the project's own
-     * when nothing is picked. */
+    /* From the menu: the calendars themselves -- new, edit, delete -- and not
+     * the one assigned to anything. The dialog calls back here so every
+     * change is a command with its own undo. */
     ActCalendar_Click() {
-        let uid = this.selectedCalUID;
-        if (uid === null && this.calRows.length) uid = this.calRows[0].UID;
-        if (uid === null) {
-            Message.Warning(Locale.Text("There are no calendars."));
-            return;
-        }
-        this.openCalendar(uid);
+        CalendarsForm.open(this.holder.project, {
+            add: (fromUID) => {
+                let maxUID = 0;
+                for (const calendar of this.holder.project.Calendars)
+                    if (calendar.UID > maxUID) maxUID = calendar.UID;
+                const calendar = this.edit.addCalendar(
+                    Locale.Text("Calendar {0}", maxUID + 1), fromUID);
+                this.fill(this.selectedUID);
+                return calendar.UID;
+            },
+            remove: (uid) => {
+                const done = this.edit.removeCalendar(uid);
+                this.fill(this.selectedUID);
+                return done;
+            },
+            edit: (uid, done) => this.openCalendar(uid, done),
+        });
     }
 
     /* A resource picked: the editor shows it, so Apply updates it. */
@@ -546,6 +530,11 @@ class MainForm extends Form {
         this.TxtResCostUse.Text = resource ? String(resource.CostPerUse) : "0";
         this.BtnResDel.Enabled   = !!resource;
         this.BtnResRates.Enabled = !!resource;
+        const atCal = resource
+                    ? this.workCalChoices.indexOf(resource.CalendarUID > 0
+                                                  ? resource.CalendarUID : -1)
+                    : 0;
+        this.CmbResCalendar.Index = atCal >= 0 ? atCal : 0;
     }
 
     BtnResNew_Click() {
@@ -561,6 +550,8 @@ class MainForm extends Form {
             MaxUnits:      resourceNumber(this.TxtResMax.Text),
             StandardRate:  resourceNumber(this.TxtResRate.Text),
             CostPerUse:    resourceNumber(this.TxtResCostUse.Text),
+            CalendarUID:   this.workCalChoices[this.CmbResCalendar.Index] !== undefined
+                         ? this.workCalChoices[this.CmbResCalendar.Index] : -1,
         };
         if (values.Name === "" || isNaN(values.MaxUnits) ||
             isNaN(values.StandardRate) || isNaN(values.CostPerUse)) {
@@ -702,6 +693,11 @@ class MainForm extends Form {
         this.ChkEstimated.Active    = has ? task.Estimated : false;
         this.CmbTaskType.Index = has
             ? taskKind(this.holder.project, task) : 0;
+        const atCal = has
+                    ? this.workCalChoices.indexOf(task.CalendarUID > 0
+                                                  ? task.CalendarUID : -1)
+                    : 0;
+        this.CmbTaskCalendar.Index = atCal >= 0 ? atCal : 0;
         this.SpinPercent.Value   = has ? task.PercentComplete : 0;
         this.CmbConstraint.Index = has ? (task.ConstraintType || 0) : 0;
         this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
@@ -1078,6 +1074,8 @@ class MainForm extends Form {
             values.Duration        = mspdiDuration(duration.minutes);
             values.DurationFormat  = duration.format;
             values.Type            = Math.max(this.CmbTaskType.Index, 0);
+            values.CalendarUID     = this.workCalChoices[this.CmbTaskCalendar.Index] !== undefined
+                                   ? this.workCalChoices[this.CmbTaskCalendar.Index] : -1;
             values.Milestone       = this.ChkMilestone.Active;
             values.Manual          = this.ChkManual.Active;
             values.EffortDriven    = this.ChkEffortDriven.Active;
@@ -2321,12 +2319,12 @@ class MainForm extends Form {
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
                         "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar",
-                        "BtnCalEdit", "BtnBaselineSave"]
+                        "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
                      "CmbBaseline_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
-                     "Calendars_Select", "CmbAttr_Select", "TxtFilter_Change",
+                     "CmbProjDefault_Select", "CmbAttr_Select", "TxtFilter_Change",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp",
                      "Tasks_Activate", "Gantt_DblClick"]);

@@ -99,16 +99,6 @@ class ProjectForm extends Form {
         dlg.TxtProjSaved.Text    = shortDate(project.LastSaved);
         dlg.TxtProjFinish.Text   = shortDate(project.FinishDate);
 
-        const names = [];
-        dlg.calChoices = [];
-        for (const calendar of project.Calendars) {
-            dlg.calChoices.push(calendar.UID);
-            names.push(calendar.Name);
-        }
-        dlg.CmbProjCalendar.Items = names;
-        const at = dlg.calChoices.indexOf(project.CalendarUID);
-        dlg.CmbProjCalendar.Index = at >= 0 ? at : (names.length ? 0 : -1);
-
         dlg.Show();
         dlg.TxtProjName.SetFocus();
         return dlg;
@@ -121,8 +111,6 @@ class ProjectForm extends Form {
             Message.Error(Locale.Text("The project's numbers must be numbers."));
             return;
         }
-        values.CalendarUID = this.calChoices[this.CmbProjCalendar.Index] ||
-                             project.CalendarUID;
         try {
             const probe = new MspProject();
             for (const name in values) probe[name] = values[name];

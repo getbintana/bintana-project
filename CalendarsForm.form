@@ -1,0 +1,105 @@
+{
+  "format": "bintana-form/1",
+  "class": "CalendarsForm",
+  "properties": {
+    "Text": "Calendars",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 620,
+    "Height": 420,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Label",
+      "name": "LblList",
+      "properties": {
+        "Text": "Calendars",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "TableView",
+      "name": "CalendarList",
+      "properties": {
+        "Columns": [
+          {
+            "Text": "Name",
+            "Width": 0
+          },
+          {
+            "Text": "Base",
+            "Width": 160
+          }
+        ],
+        "Height": 200,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "Panel",
+      "name": "ListButtons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 6
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCalNew",
+          "properties": {
+            "Text": "New\u2026",
+            "Icon": "list-add-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnCalEdit",
+          "properties": {
+            "Text": "Edit\u2026",
+            "Icon": "document-properties-symbolic",
+            "Enabled": false,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnCalDel",
+          "properties": {
+            "Text": "Delete",
+            "Icon": "user-trash-symbolic",
+            "Enabled": false,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnClose",
+          "properties": {
+            "Text": "Close",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}
