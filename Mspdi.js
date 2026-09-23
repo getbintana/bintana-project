@@ -389,6 +389,15 @@ function resourcePeak(project, resource) {
     return peak;
 }
 
+/* Every assignment of one task, added up: what the task costs. */
+function taskCost(project, task) {
+    let total = 0;
+    for (const assignment of project.Assignments)
+        if (assignment.TaskUID === task.UID)
+            total += assignmentCost(project, assignment);
+    return total;
+}
+
 /* Every assignment of one resource, added up. */
 function resourceCost(project, resource) {
     let total = 0;

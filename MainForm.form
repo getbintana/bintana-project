@@ -487,6 +487,11 @@
                         "Text": "Attr",
                         "Width": 90,
                         "Alignment": "Right"
+                      },
+                      {
+                        "Text": "Cost",
+                        "Width": 80,
+                        "Alignment": "Right"
                       }
                     ],
                     "Expand": true,

@@ -367,8 +367,11 @@ class MainForm extends Form {
 
     cells(task) {
         const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-        return [name, durationText(task, this.holder.project), shortDate(task.Start),
-                shortDate(task.Finish), attrOf(task, this.fieldID)];
+        const project = this.holder.project;
+        const cost    = taskCost(project, task);
+        return [name, durationText(task, project), shortDate(task.Start),
+                shortDate(task.Finish), attrOf(task, this.fieldID),
+                cost ? Locale.Number(cost, 2) : ""];
     }
 
     /* The plan's resources, with the cost of their assignments added up, and

@@ -20,7 +20,9 @@ XML.
 
 Es la EDT en árbol, con los resúmenes plegables y las filas nulas salteadas.
 La columna **Duración** la lee en la unidad que el archivo declara; **Campo**
-muestra el campo personalizado que elijas en Configuración.
+muestra el campo personalizado que elijas en Configuración. **Costo** suma lo
+que cuestan las asignaciones de la tarea: unidades por tarifa del recurso, o el
+costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro.
