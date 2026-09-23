@@ -64,6 +64,13 @@ class MainForm extends Form {
     /* The files the menu offers, parallel to its entries by index. */
     recentPaths = [];
 
+    /* The Resources page: the table's records, the resource being edited and
+     * the assignments of the selected task, each parallel to its control. */
+    resRows       = [];
+    resChoices    = [];
+    selectedResUID = null;
+    assignRows    = [];
+
     Form_Open() {
         try {
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
@@ -252,16 +259,17 @@ class MainForm extends Form {
                 shortDate(task.Finish), attrOf(task, this.fieldID)];
     }
 
-    /* The plan's resources, with the cost of their assignments added up.
-     * Read-only for now: an assignment is a record the panel does not edit
-     * yet, and the file's own `Cost` wins where it has one. */
+    /* The plan's resources, with the cost of their assignments added up, and
+     * the list the assignment editor offers. */
     fillResources() {
         this.Resources.Clear();
+        this.resRows = [];
         const project = this.holder ? this.holder.project : null;
         if (!project) return;
 
         for (const resource of project.Resources) {
             if (resource.IsNull) continue;
+            this.resRows.push(resource);
             this.Resources.Add([
                 resource.Name,
                 String(resource.MaxUnits),
@@ -269,6 +277,140 @@ class MainForm extends Form {
                 Locale.Number(resourceCost(project, resource), 2),
             ]);
         }
+        this.LblResEmpty.Visible = this.resRows.length === 0;
+
+        const items = [];
+        this.resChoices = [];
+        for (const resource of this.resRows) {
+            this.resChoices.push(resource.UID);
+            items.push(resource.Name);
+        }
+        this.CmbAssignRes.Items = items;
+        this.CmbAssignRes.Index = items.length ? 0 : -1;
+    }
+
+    /* A resource picked: the editor shows it, so Apply updates it. */
+    Resources_Select() {
+        const resource = this.Resources.Index >= 0
+                       ? this.resRows[this.Resources.Index] : null;
+        this.selectedResUID    = resource ? resource.UID : null;
+        this.TxtResName.Text   = resource ? resource.Name : "";
+        this.CmbResType.Index  = resource ? (resource.Type || 0) : 1;
+        this.TxtResMax.Text    = resource ? String(resource.MaxUnits) : "1";
+        this.TxtResRate.Text   = resource ? String(resource.StandardRate) : "";
+        this.TxtResCostUse.Text = resource ? String(resource.CostPerUse) : "0";
+        this.BtnResDel.Enabled = !!resource;
+    }
+
+    BtnResNew_Click() {
+        this.Resources.DeselectAll();
+        this.Resources_Select();
+        this.TxtResName.SetFocus();
+    }
+
+    BtnResApply_Click() {
+        const values = {
+            Name:          this.TxtResName.Text,
+            Type:          Math.max(this.CmbResType.Index, 0),
+            MaxUnits:      resourceNumber(this.TxtResMax.Text),
+            StandardRate:  resourceNumber(this.TxtResRate.Text),
+            CostPerUse:    resourceNumber(this.TxtResCostUse.Text),
+        };
+        if (values.Name === "" || isNaN(values.MaxUnits) ||
+            isNaN(values.StandardRate) || isNaN(values.CostPerUse)) {
+            Message.Error("A resource needs a name, and its numbers must be numbers.");
+            return;
+        }
+        try {
+            const probe = new MspResource();
+            for (const name in values) probe[name] = values[name];
+        } catch (e) {
+            Message.Error("Cannot apply: {0}", e.message);
+            return;
+        }
+
+        let resource;
+        if (this.selectedResUID === null) {
+            resource = this.edit.addResource(values);
+        } else {
+            this.edit.setResource(this.selectedResUID, values);
+            resource = this.edit.resource(this.selectedResUID);
+        }
+        this.fill(this.selectedUID);
+        if (resource) {
+            const at = this.resRows.findIndex((r) => r.UID === resource.UID);
+            if (at >= 0) { this.Resources.Select(at); this.Resources_Select(); }
+        }
+    }
+
+    BtnResDel_Click() {
+        const resource = this.selectedResUID === null
+                       ? null : this.edit.resource(this.selectedResUID);
+        if (!resource) return;
+        ConfirmForm.ask(Locale.Text("Delete resource"),
+            Locale.Text('Delete "{0}" and its assignments?', resource.Name),
+            Locale.Text("Delete"), () => {
+                this.edit.removeResource(resource.UID);
+                this.selectedResUID = null;
+                this.fill(this.selectedUID);
+            });
+    }
+
+    /* The assignments of the selected task, with the cost each one adds. */
+    fillAssignments(task) {
+        this.Assignments.Clear();
+        this.assignRows = [];
+        this.BtnAssignDel.Enabled = false;
+        if (!task) return;
+
+        const project = this.holder.project;
+        for (const assignment of project.Assignments) {
+            if (assignment.TaskUID !== task.UID) continue;
+            const resource = resourceOf(project, assignment.ResourceUID);
+            this.assignRows.push(assignment);
+            this.Assignments.Add([
+                resource ? resource.Name : `UID ${assignment.ResourceUID}`,
+                String(assignment.Units),
+                durationText({ Duration: assignment.Work, DurationFormat: 5 }),
+                Locale.Number(assignmentCost(project, assignment), 2),
+            ]);
+        }
+    }
+
+    Assignments_Select() {
+        const assignment = this.Assignments.Index >= 0
+                         ? this.assignRows[this.Assignments.Index] : null;
+        this.BtnAssignDel.Enabled = !!assignment;
+        if (!assignment) return;
+        const at = this.resChoices.indexOf(assignment.ResourceUID);
+        if (at >= 0) this.CmbAssignRes.Index = at;
+        this.TxtAssignUnits.Text = String(assignment.Units);
+    }
+
+    BtnAssignAdd_Click() {
+        const task = this.selectedTask();
+        if (!task) return;
+        const at = this.CmbAssignRes.Index;
+        const resourceUID = at >= 0 ? this.resChoices[at] : null;
+        if (resourceUID === null || resourceUID === undefined) {
+            Message.Warning(Locale.Text("Add a resource first."));
+            return;
+        }
+        const units = resourceNumber(this.TxtAssignUnits.Text);
+        if (isNaN(units) || units <= 0) {
+            Message.Error(Locale.Text("Units must be a positive number."));
+            return;
+        }
+        this.edit.addAssignment(task.UID, resourceUID, units);
+        this.fill(task.UID);
+    }
+
+    BtnAssignDel_Click() {
+        const assignment = this.Assignments.Index >= 0
+                         ? this.assignRows[this.Assignments.Index] : null;
+        if (!assignment) return;
+        this.edit.removeAssignment(assignment.UID);
+        this.fill(this.selectedUID);
     }
 
     selectedTask() {
@@ -315,7 +457,12 @@ class MainForm extends Form {
                          this.BtnLinkAdd])
             w.Enabled = has;
 
+        for (const w of [this.CmbAssignRes, this.TxtAssignUnits,
+                         this.BtnAssignAdd])
+            w.Enabled = has;
+
         this.fillLinks(has ? task : null);
+        this.fillAssignments(has ? task : null);
     }
 
     /* The links of the selected task, as the panel's own table: `linkRows`
@@ -1262,6 +1409,18 @@ class MainForm extends Form {
             ok = order() === was && ok;
             print(`edit reorder ${was} -> ${order()}`);
 
+            /* Resources and assignments through the commands the panel calls:
+             * a new resource, a task assigned to it, and the work and cost
+             * that follow from the task's own duration. */
+            const res = edit.addResource({ Name: "Ana", Type: 1, MaxUnits: 1,
+                                           StandardRate: 50, CalendarUID: 1 });
+            const asg = edit.addAssignment(2, res.UID, 1);
+            ok = res.UID === 1 && res.Name === "Ana" && asg &&
+                 asg.TaskUID === 2 && asg.Work === "PT8H0M0S" &&
+                 assignmentCost(edit.holder.project, asg) === 400 && ok;
+            print(`edit resource uid=${res.UID} assignment work=${asg.Work} ` +
+                  `cost=${assignmentCost(edit.holder.project, asg)}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1290,7 +1449,10 @@ class MainForm extends Form {
                  saved[2].Links.length === 1 &&
                  saved[2].ConstraintType === 4 &&
                  saved[2].Estimated === true &&
-                 saved[2].Notes === "Edited in the harness" && ok;
+                 saved[2].Notes === "Edited in the harness" &&
+                 second.project.Resources.length === 1 &&
+                 second.project.Assignments.length === 1 &&
+                 second.project.Assignments[0].Work === "PT8H0M0S" && ok;
 
             print(`check-edit ${name}: ${ok ? "ok" : "FAILED"}`);
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
@@ -1312,11 +1474,13 @@ class MainForm extends Form {
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActRecalc", "ActSettings", "BtnApply", "BtnLinkAdd",
-                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout"]
+                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
+                        "BtnResNew", "BtnResApply", "BtnResDel",
+                        "BtnAssignAdd", "BtnAssignDel"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
-                     "Links_Select", "Gantt_MouseDown", "Gantt_MouseMove",
-                     "Gantt_MouseUp"]);
+                     "Links_Select", "Resources_Select", "Assignments_Select",
+                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp"]);
 
         let ok = true;
         for (const member of wanted) {
@@ -1419,6 +1583,12 @@ const SCALES = [
     { dayW: 10, step: 7 },       // Week
     { dayW: 3,  step: 30 },      // Month
 ];
+
+/* A number typed in a field, with the comma a keyboard may give it; NaN when
+ * it is not one, which the caller refuses. */
+function resourceNumber(text) {
+    return Number(String(text || "").replace(",", "."));
+}
 
 /* "2026-10-01T17:00:00" reads better as "2026-10-01 17:00" in a row. */
 function shortDate(when) {

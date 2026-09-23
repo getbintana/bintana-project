@@ -130,6 +130,106 @@ class Edit {
         return true;
     }
 
+    /* --- resources and assignments ------------------------------------- */
+
+    resource(uid) {
+        for (const resource of this.holder.project.Resources)
+            if (resource.UID === uid) return resource;
+        return null;
+    }
+
+    assignment(uid) {
+        for (const assignment of this.holder.project.Assignments)
+            if (assignment.UID === uid) return assignment;
+        return null;
+    }
+
+    /* A resource the program chooses the UID for: the file's own numbering is
+     * Project's, and a new one goes after the last. */
+    addResource(values) {
+        const project = this.holder.project;
+        let maxUID = 0;
+        for (const resource of project.Resources)
+            if (resource.UID > maxUID) maxUID = resource.UID;
+
+        const resource = new MspResource(values);
+        resource.UID = maxUID + 1;
+        resource.ID = maxUID + 1;
+        project.Resources.push(resource);
+        this.commit();
+        return resource;
+    }
+
+    setResource(uid, values) {
+        const resource = this.resource(uid);
+        if (!resource) return false;
+
+        let changed = false;
+        for (const name in values) {
+            if (resource[name] !== values[name]) changed = true;
+            resource[name] = values[name];
+        }
+        if (!changed) return false;
+
+        this.commit();
+        return true;
+    }
+
+    /* The resource and the assignments that named it: an assignment to a
+     * resource that is gone is a dangling reference. */
+    removeResource(uid) {
+        const project = this.holder.project;
+        const kept = project.Resources.filter((r) => r.UID !== uid);
+        if (kept.length === project.Resources.length) return false;
+
+        project.Resources = kept;
+        project.Assignments = project.Assignments.filter(
+            (a) => a.ResourceUID !== uid);
+        this.commit();
+        return true;
+    }
+
+    /* A task and a resource, joined. One assignment per pair: assigning the
+     * same resource again updates the units instead of adding a second. The
+     * work a work resource carries is the task's duration at those units;
+     * a material is measured by the units and has none. */
+    addAssignment(taskUID, resourceUID, units) {
+        const project  = this.holder.project;
+        const task     = this.task(taskUID);
+        const resource = this.resource(resourceUID);
+        if (!task || !resource) return null;
+
+        let maxUID = 0;
+        for (const assignment of project.Assignments)
+            if (assignment.UID > maxUID) maxUID = assignment.UID;
+
+        const minutes = mspdiMinutes(task.Duration) || 0;
+        const work = resource.Type === 0 ? "PT0H0M0S"
+                   : mspdiDuration(Math.round(minutes * units));
+        const assignment = new MspAssignment({
+            UID: maxUID + 1, TaskUID: taskUID, ResourceUID: resourceUID,
+            Units: units, Work: work, RegularWork: work,
+            Start: task.Start, Finish: task.Finish,
+        });
+
+        const kept = project.Assignments.filter(
+            (a) => !(a.TaskUID === taskUID && a.ResourceUID === resourceUID));
+        kept.push(assignment);
+        project.Assignments = kept;
+        this.commit();
+        return assignment;
+    }
+
+    removeAssignment(uid) {
+        const project = this.holder.project;
+        const kept = project.Assignments.filter((a) => a.UID !== uid);
+        if (kept.length === project.Assignments.length) return false;
+
+        project.Assignments = kept;
+        this.commit();
+        return true;
+    }
+
     /* A task after `afterUID`'s whole subtree, a sibling of it; without one,
      * at the end, level 1. It carries no dates: an invented start would be a
      * lie, and the form is where they are typed. */

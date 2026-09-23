@@ -220,6 +220,54 @@ msgstr "Predecesoras"
 msgid "Resources"
 msgstr "Recursos"
 
+msgid "No resources in this file"
+msgstr "Sin recursos en este archivo"
+
+msgid "Max units"
+msgstr "Unidades máx"
+
+msgid "Cost per use"
+msgstr "Costo por uso"
+
+msgid "New"
+msgstr "Nuevo"
+
+msgid "Assignments"
+msgstr "Asignaciones"
+
+msgid "Work"
+msgstr "Trabajo"
+
+msgid "Material"
+msgstr "Material"
+
+msgid "Resource"
+msgstr "Recurso"
+
+msgid "Units"
+msgstr "Unidades"
+
+msgid "Assign"
+msgstr "Asignar"
+
+msgid "Remove"
+msgstr "Quitar"
+
+msgid "Delete resource"
+msgstr "Eliminar recurso"
+
+msgid "Delete \"{0}\" and its assignments?"
+msgstr "¿Eliminar \"{0}\" y sus asignaciones?"
+
+msgid "Add a resource first."
+msgstr "Agregá un recurso primero."
+
+msgid "Units must be a positive number."
+msgstr "Las unidades deben ser un número positivo."
+
+msgid "A resource needs a name, and its numbers must be numbers."
+msgstr "Un recurso necesita un nombre, y sus números deben ser números."
+
 msgid "Max"
 msgstr "Máx"
 

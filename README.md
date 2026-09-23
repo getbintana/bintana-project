@@ -49,10 +49,14 @@ deadline or notes, and Apply writes them as one command -- one undo. **Add** put
 subtree, **Delete** takes that subtree and every link into it, and
 **Indent**/**Outdent** move a task a level, recomputing which tasks are
 summaries, and **Up**/**Down** swap it with its sibling, subtree and all.
-**Recent** drops the last eight files. **Resources** lists the plan's
+**Recent** drops the last eight files. The **Resources** tab lists the plan's
 resources with their rate and the cost of their assignments -- a work resource
 by the hours, a material by the units, the file's own `Cost` where it wrote
-one -- read-only for now: editing an assignment is the next step. **Predecessors** lists the selected task's links: pick a task, a
+one -- and edits them: **New**/**Apply**/**Delete** for a resource (deleting
+one takes its assignments with it), and below, the selected task's
+assignments, where **Assign** joins a resource at some units and computes the
+work from the task's duration. One resource per task is one assignment:
+assigning it again updates the units. **Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
 schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place

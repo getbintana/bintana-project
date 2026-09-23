@@ -962,9 +962,276 @@
                                     "Alignment": "Right"
                                   }
                                 ],
-                                "Height": 100,
+                                "Height": 110,
                                 "HAlign": "Fill"
                               }
+                            },
+                            {
+                              "type": "Label",
+                              "name": "LblResEmpty",
+                              "properties": {
+                                "Text": "No resources in this file",
+                                "Style": "dim-label",
+                                "Visible": false,
+                                "HAlign": "Start"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "name": "ResFields",
+                              "properties": {
+                                "Columns": 2,
+                                "RowSpacing": 4,
+                                "ColumnSpacing": 8
+                              },
+                              "children": [
+                                {
+                                  "type": "Label",
+                                  "name": "LblResName",
+                                  "properties": {
+                                    "Text": "Name",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtResName",
+                                  "properties": {
+                                    "Placeholder": "Ana",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblResType",
+                                  "properties": {
+                                    "Text": "Type",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbResType",
+                                  "properties": {
+                                    "Items": [
+                                      "Material",
+                                      "Work",
+                                      "Cost"
+                                    ],
+                                    "Index": 1,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblResMax",
+                                  "properties": {
+                                    "Text": "Max units",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtResMax",
+                                  "properties": {
+                                    "Placeholder": "1",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblResRate",
+                                  "properties": {
+                                    "Text": "Rate",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtResRate",
+                                  "properties": {
+                                    "Placeholder": "50",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblResCostUse",
+                                  "properties": {
+                                    "Text": "Cost per use",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtResCostUse",
+                                  "properties": {
+                                    "Placeholder": "0",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Panel",
+                              "name": "ResButtons",
+                              "properties": {
+                                "Arrangement": "Horizontal",
+                                "Spacing": 6
+                              },
+                              "children": [
+                                {
+                                  "type": "Button",
+                                  "name": "BtnResNew",
+                                  "properties": {
+                                    "Text": "New",
+                                    "Icon": "document-new-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnResApply",
+                                  "properties": {
+                                    "Text": "Apply",
+                                    "Icon": "document-save-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnResDel",
+                                  "properties": {
+                                    "Text": "Delete",
+                                    "Icon": "user-trash-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Separator",
+                              "name": "RuleRes",
+                              "properties": {}
+                            },
+                            {
+                              "type": "Label",
+                              "name": "LblAssigns",
+                              "properties": {
+                                "Text": "Assignments",
+                                "Style": "heading",
+                                "HAlign": "Fill"
+                              }
+                            },
+                            {
+                              "type": "TableView",
+                              "name": "Assignments",
+                              "properties": {
+                                "Columns": [
+                                  {
+                                    "Text": "Resource",
+                                    "Width": 0
+                                  },
+                                  {
+                                    "Text": "Units",
+                                    "Width": 56,
+                                    "Alignment": "Right"
+                                  },
+                                  {
+                                    "Text": "Work",
+                                    "Width": 70,
+                                    "Alignment": "Right"
+                                  },
+                                  {
+                                    "Text": "Cost",
+                                    "Width": 70,
+                                    "Alignment": "Right"
+                                  }
+                                ],
+                                "Height": 90,
+                                "HAlign": "Fill"
+                              }
+                            },
+                            {
+                              "type": "Grid",
+                              "name": "AssignFields",
+                              "properties": {
+                                "Columns": 2,
+                                "RowSpacing": 4,
+                                "ColumnSpacing": 8
+                              },
+                              "children": [
+                                {
+                                  "type": "Label",
+                                  "name": "LblAssignRes",
+                                  "properties": {
+                                    "Text": "Resource",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbAssignRes",
+                                  "properties": {
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblAssignUnits",
+                                  "properties": {
+                                    "Text": "Units",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtAssignUnits",
+                                  "properties": {
+                                    "Placeholder": "1",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Panel",
+                              "name": "AssignButtons",
+                              "properties": {
+                                "Arrangement": "Horizontal",
+                                "Spacing": 6
+                              },
+                              "children": [
+                                {
+                                  "type": "Button",
+                                  "name": "BtnAssignAdd",
+                                  "properties": {
+                                    "Text": "Assign",
+                                    "Icon": "list-add-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnAssignDel",
+                                  "properties": {
+                                    "Text": "Remove",
+                                    "Icon": "list-remove-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                }
+                              ]
                             }
                           ]
                         }

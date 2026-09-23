@@ -194,4 +194,27 @@
       </PredecessorLink>
     </Task>
   </Tasks>
+  <Resources>
+    <Resource>
+      <UID>1</UID>
+      <ID>1</ID>
+      <Name>Ana</Name>
+      <Type>1</Type>
+      <MaxUnits>1</MaxUnits>
+      <StandardRate>50</StandardRate>
+      <CalendarUID>1</CalendarUID>
+    </Resource>
+  </Resources>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>1</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <Start>2026-09-03T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+  </Assignments>
 </Project>

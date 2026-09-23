@@ -122,16 +122,17 @@ afirma los tres gestos con la geometría del propio gráfico.
 
 ### 5 — Recursos y costos
 
-**A medias** (2026-09-22): recursos (tipo, unidades máximas, tasas estándar y
-extra, costo por uso, calendario) y asignaciones (unidades, trabajo, costo)
-modelados; el costo se calcula -- trabajo por la tasa en un recurso work,
-unidades por la tasa en uno material, más el costo por uso, y el `Cost` del
-archivo manda si lo trae -- y el panel muestra la tabla de recursos con su
-total. `check-cpm` afirma los cuatro casos.
+**Hecha en lo esencial** (2026-09-22): recursos (tipo, unidades máximas, tasas
+estándar y extra, costo por uso, calendario) y asignaciones (unidades, trabajo,
+costo) modelados y editables desde la pestaña Recursos: alta/edición/baja de
+recurso (la baja se lleva sus asignaciones), y la asignación de un recurso a la
+tarea seleccionada, con el trabajo calculado desde la duración. El costo se
+calcula -- trabajo por la tasa en un recurso work, unidades por la tasa en uno
+material, más el costo por uso, y el `Cost` del archivo manda si lo trae -- y
+`check-cpm` afirma los cuatro casos.
 
-- Falta: editar asignaciones (alta/baja y unidades), tablas de tasas por fecha,
-  contornos de trabajo y el costo a nivel tarea/proyecto. Nivelación queda
-  afuera por ahora.
+- Falta: tablas de tasas por fecha, contornos de trabajo y el costo a nivel
+  tarea/proyecto. Nivelación queda afuera por ahora.
 
 ### 6 — Distribución
 
