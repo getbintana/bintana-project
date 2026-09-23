@@ -62,10 +62,12 @@ class WorkCalendar {
         for (const cal of project.Calendars) byUID[cal.UID] = cal;
 
         /* Base first, derived over it: a calendar overrides what it declares
-         * and inherits the rest. A file with no calendar at all gets the
-         * schema's own day: Monday to Friday, 08:00 to 17:00. */
+         * and inherits the rest. The calendar is the task's own `CalendarUID`
+         * when the file named one -- Project writes -1 for "the project's",
+         * and that is the default here too -- and a file with no calendar at
+         * all gets the schema's own day: Monday to Friday, 08:00 to 17:00. */
         const chain = [];
-        let cal = byUID[uid] || null, guard = 0;
+        let cal = byUID[uid] || byUID[project.CalendarUID] || null, guard = 0;
         while (cal && guard++ < 16) {
             chain.unshift(cal);
             cal = cal.BaseCalendarUID ? (byUID[cal.BaseCalendarUID] || null) : null;
@@ -318,8 +320,9 @@ function recalculate(project) {
 
     const cache = {};
     const workOf = (uid) => {
-        const key = String(uid || project.CalendarUID || 0);
-        if (!cache[key]) cache[key] = new WorkCalendar(project, uid || project.CalendarUID);
+        const at  = uid > 0 ? uid : project.CalendarUID;
+        const key = String(at || 0);
+        if (!cache[key]) cache[key] = new WorkCalendar(project, at);
         return cache[key];
     };
 
@@ -331,12 +334,42 @@ function recalculate(project) {
         assignmentsOf[assignment.TaskUID].push(assignment);
     }
 
+    /* A manually scheduled summary pins its branch: an unlinked descendant
+     * starts no earlier than the latest manual summary above it. Project
+     * keeps those dates and schedules the children inside them. */
+    const floorOf = {};
+    for (let i = 0; i < tasks.length; i++) {
+        const task = tasks[i];
+        let level = task.OutlineLevel, floor = null;
+        for (let k = i - 1; k >= 0 && level > 0; k--) {
+            const up = tasks[k];
+            if (up.OutlineLevel >= level) continue;
+            level = up.OutlineLevel;
+            if (!up.Summary || !up.Manual) continue;
+            const at = whenMs(up.Start);
+            if (at !== null && (floor === null || at > floor)) floor = at;
+        }
+        if (floor !== null) floorOf[task.UID] = floor;
+    }
+
     const done = {};
     let placed = 0, skipped = 0, notMet = 0, guard = 0;
     while (placed + skipped < roots && guard++ <= tasks.length + 1) {
         let moved = false;
         for (const task of tasks) {
             if (task.Summary || done[task.UID]) continue;
+
+            /* A manually scheduled task keeps the dates it was given --
+             * Project does not move it either, and warns instead -- and its
+             * successors link to those dates. So does a task that finished:
+             * history is not rescheduled, and the actual dates are what the
+             * successors link to. */
+            if (task.Manual || whenMs(task.ActualFinish) !== null) {
+                done[task.UID] = true;
+                skipped++;
+                moved = true;
+                continue;
+            }
 
             /* ALAP is what Project places with the backward pass; here the
              * task keeps the dates the file wrote, and its successors link to
@@ -416,7 +449,10 @@ function recalculate(project) {
                 }
             }
 
-            if (startFloor === null && finishFloor === null) startFloor = start;
+            if (startFloor === null && finishFloor === null) {
+                const floor = floorOf[task.UID];
+                startFloor = floor !== undefined && floor > start ? floor : start;
+            }
 
             if (finishFloor !== null) {
                 const implied = startBefore(finishFloor);
@@ -463,7 +499,11 @@ function recalculate(project) {
      * Summaries keep the flag the file gave them: Project derives it.
      */
     const scheduled = tasks.filter((t) => !t.Summary && done[t.UID]);
-    let finish = null;
+    /* Where the backward pass starts: the project's own finish -- which is
+     * what Project uses, and it includes the manual tasks that are not
+     * scheduled -- and the latest earliest finish as the fallback for a file
+     * that does not say. */
+    let finish = whenMs(project.FinishDate);
     for (const task of scheduled) {
         const f = whenMs(task.Finish);
         if (f !== null && (finish === null || f > finish)) finish = f;
@@ -541,9 +581,10 @@ function recalculate(project) {
         }
     }
 
-    /* A summary is the span of the deeper tasks that follow it. */
+    /* A summary is the span of the deeper tasks that follow it -- unless it
+     * is manually scheduled, where the dates are the user's too. */
     for (let i = 0; i < tasks.length; i++) {
-        if (!tasks[i].Summary) continue;
+        if (!tasks[i].Summary || tasks[i].Manual) continue;
         let from = null, to = null;
         for (let k = i + 1; k < tasks.length && tasks[k].OutlineLevel > tasks[i].OutlineLevel; k++) {
             const s = whenMs(tasks[k].Start), f = whenMs(tasks[k].Finish);

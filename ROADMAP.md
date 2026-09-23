@@ -100,10 +100,16 @@ es true y `MaxUnits` es 1, que es lo que la ausencia significa. El fixture
 `09-defaults` fija el lado que no se puede perder y `check-cpm` sube a 49
 aserciones con los defaults del shape.
 
-- **El oráculo es Project**: mismo archivo, comparar `Start`/`Finish`/slack por
-  tarea. La fidelidad se mide, no se argumenta. El corpus sintético no es
-  CPM-consistente (sus fechas están escritas a mano), así que la validación
-  real espera el archivo de Project.
+- **El oráculo es Project** (2026-09-23, primer archivo real): `urbano
+  v5.05052026.xml`, guardado por Project 16.0, medido con `check-oracle` --
+  compara tarea por tarea contra las fechas del archivo. Resultado: **42 de 42
+  tareas iguales** en inicio, fin y criticidad. Lo que hizo falta para llegar:
+  `CalendarUID=-1` es el calendario del proyecto (el motor caía al del
+  esquema), las tareas `Manual` y las terminadas (`ActualFinish`) conservan sus
+  fechas, un resumen manual fija el piso de su rama, y el pase atrás arranca
+  del `FinishDate` del proyecto. La ida y vuelta del archivo no pierde nada
+  (`problems` 5396 → 5337 al modelarse `Manual`) y `tests/FIDELITY.md` §D lo
+  detalla. Queda abrir la salida en Project para el visto bueno final.
 - **Constraints blandas** (2026-09-23): SNLT/FNLT no pinchan nada -- la tarea
   se planifica ASAP y `notMet` cuenta las fechas que pasó, leídas contra la
   fecha cruda (un feriado en el medio no corre la promesa); ALAP conserva las

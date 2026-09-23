@@ -101,6 +101,10 @@ class MainForm extends Form {
                 this.checkEdit();
                 return;
             }
+            if (Application.Arguments.indexOf("check-oracle") >= 0) {
+                this.checkOracle();
+                return;
+            }
             if (Application.Arguments.indexOf("check") >= 0) {
                 this.check();
                 return;
@@ -652,6 +656,7 @@ class MainForm extends Form {
         this.TxtDuration.Text = has
             ? durationText(task, this.holder.project) : "";
         this.ChkMilestone.Active    = has ? task.Milestone : false;
+        this.ChkManual.Active       = has ? task.Manual : false;
         this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
         this.ChkEstimated.Active    = has ? task.Estimated : false;
         this.CmbTaskType.Index = has
@@ -1005,6 +1010,7 @@ class MainForm extends Form {
             values.DurationFormat  = duration.format;
             values.Type            = Math.max(this.CmbTaskType.Index, 0);
             values.Milestone       = this.ChkMilestone.Active;
+            values.Manual          = this.ChkManual.Active;
             values.EffortDriven    = this.ChkEffortDriven.Active;
             values.Estimated       = this.ChkEstimated.Active;
             values.PercentComplete = Math.round(this.SpinPercent.Value);
@@ -1428,9 +1434,10 @@ class MainForm extends Form {
             const fresh = new MspProject({ Name: "Fresh" });
             ok = eq("fresh defaults",
                     [fresh.ScheduleFromStart, fresh.DefaultTaskType,
-                     new MspTask({}).Type, new MspLink({}).Type,
-                     new MspResource({}).MaxUnits].join(","),
-                    "true,1,-1,-1,1") && ok;
+                     fresh.WeekStartDay, new MspTask({}).Type,
+                     new MspTask({}).EffortDriven, new MspTask({}).Estimated,
+                     new MspLink({}).Type, new MspResource({}).MaxUnits].join(","),
+                    "true,1,-1,-1,false,true,-1,1") && ok;
             ok = eq("a missing link type is FS", linkKind(new MspLink({})), 1) && ok;
             ok = eq("a missing task type inherits",
                     taskKind(new MspProject({ DefaultTaskType: 0 }),
@@ -1512,6 +1519,22 @@ class MainForm extends Form {
                     "2026-09-09T13:00:00..2026-09-10T12:00:00") && ok;
             ok = eq("ALAP kept", c.Tasks[4].Start, "") && ok;
             ok = eq("nothing violated", constrained.notMet, 0) && ok;
+
+            /* A manually scheduled task keeps the dates the file gave it --
+             * a link does not move it -- and its successor is placed from
+             * those dates. */
+            const man = projectOf([
+                task(1, "PT8H0M0S", [], { Manual: true,
+                                          Start: "2026-09-16T08:00:00",
+                                          Finish: "2026-09-16T17:00:00" }),
+                task(2, "PT8H0M0S", [link(1, 1)]),
+            ]);
+            const manRun = recalculate(man);
+            ok = eq("manual kept", `${man.Tasks[0].Start}..${man.Tasks[0].Finish}`,
+                    "2026-09-16T08:00:00..2026-09-16T17:00:00") && ok;
+            ok = eq("manual successor", man.Tasks[1].Start,
+                    "2026-09-17T08:00:00") && ok;
+            ok = eq("manual skipped", manRun.skipped, 1) && ok;
 
             /* The soft constraints never pin: the task is scheduled as early
              * as its links allow, and the date it passed is a violation. */
@@ -1766,6 +1789,59 @@ class MainForm extends Form {
         }
     }
 
+    /*
+     * The oracle: the file's own dates against what the pass makes of them.
+     * Project wrote the file, so its Start/Finish/Critical are the answer --
+     * this prints the differences instead of arguing them. Manual tasks and
+     * summaries stay out: the first are the user's dates, the second are
+     * derived. Not a golden; a measurement, run by hand.
+     */
+    checkOracle() {
+        const args = Application.Arguments;
+        const i    = args.indexOf("check-oracle");
+        const path = this.resolve(args[i + 1] || "");
+        this.load(path);
+
+        const project = this.holder.project;
+        const kept = [];
+        for (const task of project.Tasks) {
+            if (task.IsNull || task.Summary || task.Manual) continue;
+            if (whenMs(task.Start) === null || whenMs(task.Finish) === null) continue;
+            kept.push({ uid: task.UID, name: task.Name, start: task.Start,
+                        finish: task.Finish, critical: !!task.Critical });
+        }
+
+        const run = recalculate(project);
+        const days = (a, b) => a === null || b === null
+                             ? null : Math.round((b - a) / DAY_MS);
+
+        let same = 0, starts = 0, finishes = 0, criticals = 0;
+        for (const was of kept) {
+            const task = taskOf(project, was.uid);
+            if (!task) continue;
+            const ds = days(whenMs(was.start), whenMs(task.Start));
+            const df = days(whenMs(was.finish), whenMs(task.Finish));
+            if (ds === 0 && df === 0) same++;
+            if (ds !== 0) starts++;
+            if (df !== 0) finishes++;
+            if (was.critical !== !!task.Critical) {
+                criticals++;
+                print(`oracle ${task.UID} ${was.name}: critical ` +
+                      `${was.critical} -> ${!!task.Critical}`);
+            }
+            if (ds !== 0 || df !== 0)
+                print(`oracle ${task.UID} ${was.name}: ` +
+                      `${shortDate(was.start)}..${shortDate(was.finish)} -> ` +
+                      `${shortDate(task.Start)}..${shortDate(task.Finish)} ` +
+                      `(${ds}d/${df}d)`);
+        }
+        print(`oracle ${File.Name(path)}: ${kept.length} tasks, ` +
+              `${run.placed} placed, ${run.skipped} kept, ${same} same, ` +
+              `${starts} starts off, ${finishes} finishes off, ` +
+              `${criticals} critical off`);
+        Application.Quit(0);
+    }
+
     checkCorpus() {
         const args = Application.Arguments;
         const i    = args.indexOf("check-corpus");
@@ -1877,15 +1953,16 @@ class MainForm extends Form {
                   `start=${task.Start} percent=${task.PercentComplete} ` +
                   `actual=${task.ActualStart}`);
 
-            /* The forward pass as one undo: UID 1 is 2d from the project
-             * start and UID 2 follows it. Before the indent, because a
-             * summary is not scheduled -- it is the span of its children. */
+            /* The forward pass as one undo: UID 1 already finished and keeps
+             * its actual dates, and UID 2 is placed after them. Before the
+             * indent, because a summary is not scheduled -- it is the span of
+             * its children. */
             const recalc = edit.recalculate();
-            ok = recalc.placed === 2 && recalc.skipped === 0 &&
-                 edit.task(1).Start === "2026-09-01T08:00:00" &&
-                 edit.task(1).Finish === "2026-09-02T17:00:00" &&
+            ok = recalc.placed === 1 && recalc.skipped === 1 &&
+                 edit.task(1).Start === "2026-09-01T09:00" &&
+                 edit.task(1).Finish === "2026-09-02T17:00" &&
                  edit.task(2).Start === "2026-09-03T08:00:00" && ok;
-            print(`edit recalc placed=${recalc.placed} ` +
+            print(`edit recalc placed=${recalc.placed} skipped=${recalc.skipped} ` +
                   `A=${edit.task(1).Start}..${edit.task(1).Finish} ` +
                   `B=${edit.task(2).Start}..${edit.task(2).Finish}`);
             edit.undo();
@@ -2298,10 +2375,12 @@ function parseMoment(text) {
  * "2d", "8h", "30m", "1mo", "2ed" -- elapsed -- or a bare number in `unit`
  * (the setting) or in the task's own unit. A unit written wins, then the
  * setting, and the format moves with whichever was said; a bare number with
- * neither keeps the format it had, estimated months included.
+ * neither keeps the format it had, estimated months included. A trailing `?`
+ * -- what the field itself writes on an estimated duration -- is read and
+ * left to the Estimated checkbox, which is the editor for that flag.
  */
 function parseDuration(text, format, unit, project) {
-    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*$/.exec(String(text || ""));
+    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*\??\s*$/.exec(String(text || ""));
     if (!m) return null;
 
     const typed = m[3] ? m[2] + m[3] : "";

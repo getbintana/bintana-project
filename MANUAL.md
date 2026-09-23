@@ -31,8 +31,9 @@ coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro.
 
 Seleccioná una fila y usá el panel de la derecha. La pestaña **Tarea** tiene
 nombre, inicio, fin, duración (`2d`, `8h`, `30m`, `2ed` para elapsed, o un
-número en la unidad de la tarea), avance, hito, condicionada por esfuerzo,
-estimada, tipo de tarea, restricción con su fecha, fecha límite, notas y el
+número en la unidad de la tarea), avance, hito, programada manualmente,
+condicionada por esfuerzo, estimada, tipo de tarea, restricción con su fecha,
+fecha límite, notas y el
 valor de un campo personalizado del archivo. **Aplicar** escribe todo junto:
 es un solo Deshacer.
 
@@ -80,6 +81,10 @@ cuántas restricciones incumplidas.
   mismo número la reemplaza sin tocar las demás.
 - El **avance** mueve las fechas reales: arriba de cero hay inicio real, al
   cien por ciento hay fin real, y en cero no hay ninguno.
+- Las tareas **terminadas** (con fin real) y las **programadas manualmente**
+  (el tilde del panel) no se mueven al recalcular: sus fechas son las que
+  tienen, y las sucesoras se enlazan a ellas. Un resumen manual fija además el
+  piso de su rama.
 - En Configuración podés pedir que se recalcule solo después de cada cambio.
 
 ## Recursos y costos

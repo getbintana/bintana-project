@@ -763,6 +763,15 @@
                                   }
                                 },
                                 {
+                                  "type": "CheckButton",
+                                  "name": "ChkManual",
+                                  "properties": {
+                                    "Text": "Manually scheduled",
+                                    "ColumnSpan": 2,
+                                    "HAlign": "Start"
+                                  }
+                                },
+                                {
                                   "type": "Label",
                                   "name": "LblTaskType",
                                   "properties": {

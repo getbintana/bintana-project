@@ -94,8 +94,19 @@ class MspTask extends Record {
         Duration:         Field.Text(),
         DurationFormat:   Field.Int(),
         Work:             Field.Text(),
+        /* Effort-driven has no default in the schema; Project writes it in
+         * every task and a file that omits it reads as false, which is what a
+         * reader that does not know the file assumes. */
         EffortDriven:     Field.Bool(),
-        Estimated:        Field.Bool(),
+        /* Estimated is the one flag whose absence reads as true -- Project's
+         * own default for a new task -- so a file that wrote 0 (not
+         * estimated) keeps it and the `true` Project always writes is the
+         * omission. */
+        Estimated:        Field.Bool(true),
+        /* Manually scheduled: its dates are the user's and the pass leaves
+         * them alone. Absent means automatic, which is what a file older than
+         * the flag can only mean. */
+        Manual:           Field.Bool(),
         Milestone:        Field.Bool(),
         Summary:          Field.Bool(),
         Critical:         Field.Bool(),
@@ -274,7 +285,9 @@ class MspProject extends Record {
         DefaultTaskType:   Field.Int({ def: 1 }),
         DurationFormat:    Field.Int(),
         WorkFormat:        Field.Int(),
-        WeekStartDay:      Field.Int(),
+        /* No default in the schema and Project writes its 0 (Sunday): a
+         * present one is kept, an absent one reads as 0 at the call site. */
+        WeekStartDay:      Field.Int({ def: -1 }),
         FieldDefs:         Field.List(MspFieldDef, { in: "ExtendedAttributes" }),
         Calendars:         Field.List(MspCalendar, { in: "Calendars" }),
         Tasks:             Field.List(MspTask, { in: "Tasks" }),

@@ -99,10 +99,38 @@ líneas base, `SecondaryPID`/`AutoRollDown`/`Ltuid` de los campos extendidos y
 el `CreateDate` de la tarea resumen. Los `problem-in` y `problem-out` son
 idénticos en los diez.
 
+## D. El oráculo: un archivo de Project (2026-09-23)
+
+El primer archivo real: `urbano v5.05052026.xml`, guardado por Project 16.0
+(326 KB, 59 `Task` -- 49 tareas y 10 nulas --, 45 `PredecessorLink`, 49
+asignaciones al recurso nulo, 185 `TimephasedData`, sin baselines). No se
+versiona: es de un tercero. Se copió a `/tmp` y se midió con `check` y con
+`check-oracle`.
+
+- **Ida y vuelta**: `problems` 5396 → 5337 (los 59 `Manual` dejan de ser un
+  problema al modelarse), `touched` 843, y ningún elemento perdido: las 752
+  bajas son defaults (los ceros que Project escribe en cada tarea) y los 91
+  cambios de valor son la forma booleana (`1`/`0` de Project → `true`/`false`
+  del esquema). `ScheduleFromStart=1` se omite porque el XSD lo declara
+  `true`; los `Estimated=0` y el `WeekStartDay=0` ahora se conservan.
+- **CPM**: `check-oracle` compara tarea por tarea contra las fechas que
+  escribió Project: **42 de 42 iguales** en inicio, fin y criticidad. Las
+  reglas que hizo falta agregar, todas verificadas contra el archivo:
+  - `CalendarUID=-1` en una tarea es el calendario del proyecto; el motor caía
+    al calendario del esquema y corría todas las horas (09:00-13:00 y
+    15:00-19:00 en el archivo).
+  - Las tareas `Manual` conservan sus fechas, y un resumen manual fija el piso
+    de su rama.
+  - Una tarea terminada (`ActualFinish`) no se reprograma: es historia.
+  - El pase atrás arranca del `FinishDate` del proyecto y no del último fin
+    programado (la tarea manual final corre el fin del plan).
+- Queda abierto: los `EffortDriven=0` (59) todavía se omiten -- no hay default
+  en el XSD y MPXJ lee la ausencia como falso, pero Project los escribe
+  siempre; conviene confirmarlo abriendo la salida en Project.
+
 ## Qué sigue
 
-1. Conseguir el `Save As → XML` real y abrirlo en Project: eso convierte estos
-   fixtures en dorado y contesta B.
-2. Medir el CPM de los cuatro tipos de vínculo contra Project: la numeración
-   del motor ya es la del XSD (0=FF, 1=FS, 2=SF, 3=SS) y `check-cpm` afirma las
-   fechas calculadas a mano, pero el oráculo es Project.
+1. Abrir en Project el XML que sale de acá (el archivo real ya está): contesta
+   B, el `EffortDriven` omitido y convierte el corpus en dorado.
+2. Medir el CPM de los cuatro tipos de vínculo contra Project: el archivo real
+   trae 45 vínculos, casi todos FS; los otros tipos siguen calculados a mano.

@@ -217,6 +217,9 @@ msgstr "Hito"
 msgid "Effort driven"
 msgstr "Condicionada por esfuerzo"
 
+msgid "Manually scheduled"
+msgstr "Programada manualmente"
+
 msgid "Estimated"
 msgstr "Estimada"
 
