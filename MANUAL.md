@@ -124,6 +124,9 @@ fiscal, respetar restricciones, valor ganado y demás). Cada uno es un solo
 Deshacer. Abajo, **Costo total** es lo que suman las asignaciones del plan y
 **Línea base** elige cuál se guarda y se dibuja.
 
+Los tres diálogos están también en el menú **Proyecto**; **Calendario…** abre
+el elegido en la lista, o el del proyecto si no hay ninguno elegido.
+
 **Editar…** abre el calendario elegido: los días laborables con sus tramos
 como texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y
 las excepciones, que es como se cargan los feriados.

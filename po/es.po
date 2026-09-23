@@ -828,3 +828,12 @@ msgstr "Fecha actual"
 
 msgid "The project's numbers must be numbers."
 msgstr "Los números del proyecto deben ser números."
+
+msgid "Calendar…"
+msgstr "Calendario…"
+
+msgid "_Project"
+msgstr "_Proyecto"
+
+msgid "There are no calendars."
+msgstr "No hay calendarios."

@@ -448,7 +448,7 @@ class MainForm extends Form {
     /* The project's data -- the document's metadata, the scheduling settings
      * and the currency -- in its own dialog; the values come back whole and
      * are one undo like any edit. */
-    BtnProjData_Click() {
+    ActProjData_Click() {
         ProjectForm.open(this.holder.project, (values) => {
             if (!this.edit.setProject(values)) return;
             this.fill(this.selectedUID);
@@ -459,7 +459,7 @@ class MainForm extends Form {
     /* The file's own preferences -- the defaults for new tasks, the
      * calculation switches, the earned-value method -- in their dialog and
      * as one undo, like any other edit. */
-    BtnProjOptions_Click() {
+    ActProjOptions_Click() {
         OptionsForm.open(this.holder.project, (values) => {
             if (!this.edit.setProject(values)) return;
             this.fill(this.selectedUID);
@@ -475,14 +475,29 @@ class MainForm extends Form {
 
     /* The calendar's own dialog: it hands the whole shape back, and the edit
      * is one undo like any other. */
-    BtnCalEdit_Click() {
-        const calendar = this.selectedCalUID === null
-                       ? null : this.edit.calendar(this.selectedCalUID);
+    openCalendar(uid) {
+        const calendar = uid === null ? null : this.edit.calendar(uid);
         if (!calendar) return;
         CalendarForm.open(calendar, (values) => {
             this.edit.setCalendar(calendar.UID, values);
             this.fill(this.selectedUID);
         });
+    }
+
+    BtnCalEdit_Click() {
+        if (this.selectedCalUID !== null) this.openCalendar(this.selectedCalUID);
+    }
+
+    /* From the menu: the calendar picked in the list, or the project's own
+     * when nothing is picked. */
+    ActCalendar_Click() {
+        let uid = this.selectedCalUID;
+        if (uid === null && this.calRows.length) uid = this.calRows[0].UID;
+        if (uid === null) {
+            Message.Warning(Locale.Text("There are no calendars."));
+            return;
+        }
+        this.openCalendar(uid);
     }
 
     /* A resource picked: the editor shows it, so Apply updates it. */
@@ -2229,7 +2244,7 @@ class MainForm extends Form {
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
-                        "BtnAssignAdd", "BtnAssignDel", "BtnProjData", "BtnProjOptions",
+                        "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar",
                         "BtnCalEdit", "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",

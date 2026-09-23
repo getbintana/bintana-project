@@ -111,6 +111,21 @@
       "name": "ActReport",
       "text": "Report\u2026",
       "icon": "x-office-document-symbolic"
+    },
+    {
+      "name": "ActProjData",
+      "text": "Project data\u2026",
+      "icon": "document-properties-symbolic"
+    },
+    {
+      "name": "ActProjOptions",
+      "text": "Project options\u2026",
+      "icon": "preferences-system-symbolic"
+    },
+    {
+      "name": "ActCalendar",
+      "text": "Calendar\u2026",
+      "icon": "x-office-calendar-symbolic"
     }
   ],
   "menus": [
@@ -208,6 +223,24 @@
           "name": "MnuLog",
           "text": "Show log",
           "check": true
+        }
+      ]
+    },
+    {
+      "name": "MnuProject",
+      "text": "_Project",
+      "children": [
+        {
+          "action": "ActProjData"
+        },
+        {
+          "action": "ActProjOptions"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActCalendar"
         }
       ]
     },
@@ -1398,7 +1431,8 @@
                                     "Text": "Project data\u2026",
                                     "Icon": "document-properties-symbolic",
                                     "HExpand": true,
-                                    "HAlign": "Fill"
+                                    "HAlign": "Fill",
+                                    "Action": "ActProjData"
                                   }
                                 },
                                 {
@@ -1408,7 +1442,8 @@
                                     "Text": "Project options\u2026",
                                     "Icon": "preferences-system-symbolic",
                                     "HExpand": true,
-                                    "HAlign": "Fill"
+                                    "HAlign": "Fill",
+                                    "Action": "ActProjOptions"
                                   }
                                 }
                               ]
