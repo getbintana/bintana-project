@@ -131,6 +131,7 @@ versiona: es de un tercero. Se copió a `/tmp` y se midió con `check` y con
 ## Qué sigue
 
 1. Abrir en Project el XML que sale de acá (el archivo real ya está): contesta
-   B, el `EffortDriven` omitido y convierte el corpus en dorado.
+   B, el `EffortDriven` omitido y convierte el corpus en dorado. El checklist
+   está en `ACEPTACION.md` y la salida la prepara `tests/aceptacion.sh`.
 2. Medir el CPM de los cuatro tipos de vínculo contra Project: el archivo real
    trae 45 vínculos, casi todos FS; los otros tipos siguen calculados a mano.
