@@ -565,7 +565,8 @@
                         "Tabs": [
                           "Task",
                           "Links",
-                          "Resources"
+                          "Resources",
+                          "Project"
                         ]
                       },
                       "children": [
@@ -1232,6 +1233,274 @@
                                   }
                                 }
                               ]
+                            }
+                          ]
+                        },
+                        {
+                          "type": "Panel",
+                          "name": "PageProject",
+                          "properties": {
+                            "Arrangement": "Vertical",
+                            "Spacing": 8,
+                            "Padding": "8 0 8 0",
+                            "HAlign": "Fill"
+                          },
+                          "children": [
+                            {
+                              "type": "Grid",
+                              "name": "ProjectFields",
+                              "properties": {
+                                "Columns": 2,
+                                "RowSpacing": 4,
+                                "ColumnSpacing": 8
+                              },
+                              "children": [
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjStart",
+                                  "properties": {
+                                    "Text": "Start date",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjStart",
+                                  "properties": {
+                                    "Placeholder": "YYYY-MM-DD HH:MM",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjFinish",
+                                  "properties": {
+                                    "Text": "Finish",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjFinish",
+                                  "properties": {
+                                    "Placeholder": "",
+                                    "HExpand": true,
+                                    "HAlign": "Fill",
+                                    "ReadOnly": true
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjCalendar",
+                                  "properties": {
+                                    "Text": "Default calendar",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbProjCalendar",
+                                  "properties": {
+                                    "Items": [],
+                                    "Index": 0,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjMinutesDay",
+                                  "properties": {
+                                    "Text": "Minutes a day",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjMinutesDay",
+                                  "properties": {
+                                    "Placeholder": "480",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjMinutesWeek",
+                                  "properties": {
+                                    "Text": "Minutes a week",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjMinutesWeek",
+                                  "properties": {
+                                    "Placeholder": "2400",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjDaysMonth",
+                                  "properties": {
+                                    "Text": "Days a month",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjDaysMonth",
+                                  "properties": {
+                                    "Placeholder": "20",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjTaskType",
+                                  "properties": {
+                                    "Text": "Default task type",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbProjTaskType",
+                                  "properties": {
+                                    "Items": [
+                                      "Fixed units",
+                                      "Fixed duration",
+                                      "Fixed work"
+                                    ],
+                                    "Index": 1,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjWeekStart",
+                                  "properties": {
+                                    "Text": "Week starts",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbProjWeekStart",
+                                  "properties": {
+                                    "Items": [
+                                      "Sunday",
+                                      "Monday",
+                                      "Tuesday",
+                                      "Wednesday",
+                                      "Thursday",
+                                      "Friday",
+                                      "Saturday"
+                                    ],
+                                    "Index": 1,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjCurrencyCode",
+                                  "properties": {
+                                    "Text": "Currency code",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjCurrencyCode",
+                                  "properties": {
+                                    "Placeholder": "USD",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjCurrencySymbol",
+                                  "properties": {
+                                    "Text": "Currency symbol",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjCurrencySymbol",
+                                  "properties": {
+                                    "Placeholder": "$",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "Button",
+                              "name": "BtnProjApply",
+                              "properties": {
+                                "Text": "Apply",
+                                "Icon": "document-save-symbolic",
+                                "HExpand": true,
+                                "HAlign": "Fill"
+                              }
+                            },
+                            {
+                              "type": "Separator",
+                              "name": "RuleProj",
+                              "properties": {}
+                            },
+                            {
+                              "type": "Panel",
+                              "name": "CalHead",
+                              "properties": {
+                                "Arrangement": "Horizontal",
+                                "Spacing": 8
+                              },
+                              "children": [
+                                {
+                                  "type": "Label",
+                                  "name": "LblCalendars",
+                                  "properties": {
+                                    "Text": "Calendars",
+                                    "Style": "heading",
+                                    "HExpand": true,
+                                    "HAlign": "Start"
+                                  }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnCalEdit",
+                                  "properties": {
+                                    "Text": "Edit\u2026",
+                                    "Icon": "document-properties-symbolic",
+                                    "Width": 110
+                                  }
+                                }
+                              ]
+                            },
+                            {
+                              "type": "TableView",
+                              "name": "Calendars",
+                              "properties": {
+                                "Columns": [
+                                  {
+                                    "Text": "Name",
+                                    "Width": 0
+                                  },
+                                  {
+                                    "Text": "Base",
+                                    "Width": 120
+                                  }
+                                ],
+                                "Height": 70,
+                                "HAlign": "Fill"
+                              }
                             }
                           ]
                         }

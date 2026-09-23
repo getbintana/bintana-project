@@ -11,20 +11,22 @@ deliberado, nunca por accidente.
 
 Re-medido el mismo día tras el arreglo de la clave XML en default en Bintana:
 los `problems` in→out quedaron iguales en los ocho. Tercera medición, con el
-header de Project, los calendarios, `Estimated`/`EffortDriven` y los recursos y
-asignaciones modelados: los `problems` bajan (05 pierde el de `Estimated`, 03 y
-04 los de `OvertimeRate`/`ID`/`IsNull` de recurso), los defaults entran a la
-lista deliberada, y los counts siguen iguales in→out.
+header de Project (moneda incluida), los calendarios, `Estimated`/
+`EffortDriven` y los recursos y asignaciones modelados: los `problems` bajan
+(05 pierde el de `Estimated`, 03 y 04 los de `OvertimeRate`/`ID`/`IsNull` de
+recurso, y el header pierde `CurrencyDigits`/`CurrencySymbol`/`CurrencyCode`/
+`CurrencySymbolPosition`), los defaults entran a la lista deliberada, y los
+counts siguen iguales in→out.
 
 | Fixture | tasks | hitos | attrs | links | problems in→out | touched |
 |---|---|---|---|---|---|---|
-| 01-minimal | 2 | 0 | 0 | 1 | 14 → 14 | 10 |
-| 02-relations | 5 | 0 | 0 | 4 | 6 → 6 | 8 |
-| 03-resources-assignments | 2 | 0 | 0 | 0 | 8 → 8 | 9 |
-| 04-calendars | 1 | 0 | 0 | 0 | 6 → 6 | 8 |
-| 05-durations | 4 | 1 | 0 | 1 | 6 → 6 | 9 |
-| 06-timephased-custom | 1 | 0 | 1 | 0 | 15 → 15 | 4 |
-| 07-extended-attrs | 3 | 2 | 2 | 2 | 12 → 12 | 8 |
+| 01-minimal | 2 | 0 | 0 | 1 | 10 → 10 | 11 |
+| 02-relations | 5 | 0 | 0 | 4 | 2 → 2 | 9 |
+| 03-resources-assignments | 2 | 0 | 0 | 0 | 4 → 4 | 10 |
+| 04-calendars | 1 | 0 | 0 | 0 | 2 → 2 | 9 |
+| 05-durations | 4 | 1 | 0 | 1 | 2 → 2 | 10 |
+| 06-timephased-custom | 1 | 0 | 1 | 0 | 11 → 11 | 5 |
+| 07-extended-attrs | 3 | 2 | 2 | 2 | 8 → 8 | 9 |
 | 08-namespace-2007 | 1 | 0 | 0 | 0 | 0 → 0 | 1 |
 
 Los counts de tareas, links y attrs se conservan en los ocho; el Gantt dibuja
@@ -44,11 +46,11 @@ todos (el `check` lo afirma). Lo que sigue es lo que **cambia** en el archivo.
 `SaveXml` borra un elemento modelado cuyo valor es el default del campo. En el
 corpus eso toca: `IsNull=false`, `Type=0` (tarea y `PredecessorLink`),
 `LinkLag=0`, `OutlineLevel=0`, `PercentComplete=0`, `<Name></Name>` vacío,
-`ID` 0 de la tarea resumen, `IsNull=false` de un recurso, y -- desde que el
-header y los calendarios se modelan -- `DefaultTaskType=0` y los defaults de
-calendario: `DayWorking=false` (día no laborable), `IsBaseCalendar=false`
-(calendario de recurso), `EnteredByOccurrences=false`, `Period=0` y
-`DaysOfWeek=0`. Cada uno aparece en `touched` como `removed`. `ID` no es clave
+`ID` 0 de la tarea resumen, `IsNull=false` de un recurso,
+`CurrencySymbolPosition=0`, y -- desde que el header y los calendarios se
+modelan -- `DefaultTaskType=0` y los defaults de calendario: `DayWorking=false`
+(día no laborable), `IsBaseCalendar=false` (calendario de recurso),
+`EnteredByOccurrences=false`, `Period=0` y `DaysOfWeek=0`. Cada uno aparece en `touched` como `removed`. `ID` no es clave
 en el shape y su ausencia es posicional para Project.
 
 Una clave, en cambio, no es un default: `UID 0` se escribe siempre (arreglado

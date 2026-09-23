@@ -12,7 +12,6 @@
   <CurrencyDigits>2</CurrencyDigits>
   <CurrencySymbol>$</CurrencySymbol>
   <CurrencyCode>USD</CurrencyCode>
-  <CurrencySymbolPosition>0</CurrencySymbolPosition>
   <CalendarUID>1</CalendarUID>
   <DefaultStartTime>08:00:00</DefaultStartTime>
   <DefaultFinishTime>17:00:00</DefaultFinishTime>

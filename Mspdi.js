@@ -207,6 +207,10 @@ class MspProject extends Record {
         ScheduleFromStart: Field.Bool(),
         StartDate:         Field.DateTime(),
         FinishDate:        Field.DateTime(),
+        CurrencyDigits:    Field.Int(),
+        CurrencySymbol:    Field.Text(),
+        CurrencyCode:      Field.Text(),
+        CurrencySymbolPosition: Field.Int(),
         CalendarUID:       Field.Int(),
         DefaultStartTime:  Field.Time(),
         DefaultFinishTime: Field.Time(),
@@ -268,10 +272,22 @@ const DURATION_FORMATS = {
     44: { unit: "mo", per: 43200, elapsed: true,  estimated: true },
 };
 
-/* The units a duration is read and written in; a format outside the table is
- * the schema's own default, working days. */
-function durationFormat(format) {
-    return DURATION_FORMATS[format] || DURATION_FORMATS[7];
+/*
+ * The units a duration is read and written in; a format outside the table is
+ * the schema's own default, working days. The working units are the project's
+ * own -- a day is `MinutesPerDay`, a week `MinutesPerWeek` and a month a
+ * month of days -- while the elapsed ones are calendar time and do not move.
+ */
+function durationFormat(format, project) {
+    const f = DURATION_FORMATS[format] || DURATION_FORMATS[7];
+    if (f.elapsed || !project) return f;
+
+    const day   = project.MinutesPerDay || 480;
+    const week  = project.MinutesPerWeek || 2400;
+    const month = day * (project.DaysPerMonth || 20);
+    return { unit: f.unit, elapsed: false, estimated: f.estimated,
+             per: f.unit === "m" ? 1 : f.unit === "h" ? 60
+                : f.unit === "d" ? day : f.unit === "w" ? week : month };
 }
 
 function isElapsed(format) {

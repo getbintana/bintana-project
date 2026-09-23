@@ -1,4 +1,7 @@
-touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: removed (was "false")
+touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
+touched: /Project/MinutesPerDay[1]: "480" -> "420"
+touched: /Project/MinutesPerWeek[1]: "2400" -> "2100"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: "false" -> "true"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[7]/DayWorking[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/ID[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
@@ -24,6 +27,8 @@ touched: /Project/Tasks[1]/Task[3]/Work[1]: "PT8H0M0S" -> "PT0H0M0S"
 touched: /Project/Tasks[1]/Task[3]/PercentComplete[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/PredecessorUID[1]: "1" -> "2"
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/WorkingTimes[1]/WorkingTime[1]/FromTime[1]: added ("08:00:00")
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/WorkingTimes[1]/WorkingTime[1]/ToTime[1]: added ("12:00:00")
 touched: /Project/Tasks[1]/Task[2]/Summary[1]: added ("true")
 touched: /Project/Tasks[1]/Task[2]/Critical[1]: added ("true")
 touched: /Project/Tasks[1]/Task[3]/Estimated[1]: added ("true")
@@ -39,9 +44,9 @@ touched: /Project/Tasks[1]/Task[4]/WBS[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/OutlineNumber[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/OutlineLevel[1]: added ("1")
 touched: /Project/Tasks[1]/Task[4]/Priority[1]: added ("500")
-touched: /Project/Tasks[1]/Task[4]/Start[1]: added ("2026-09-03T08:00:00")
-touched: /Project/Tasks[1]/Task[4]/Finish[1]: added ("2026-09-03T17:00:00")
-touched: /Project/Tasks[1]/Task[4]/Duration[1]: added ("PT8H0M0S")
+touched: /Project/Tasks[1]/Task[4]/Start[1]: added ("2026-09-03T08:00")
+touched: /Project/Tasks[1]/Task[4]/Finish[1]: added ("2026-09-03T17:00")
+touched: /Project/Tasks[1]/Task[4]/Duration[1]: added ("PT7H0M0S")
 touched: /Project/Tasks[1]/Task[4]/DurationFormat[1]: added ("7")
 touched: /Project/Tasks[1]/Task[4]/Work[1]: added ("PT8H0M0S")
 touched: /Project/Tasks[1]/Task[4]/Critical[1]: added ("true")

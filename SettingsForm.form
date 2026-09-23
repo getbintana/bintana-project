@@ -101,6 +101,15 @@
             "Width": 160,
             "HAlign": "Start"
           }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkAutorecalc",
+          "properties": {
+            "Text": "Recalculate after each change",
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
         }
       ]
     },

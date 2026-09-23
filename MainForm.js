@@ -71,6 +71,11 @@ class MainForm extends Form {
     selectedResUID = null;
     assignRows    = [];
 
+    /* The Project page: its calendars and the one picked. */
+    calRows        = [];
+    calChoices     = [];
+    selectedCalUID = null;
+
     Form_Open() {
         try {
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
@@ -126,6 +131,8 @@ class MainForm extends Form {
         const scale  = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
         this.fieldID = Settings.Get("bintana-project.field", "");
         this.unit    = Settings.Get("bintana-project.unit", "");
+        if (this.edit)
+            this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
         if (this.CmbScale.Index !== scale) {
             this.CmbScale.Index = scale;
             this.CmbScale_Select();
@@ -192,6 +199,7 @@ class MainForm extends Form {
         this.holder = readMspdi(path);
         this.path   = path;
         this.edit   = new Edit(this.holder);
+        this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
         this.forceClose = false;
         this.fill();
         if (this.settingsReady) {
@@ -239,6 +247,7 @@ class MainForm extends Form {
         for (const p of this.holder.problems) this.log(`not modelled: ${p}`);
 
         this.fillResources();
+        this.fillProject();
 
         /* The data changed: the chart is a frame behind until asked, and its
          * own size depends on how many rows there now are. */
@@ -255,7 +264,7 @@ class MainForm extends Form {
 
     cells(task) {
         const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-        return [name, durationText(task), shortDate(task.Start),
+        return [name, durationText(task, this.holder.project), shortDate(task.Start),
                 shortDate(task.Finish), attrOf(task, this.fieldID)];
     }
 
@@ -287,6 +296,91 @@ class MainForm extends Form {
         }
         this.CmbAssignRes.Items = items;
         this.CmbAssignRes.Index = items.length ? 0 : -1;
+    }
+
+    /* The project's own settings and its calendars. */
+    fillProject() {
+        const project = this.holder ? this.holder.project : null;
+        if (!project) return;
+
+        this.TxtProjStart.Text       = shortDate(project.StartDate);
+        this.TxtProjFinish.Text      = shortDate(project.FinishDate);
+        this.TxtProjMinutesDay.Text  = String(project.MinutesPerDay);
+        this.TxtProjMinutesWeek.Text = String(project.MinutesPerWeek);
+        this.TxtProjDaysMonth.Text   = String(project.DaysPerMonth);
+        this.CmbProjTaskType.Index   = project.DefaultTaskType || 0;
+        this.CmbProjWeekStart.Index  = Math.min(Math.max(project.WeekStartDay || 0, 0), 6);
+        this.TxtProjCurrencyCode.Text   = project.CurrencyCode;
+        this.TxtProjCurrencySymbol.Text = project.CurrencySymbol;
+
+        const names = [];
+        this.calChoices = [];
+        for (const calendar of project.Calendars) {
+            this.calChoices.push(calendar.UID);
+            names.push(calendar.Name);
+        }
+        this.CmbProjCalendar.Items = names;
+        const at = this.calChoices.indexOf(project.CalendarUID);
+        this.CmbProjCalendar.Index = at >= 0 ? at : (names.length ? 0 : -1);
+
+        this.Calendars.Clear();
+        this.calRows = [];
+        for (const calendar of project.Calendars) {
+            this.calRows.push(calendar);
+            const base = calendar.BaseCalendarUID
+                       ? (this.edit.calendar(calendar.BaseCalendarUID) || {}).Name || ""
+                       : "";
+            this.Calendars.Add([calendar.Name, base]);
+        }
+        this.BtnCalEdit.Enabled = false;
+    }
+
+    BtnProjApply_Click() {
+        const project = this.holder.project;
+        const values = {
+            StartDate:       parseMoment(this.TxtProjStart.Text),
+            CalendarUID:     this.calChoices[this.CmbProjCalendar.Index] || project.CalendarUID,
+            MinutesPerDay:   resourceNumber(this.TxtProjMinutesDay.Text),
+            MinutesPerWeek:  resourceNumber(this.TxtProjMinutesWeek.Text),
+            DaysPerMonth:    resourceNumber(this.TxtProjDaysMonth.Text),
+            DefaultTaskType: Math.max(this.CmbProjTaskType.Index, 0),
+            WeekStartDay:    Math.max(this.CmbProjWeekStart.Index, 0),
+            CurrencyCode:    this.TxtProjCurrencyCode.Text,
+            CurrencySymbol:  this.TxtProjCurrencySymbol.Text,
+        };
+        for (const name of ["MinutesPerDay", "MinutesPerWeek", "DaysPerMonth"]) {
+            if (isNaN(values[name]) || values[name] < 0) {
+                Message.Error(Locale.Text("The project's minutes and days must be numbers."));
+                return;
+            }
+        }
+        try {
+            const probe = new MspProject();
+            for (const name in values) probe[name] = values[name];
+        } catch (e) {
+            Message.Error("Cannot apply: {0}", e.message);
+            return;
+        }
+        this.edit.setProject(values);
+        this.fill(this.selectedUID);
+    }
+
+    Calendars_Select() {
+        this.selectedCalUID = this.Calendars.Index >= 0
+                            ? this.calRows[this.Calendars.Index].UID : null;
+        this.BtnCalEdit.Enabled = this.selectedCalUID !== null;
+    }
+
+    /* The calendar's own dialog: it hands the whole shape back, and the edit
+     * is one undo like any other. */
+    BtnCalEdit_Click() {
+        const calendar = this.selectedCalUID === null
+                       ? null : this.edit.calendar(this.selectedCalUID);
+        if (!calendar) return;
+        CalendarForm.open(calendar, (values) => {
+            this.edit.setCalendar(calendar.UID, values);
+            this.fill(this.selectedUID);
+        });
     }
 
     /* A resource picked: the editor shows it, so Apply updates it. */
@@ -371,7 +465,8 @@ class MainForm extends Form {
             this.Assignments.Add([
                 resource ? resource.Name : `UID ${assignment.ResourceUID}`,
                 String(assignment.Units),
-                durationText({ Duration: assignment.Work, DurationFormat: 5 }),
+                durationText({ Duration: assignment.Work, DurationFormat: 5 },
+                             project),
                 Locale.Number(assignmentCost(project, assignment), 2),
             ]);
         }
@@ -428,7 +523,8 @@ class MainForm extends Form {
         this.TxtName.Text     = has ? task.Name : "";
         this.TxtStart.Text    = has ? shortDate(task.Start) : "";
         this.TxtFinish.Text   = has ? shortDate(task.Finish) : "";
-        this.TxtDuration.Text = has ? durationText(task) : "";
+        this.TxtDuration.Text = has
+            ? durationText(task, this.holder.project) : "";
         this.ChkMilestone.Active    = has ? task.Milestone : false;
         this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
         this.ChkEstimated.Active    = has ? task.Estimated : false;
@@ -725,7 +821,7 @@ class MainForm extends Form {
         /* A summary is what Project derives it from: only the name is read. */
         if (!task.Summary) {
             const duration = parseDuration(this.TxtDuration.Text, task.DurationFormat,
-                                            this.unit);
+                                            this.unit, this.holder.project);
             if (duration === null) {
                 Message.Error("{0} is not a duration -- try 2d, 8h or 30m",
                               this.TxtDuration.Text);
@@ -1176,8 +1272,8 @@ class MainForm extends Form {
             ok = eq("move undone", edit.task(1).Start, "2026-09-01T08:00:00") && ok;
 
             /* The end edge resizes: the duration follows the finish. The
-             * fixture's calendar works Saturday too, so the day after the
-             * second is two working days. */
+             * fixture's calendar is Monday to Friday, so three calendar days
+             * from Tuesday are three working ones. */
             this.Gantt_MouseDown(end, y, 1, false, false);
             this.Gantt_MouseMove(end + g.dayW, y);
             this.Gantt_MouseUp();
@@ -1421,6 +1517,29 @@ class MainForm extends Form {
             print(`edit resource uid=${res.UID} assignment work=${asg.Work} ` +
                   `cost=${assignmentCost(edit.holder.project, asg)}`);
 
+            /* The project's own minutes: a day is 420 now, so a typed "1d" is
+             * seven hours and not eight. */
+            ok = edit.setProject({ MinutesPerDay: 420, MinutesPerWeek: 2100,
+                                   DaysPerMonth: 20 }) && ok;
+            this.fill(2);
+            this.TxtDuration.Text = "1d";
+            ok = this.applyFields() &&
+                 edit.task(2).Duration === "PT7H0M0S" && ok;
+            print(`edit minutes a day: 1d -> ${edit.task(2).Duration}`);
+
+            /* A calendar edited whole: Sunday works a morning from now on. */
+            const cal = edit.calendar(1);
+            const week = cal.WeekDays.slice();
+            for (let i = 0; i < week.length; i++)
+                if (week[i].DayType === 1)
+                    week[i] = new MspWeekDay({
+                        DayType: 1, DayWorking: true,
+                        WorkingTimes: [new MspWorkingTime({ FromTime: "08:00:00",
+                                                            ToTime: "12:00:00" })] });
+            ok = edit.setCalendar(1, { WeekDays: week }) && ok;
+            ok = edit.calendar(1).WeekDays[0].DayWorking === true && ok;
+            print(`edit calendar sunday=${edit.calendar(1).WeekDays[0].DayWorking}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1476,11 +1595,13 @@ class MainForm extends Form {
                         "ActRecalc", "ActSettings", "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel",
-                        "BtnAssignAdd", "BtnAssignDel"]
+                        "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",
+                        "BtnCalEdit"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
-                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp"]);
+                     "Calendars_Select", "Gantt_MouseDown", "Gantt_MouseMove",
+                     "Gantt_MouseUp"]);
 
         let ok = true;
         for (const member of wanted) {
@@ -1507,7 +1628,8 @@ class MainForm extends Form {
             if (!this.Tasks.Exists(key)) { ok = false; continue; }
             const row  = this.Tasks.Row(key);
             const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-            if (row[0] !== name || row[1] !== durationText(task)) ok = false;
+            if (row[0] !== name ||
+                row[1] !== durationText(task, this.holder.project)) ok = false;
         }
 
         this.Tasks.Key = rows.length ? String(rows[0].UID) : "";
@@ -1600,10 +1722,10 @@ function shortDate(when) {
  * counts elapsed time and a `?` when it is estimated -- the field's own flag
  * or the format's spelling, whichever says so.
  */
-function durationText(task) {
+function durationText(task, project) {
     const minutes = mspdiMinutes(task.Duration);
     if (minutes === null) return task.Duration || "";
-    const format = durationFormat(task.DurationFormat);
+    const format = durationFormat(task.DurationFormat, project);
     const estimated = task.Estimated || format.estimated;
     return `${minutes / format.per}${format.elapsed ? "e" : ""}${format.unit}` +
            (estimated ? "?" : "");
@@ -1622,7 +1744,7 @@ function parseMoment(text) {
  * setting, and the format moves with whichever was said; a bare number with
  * neither keeps the format it had, estimated months included.
  */
-function parseDuration(text, format, unit) {
+function parseDuration(text, format, unit, project) {
     const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*$/.exec(String(text || ""));
     if (!m) return null;
 
@@ -1632,7 +1754,7 @@ function parseDuration(text, format, unit) {
     else if (unit) chosen = formatOfUnit(unit);
 
     const minutes = Math.round(Number(m[1].replace(",", ".")) *
-                               durationFormat(chosen).per);
+                               durationFormat(chosen, project).per);
     return { minutes, format: (typed || unit) ? chosen : format };
 }
 

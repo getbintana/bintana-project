@@ -11,7 +11,6 @@
   <CurrencyDigits>2</CurrencyDigits>
   <CurrencySymbol>$</CurrencySymbol>
   <CurrencyCode>USD</CurrencyCode>
-  <CurrencySymbolPosition>0</CurrencySymbolPosition>
   <CalendarUID>1</CalendarUID>
   <MinutesPerDay>480</MinutesPerDay>
   <MinutesPerWeek>2400</MinutesPerWeek>

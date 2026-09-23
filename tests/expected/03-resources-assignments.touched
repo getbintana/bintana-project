@@ -1,3 +1,4 @@
+touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/DefaultTaskType[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/Type[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")

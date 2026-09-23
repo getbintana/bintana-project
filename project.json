@@ -8,6 +8,7 @@
     "Gantt.js",
     "ConfirmForm.js",
     "SettingsForm.js",
+    "CalendarForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

@@ -1,0 +1,403 @@
+{
+  "format": "bintana-form/1",
+  "class": "CalendarForm",
+  "properties": {
+    "Text": "Calendar",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 620,
+    "Height": 560,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "name": "Top",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 6,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblName",
+          "properties": {
+            "Text": "Name",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtName",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Label",
+      "name": "LblWeek",
+      "properties": {
+        "Text": "Week days",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "Week",
+      "properties": {
+        "Columns": 3,
+        "RowSpacing": 4,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblDay1",
+          "properties": {
+            "Text": "Sunday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay1",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay1",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay2",
+          "properties": {
+            "Text": "Monday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay2",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay2",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay3",
+          "properties": {
+            "Text": "Tuesday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay3",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay3",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay4",
+          "properties": {
+            "Text": "Wednesday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay4",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay4",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay5",
+          "properties": {
+            "Text": "Thursday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay5",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay5",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay6",
+          "properties": {
+            "Text": "Friday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay6",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay6",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDay7",
+          "properties": {
+            "Text": "Saturday",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDay7",
+          "properties": {
+            "Text": "Working",
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDay7",
+          "properties": {
+            "Placeholder": "08:00-12:00 13:00-17:00",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Label",
+      "name": "LblExc",
+      "properties": {
+        "Text": "Exceptions",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "TableView",
+      "name": "Exc",
+      "properties": {
+        "Columns": [
+          {
+            "Text": "From",
+            "Width": 140
+          },
+          {
+            "Text": "To",
+            "Width": 140
+          },
+          {
+            "Text": "Name",
+            "Width": 0
+          },
+          {
+            "Text": "Kind",
+            "Width": 80
+          }
+        ],
+        "Height": 100,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "ExcFields",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 4,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblExcFrom",
+          "properties": {
+            "Text": "From",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtExcFrom",
+          "properties": {
+            "Placeholder": "YYYY-MM-DD HH:MM",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblExcTo",
+          "properties": {
+            "Text": "To",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtExcTo",
+          "properties": {
+            "Placeholder": "YYYY-MM-DD HH:MM",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblExcName",
+          "properties": {
+            "Text": "Name",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtExcName",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkExcWorking",
+          "properties": {
+            "Text": "Working",
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "ExcButtons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 6
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnExcAdd",
+          "properties": {
+            "Text": "Add",
+            "Icon": "list-add-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnExcDel",
+          "properties": {
+            "Text": "Remove",
+            "Icon": "list-remove-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Text": "Cancel",
+            "Cancel": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnOk",
+          "properties": {
+            "Text": "OK",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

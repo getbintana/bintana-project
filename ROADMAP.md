@@ -103,10 +103,18 @@ Herramientas/Ayuda), toolbar de íconos con `Style: "toolbar"`, barra de estado,
 y cada comando declarado una vez como `Action` -- un solo `Enabled` y una sola
 etiqueta para el botón, el ítem de menú y su atajo. Los combos hablan en
 nombres ("Ajustar a la ventana", "Fin a inicio", "Lo antes posible") y el
-catálogo `es.po` los cubre. El panel de propiedades es un `Switcher` de tres
-pestañas (Tarea/Vínculos/Recursos) dentro de un `Scroller` con `Arrangement`
---que es lo que lo hace ocupar el ancho--, y el log arranca oculto (Ver → Ver
-log).
+catálogo `es.po` los cubre. El panel de propiedades es un `Switcher` de cuatro
+pestañas (Tarea/Vínculos/Recursos/Proyecto) dentro de un `Scroller` con
+`Arrangement` --que es lo que lo hace ocupar el ancho--, y el log arranca
+oculto (Ver → Ver log).
+
+**Configuración del plan** (2026-09-22): la pestaña Proyecto edita el
+encabezado (fecha de inicio, calendario por defecto, minutos por día/semana,
+días por mes, tipo de tarea por defecto, inicio de semana y moneda) y lista los
+calendarios; **Editar…** abre uno entero -- días laborables con sus tramos como
+texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y
+excepciones (feriados). Los minutos por día ahora mandan: es lo que significa
+un `1d` tipeado. El recálculo automático es una opción, apagada por defecto.
 
 ### 4 — Gantt interactivo
 

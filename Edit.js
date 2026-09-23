@@ -24,6 +24,11 @@ class Edit {
     at     = 0;
     saved  = 0;
 
+    /* With `auto` on, every accepted command brings the schedule up to date
+     * before the snapshot, so one edit is still one undo. Off by default:
+     * a date typed by hand is the user's until they ask. */
+    auto = false;
+
     constructor(holder) {
         this.holder = holder;
         this.states = [holder.project.Serialize(true)];
@@ -44,6 +49,7 @@ class Edit {
     /* One accepted command, and the state it left behind. The redo tail is
      * dropped, and the oldest step goes when the stack is full. */
     commit() {
+        if (this.auto) recalculate(this.holder.project);
         this.states.length = this.at + 1;
         this.states.push(this.holder.project.Serialize(true));
         if (this.states.length > Edit.LIMIT) {
@@ -226,6 +232,52 @@ class Edit {
         if (kept.length === project.Assignments.length) return false;
 
         project.Assignments = kept;
+        this.commit();
+        return true;
+    }
+
+    /* --- the project and its calendars --------------------------------- */
+
+    calendar(uid) {
+        for (const calendar of this.holder.project.Calendars)
+            if (calendar.UID === uid) return calendar;
+        return null;
+    }
+
+    /* The project's own settings: its start, its calendar, the minutes a day,
+     * the currency. One step, like a task's fields. */
+    setProject(values) {
+        const project = this.holder.project;
+        let changed = false;
+        for (const name in values) {
+            if (project[name] !== values[name]) changed = true;
+            project[name] = values[name];
+        }
+        if (!changed) return false;
+        this.commit();
+        return true;
+    }
+
+    /* A calendar whole: its name, its week days and its exceptions. The dialog
+     * edits its own copy and hands the new one in, which is why the lists
+     * compare by value and not by reference. */
+    setCalendar(uid, values) {
+        const calendar = this.calendar(uid);
+        if (!calendar) return false;
+
+        let changed = false;
+        for (const name in values) {
+            if (name === "WeekDays" || name === "Exceptions") {
+                if (JSON.stringify(calendar[name]) !== JSON.stringify(values[name]))
+                    changed = true;
+                calendar[name] = values[name];
+                continue;
+            }
+            if (calendar[name] !== values[name]) changed = true;
+            calendar[name] = values[name];
+        }
+        if (!changed) return false;
+
         this.commit();
         return true;
     }

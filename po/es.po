@@ -310,6 +310,108 @@ msgstr "Notas"
 msgid "Settings"
 msgstr "Configuración"
 
+msgid "Project"
+msgstr "Proyecto"
+
+msgid "Start date"
+msgstr "Fecha de inicio"
+
+msgid "Default calendar"
+msgstr "Calendario por defecto"
+
+msgid "Minutes a day"
+msgstr "Minutos por día"
+
+msgid "Minutes a week"
+msgstr "Minutos por semana"
+
+msgid "Days a month"
+msgstr "Días por mes"
+
+msgid "Default task type"
+msgstr "Tipo de tarea por defecto"
+
+msgid "Fixed units"
+msgstr "Unidades fijas"
+
+msgid "Fixed duration"
+msgstr "Duración fija"
+
+msgid "Fixed work"
+msgstr "Trabajo fijo"
+
+msgid "Week starts"
+msgstr "La semana empieza"
+
+msgid "Sunday"
+msgstr "Domingo"
+
+msgid "Monday"
+msgstr "Lunes"
+
+msgid "Tuesday"
+msgstr "Martes"
+
+msgid "Wednesday"
+msgstr "Miércoles"
+
+msgid "Thursday"
+msgstr "Jueves"
+
+msgid "Friday"
+msgstr "Viernes"
+
+msgid "Saturday"
+msgstr "Sábado"
+
+msgid "Currency code"
+msgstr "Código de moneda"
+
+msgid "Currency symbol"
+msgstr "Símbolo de moneda"
+
+msgid "Calendars"
+msgstr "Calendarios"
+
+msgid "Base"
+msgstr "Base"
+
+msgid "Edit…"
+msgstr "Editar…"
+
+msgid "The project's minutes and days must be numbers."
+msgstr "Los minutos y días del proyecto deben ser números."
+
+msgid "Recalculate after each change"
+msgstr "Recalcular después de cada cambio"
+
+msgid "Calendar"
+msgstr "Calendario"
+
+msgid "Week days"
+msgstr "Días de la semana"
+
+msgid "Working"
+msgstr "Laborable"
+
+msgid "Holiday"
+msgstr "Feriado"
+
+msgid "Exceptions"
+msgstr "Excepciones"
+
+msgid "From"
+msgstr "Desde"
+
+msgid "To"
+msgstr "Hasta"
+
+msgid "Kind"
+msgstr "Tipo"
+
+msgid "An exception needs a date."
+msgstr "Una excepción necesita una fecha."
+
 msgid "Recent"
 msgstr "Recientes"
 

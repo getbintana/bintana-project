@@ -12,12 +12,11 @@
   <CurrencyDigits>2</CurrencyDigits>
   <CurrencySymbol>$</CurrencySymbol>
   <CurrencyCode>USD</CurrencyCode>
-  <CurrencySymbolPosition>0</CurrencySymbolPosition>
   <CalendarUID>1</CalendarUID>
   <DefaultStartTime>08:00:00</DefaultStartTime>
   <DefaultFinishTime>17:00:00</DefaultFinishTime>
-  <MinutesPerDay>480</MinutesPerDay>
-  <MinutesPerWeek>2400</MinutesPerWeek>
+  <MinutesPerDay>420</MinutesPerDay>
+  <MinutesPerWeek>2100</MinutesPerWeek>
   <DaysPerMonth>20</DaysPerMonth>
   <DefaultTaskType>1</DefaultTaskType>
   <DurationFormat>7</DurationFormat>
@@ -33,6 +32,13 @@
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
+          <DayWorking>true</DayWorking>
+          <WorkingTimes>
+            <WorkingTime>
+              <FromTime>08:00:00</FromTime>
+              <ToTime>12:00:00</ToTime>
+            </WorkingTime>
+          </WorkingTimes>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
@@ -180,9 +186,9 @@
       <OutlineNumber>2</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Start>2026-09-03T08:00:00</Start>
-      <Finish>2026-09-03T17:00:00</Finish>
-      <Duration>PT8H0M0S</Duration>
+      <Start>2026-09-03T08:00</Start>
+      <Finish>2026-09-03T17:00</Finish>
+      <Duration>PT7H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
       <Critical>true</Critical>
