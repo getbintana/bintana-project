@@ -192,8 +192,22 @@ class MainForm extends Form {
     }
 
     /* The bundled sample, so an empty first screen is never the question. */
+    /* The sample is a template, not a file of the user's: it is copied into
+     * the config directory and that copy is what the window opens, so a Save
+     * writes the copy and never the fixture the repo ships -- which is one of
+     * the files the harness is measured against. */
     openSample() {
-        this.load(File.Join(Application.Directory, "tests", "corpus", "01-minimal.xml"));
+        const source = File.Join(Application.Directory, "tests", "corpus",
+                                 "01-minimal.xml");
+        const copy = File.Join(Application.ConfigDirectory,
+                               "sample-01-minimal.xml");
+        try {
+            writeMspdi(copy, readMspdi(source));
+        } catch (e) {
+            /* Without the copy the sample is still worth opening; it is read
+             * until somebody saves it somewhere else. */
+        }
+        this.load(File.Exists(copy) ? copy : source);
     }
 
     /* A file dragged from the file manager, anywhere on the window. */
