@@ -401,7 +401,9 @@ class MainForm extends Form {
         if (!project) return;
 
         for (const resource of project.Resources) {
-            if (resource.IsNull) continue;
+            /* UID 0 is Project's "Unassigned": it is not a resource anybody
+             * edits or assigns, so it is not listed. */
+            if (resource.IsNull || resource.UID === 0) continue;
             this.resRows.push(resource);
             this.Resources.Add([
                 resource.Name,
@@ -607,7 +609,10 @@ class MainForm extends Form {
             const resource = resourceOf(project, assignment.ResourceUID);
             this.assignRows.push(assignment);
             this.Assignments.Add([
-                resource ? resource.Name : `UID ${assignment.ResourceUID}`,
+                resource ? resource.Name
+                         : assignment.ResourceUID > 0
+                           ? `UID ${assignment.ResourceUID}`
+                           : Locale.Text("No resource"),
                 String(assignment.Units),
                 durationText({ Duration: assignment.Work, DurationFormat: 5 },
                              project),
@@ -1111,7 +1116,7 @@ class MainForm extends Form {
         const tasks = project.Tasks;
         const critical = tasks.filter((t) => !t.IsNull && t.Critical).length;
         const over = project.Resources.filter(
-            (r) => !r.IsNull && r.MaxUnits > 0 &&
+            (r) => !r.IsNull && r.UID !== 0 && r.MaxUnits > 0 &&
                    resourcePeak(project, r) > r.MaxUnits).length;
         const late = tasks.filter((t) => {
             const deadline = t.Deadline ? whenMs(t.Deadline) : null;

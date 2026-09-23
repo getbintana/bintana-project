@@ -313,6 +313,9 @@ msgstr "Eliminar recurso"
 msgid "Delete \"{0}\" and its assignments?"
 msgstr "¿Eliminar \"{0}\" y sus asignaciones?"
 
+msgid "No resource"
+msgstr "(sin recurso)"
+
 msgid "Add a resource first."
 msgstr "Agregá un recurso primero."
 
