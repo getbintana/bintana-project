@@ -116,7 +116,8 @@ seleccionada se resalta.
 
 - **Clic** selecciona; **arrastrar** una barra mueve la tarea; arrastrar su
   **extremo** la estira (la duración sale del tiempo laborable del calendario
-  de la tarea); **Ctrl + arrastrar** dibuja un vínculo.
+  de la tarea); **Ctrl + arrastrar** dibuja un vínculo del tipo elegido en
+  **Vínculo nuevo** (fin a inicio por defecto).
 - Nada se escribe hasta soltar el botón: un gesto es un Deshacer.
 - **Escala**: Ajustar a la ventana, Días, Semanas, Meses; el gráfico se
   desplaza con sus barras.

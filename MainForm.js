@@ -837,7 +837,8 @@ class MainForm extends Form {
             if (drag.to !== null && drag.to !== undefined) {
                 const succ  = this.edit.task(drag.to);
                 const links = succ.Links.filter((l) => l.PredecessorUID !== drag.uid);
-                links.push(new MspLink({ PredecessorUID: drag.uid, Type: 1,
+                links.push(new MspLink({ PredecessorUID: drag.uid,
+                                         Type: LINK_ORDER[this.CmbDrawType.Index] || 1,
                                          LinkLag: 0, LagFormat: 3 }));
                 if (this.edit.setLinks(succ.UID, links)) this.fill(succ.UID);
                 else this.Gantt.Redraw();
@@ -1654,9 +1655,11 @@ class MainForm extends Form {
             ok = eq("resize duration", edit.task(1).Duration, "PT24H0M0S") && ok;
             edit.undo();
 
-            /* Ctrl from one bar to another draws an FS link on the target.
-             * The undo replaced the records, so the geometry is taken again
-             * from the plan as it is now. */
+            /* Ctrl from one bar to another draws a link of the kind the
+             * chart's own combo says -- Start to start, here, which is its
+             * second item and MSPDI's 3. The undo replaced the records, so
+             * the geometry is taken again from the plan as it is now. */
+            this.CmbDrawType.Index = 1;
             const g2   = ganttGeometry(this.holder.project, this.ganttWidth(),
                                        this.ganttHeight(), this.step);
             const one  = edit.task(1), two = edit.task(2);
@@ -1669,6 +1672,8 @@ class MainForm extends Form {
             this.Gantt_MouseUp();
             ok = eq("link count", edit.task(1).Links.length, 1) && ok;
             ok = eq("link predecessor", edit.task(1).Links[0].PredecessorUID, 2) && ok;
+            ok = eq("link type", edit.task(1).Links[0].Type, 3) && ok;
+            this.CmbDrawType.Index = 0;
             edit.undo();
 
             print(ok ? "CHECK-OK" : "CHECK-FAILED");

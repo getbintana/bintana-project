@@ -527,6 +527,29 @@
                         "Index": 0,
                         "Width": 170
                       }
+                    },
+                    {
+                      "type": "Label",
+                      "name": "LblDrawType",
+                      "properties": {
+                        "Text": "New link",
+                        "HExpand": true,
+                        "HAlign": "End"
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbDrawType",
+                      "properties": {
+                        "Items": [
+                          "Finish to start",
+                          "Start to start",
+                          "Finish to finish",
+                          "Start to finish"
+                        ],
+                        "Index": 0,
+                        "Width": 170
+                      }
                     }
                   ]
                 },

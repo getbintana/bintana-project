@@ -164,8 +164,12 @@ dibuja la línea base como barra fina debajo de la tarea, y el porcentaje mueve
 las fechas reales como las lee Project (arriba de cero hay inicio real, al
 ciento hay fin real, en cero no hay ninguno).
 
-- Queda: elegir el tipo de vínculo al dibujarlo (hoy FS), dibujar desde el
-  extremo para enlazar en vez de redimensionar, y varias líneas base.
+**El tipo al dibujar** (2026-09-23): el combo **Vínculo nuevo**, en la barra del
+Gantt, elige los cuatro tipos (FS por defecto) y **Ctrl + arrastrar** crea el
+que dice; `check-drag` lo afirma con un Start to start.
+
+- Queda: dibujar desde el extremo para enlazar en vez de redimensionar, y
+  varias líneas base.
 
 ### 5 — Recursos y costos
 

@@ -316,6 +316,9 @@ msgstr "Elegir…"
 msgid "Lag (min)"
 msgstr "Retardo (min)"
 
+msgid "New link"
+msgstr "Vínculo nuevo"
+
 msgid "Link"
 msgstr "Enlazar"
 
