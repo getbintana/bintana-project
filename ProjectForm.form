@@ -1,0 +1,420 @@
+{
+  "format": "bintana-form/1",
+  "class": "ProjectForm",
+  "properties": {
+    "Text": "Project data",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 660,
+    "Height": 700,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Label",
+      "name": "LblData",
+      "properties": {
+        "Text": "Data",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "GridData",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 6,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblProjName",
+          "properties": {
+            "Text": "Name",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjName",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjTitle",
+          "properties": {
+            "Text": "Title",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjTitle",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjSubject",
+          "properties": {
+            "Text": "Subject",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjSubject",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjAuthor",
+          "properties": {
+            "Text": "Author",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjAuthor",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjManager",
+          "properties": {
+            "Text": "Manager",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjManager",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCompany",
+          "properties": {
+            "Text": "Company",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCompany",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCategory",
+          "properties": {
+            "Text": "Category",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCategory",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjRevision",
+          "properties": {
+            "Text": "Revision",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjRevision",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCreation",
+          "properties": {
+            "Text": "Creation date",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCreation",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "ReadOnly": true
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjSaved",
+          "properties": {
+            "Text": "Last saved",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjSaved",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "ReadOnly": true
+          }
+        }
+      ]
+    },
+    {
+      "type": "Label",
+      "name": "LblScheduling",
+      "properties": {
+        "Text": "Scheduling",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "GridScheduling",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 6,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "CheckButton",
+          "name": "ChkProjFromStart",
+          "properties": {
+            "Text": "Schedule from start",
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjStart",
+          "properties": {
+            "Text": "Start date",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjStart",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Placeholder": "YYYY-MM-DD HH:MM"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjFinish",
+          "properties": {
+            "Text": "Finish",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjFinish",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "ReadOnly": true
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjStatus",
+          "properties": {
+            "Text": "Status date",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjStatus",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Placeholder": "YYYY-MM-DD HH:MM"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCalendar",
+          "properties": {
+            "Text": "Default calendar",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbProjCalendar",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Items": [],
+            "Index": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "Label",
+      "name": "LblCurrency",
+      "properties": {
+        "Text": "Currency",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "GridCurrency",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 6,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblProjCurrencyCode",
+          "properties": {
+            "Text": "Currency code",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCurrencyCode",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Placeholder": "USD"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCurrencySymbol",
+          "properties": {
+            "Text": "Currency symbol",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCurrencySymbol",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Placeholder": "$"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCurrencyDigits",
+          "properties": {
+            "Text": "Currency digits",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjCurrencyDigits",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Placeholder": "2"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjCurrencyPosition",
+          "properties": {
+            "Text": "Symbol position",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbProjCurrencyPosition",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Items": [
+              "Before",
+              "After",
+              "Before with space",
+              "After with space"
+            ],
+            "Index": 0
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Text": "Cancel",
+            "Cancel": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnOk",
+          "properties": {
+            "Text": "OK",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

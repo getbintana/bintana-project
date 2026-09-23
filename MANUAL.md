@@ -113,11 +113,16 @@ tabla y el período en que arranca el trabajo fija el costo por uso.
 
 ## Proyecto y calendarios
 
-La pestaña **Proyecto** edita el encabezado: fecha de inicio, calendario por
-defecto, minutos por día y por semana, días por mes, tipo de tarea por
-defecto, el día en que empieza la semana y la moneda. Los minutos por día son
-lo que significa un `1d` tipeado. Abajo del todo, **Costo total** es lo que
-suman las asignaciones del plan.
+La pestaña **Proyecto** selecciona y abre diálogos: **Datos del proyecto…**
+edita la identidad y la información (nombre, título, asunto, autor, gerente,
+compañía, categoría, revisión, fecha de creación y último guardado —esos dos
+de solo lectura—, fecha de inicio, fecha de estado, calendario por defecto y
+la moneda), y **Opciones del proyecto…** los valores por defecto y los
+switches del archivo (tipo de tarea, tasas y formato de trabajo, minutos por
+día y por semana —lo que significa un `1d` tipeado—, holgura crítica, año
+fiscal, respetar restricciones, valor ganado y demás). Cada uno es un solo
+Deshacer. Abajo, **Costo total** es lo que suman las asignaciones del plan y
+**Línea base** elige cuál se guarda y se dibuja.
 
 **Editar…** abre el calendario elegido: los días laborables con sus tramos
 como texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y

@@ -148,6 +148,18 @@ tiene un filtro por nombre --el match y sus ancestros, con la lupa para
 limpiar-- y el menú Editar, **Save Baseline**, con la línea base dibujada como
 barra fina debajo de cada tarea.
 
+**El `<Project>` del XSD, entero y en diálogos** (2026-09-23): el encabezado
+se modela completo (identidad, programación, cálculo, moneda y las banderas
+administrativas) y el panel deja de editarlo: la pestaña Proyecto selecciona.
+**Datos del proyecto…** (`ProjectForm`) lleva la identidad y la información
+--nombre, título, asunto, autor, gerente, compañía, categoría, revisión,
+creación y último guardado, fecha de inicio, fecha de estado, calendario y
+moneda--; **Opciones del proyecto…** (`OptionsForm`) los valores por defecto y
+los switches del archivo, en solapas de Valores por defecto / Cálculo / Valor
+ganado. Las banderas que escribe Project (externally edited, actuals in sync,
+remove file properties, admin project) quedan modeladas sin diálogo. Los
+`problems` del corpus caen a cero en ocho de los diez fixtures.
+
 **Autosave y recuperación** (2026-09-23): mientras hay cambios sin guardar se
 escribe una copia cada minuto en el directorio de config (nunca al lado del
 plan, que puede ser de solo lectura); al abrir, una copia más nueva que el
@@ -260,9 +272,14 @@ real). Cada uno con su trigger para reabrir.
 - **Orden y filtro por columnas**: no por ahora. La tabla es el WBS en orden de
   archivo y el Gantt dibuja ese orden; ordenar rompería la adyacencia
   padre-hijo. Si se quiere, será una vista aparte.
-- **Gantt**: el scroller es suyo (vertical por filas, horizontal por timescale),
-  no sincronizado con la tabla -- la misma simplificación de siempre: comparten
-  identidad, no geometría.
+- **Gantt**: hoy el scroller es suyo (vertical por filas, horizontal por
+  timescale), no sincronizado con la tabla -- comparten identidad, no
+  geometría. **La meta es la vista clásica**: el plan a la izquierda y el
+  Gantt a la derecha, en un `Split` cuyas filas se alinean y cuyo scroll
+  vertical es uno solo. Es el trabajo grande de UI que sigue; la tabla y el
+  gráfico tendrán que compartir la geometría de filas (o el `Split` mostrar
+  dos vistas del mismo modelo de filas), que es justo lo que la simplificación
+  de arriba evitaba.
 
 ## Abiertas
 

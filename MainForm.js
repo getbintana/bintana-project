@@ -430,27 +430,8 @@ class MainForm extends Form {
         const project = this.holder ? this.holder.project : null;
         if (!project) return;
 
-        this.TxtProjStart.Text       = shortDate(project.StartDate);
-        this.TxtProjFinish.Text      = shortDate(project.FinishDate);
-        this.TxtProjMinutesDay.Text  = String(project.MinutesPerDay);
-        this.TxtProjMinutesWeek.Text = String(project.MinutesPerWeek);
-        this.TxtProjDaysMonth.Text   = String(project.DaysPerMonth);
-        this.CmbProjTaskType.Index   = project.DefaultTaskType || 0;
-        this.CmbProjWeekStart.Index  = Math.min(Math.max(project.WeekStartDay || 0, 0), 6);
-        this.TxtProjCurrencyCode.Text   = project.CurrencyCode;
-        this.TxtProjCurrencySymbol.Text = project.CurrencySymbol;
         const cost = projectCost(project);
         this.TxtProjCost.Text = cost ? Locale.Number(cost, 2) : "";
-
-        const names = [];
-        this.calChoices = [];
-        for (const calendar of project.Calendars) {
-            this.calChoices.push(calendar.UID);
-            names.push(calendar.Name);
-        }
-        this.CmbProjCalendar.Items = names;
-        const at = this.calChoices.indexOf(project.CalendarUID);
-        this.CmbProjCalendar.Index = at >= 0 ? at : (names.length ? 0 : -1);
 
         this.Calendars.Clear();
         this.calRows = [];
@@ -464,34 +445,26 @@ class MainForm extends Form {
         this.BtnCalEdit.Enabled = false;
     }
 
-    BtnProjApply_Click() {
-        const project = this.holder.project;
-        const values = {
-            StartDate:       parseMoment(this.TxtProjStart.Text),
-            CalendarUID:     this.calChoices[this.CmbProjCalendar.Index] || project.CalendarUID,
-            MinutesPerDay:   resourceNumber(this.TxtProjMinutesDay.Text),
-            MinutesPerWeek:  resourceNumber(this.TxtProjMinutesWeek.Text),
-            DaysPerMonth:    resourceNumber(this.TxtProjDaysMonth.Text),
-            DefaultTaskType: Math.max(this.CmbProjTaskType.Index, 0),
-            WeekStartDay:    Math.max(this.CmbProjWeekStart.Index, 0),
-            CurrencyCode:    this.TxtProjCurrencyCode.Text,
-            CurrencySymbol:  this.TxtProjCurrencySymbol.Text,
-        };
-        for (const name of ["MinutesPerDay", "MinutesPerWeek", "DaysPerMonth"]) {
-            if (isNaN(values[name]) || values[name] < 0) {
-                Message.Error(Locale.Text("The project's minutes and days must be numbers."));
-                return;
-            }
-        }
-        try {
-            const probe = new MspProject();
-            for (const name in values) probe[name] = values[name];
-        } catch (e) {
-            Message.Error("Cannot apply: {0}", e.message);
-            return;
-        }
-        this.edit.setProject(values);
-        this.fill(this.selectedUID);
+    /* The project's data -- the document's metadata, the scheduling settings
+     * and the currency -- in its own dialog; the values come back whole and
+     * are one undo like any edit. */
+    BtnProjData_Click() {
+        ProjectForm.open(this.holder.project, (values) => {
+            if (!this.edit.setProject(values)) return;
+            this.fill(this.selectedUID);
+            this.log(Locale.Text("Project data saved."));
+        });
+    }
+
+    /* The file's own preferences -- the defaults for new tasks, the
+     * calculation switches, the earned-value method -- in their dialog and
+     * as one undo, like any other edit. */
+    BtnProjOptions_Click() {
+        OptionsForm.open(this.holder.project, (values) => {
+            if (!this.edit.setProject(values)) return;
+            this.fill(this.selectedUID);
+            this.log(Locale.Text("Project options saved."));
+        });
     }
 
     Calendars_Select() {
@@ -2256,7 +2229,7 @@ class MainForm extends Form {
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
-                        "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",
+                        "BtnAssignAdd", "BtnAssignDel", "BtnProjData", "BtnProjOptions",
                         "BtnCalEdit", "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",

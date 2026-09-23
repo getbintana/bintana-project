@@ -1,4 +1,5 @@
 touched: /Project/ScheduleFromStart[1]: removed (was "true")
+touched: /Project/CriticalSlackLimit[1]: removed (was "0")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/MinutesPerDay[1]: "480" -> "420"
 touched: /Project/MinutesPerWeek[1]: "2400" -> "2100"

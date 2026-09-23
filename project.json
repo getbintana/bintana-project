@@ -10,6 +10,8 @@
     "SettingsForm.js",
     "CalendarForm.js",
     "RatesForm.js",
+    "ProjectForm.js",
+    "OptionsForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

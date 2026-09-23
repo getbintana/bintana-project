@@ -591,3 +591,240 @@ msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces"
 
 msgid "{0} tasks, {1} milestones, {2} with attributes, {3} links -- {4} not modelled (see log)"
 msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces -- {4} sin modelar (ver log)"
+
+msgid "Project data"
+msgstr "Datos del proyecto"
+
+msgid "Project data…"
+msgstr "Datos del proyecto…"
+
+msgid "Project data saved."
+msgstr "Datos del proyecto guardados."
+
+msgid "Data"
+msgstr "Datos"
+
+msgid "Title"
+msgstr "Título"
+
+msgid "Subject"
+msgstr "Asunto"
+
+msgid "Author"
+msgstr "Autor"
+
+msgid "Manager"
+msgstr "Gerente"
+
+msgid "Company"
+msgstr "Compañía"
+
+msgid "Category"
+msgstr "Categoría"
+
+msgid "Revision"
+msgstr "Revisión"
+
+msgid "Creation date"
+msgstr "Fecha de creación"
+
+msgid "Last saved"
+msgstr "Último guardado"
+
+msgid "Scheduling"
+msgstr "Programación"
+
+msgid "Schedule from start"
+msgstr "Programar desde el comienzo"
+
+msgid "Status date"
+msgstr "Fecha de estado"
+
+msgid "Currency"
+msgstr "Moneda"
+
+msgid "Currency digits"
+msgstr "Dígitos de moneda"
+
+msgid "Symbol position"
+msgstr "Posición del símbolo"
+
+msgid "Before"
+msgstr "Antes"
+
+msgid "After"
+msgstr "Después"
+
+msgid "Before with space"
+msgstr "Antes con espacio"
+
+msgid "After with space"
+msgstr "Después con espacio"
+
+msgid "Project options"
+msgstr "Opciones del proyecto"
+
+msgid "Project options…"
+msgstr "Opciones del proyecto…"
+
+msgid "Project options saved."
+msgstr "Opciones del proyecto guardadas."
+
+msgid "Defaults"
+msgstr "Valores por defecto"
+
+msgid "Calculation"
+msgstr "Cálculo"
+
+msgid "Earned value"
+msgstr "Valor ganado"
+
+msgid "Default fixed cost accrual"
+msgstr "Acumulación de costo fijo por defecto"
+
+msgid "Default standard rate"
+msgstr "Tasa estándar por defecto"
+
+msgid "Default overtime rate"
+msgstr "Tasa extra por defecto"
+
+msgid "Duration format"
+msgstr "Formato de duración"
+
+msgid "Work format"
+msgstr "Formato de trabajo"
+
+msgid "New task start date"
+msgstr "Inicio de tareas nuevas"
+
+msgid "Default start time"
+msgstr "Hora de inicio por defecto"
+
+msgid "Default finish time"
+msgstr "Hora de fin por defecto"
+
+msgid "Critical slack limit (days)"
+msgstr "Holgura crítica (días)"
+
+msgid "Fiscal year starts"
+msgstr "El año fiscal empieza"
+
+msgid "Fiscal year start"
+msgstr "Inicio del año fiscal"
+
+msgid "Editable actual costs"
+msgstr "Costos reales editables"
+
+msgid "Honor constraints"
+msgstr "Respetar restricciones"
+
+msgid "Inserted projects like summary"
+msgstr "Proyectos insertados como resumen"
+
+msgid "Multiple critical paths"
+msgstr "Caminos críticos múltiples"
+
+msgid "New tasks effort driven"
+msgstr "Tareas nuevas condicionadas por esfuerzo"
+
+msgid "New tasks estimated"
+msgstr "Tareas nuevas estimadas"
+
+msgid "Splits in progress tasks"
+msgstr "Dividir tareas en curso"
+
+msgid "Spread actual cost"
+msgstr "Distribuir costo real"
+
+msgid "Spread percent complete"
+msgstr "Distribuir porcentaje completado"
+
+msgid "Task updates resource"
+msgstr "La tarea actualiza al recurso"
+
+msgid "Move completed ends back"
+msgstr "Mover fines completados atrás"
+
+msgid "Move remaining starts back"
+msgstr "Mover inicios restantes atrás"
+
+msgid "Move remaining starts forward"
+msgstr "Mover inicios restantes adelante"
+
+msgid "Move completed ends forward"
+msgstr "Mover fines completados adelante"
+
+msgid "Auto add new resources and tasks"
+msgstr "Agregar recursos y tareas automáticamente"
+
+msgid "Autolink"
+msgstr "Enlazar automáticamente"
+
+msgid "Microsoft Project Server URL"
+msgstr "URL de Microsoft Project Server"
+
+msgid "Earned value method"
+msgstr "Método de valor ganado"
+
+msgid "Baseline for earned value"
+msgstr "Línea base para valor ganado"
+
+msgid "Default task earned value method"
+msgstr "Método de valor ganado por defecto"
+
+msgid "Percent complete"
+msgstr "Porcentaje completado"
+
+msgid "Physical percent complete"
+msgstr "Porcentaje completado físico"
+
+msgid "Prorated"
+msgstr "Prorrateado"
+
+msgid "End"
+msgstr "Fin"
+
+msgid "January"
+msgstr "Enero"
+
+msgid "February"
+msgstr "Febrero"
+
+msgid "March"
+msgstr "Marzo"
+
+msgid "April"
+msgstr "Abril"
+
+msgid "May"
+msgstr "Mayo"
+
+msgid "June"
+msgstr "Junio"
+
+msgid "July"
+msgstr "Julio"
+
+msgid "August"
+msgstr "Agosto"
+
+msgid "September"
+msgstr "Septiembre"
+
+msgid "October"
+msgstr "Octubre"
+
+msgid "November"
+msgstr "Noviembre"
+
+msgid "December"
+msgstr "Diciembre"
+
+msgid "Project start date"
+msgstr "Inicio del proyecto"
+
+msgid "Current date"
+msgstr "Fecha actual"
+
+msgid "The project's numbers must be numbers."
+msgstr "Los números del proyecto deben ser números."

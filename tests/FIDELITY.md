@@ -37,16 +37,16 @@ toca, más el costo por uso del período en que arranca (dos aserciones nuevas e
 
 | Fixture | tasks | hitos | attrs | links | problems in→out | touched |
 |---|---|---|---|---|---|---|
-| 01-minimal | 2 | 0 | 0 | 1 | 8 → 8 | 13 |
-| 02-relations | 5 | 0 | 0 | 4 | 2 → 2 | 10 |
-| 03-resources-assignments | 2 | 0 | 0 | 0 | 4 → 4 | 10 |
-| 04-calendars | 1 | 0 | 0 | 0 | 2 → 2 | 12 |
-| 05-durations | 4 | 1 | 0 | 1 | 2 → 2 | 12 |
-| 06-timephased-custom | 1 | 0 | 1 | 0 | 10 → 10 | 5 |
-| 07-extended-attrs | 3 | 2 | 2 | 2 | 8 → 8 | 11 |
+| 01-minimal | 2 | 0 | 0 | 1 | 3 → 3 | 14 |
+| 02-relations | 5 | 0 | 0 | 4 | 0 → 0 | 11 |
+| 03-resources-assignments | 2 | 0 | 0 | 0 | 0 → 0 | 11 |
+| 04-calendars | 1 | 0 | 0 | 0 | 0 → 0 | 13 |
+| 05-durations | 4 | 1 | 0 | 1 | 0 → 0 | 14 |
+| 06-timephased-custom | 1 | 0 | 1 | 0 | 8 → 8 | 6 |
+| 07-extended-attrs | 3 | 2 | 2 | 2 | 6 → 6 | 12 |
 | 08-namespace-2007 | 1 | 0 | 0 | 0 | 0 → 0 | 1 |
-| 09-defaults | 2 | 0 | 0 | 1 | 1 → 1 | 4 |
-| 10-rates | 2 | 0 | 0 | 0 | 4 → 4 | 8 |
+| 09-defaults | 2 | 0 | 0 | 1 | 0 → 0 | 5 |
+| 10-rates | 2 | 0 | 0 | 0 | 0 → 0 | 9 |
 
 Los counts de tareas, links y attrs se conservan en los diez; el Gantt dibuja
 todos (el `check` lo afirma). Lo que sigue es lo que **cambia** en el archivo.
@@ -99,6 +99,12 @@ líneas base, `SecondaryPID`/`AutoRollDown`/`Ltuid` de los campos extendidos y
 el `CreateDate` de la tarea resumen. Los `problem-in` y `problem-out` son
 idénticos en los diez.
 
+Séptima medición, el mismo día, con el `<Project>` del XSD modelado entero:
+la identidad y la información del proyecto tienen su diálogo (`ProjectForm`)
+y los valores por defecto y switches de cálculo el suyo (`OptionsForm`); las
+banderas administrativas quedan modeladas sin diálogo. Los `problems` caen a
+cero en ocho de los diez fixtures y el archivo real baja de 5337 a 5302.
+
 ## D. El oráculo: un archivo de Project (2026-09-23)
 
 El primer archivo real: `urbano v5.05052026.xml`, guardado por Project 16.0
@@ -107,8 +113,8 @@ asignaciones al recurso nulo, 185 `TimephasedData`, sin baselines). No se
 versiona: es de un tercero. Se copió a `/tmp` y se midió con `check` y con
 `check-oracle`.
 
-- **Ida y vuelta**: `problems` 5396 → 5337 (los 59 `Manual` dejan de ser un
-  problema al modelarse), `touched` 843, y ningún elemento perdido: las 752
+- **Ida y vuelta**: `problems` 5396 → 5302 (los 59 `Manual` y el header
+  entero dejan de ser un problema al modelarse), `touched` 871, y ningún elemento perdido: las 752
   bajas son defaults (los ceros que Project escribe en cada tarea) y los 91
   cambios de valor son la forma booleana (`1`/`0` de Project → `true`/`false`
   del esquema). `ScheduleFromStart=1` se omite porque el XSD lo declara

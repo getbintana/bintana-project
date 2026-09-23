@@ -1,4 +1,5 @@
 touched: /Project/ScheduleFromStart[1]: removed (was "true")
+touched: /Project/CriticalSlackLimit[1]: removed (was "0")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/DefaultTaskType[1]: removed (was "1")
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: removed (was "false")

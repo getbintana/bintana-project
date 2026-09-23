@@ -263,12 +263,26 @@ class MspProject extends Record {
     static Fields = {
         SaveVersion:       Field.Int(),
         Name:              Field.Text(),
+        /* The document's own data, in the schema's order: what Project's
+         * Project Information dialog edits. None of them has a default, so a
+         * value the file wrote survives. */
+        Title:             Field.Text(),
+        Subject:           Field.Text(),
+        Category:          Field.Text(),
+        Company:           Field.Text(),
+        Manager:           Field.Text(),
+        Author:            Field.Text(),
+        CreationDate:      Field.DateTime(),
+        Revision:          Field.Int(),
+        LastSaved:         Field.DateTime(),
         /* true, as the schema says: a file that means to schedule from the
          * finish writes `false`, and that is what is kept. `Field.Bool` takes
          * its default as the argument, not as an option. */
         ScheduleFromStart: Field.Bool(true),
         StartDate:         Field.DateTime(),
         FinishDate:        Field.DateTime(),
+        FYStartDate:       Field.Int(),
+        CriticalSlackLimit: Field.Int(),
         CurrencyDigits:    Field.Int(),
         CurrencySymbol:    Field.Text(),
         CurrencyCode:      Field.Text(),
@@ -283,11 +297,45 @@ class MspProject extends Record {
          * means Fixed Duration and a file that wrote 0 (Fixed Units) keeps
          * its own word. */
         DefaultTaskType:   Field.Int({ def: 1 }),
+        DefaultFixedCostAccrual: Field.Int(),
+        DefaultStandardRate: Field.Number(),
+        DefaultOvertimeRate: Field.Number(),
         DurationFormat:    Field.Int(),
         WorkFormat:        Field.Int(),
+        /* The switches the schema declares a default for: a true is the
+         * omission and a false is kept. */
+        EditableActualCosts: Field.Bool(),
+        HonorConstraints:  Field.Bool(true),
+        EarnedValueMethod: Field.Int(),
+        InsertedProjectsLikeSummary: Field.Bool(true),
+        MultipleCriticalPaths: Field.Bool(),
+        NewTasksEffortDriven: Field.Bool(true),
+        NewTasksEstimated: Field.Bool(true),
+        SplitsInProgressTasks: Field.Bool(true),
+        SpreadActualCost:  Field.Bool(true),
+        SpreadPercentComplete: Field.Bool(),
+        TaskUpdatesResource: Field.Bool(),
+        FiscalYearStart:   Field.Bool(),
         /* No default in the schema and Project writes its 0 (Sunday): a
          * present one is kept, an absent one reads as 0 at the call site. */
         WeekStartDay:      Field.Int({ def: -1 }),
+        MoveCompletedEndsBack: Field.Bool(),
+        MoveRemainingStartsBack: Field.Bool(),
+        MoveRemainingStartsForward: Field.Bool(),
+        MoveCompletedEndsForward: Field.Bool(),
+        BaselineForEarnedValue: Field.Int(),
+        AutoAddNewResourcesAndTasks: Field.Bool(true),
+        StatusDate:        Field.DateTime(),
+        CurrentDate:       Field.DateTime(),
+        MicrosoftProjectServerURL: Field.Bool(),
+        Autolink:          Field.Bool(),
+        NewTaskStartDate:  Field.Int(),
+        DefaultTaskEVMethod: Field.Int(),
+        ProjectExternallyEdited: Field.Bool(),
+        ExtendedCreationDate: Field.DateTime(),
+        ActualsInSync:     Field.Bool(),
+        RemoveFileProperties: Field.Bool(),
+        AdminProject:      Field.Bool(),
         FieldDefs:         Field.List(MspFieldDef, { in: "ExtendedAttributes" }),
         Calendars:         Field.List(MspCalendar, { in: "Calendars" }),
         Tasks:             Field.List(MspTask, { in: "Tasks" }),

@@ -8,7 +8,6 @@
   <ScheduleFromStart>false</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-02T17:00:00</FinishDate>
-  <CriticalSlackLimit>0</CriticalSlackLimit>
   <CurrencyDigits>2</CurrencyDigits>
   <CurrencySymbol>$</CurrencySymbol>
   <CurrencyCode>USD</CurrencyCode>
