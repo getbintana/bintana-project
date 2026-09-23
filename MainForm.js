@@ -318,6 +318,7 @@ class MainForm extends Form {
             this.Resources.Add([
                 resource.Name,
                 String(resource.MaxUnits),
+                String(resourcePeak(project, resource)),
                 String(resource.StandardRate),
                 Locale.Number(resourceCost(project, resource), 2),
             ]);
@@ -992,8 +993,12 @@ class MainForm extends Form {
             Message.Warning("Nothing to schedule: the project has no start date.");
             return;
         }
-        const tasks = this.holder.project.Tasks;
+        const project = this.holder.project;
+        const tasks = project.Tasks;
         const critical = tasks.filter((t) => !t.IsNull && t.Critical).length;
+        const over = project.Resources.filter(
+            (r) => !r.IsNull && r.MaxUnits > 0 &&
+                   resourcePeak(project, r) > r.MaxUnits).length;
         const late = tasks.filter((t) => {
             const deadline = t.Deadline ? whenMs(t.Deadline) : null;
             const finish   = t.Finish ? whenMs(t.Finish) : null;
@@ -1002,6 +1007,7 @@ class MainForm extends Form {
         this.fill(this.selectedUID);
         this.log(`Recalculated ${result.placed} tasks, ${critical} critical` +
                  (late ? `, ${late} past deadline` : "") +
+                 (over ? `, ${over} over-allocated` : "") +
                  (result.skipped
                     ? `, ${result.skipped} kept (constraint not scheduled here)`
                     : "") + ".");
@@ -1300,6 +1306,20 @@ class MainForm extends Form {
             ok = eq("material cost", assignmentCost(r, r.Assignments[1]), 250) && ok;
             ok = eq("file cost", assignmentCost(r, r.Assignments[2]), 123) && ok;
             ok = eq("resource total", resourceCost(r, r.Resources[0]), 523) && ok;
+
+            /* Two tasks that overlap add their units at the overlap: that is
+             * what the Peak column shows and the log counts. */
+            const o = projectOf([task(1, "PT8H0M0S"), task(2, "PT8H0M0S")]);
+            o.Resources   = [new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                               MaxUnits: 1, StandardRate: 50 })];
+            o.Assignments = [
+                new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                    Units: 1, Work: "PT8H0M0S" }),
+                new MspAssignment({ UID: 2, TaskUID: 2, ResourceUID: 1,
+                                    Units: 1, Work: "PT8H0M0S" }),
+            ];
+            recalculate(o);
+            ok = eq("peak units", resourcePeak(o, o.Resources[0]), 2) && ok;
 
             /* The backward pass: the chain is critical and the parallel task
              * has the Wednesday to slip -- the Tuesday is the holiday. */

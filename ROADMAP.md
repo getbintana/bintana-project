@@ -149,10 +149,12 @@ recurso (la baja se lleva sus asignaciones), y la asignación de un recurso a la
 tarea seleccionada, con el trabajo calculado desde la duración. El costo se
 calcula -- trabajo por la tasa en un recurso work, unidades por la tasa en uno
 material, más el costo por uso, y el `Cost` del archivo manda si lo trae -- y
-`check-cpm` afirma los cuatro casos.
+`check-cpm` afirma los casos. La **sobreasignación se detecta** (la columna
+Peak suma las asignaciones que se solapan y el log cuenta los recursos pasados
+de su máximo); no se nivela.
 
-- Falta: tablas de tasas por fecha, contornos de trabajo y el costo a nivel
-  tarea/proyecto. Nivelación queda afuera por ahora.
+- Falta: tablas de tasas por fecha, contornos de trabajo, costo a nivel
+  tarea/proyecto y calendario de recurso. Nivelación queda afuera por ahora.
 
 ### 6 — Distribución
 

@@ -1009,6 +1009,11 @@
                                     "Alignment": "Right"
                                   },
                                   {
+                                    "Text": "Peak",
+                                    "Width": 50,
+                                    "Alignment": "Right"
+                                  },
+                                  {
                                     "Text": "Rate",
                                     "Width": 60,
                                     "Alignment": "Right"

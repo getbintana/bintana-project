@@ -61,13 +61,15 @@ its week days (each with its working times as prose, `08:00-12:00
 The minutes a day is not decoration: it is what a typed `1d` means.
 
 **Recent** drops the last eight files. The **Resources** tab lists the plan's
-resources with their rate and the cost of their assignments -- a work resource
-by the hours, a material by the units, the file's own `Cost` where it wrote
-one -- and edits them: **New**/**Apply**/**Delete** for a resource (deleting
-one takes its assignments with it), and below, the selected task's
-assignments, where **Assign** joins a resource at some units and computes the
-work from the task's duration. One resource per task is one assignment:
-assigning it again updates the units. **Predecessors** lists the selected task's links: pick a task, a
+resources with their rate, the cost of their assignments -- a work resource by
+the hours, a material by the units, the file's own `Cost` where it wrote one
+-- and **Peak**: the most units assigned at once, which is over the maximum
+when two tasks overlap. Recalculate says how many resources are over. The tab
+edits them too: **New**/**Apply**/**Delete** for a resource (deleting one
+takes its assignments with it), and below, the selected task's assignments,
+where **Assign** joins a resource at some units and computes the work from the
+task's duration. One resource per task is one assignment: assigning it again
+updates the units. **Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
 schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place
@@ -92,7 +94,8 @@ wrote; a `Deadline` is a target and never schedules anything, but the log
 counts the tasks past theirs. It is one undo, like any other command; the
 chart paints critical tasks red and shows completion as a band inside the bar,
 so neither hides the other. `CriticalSlackLimit` is not modelled, so the limit
-is zero.
+is zero. A task past its deadline gets a small red arrow over its bar where the
+deadline was promised, and the log counts them.
 
 **Save Baseline** (Edit menu) keeps the plan as it stands -- every task's dates
 and work into its own `Baseline` -- and the chart draws that baseline as a thin

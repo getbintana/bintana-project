@@ -167,6 +167,16 @@ function drawGantt(p, width, height, project, selected, step, drag) {
         if (s === null || f === null) continue;
         const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
 
+        /* A deadline the task is past, marked where it was promised: the
+         * little red arrow Project draws over the bar. */
+        const deadline = whenMs(task.Deadline);
+        if (deadline !== null && deadline < f) {
+            p.Color = late;
+            p.Polygon([x(deadline), y - 2, x(deadline) + 5, y - 9,
+                       x(deadline) - 5, y - 9]);
+            p.Fill();
+        }
+
         /* The baseline, when the file carries one: a thin gray bar under the
          * task's own, which is what Project shows a slip against. */
         const baseline = baselineOf(task);

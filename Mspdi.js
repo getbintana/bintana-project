@@ -359,6 +359,36 @@ function assignmentCost(project, assignment) {
     return cost + (resource.CostPerUse || 0);
 }
 
+/*
+ * The most units a resource has assigned at once: the assignments whose tasks
+ * overlap add up there, which is what over-allocation is. It answers 0 when
+ * nothing is dated. It reports and never reschedules -- leveling is not here.
+ */
+function resourcePeak(project, resource) {
+    const spans = [];
+    for (const assignment of project.Assignments) {
+        if (assignment.ResourceUID !== resource.UID) continue;
+
+        let task = null;
+        for (const candidate of project.Tasks)
+            if (candidate.UID === assignment.TaskUID) { task = candidate; break; }
+        if (!task) continue;
+
+        const from = whenMs(task.Start), to = whenMs(task.Finish);
+        if (from === null || to === null) continue;
+        spans.push({ from, to, units: assignment.Units || 0 });
+    }
+
+    let peak = 0;
+    for (const at of spans) {
+        let total = 0;
+        for (const span of spans)
+            if (span.from <= at.from && span.to >= at.from) total += span.units;
+        if (total > peak) peak = total;
+    }
+    return peak;
+}
+
 /* Every assignment of one resource, added up. */
 function resourceCost(project, resource) {
     let total = 0;

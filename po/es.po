@@ -280,6 +280,9 @@ msgstr "Un recurso necesita un nombre, y sus números deben ser números."
 msgid "Max"
 msgstr "Máx"
 
+msgid "Peak"
+msgstr "Pico"
+
 msgid "Rate"
 msgstr "Tasa"
 
