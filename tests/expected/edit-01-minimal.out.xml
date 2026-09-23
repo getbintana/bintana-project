@@ -203,21 +203,21 @@
       <UID>2</UID>
       <ID>2</ID>
       <Name>Build</Name>
-      <Type>1</Type>
       <CreateDate>2026-09-01T08:00:00</CreateDate>
       <WBS>2</WBS>
       <OutlineNumber>2</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
       <Start>2026-09-03T08:00</Start>
-      <Finish>2026-09-03T17:00</Finish>
+      <Finish>2026-09-03T12:00</Finish>
       <Duration>PT7H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
+      <EffortDriven>true</EffortDriven>
       <Critical>true</Critical>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-03T08:00</ActualStart>
-      <ActualFinish>2026-09-03T17:00</ActualFinish>
+      <ActualFinish>2026-09-03T12:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>
@@ -231,7 +231,7 @@
       <Baseline>
         <Number>0</Number>
         <Start>2026-09-03T08:00</Start>
-        <Finish>2026-09-03T17:00</Finish>
+        <Finish>2026-09-03T12:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
     </Task>
@@ -246,6 +246,15 @@
       <StandardRate>50</StandardRate>
       <CalendarUID>1</CalendarUID>
     </Resource>
+    <Resource>
+      <UID>2</UID>
+      <ID>2</ID>
+      <Name>Bruno</Name>
+      <Type>1</Type>
+      <MaxUnits>1</MaxUnits>
+      <StandardRate>40</StandardRate>
+      <CalendarUID>1</CalendarUID>
+    </Resource>
   </Resources>
   <Assignments>
     <Assignment>
@@ -256,7 +265,17 @@
       <RegularWork>PT8H0M0S</RegularWork>
       <Start>2026-09-03T08:00:00</Start>
       <Units>1</Units>
-      <Work>PT8H0M0S</Work>
+      <Work>PT4H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>2</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>2</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT4H0M0S</RegularWork>
+      <Start>2026-09-03T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT4H0M0S</Work>
     </Assignment>
   </Assignments>
 </Project>

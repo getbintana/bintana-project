@@ -343,6 +343,18 @@ msgstr "Días por mes"
 msgid "Default task type"
 msgstr "Tipo de tarea por defecto"
 
+msgid "Task type"
+msgstr "Tipo de tarea"
+
+msgid "Fixed units"
+msgstr "Unidades fijas"
+
+msgid "Fixed duration"
+msgstr "Duración fija"
+
+msgid "Fixed work"
+msgstr "Trabajo fijo"
+
 msgid "Fixed units"
 msgstr "Unidades fijas"
 

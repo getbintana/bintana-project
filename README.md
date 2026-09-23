@@ -46,8 +46,9 @@ one undo; a task with no dates is only reachable from the table.
 The panel on the right is a view of the selected row: type a name, a moment
 (`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, `2ed` for elapsed, or a
 bare number in the task's own unit), a percentage, the milestone, estimated and
-effort-driven ticks, a constraint (`ASAP` through `FNLT`, with its date), a
-deadline, notes, or the value of a custom field the file defines -- the same
+effort-driven ticks, the task type (Fixed Units/Duration/Work), a constraint
+(`ASAP` through `FNLT`, with its date), a deadline, notes, or the value of a
+custom field the file defines -- the same
 `FieldID` the list's column can be pointed at -- and Apply writes them as one
 command -- one undo. **Add** puts a new task after the selected one and its
 subtree, **Delete** takes that subtree and every link into it, and
@@ -69,7 +70,15 @@ edits them too: **New**/**Apply**/**Delete** for a resource (deleting one
 takes its assignments with it), and below, the selected task's assignments,
 where **Assign** joins a resource at some units and computes the work from the
 task's duration. One resource per task is one assignment: assigning it again
-updates the units. **Predecessors** lists the selected task's links: pick a task, a
+updates the units. What the units do to the duration is the task's `Type` and
+its effort-driven flag: an effort-driven task keeps its work and shortens as
+units add up (one that already carries a unit takes half the time when a second
+arrives), Fixed Duration ignores the flag, and any other type keeps the
+duration and lets the work grow. A duration typed by hand is the user's number:
+it does not rewrite the work of the assignments -- assigning a resource is the
+road that follows the identity.
+
+**Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
 schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place

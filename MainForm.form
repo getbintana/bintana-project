@@ -728,6 +728,27 @@
                                 },
                                 {
                                   "type": "Label",
+                                  "name": "LblTaskType",
+                                  "properties": {
+                                    "Text": "Task type",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbTaskType",
+                                  "properties": {
+                                    "Items": [
+                                      "Fixed units",
+                                      "Fixed duration",
+                                      "Fixed work"
+                                    ],
+                                    "Index": 0,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
                                   "name": "LblConstraint",
                                   "properties": {
                                     "Text": "Constraint",

@@ -241,6 +241,20 @@ class WorkCalendar {
 }
 
 /*
+ * The work identity `Type` describes, in minutes. A task with no assignments
+ * is its own unit of work at a hundred per cent, so `before` is what the task
+ * already carries and `after` what it carries once the resource is in -- both
+ * at least one. An effort-driven task keeps its work and shortens as units
+ * add up; Fixed Duration (1) ignores the flag, because its duration is the
+ * point, and every other type keeps the duration and lets the work grow.
+ */
+function assignmentDuration(task, before, after) {
+    const minutes = mspdiMinutes(task.Duration) || 0;
+    const effort  = task.EffortDriven && (task.Type || 0) !== 1;
+    return effort && minutes > 0 ? Math.round(minutes * before / after) : minutes;
+}
+
+/*
  * The forward pass. Answers how many tasks it placed, or 0 when there is no
  * start to place them from. A link whose predecessor is not in the file is
  * ignored; a cycle is left where it was rather than hung on.

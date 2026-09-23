@@ -197,30 +197,73 @@ class Edit {
 
     /* A task and a resource, joined. One assignment per pair: assigning the
      * same resource again updates the units instead of adding a second. The
-     * work a work resource carries is the task's duration at those units;
-     * a material is measured by the units and has none. */
+     * task's `Type` and `EffortDriven` decide what the units do to the
+     * duration, and the work a work resource carries is that duration at its
+     * units; a material is measured by the units and has none. */
     addAssignment(taskUID, resourceUID, units) {
         const project  = this.holder.project;
         const task     = this.task(taskUID);
         const resource = this.resource(resourceUID);
         if (!task || !resource) return null;
 
+        /* What the task already carries in work-resource units, and what the
+         * assignment being replaced carried: a task with none is its own unit
+         * of work at a hundred per cent. */
+        let existing = 0, replaced = 0;
+        for (const assignment of project.Assignments) {
+            if (assignment.TaskUID !== taskUID) continue;
+            const other = this.resource(assignment.ResourceUID);
+            if (!other || other.Type !== 1) continue;
+            existing += assignment.Units || 0;
+            if (assignment.ResourceUID === resourceUID)
+                replaced = assignment.Units || 0;
+        }
+        const adds   = resource.Type === 1 ? units : 0;
+        const before = existing > 0 ? existing : 1;
+        const after  = existing > 0 ? existing - replaced + adds : 1 + adds;
+
+        const minutes  = mspdiMinutes(task.Duration) || 0;
+        const duration = assignmentDuration(task, before, after);
+        const work = resource.Type === 0 ? "PT0H0M0S"
+                   : mspdiDuration(Math.round(duration * units));
+
         let maxUID = 0;
         for (const assignment of project.Assignments)
             if (assignment.UID > maxUID) maxUID = assignment.UID;
 
-        const minutes = mspdiMinutes(task.Duration) || 0;
-        const work = resource.Type === 0 ? "PT0H0M0S"
-                   : mspdiDuration(Math.round(minutes * units));
         const assignment = new MspAssignment({
             UID: maxUID + 1, TaskUID: taskUID, ResourceUID: resourceUID,
             Units: units, Work: work, RegularWork: work,
             Start: task.Start, Finish: task.Finish,
         });
 
-        const kept = project.Assignments.filter(
-            (a) => !(a.TaskUID === taskUID && a.ResourceUID === resourceUID));
+        const kept = [];
+        for (const other of project.Assignments) {
+            if (other.TaskUID === taskUID && other.ResourceUID === resourceUID)
+                continue;
+            /* What stays is the new duration at its own units, but only when
+             * the duration moved: an untouched one is the file's number. */
+            const r = this.resource(other.ResourceUID);
+            if (r && r.Type === 1 && duration !== minutes)
+                other.Work = mspdiDuration(
+                    Math.round(duration * (other.Units || 0)));
+            kept.push(other);
+        }
         kept.push(assignment);
+
+        /* A task whose duration moved follows it: the finish is the working
+         * time from the start, which is the road `recalculate` walks. */
+        if (duration !== minutes) {
+            task.Duration = mspdiDuration(duration);
+            task.Work     = mspdiDuration(Math.round(duration * after));
+            if (task.Start !== "") {
+                const calendar = new WorkCalendar(project, task.CalendarUID);
+                const from = whenMs(task.Start);
+                if (from !== null)
+                    task.Finish = isoLocal(calendar.add(from, duration));
+            }
+        }
+
         project.Assignments = kept;
         this.commit();
         return assignment;

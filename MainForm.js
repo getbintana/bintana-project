@@ -565,6 +565,8 @@ class MainForm extends Form {
         this.ChkMilestone.Active    = has ? task.Milestone : false;
         this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
         this.ChkEstimated.Active    = has ? task.Estimated : false;
+        this.CmbTaskType.Index = has
+            ? Math.min(Math.max(task.Type || 0, 0), 2) : 0;
         this.SpinPercent.Value   = has ? task.PercentComplete : 0;
         this.CmbConstraint.Index = has ? (task.ConstraintType || 0) : 0;
         this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
@@ -576,9 +578,9 @@ class MainForm extends Form {
          * derives from its children; only its name is the user's. */
         for (const w of [this.TxtStart, this.TxtFinish, this.TxtDuration,
                          this.ChkMilestone, this.ChkEffortDriven,
-                         this.ChkEstimated, this.SpinPercent,
-                         this.CmbConstraint, this.TxtConstraint,
-                         this.TxtDeadline])
+                         this.ChkEstimated, this.CmbTaskType,
+                         this.SpinPercent, this.CmbConstraint,
+                         this.TxtConstraint, this.TxtDeadline])
             w.Enabled = editable;
         /* The commands the toolbar, the menu and the panel share are one
          * `Enabled`: assigning the button's would be refused, and rightly. */
@@ -910,6 +912,7 @@ class MainForm extends Form {
             values.Finish          = parseMoment(this.TxtFinish.Text);
             values.Duration        = mspdiDuration(duration.minutes);
             values.DurationFormat  = duration.format;
+            values.Type            = Math.max(this.CmbTaskType.Index, 0);
             values.Milestone       = this.ChkMilestone.Active;
             values.EffortDriven    = this.ChkEffortDriven.Active;
             values.Estimated       = this.ChkEstimated.Active;
@@ -1321,6 +1324,22 @@ class MainForm extends Form {
             recalculate(o);
             ok = eq("peak units", resourcePeak(o, o.Resources[0]), 2) && ok;
 
+            /* The work identity: effort-driven halves the duration when the
+             * units double, Fixed Duration ignores the flag, and without it
+             * the duration stands and the work grows. */
+            ok = eq("effort driven", assignmentDuration(
+                    { Duration: "PT8H0M0S", EffortDriven: true, Type: 0 }, 1, 2),
+                    240) && ok;
+            ok = eq("effort, two already", assignmentDuration(
+                    { Duration: "PT8H0M0S", EffortDriven: true, Type: 0 }, 2, 3),
+                    320) && ok;
+            ok = eq("fixed duration", assignmentDuration(
+                    { Duration: "PT8H0M0S", EffortDriven: true, Type: 1 }, 1, 2),
+                    480) && ok;
+            ok = eq("not effort driven", assignmentDuration(
+                    { Duration: "PT8H0M0S", EffortDriven: false, Type: 0 }, 1, 2),
+                    480) && ok;
+
             /* The backward pass: the chain is critical and the parallel task
              * has the Wednesday to slip -- the Tuesday is the holiday. */
             const q = projectOf([
@@ -1639,6 +1658,18 @@ class MainForm extends Form {
             print(`edit resource uid=${res.UID} assignment work=${asg.Work} ` +
                   `cost=${assignmentCost(edit.holder.project, asg)}`);
 
+            /* The task type and effort-driven: one more unit on a task that
+             * already carries one halves the duration and keeps the work. */
+            edit.setFields(2, { Type: 0, EffortDriven: true });
+            const bruno = edit.addResource({ Name: "Bruno", Type: 1,
+                                             MaxUnits: 1, StandardRate: 40,
+                                             CalendarUID: 1 });
+            ok = edit.addAssignment(2, bruno.UID, 1) &&
+                 edit.task(2).Duration === "PT4H0M0S" &&
+                 edit.task(2).Work === "PT8H0M0S" && ok;
+            print(`edit effort duration=${edit.task(2).Duration} ` +
+                  `work=${edit.task(2).Work}`);
+
             /* The project's own minutes: a day is 420 now, so a typed "1d" is
              * seven hours and not eight. */
             ok = edit.setProject({ MinutesPerDay: 420, MinutesPerWeek: 2100,
@@ -1725,9 +1756,9 @@ class MainForm extends Form {
                  saved[2].ConstraintType === 4 &&
                  saved[2].Estimated === true &&
                  saved[2].Notes === "Edited in the harness" &&
-                 second.project.Resources.length === 1 &&
-                 second.project.Assignments.length === 1 &&
-                 second.project.Assignments[0].Work === "PT8H0M0S" &&
+                 second.project.Resources.length === 2 &&
+                 second.project.Assignments.length === 2 &&
+                 second.project.Assignments[0].Work === "PT4H0M0S" &&
                  second.project.FieldDefs.length === 1 &&
                  saved[3].Attributes.length === 1 &&
                  saved[3].Attributes[0].Value === "4821" &&
