@@ -5,6 +5,9 @@ tree beside a Gantt, and write it back without touching what the model does not
 own. The plan is a real scheduler one phase at a time -- `ROADMAP.md` says in
 which order.
 
+[`MANUAL.md`](MANUAL.md) is the user's manual, in Spanish, and this file is for
+whoever works on it.
+
 ## Run it
 
 ```sh
