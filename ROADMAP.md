@@ -170,8 +170,13 @@ material, más el costo por uso, y el `Cost` del archivo manda si lo trae -- y
 Peak suma las asignaciones que se solapan y el log cuenta los recursos pasados
 de su máximo); no se nivela.
 
-- Falta: tablas de tasas por fecha, contornos de trabajo, costo a nivel
-  tarea/proyecto y calendario de recurso. Nivelación queda afuera por ahora.
+**El costo a la vista** (2026-09-23): la tabla tiene una columna **Costo** por
+tarea (`taskCost`, vacía cuando la tarea no cuesta nada), la pestaña Proyecto
+muestra el **costo total** del plan (`projectCost`) y el informe usa la misma
+cuenta. Nada de esto se guarda: el `Cost` del archivo manda donde lo trae.
+
+- Falta: tablas de tasas por fecha, contornos de trabajo y calendario de
+  recurso. Nivelación queda afuera por ahora.
 
 ### 6 — Distribución
 

@@ -301,6 +301,9 @@ msgstr "Tasa"
 msgid "Cost"
 msgstr "Costo"
 
+msgid "Total cost"
+msgstr "Costo total"
+
 msgid "Type"
 msgstr "Tipo"
 

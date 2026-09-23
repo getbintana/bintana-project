@@ -101,7 +101,8 @@ su propio costo, ese manda.
 La pestaña **Proyecto** edita el encabezado: fecha de inicio, calendario por
 defecto, minutos por día y por semana, días por mes, tipo de tarea por
 defecto, el día en que empieza la semana y la moneda. Los minutos por día son
-lo que significa un `1d` tipeado.
+lo que significa un `1d` tipeado. Abajo del todo, **Costo total** es lo que
+suman las asignaciones del plan.
 
 **Editar…** abre el calendario elegido: los días laborables con sus tramos
 como texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y

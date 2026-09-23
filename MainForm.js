@@ -419,6 +419,8 @@ class MainForm extends Form {
         this.CmbProjWeekStart.Index  = Math.min(Math.max(project.WeekStartDay || 0, 0), 6);
         this.TxtProjCurrencyCode.Text   = project.CurrencyCode;
         this.TxtProjCurrencySymbol.Text = project.CurrencySymbol;
+        const cost = projectCost(project);
+        this.TxtProjCost.Text = cost ? Locale.Number(cost, 2) : "";
 
         const names = [];
         this.calChoices = [];
@@ -1157,11 +1159,6 @@ class MainForm extends Form {
         for (const task of project.Tasks) {
             if (task.IsNull || task.Summary) continue;
 
-            let cost = 0;
-            for (const assignment of project.Assignments)
-                if (assignment.TaskUID === task.UID)
-                    cost += assignmentCost(project, assignment);
-
             rows.push({
                 Task:     task.Name,
                 Start:    String(task.Start || "").slice(0, 10),
@@ -1169,7 +1166,7 @@ class MainForm extends Form {
                 Duration: durationText(task, project),
                 Complete: `${task.PercentComplete}%`,
                 Critical: task.Critical ? Locale.Text("Critical") : "",
-                Cost:     cost,
+                Cost:     taskCost(project, task),
             });
         }
 
@@ -1503,6 +1500,8 @@ class MainForm extends Form {
             ok = eq("material cost", assignmentCost(r, r.Assignments[1]), 250) && ok;
             ok = eq("file cost", assignmentCost(r, r.Assignments[2]), 123) && ok;
             ok = eq("resource total", resourceCost(r, r.Resources[0]), 523) && ok;
+            ok = eq("task total", taskCost(r, r.Tasks[0]), 773) && ok;
+            ok = eq("plan total", projectCost(r), 773) && ok;
 
             /* Two tasks that overlap add their units at the overlap: that is
              * what the Peak column shows and the log counts. */

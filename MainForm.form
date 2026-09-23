@@ -1532,6 +1532,23 @@
                                     "HExpand": true,
                                     "HAlign": "Fill"
                                   }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblProjCost",
+                                  "properties": {
+                                    "Text": "Total cost",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtProjCost",
+                                  "properties": {
+                                    "HExpand": true,
+                                    "HAlign": "Fill",
+                                    "ReadOnly": true
+                                  }
                                 }
                               ]
                             },

@@ -407,6 +407,14 @@ function resourceCost(project, resource) {
     return total;
 }
 
+/* The whole plan, added up. */
+function projectCost(project) {
+    let total = 0;
+    for (const assignment of project.Assignments)
+        total += assignmentCost(project, assignment);
+    return total;
+}
+
 /* The baseline a task carries (number 0, the one Set Baseline writes), or
  * null when it has none. */
 function baselineOf(task) {
