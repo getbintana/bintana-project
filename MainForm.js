@@ -61,8 +61,10 @@ class MainForm extends Form {
     fieldID = "";
     unit    = "";
 
-    /* The files the menu offers, parallel to its entries by index. */
-    recentPaths = [];
+    /* The files the menu offers, parallel to its entries by index, and the
+     * timer that keeps the recovery copy. */
+    recentPaths   = [];
+    autosaveTimer = null;
 
     /* The Resources page: the table's records, the resource being edited and
      * the assignments of the selected task, each parallel to its control. */
@@ -128,6 +130,7 @@ class MainForm extends Form {
             this.openSample();
         }
         this.applySettings();
+        this.startAutosave();
     }
 
     /* What the last run left. The folder is read where the dialog opens and
@@ -200,17 +203,81 @@ class MainForm extends Form {
         }
     }
 
-    load(path) {
+    /* `keepPath` is the file the document is *called* while its bytes came
+     * from somewhere else, which is what recovering an autosave is. */
+    load(path, keepPath, recovering) {
         this.holder = readMspdi(path);
-        this.path   = path;
+        this.path   = keepPath || path;
         this.edit   = new Edit(this.holder);
         this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
         this.forceClose = false;
         this.fill();
         if (this.settingsReady) {
-            Settings.Set("bintana-project.folder", File.Directory(path));
-            this.rememberRecent(path);
+            Settings.Set("bintana-project.folder", File.Directory(this.path));
+            this.rememberRecent(this.path);
+            if (!recovering && path !== this.autosavePath()) this.offerRecovery();
         }
+    }
+
+    /* --- the autosave --------------------------------------------------- */
+
+    /* A copy in the config directory, refreshed while there is unsaved work.
+     * It is never beside the schedule: a project tree may be read-only, and
+     * somebody else's copy of a plan is not theirs to find. */
+    autosavePath() {
+        return File.Join(Application.ConfigDirectory,
+                         "autosave-" + File.BaseName(this.path) + ".xml");
+    }
+
+    startAutosave() {
+        if (this.autosaveTimer) this.autosaveTimer.Stop();
+        this.autosaveTimer = Timer.Every(60000, () => this.autosave());
+    }
+
+    autosave() {
+        if (!Settings.Get("bintana-project.autosave", true)) return;
+        if (!this.settingsReady || !this.edit || !this.edit.dirty || !this.path)
+            return;
+        try {
+            writeMspdi(this.autosavePath(), this.holder);
+        } catch (e) {
+            /* A recovery copy that cannot be written is not worth a dialog:
+             * the file the user asked for is still theirs to save. */
+        }
+    }
+
+    /* A newer copy than the file means the last session ended with unsaved
+     * work, and it is offered rather than taken. The question waits for the
+     * window: a dialog shown from `Form_Open` can be mapped under it. */
+    offerRecovery() {
+        Timer.After(150, () => this.askRecovery());
+    }
+
+    askRecovery() {
+        if (!Settings.Get("bintana-project.autosave", true)) return;
+
+        const copy = this.autosavePath();
+        const made = File.Info(copy);
+        if (!made) return;
+
+        const file = File.Info(this.path);
+        if (file && made.Modified <= file.Modified) {
+            if (File.Exists(copy)) File.Delete(copy);   // the file is newer
+            return;
+        }
+
+        ConfirmForm.ask(Locale.Text("Unsaved changes"),
+            Locale.Text("There is a newer autosave of {0}. Open it?",
+                        File.Name(this.path)),
+            Locale.Text("Open"), () => {
+                try {
+                    this.load(copy, this.path, true);
+                    if (File.Exists(copy)) File.Delete(copy);
+                    this.log(`Recovered ${copy}.`);
+                } catch (e) {
+                    Message.Error("Cannot open {0}: {1}", copy, e.message);
+                }
+            }, null, "suggested-action");
     }
 
     /* The table as the WBS it is: a tree keyed by UID, summaries included and
@@ -1114,6 +1181,8 @@ class MainForm extends Form {
     save() {
         try {
             writeMspdi(this.path, this.holder);
+            const copy = this.autosavePath();
+            if (File.Exists(copy)) File.Delete(copy);
             this.edit.markSaved();
             this.updateTitle();
             this.log(`Saved ${this.path}.`);

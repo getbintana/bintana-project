@@ -110,6 +110,15 @@
             "ColumnSpan": 2,
             "HAlign": "Start"
           }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkAutosave",
+          "properties": {
+            "Text": "Autosave every minute",
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
         }
       ]
     },

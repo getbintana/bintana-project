@@ -25,6 +25,7 @@ class SettingsForm extends Form {
         dlg.CmbUnit.Index = unit >= 0 ? unit : 0;
 
         dlg.ChkAutorecalc.Active = Settings.Get("bintana-project.autorecalc", false);
+        dlg.ChkAutosave.Active   = Settings.Get("bintana-project.autosave", true);
 
         dlg.Show();
         dlg.BtnSave.SetFocus();
@@ -37,6 +38,7 @@ class SettingsForm extends Form {
         Settings.Set("bintana-project.field", trim(this.TxtField.Text));
         Settings.Set("bintana-project.unit", UNIT_KEYS[this.CmbUnit.Index] || "");
         Settings.Set("bintana-project.autorecalc", this.ChkAutorecalc.Active);
+        Settings.Set("bintana-project.autosave", this.ChkAutosave.Active);
         if (this.onSaved) this.onSaved();
         this.Close();
     }

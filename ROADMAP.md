@@ -127,6 +127,12 @@ tiene un filtro por nombre --el match y sus ancestros, con la lupa para
 limpiar-- y el menú Editar, **Save Baseline**, con la línea base dibujada como
 barra fina debajo de cada tarea.
 
+**Autosave y recuperación** (2026-09-23): mientras hay cambios sin guardar se
+escribe una copia cada minuto en el directorio de config (nunca al lado del
+plan, que puede ser de solo lectura); al abrir, una copia más nueva que el
+archivo se **ofrece** -- no se toma -- y se borra al guardar. Se apaga desde
+Settings.
+
 ### 4 — Gantt interactivo
 
 **Hecha** (2026-09-22): selección sincronizada con la tabla, arrastrar una

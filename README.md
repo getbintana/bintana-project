@@ -158,12 +158,19 @@ through XML. The corpus measures the road to it; see `ROADMAP.md`.
 
 ## Settings and translation
 
-Six things are remembered, all under `bintana-project.*` in `Settings` (the
+Seven things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
 folder the last file came from, the timescale, which custom field the list
 shows (by `FieldID`, empty for the first), the unit a bare duration is read in,
-the recent list, and whether the plan is recalculated after each change
-(off by default: a date typed by hand is the user's until they ask). **Settings…** in the Tools menu is the one dialog that
+the recent list, whether the plan is recalculated after each change (off by
+default: a date typed by hand is the user's until they ask), and whether the
+recovery copy is kept.
+
+**The autosave is a copy, not a save**: while there is unsaved work the app
+writes it every minute to the config directory -- never beside the schedule,
+which may be read-only -- and a copy newer than the file is offered at open
+time rather than taken. Saving deletes it. It is closed again by the same
+switch in Settings. **Settings…** in the Tools menu is the one dialog that
 edits them, and it edits the same keys the code reads -- what it writes takes
 effect on Save, and a headless check never touches any of it.
 

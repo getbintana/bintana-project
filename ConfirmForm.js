@@ -14,7 +14,7 @@
 
 class ConfirmForm extends Form {
 
-    static ask(title, message, acceptText, onConfirm, other) {
+    static ask(title, message, acceptText, onConfirm, other, acceptStyle) {
         const dlg = new ConfirmForm();
 
         dlg.Text             = title;
@@ -22,6 +22,10 @@ class ConfirmForm extends Form {
         dlg.BtnYes.Text      = acceptText || Locale.Text("OK");
         dlg.onConfirm        = onConfirm;
         dlg.Modal            = true;
+
+        /* The form's own accept is the dangerous one -- Delete, Discard -- and
+         * a caller whose yes is safe says so. */
+        if (acceptStyle) dlg.BtnYes.Style = acceptStyle;
 
         if (other) {
             dlg.BtnOther.Text    = other.Text;

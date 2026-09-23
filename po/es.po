@@ -355,15 +355,6 @@ msgstr "Duración fija"
 msgid "Fixed work"
 msgstr "Trabajo fijo"
 
-msgid "Fixed units"
-msgstr "Unidades fijas"
-
-msgid "Fixed duration"
-msgstr "Duración fija"
-
-msgid "Fixed work"
-msgstr "Trabajo fijo"
-
 msgid "Week starts"
 msgstr "La semana empieza"
 
@@ -408,6 +399,12 @@ msgstr "Los minutos y días del proyecto deben ser números."
 
 msgid "Recalculate after each change"
 msgstr "Recalcular después de cada cambio"
+
+msgid "Autosave every minute"
+msgstr "Guardar copia cada minuto"
+
+msgid "There is a newer autosave of {0}. Open it?"
+msgstr "Hay una copia más nueva de {0}. ¿Abrirla?"
 
 msgid "Calendar"
 msgstr "Calendario"
@@ -471,15 +468,6 @@ msgstr "Minutos"
 
 msgid "Hours"
 msgstr "Horas"
-
-msgid "Days"
-msgstr "Días"
-
-msgid "Weeks"
-msgstr "Semanas"
-
-msgid "Months"
-msgstr "Meses"
 
 msgid "Export"
 msgstr "Exportar"
