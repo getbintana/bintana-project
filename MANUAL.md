@@ -86,6 +86,8 @@ cuántas restricciones incumplidas.
   tienen, y las sucesoras se enlazan a ellas. Un resumen manual fija además el
   piso de su rama.
 - En Configuración podés pedir que se recalcule solo después de cada cambio.
+  **Recalcular** (F5) sobre un plan que ya está donde el pase lo deja no mueve
+  nada: no ensucia el archivo ni agrega un paso de Deshacer.
 
 ## Recursos y costos
 

@@ -450,12 +450,15 @@ class Edit {
         return true;
     }
 
-    /* The scheduling pass over the plan, as one undo. Answers how many tasks
-     * it placed and how many it kept because their constraint needs Project's
-     * backward scheduling. */
+    /* The scheduling pass over the plan, as one undo -- and no undo at all
+     * when the plan already was where the pass puts it: a key that changes
+     * nothing must not dirty the file nor spend a step. Answers how many
+     * tasks it placed, how many it kept, and whether anything moved. */
     recalculate() {
+        const before = JSON.stringify(this.holder.project);
         const result = recalculate(this.holder.project);
-        if (result.placed) this.commit();
+        result.changed = JSON.stringify(this.holder.project) !== before;
+        if (result.changed) this.commit();
         return result;
     }
 

@@ -1119,6 +1119,10 @@ class MainForm extends Form {
             return deadline !== null && finish !== null && finish > deadline;
         }).length;
         this.fill(this.selectedUID);
+        if (!result.changed) {
+            this.log(Locale.Text("Recalculated: nothing moved."));
+            return;
+        }
         this.log(`Recalculated ${result.placed} tasks, ${critical} critical` +
                  (late ? `, ${late} past deadline` : "") +
                  (over ? `, ${over} over-allocated` : "") +
@@ -1982,6 +1986,13 @@ class MainForm extends Form {
             edit.undo();
             ok = edit.task(1).Start === "2026-09-01T09:00" && ok;
             edit.redo();
+
+            /* Recalculating a plan already where the pass puts it moves
+             * nothing, so it costs no undo step. */
+            const steps = edit.at;
+            const again = edit.recalculate();
+            ok = !again.changed && edit.at === steps && ok;
+            print(`edit recalc again changed=${again.changed} steps=${edit.at}`);
 
             /* A task after it, indented under it: UID 1 becomes a summary. */
             const added = edit.addTask(1);

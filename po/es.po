@@ -163,6 +163,9 @@ msgstr "Rehacer"
 msgid "Recalculate"
 msgstr "Recalcular"
 
+msgid "Recalculated: nothing moved."
+msgstr "Recalculado: nada se movió."
+
 msgid "Save Baseline"
 msgstr "Guardar línea base"
 
