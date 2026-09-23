@@ -1232,6 +1232,16 @@
                                     "HExpand": true,
                                     "HAlign": "Fill"
                                   }
+                                },
+                                {
+                                  "type": "Button",
+                                  "name": "BtnResRates",
+                                  "properties": {
+                                    "Text": "Rates\u2026",
+                                    "Icon": "view-list-symbolic",
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
                                 }
                               ]
                             },

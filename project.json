@@ -9,6 +9,7 @@
     "ConfirmForm.js",
     "SettingsForm.js",
     "CalendarForm.js",
+    "RatesForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

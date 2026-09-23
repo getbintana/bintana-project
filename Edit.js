@@ -181,6 +181,23 @@ class Edit {
         return true;
     }
 
+    /* A resource's rate periods, whole: the dialog hands the list back and
+     * one undo covers it. Ordered by table and from-date, which is how the
+     * file reads and how the engine walks it. */
+    setResourceRates(uid, rates) {
+        const resource = this.resource(uid);
+        if (!resource) return false;
+
+        const kept = (rates || []).slice();
+        kept.sort((a, b) => (a.RateTable || 0) - (b.RateTable || 0) ||
+                            Locale.Compare(a.RatesFrom, b.RatesFrom));
+        if (JSON.stringify(resource.Rates) === JSON.stringify(kept)) return false;
+
+        resource.Rates = kept;
+        this.commit();
+        return true;
+    }
+
     /* The resource and the assignments that named it: an assignment to a
      * resource that is gone is a dangling reference. */
     removeResource(uid) {

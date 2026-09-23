@@ -87,7 +87,9 @@ cuántas restricciones incumplidas.
 La pestaña **Recursos** lista los recursos con su máximo, **Pico** (las
 unidades simultáneas: si supera el máximo, está sobreasignado), su tasa y el
 costo de sus asignaciones. **Nuevo**/**Aplicar**/**Eliminar** editan el
-recurso; eliminar uno se lleva sus asignaciones.
+recurso; eliminar uno se lleva sus asignaciones. **Tasas…** abre las tablas de
+tasas por fecha del recurso (A–E): los períodos con sus fechas, su tasa, la
+extra y el costo por uso, con Agregar/Quitar; aceptar es un solo Deshacer.
 
 Abajo, las asignaciones de la tarea seleccionada: elegí recurso y unidades y
 **Asignar**; **Quitar** las deshace. El trabajo se calcula desde la duración,
@@ -97,10 +99,10 @@ mitad cuando llega otra).
 
 El costo sale del trabajo por la tasa en un recurso de trabajo, de las
 unidades por la tasa en uno material, más el costo por uso; si el archivo trae
-su propio costo, ese manda. Si el recurso trae **tasas por fecha** (tablas A–E
-del archivo), el trabajo se reparte sobre el tiempo laborable de la asignación
-y cada período cobra la parte que le toca: la asignación elige la tabla, y el
-panel edita la tasa base, no los períodos (esos se conservan como están).
+su propio costo, ese manda. Si el recurso trae **tasas por fecha** (tablas A–E,
+las edita **Tasas…**), el trabajo se reparte sobre el tiempo laborable de la
+asignación y cada período cobra la parte que le toca: la asignación elige la
+tabla y el período en que arranca el trabajo fija el costo por uso.
 
 ## Proyecto y calendarios
 

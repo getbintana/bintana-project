@@ -223,6 +223,30 @@ msgstr "Estimada"
 msgid "Apply"
 msgstr "Aplicar"
 
+msgid "Rates"
+msgstr "Tasas"
+
+msgid "Rates…"
+msgstr "Tasas…"
+
+msgid "Rates of {0}"
+msgstr "Tasas de {0}"
+
+msgid "Rates saved."
+msgstr "Tasas guardadas."
+
+msgid "Table"
+msgstr "Tabla"
+
+msgid "Overtime rate"
+msgstr "Tasa extra"
+
+msgid "A rate period needs a date."
+msgstr "Un período de tasa necesita una fecha."
+
+msgid "The rates must be numbers."
+msgstr "Las tasas deben ser números."
+
 msgid "Add"
 msgstr "Agregar"
 

@@ -502,7 +502,8 @@ class MainForm extends Form {
         this.TxtResMax.Text    = resource ? String(resource.MaxUnits) : "1";
         this.TxtResRate.Text   = resource ? String(resource.StandardRate) : "";
         this.TxtResCostUse.Text = resource ? String(resource.CostPerUse) : "0";
-        this.BtnResDel.Enabled = !!resource;
+        this.BtnResDel.Enabled   = !!resource;
+        this.BtnResRates.Enabled = !!resource;
     }
 
     BtnResNew_Click() {
@@ -557,6 +558,22 @@ class MainForm extends Form {
                 this.selectedResUID = null;
                 this.fill(this.selectedUID);
             });
+    }
+
+    /* The resource's rate tables, in their own dialog: the list comes back
+     * whole and it is one undo like any edit. */
+    BtnResRates_Click() {
+        const uid = this.selectedResUID;
+        const resource = uid === null ? null : this.edit.resource(uid);
+        if (!resource) return;
+
+        RatesForm.open(resource, (rates) => {
+            if (!this.edit.setResourceRates(uid, rates)) return;
+            this.fill(this.selectedUID);
+            const at = this.resRows.findIndex((r) => r.UID === uid);
+            if (at >= 0) { this.Resources.Select(at); this.Resources_Select(); }
+            this.log(Locale.Text("Rates saved."));
+        });
     }
 
     /* The assignments of the selected task, with the cost each one adds. */
@@ -1961,6 +1978,26 @@ class MainForm extends Form {
             print(`edit resource uid=${res.UID} assignment work=${asg.Work} ` +
                   `cost=${assignmentCost(edit.holder.project, asg)}`);
 
+            /* The rate table through the command the dialog calls: the list
+             * comes back ordered by date, and the cost follows the period the
+             * work happens in -- those 8h are after the raise, at 80. */
+            ok = edit.setResourceRates(res.UID, [
+                     new MspRate({ RatesFrom: "2026-09-01T00:00:00",
+                                   RatesTo: "2026-12-31T23:59:00", RateTable: 0,
+                                   StandardRate: 80, StandardRateFormat: 2 }),
+                     new MspRate({ RatesFrom: "2026-01-01T00:00:00",
+                                   RatesTo: "2026-08-31T23:59:00", RateTable: 0,
+                                   StandardRate: 50, StandardRateFormat: 2,
+                                   CostPerUse: 10 }),
+                 ]) &&
+                 edit.resource(res.UID).Rates.length === 2 &&
+                 edit.resource(res.UID).Rates[0].RatesFrom === "2026-01-01T00:00:00" &&
+                 assignmentCost(edit.holder.project,
+                                edit.holder.project.Assignments[0]) === 640 && ok;
+            print(`edit rates=${edit.resource(res.UID).Rates.length} ` +
+                  `cost=${assignmentCost(edit.holder.project,
+                                         edit.holder.project.Assignments[0])}`);
+
             /* The task type and effort-driven: one more unit on a task that
              * already carries one halves the duration and keeps the work. */
             edit.setFields(2, { Type: 0, EffortDriven: true });
@@ -2080,6 +2117,7 @@ class MainForm extends Form {
                  saved[2].Estimated === true &&
                  saved[2].Notes === "Edited in the harness" &&
                  second.project.Resources.length === 2 &&
+                 second.project.Resources[0].Rates.length === 2 &&
                  second.project.Assignments.length === 2 &&
                  second.project.Assignments[0].Work === "PT4H0M0S" &&
                  second.project.FieldDefs.length === 1 &&
@@ -2110,7 +2148,7 @@ class MainForm extends Form {
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport",
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
-                        "BtnResNew", "BtnResApply", "BtnResDel",
+                        "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
                         "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",
                         "BtnCalEdit", "BtnBaselineSave"]
             .map((name) => `${name}_Click`)

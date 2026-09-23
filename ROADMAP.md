@@ -204,8 +204,14 @@ todavía no edita las tablas (se conservan tal cual), así que la tasa base que
 edita el panel es la de un recurso sin períodos. `10-rates` lo fija sin `Cost`
 y `check-cpm` afirma el reparto.
 
-- Falta: contornos de trabajo y calendario de recurso, y editar las tablas de
-  tasas desde la UI. Nivelación queda afuera por ahora.
+**El editor de tasas** (2026-09-23): **Tasas…** en la pestaña Recursos abre
+`RatesForm`, que edita los períodos de las cinco tablas (fechas, tabla, tasa,
+extra y costo por uso) con Agregar/Quitar; la lista vuelve entera a
+`Edit.setResourceRates`, ordenada por tabla y fecha, y es un undo. Los formatos
+de tasa del archivo se conservan (una fila nueva nace en horas).
+
+- Falta: contornos de trabajo y calendario de recurso. Nivelación queda afuera
+  por ahora.
 
 ### 6 — Distribución
 

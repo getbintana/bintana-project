@@ -266,6 +266,21 @@
       <Type>1</Type>
       <StandardRate>50</StandardRate>
       <CalendarUID>1</CalendarUID>
+      <Rates>
+        <Rate>
+          <RatesFrom>2026-01-01T00:00:00</RatesFrom>
+          <RatesTo>2026-08-31T23:59:00</RatesTo>
+          <StandardRate>50</StandardRate>
+          <StandardRateFormat>2</StandardRateFormat>
+          <CostPerUse>10</CostPerUse>
+        </Rate>
+        <Rate>
+          <RatesFrom>2026-09-01T00:00:00</RatesFrom>
+          <RatesTo>2026-12-31T23:59:00</RatesTo>
+          <StandardRate>80</StandardRate>
+          <StandardRateFormat>2</StandardRateFormat>
+        </Rate>
+      </Rates>
     </Resource>
     <Resource>
       <UID>2</UID>
