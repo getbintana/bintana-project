@@ -82,12 +82,13 @@ planifican en tiempo calendario -- el caso en `check-cpm` lo distingue del
 laborable. `Type` (Fixed Units/Duration/Work) se modela, pero su semántica
 necesita asignaciones: queda con recursos.
 
-**Task Types** (2026-09-22): el combo en la pestaña Tarea y la identidad
+**Task Types** (2026-09-22): el combo en la pestaña Tarea, la identidad
 aplicada al asignar -- effort-driven conserva el trabajo y acorta al sumar
 unidades, Fixed Duration ignora el flag, el resto conserva la duración y deja
-crecer el trabajo (`assignmentDuration`, con cuatro aserciones en
-`check-cpm`). Falta que el propio `recalculate` derive la duración del trabajo
-y las unidades, y el calendario de recurso.
+crecer el trabajo (`assignmentDuration`) -- y la misma identidad aplicada por
+`recalculate` a todo el plan (`workDuration`: la tarea se planifica en
+`trabajo / unidades`, o deriva el trabajo de la duración si es Fixed Duration),
+con ocho aserciones en `check-cpm`. Falta el calendario de recurso.
 - **El oráculo es Project**: mismo archivo, comparar `Start`/`Finish`/slack por
   tarea. La fidelidad se mide, no se argumenta. El corpus sintético no es
   CPM-consistente (sus fechas están escritas a mano), así que la validación

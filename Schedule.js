@@ -255,6 +255,42 @@ function assignmentDuration(task, before, after) {
 }
 
 /*
+ * The work identity the pass applies: a task with work resources carries
+ * `Work = Duration × Units`, and the type says which of the three is pinned.
+ * Fixed Duration keeps the duration and derives the work; every other keeps
+ * the work and derives the duration. It answers the duration in minutes and
+ * leaves the task's and its assignments' work in step -- so `recalculate`
+ * schedules the duration the resources actually add up to. A task with no
+ * work resource is left exactly as the file wrote it.
+ */
+function workDuration(project, task, minutes, mine) {
+    const assignments = mine || project.Assignments.filter(
+        (a) => a.TaskUID === task.UID);
+
+    let units = 0, work = 0;
+    for (const assignment of assignments) {
+        const resource = resourceOf(project, assignment.ResourceUID);
+        if (!resource || resource.Type !== 1) continue;
+        units += assignment.Units || 0;
+        work  += mspdiMinutes(assignment.Work) || 0;
+    }
+    if (units <= 0) return minutes;
+
+    if ((task.Type || 0) === 1) work = Math.round(minutes * units);   // Fixed Duration
+    else if (work > 0)          minutes = Math.round(work / units);
+    else                        work = Math.round(minutes * units);
+
+    task.Work = mspdiDuration(work);
+    for (const assignment of assignments) {
+        const resource = resourceOf(project, assignment.ResourceUID);
+        if (!resource || resource.Type !== 1) continue;
+        assignment.Work = mspdiDuration(Math.round(minutes * (assignment.Units || 0)));
+        assignment.RegularWork = assignment.Work;
+    }
+    return minutes;
+}
+
+/*
  * The forward pass. Answers how many tasks it placed, or 0 when there is no
  * start to place them from. A link whose predecessor is not in the file is
  * ignored; a cycle is left where it was rather than hung on.
@@ -284,6 +320,14 @@ function recalculate(project) {
         return cache[key];
     };
 
+    /* The assignments each task carries, read once: the work identity is
+     * applied per task and walking the whole list per task is quadratic. */
+    const assignmentsOf = {};
+    for (const assignment of project.Assignments) {
+        if (!assignmentsOf[assignment.TaskUID]) assignmentsOf[assignment.TaskUID] = [];
+        assignmentsOf[assignment.TaskUID].push(assignment);
+    }
+
     const done = {};
     let placed = 0, skipped = 0, guard = 0;
     while (placed + skipped < roots && guard++ <= tasks.length + 1) {
@@ -304,7 +348,12 @@ function recalculate(project) {
             }
 
             const work = workOf(task.CalendarUID);
-            const duration = mspdiMinutes(task.Duration) || 0;
+
+            /* What the resources add up to, before the dates are laid out. */
+            const before = mspdiMinutes(task.Duration) || 0;
+            const duration = workDuration(project, task, before,
+                                          assignmentsOf[task.UID]);
+            if (duration !== before) task.Duration = mspdiDuration(duration);
 
             /* An elapsed duration counts calendar time -- weekends and nights
              * included -- where `work.add`/`work.subtract` count working

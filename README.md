@@ -74,9 +74,10 @@ updates the units. What the units do to the duration is the task's `Type` and
 its effort-driven flag: an effort-driven task keeps its work and shortens as
 units add up (one that already carries a unit takes half the time when a second
 arrives), Fixed Duration ignores the flag, and any other type keeps the
-duration and lets the work grow. A duration typed by hand is the user's number:
-it does not rewrite the work of the assignments -- assigning a resource is the
-road that follows the identity.
+duration and lets the work grow. Recalculate applies the same identity to the
+whole plan -- a task with work resources is scheduled at `Work / Units`, or
+has its work derived from the duration when it is Fixed Duration -- while a
+duration typed by hand stays the user's number.
 
 **Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and

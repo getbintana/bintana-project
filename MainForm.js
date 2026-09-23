@@ -1340,6 +1340,31 @@ class MainForm extends Form {
                     { Duration: "PT8H0M0S", EffortDriven: false, Type: 0 }, 1, 2),
                     480) && ok;
 
+            /* And what the pass derives: two units carrying eight hours each
+             * make an eight-hour task, while Fixed Duration keeps the
+             * duration and doubles the work. */
+            const w = projectOf([task(1, "PT16H0M0S")]);
+            w.Resources = [
+                new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                  MaxUnits: 1, StandardRate: 50 }),
+                new MspResource({ UID: 2, Name: "Bruno", Type: 1,
+                                  MaxUnits: 1, StandardRate: 40 }),
+            ];
+            w.Assignments = [
+                new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                    Units: 1, Work: "PT8H0M0S" }),
+                new MspAssignment({ UID: 2, TaskUID: 1, ResourceUID: 2,
+                                    Units: 1, Work: "PT8H0M0S" }),
+            ];
+            w.Tasks[0].Type = 0;
+            ok = eq("work derives the duration",
+                    workDuration(w, w.Tasks[0], 960), 480) && ok;
+            ok = eq("...and the work is in step", w.Tasks[0].Work, "PT16H0M0S") && ok;
+            w.Tasks[0].Type = 1;
+            ok = eq("duration keeps its own",
+                    workDuration(w, w.Tasks[0], 240), 240) && ok;
+            ok = eq("...and derives the work", w.Tasks[0].Work, "PT8H0M0S") && ok;
+
             /* The backward pass: the chain is critical and the parallel task
              * has the Wednesday to slip -- the Tuesday is the holiday. */
             const q = projectOf([
