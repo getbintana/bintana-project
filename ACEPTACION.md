@@ -12,6 +12,13 @@ Con el archivo real a mano (por ejemplo `urbano v5.05052026.xml`):
 tests/aceptacion.sh "/home/matias/Escritorio/urbano v5.05052026.xml"
 ```
 
+Sin el archivo real, `examples/desarrollo-bintana.xml` sirve igual: es de la
+app y no lleva datos de nadie.
+
+```sh
+tests/aceptacion.sh examples/desarrollo-bintana.xml
+```
+
 Deja la salida y su informe en `/tmp/bintana-project-aceptacion/`. La última
 línea dice cuál es el XML a abrir. El original **no se toca**: se trabaja sobre
 una copia.

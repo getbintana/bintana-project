@@ -11,10 +11,18 @@ whoever works on it.
 ## Run it
 
 ```sh
-/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project           # window, opens tests/corpus/01-minimal.xml
+/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project           # window, opens a copy of the sample
 /home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project plan.xml  # or a file of your own
+/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project \
+    examples/desarrollo-bintana.xml                                                          # this project's own plan
 /home/matias/Proyectos/bintana-project/tests/run.sh                                           # the fidelity harness, headless
 ```
+
+`examples/desarrollo-bintana.xml` is the plan for building this application --
+phases, milestones, resources with dated rates, costs, a manual task and the
+round trip to Project -- made with the app itself and scheduled by its own
+engine (33 tasks, 7 milestones, 35 links). It is also the demo: open it and
+press F5, nothing moves.
 
 The window is a menu bar (File/Edit/View/Tools/Help), an icon toolbar with the
 commands that matter while editing, the WBS and the chart, the properties panel
