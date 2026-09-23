@@ -166,8 +166,11 @@ msgstr "Recalcular"
 msgid "Save Baseline"
 msgstr "Guardar línea base"
 
-msgid "Baseline saved."
-msgstr "Línea base guardada."
+msgid "Baseline"
+msgstr "Línea base"
+
+msgid "Baseline {0} saved."
+msgstr "Línea base {0} guardada."
 
 msgid "Task"
 msgstr "Tarea"

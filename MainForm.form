@@ -1572,6 +1572,57 @@
                                     "HAlign": "Fill",
                                     "ReadOnly": true
                                   }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblBaseline",
+                                  "properties": {
+                                    "Text": "Baseline",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "Panel",
+                                  "name": "BaselineRow",
+                                  "properties": {
+                                    "Arrangement": "Horizontal",
+                                    "Spacing": 6,
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "ComboBox",
+                                      "name": "CmbBaseline",
+                                      "properties": {
+                                        "Items": [
+                                          "Baseline",
+                                          "Baseline 1",
+                                          "Baseline 2",
+                                          "Baseline 3",
+                                          "Baseline 4",
+                                          "Baseline 5",
+                                          "Baseline 6",
+                                          "Baseline 7",
+                                          "Baseline 8",
+                                          "Baseline 9",
+                                          "Baseline 10"
+                                        ],
+                                        "Index": 0,
+                                        "HExpand": true,
+                                        "HAlign": "Fill"
+                                      }
+                                    },
+                                    {
+                                      "type": "Button",
+                                      "name": "BtnBaselineSave",
+                                      "properties": {
+                                        "Text": "Save",
+                                        "Icon": "document-save-symbolic",
+                                        "Width": 100
+                                      }
+                                    }
+                                  ]
                                 }
                               ]
                             },

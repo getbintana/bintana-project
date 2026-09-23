@@ -449,11 +449,11 @@ function projectCost(project) {
     return total;
 }
 
-/* The baseline a task carries (number 0, the one Set Baseline writes), or
- * null when it has none. */
-function baselineOf(task) {
+/* The baseline a task carries under one number -- 0 is the one Project's Set
+ * Baseline writes first, up to 10 -- or null when it has none. */
+function baselineOf(task, number) {
     for (const baseline of task.Baselines)
-        if (baseline.Number === 0) return baseline;
+        if (baseline.Number === number) return baseline;
     return null;
 }
 

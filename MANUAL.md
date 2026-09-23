@@ -74,7 +74,10 @@ cuántas restricciones incumplidas.
 - La **fecha límite** es un objetivo: no mueve nada, y las tareas que la pasan
   llevan una flecha roja sobre la barra.
 - **Editar → Guardar línea base** guarda el plan tal como está; el Gantt dibuja
-  esa línea como barra fina gris debajo de cada tarea, para leer el desvío.
+  esa línea como barra fina gris debajo de cada tarea, para leer el desvío. El
+  combo **Línea base** de la pestaña Proyecto elige el número (0 a 10, como
+  Project): Guardar escribe esa y el Gantt dibuja esa; guardar dos veces el
+  mismo número la reemplaza sin tocar las demás.
 - El **avance** mueve las fechas reales: arriba de cero hay inicio real, al
   cien por ciento hay fin real, y en cero no hay ninguno.
 - En Configuración podés pedir que se recalcule solo después de cada cambio.

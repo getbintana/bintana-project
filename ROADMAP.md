@@ -168,8 +168,14 @@ ciento hay fin real, en cero no hay ninguno).
 Gantt, elige los cuatro tipos (FS por defecto) y **Ctrl + arrastrar** crea el
 que dice; `check-drag` lo afirma con un Start to start.
 
-- Queda: dibujar desde el extremo para enlazar en vez de redimensionar, y
-  varias líneas base.
+**Varias líneas base** (2026-09-23): el combo **Línea base** de la pestaña
+Proyecto elige el número (0 a 10, los que guarda Project); **Guardar** escribe
+esa y el Gantt dibuja la elegida -- `Edit.setBaseline(number)` reemplaza solo
+su número, ordena la lista, y `baselineOf(task, number)` la lee. El menú y el
+botón llaman al mismo comando, que sigue siendo un undo. `check-edit` guarda
+0 y 1 y vuelve a guardar 0 para probar el reemplazo.
+
+- Queda: dibujar desde el extremo para enlazar en vez de redimensionar.
 
 ### 5 — Recursos y costos
 

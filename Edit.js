@@ -279,14 +279,18 @@ class Edit {
         return true;
     }
 
-    /* The plan as it stands, kept as baseline 0: every task's dates and work
-     * into its own `Baseline`, which is what Project's Set Baseline does. */
-    setBaseline() {
+    /* The plan as it stands, kept under one number -- 0 to start, the ten
+     * Project offers -- every task's dates and work into its own `Baseline`,
+     * which is what Project's Set Baseline does. Re-saving one number
+     * replaces it and leaves the others alone. */
+    setBaseline(number) {
+        const at = Math.min(Math.max(Number(number) || 0, 0), 10);
         for (const task of this.holder.project.Tasks) {
             if (task.IsNull) continue;
-            const kept = task.Baselines.filter((b) => b.Number !== 0);
-            kept.push(new MspBaseline({ Number: 0, Start: task.Start,
+            const kept = task.Baselines.filter((b) => b.Number !== at);
+            kept.push(new MspBaseline({ Number: at, Start: task.Start,
                                         Finish: task.Finish, Work: task.Work }));
+            kept.sort((a, b) => a.Number - b.Number);
             task.Baselines = kept;
         }
         this.commit();

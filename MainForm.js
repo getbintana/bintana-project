@@ -874,7 +874,8 @@ class MainForm extends Form {
     /* Every frame is drawn from the data; there is nothing to keep. */
     Gantt_Draw(p, width, height) {
         drawGantt(p, width, height, this.holder ? this.holder.project : null,
-                  this.selectedUID, this.step, this.drag);
+                  this.selectedUID, this.step, this.drag,
+                  this.baselineNumber || 0);
     }
 
     /*
@@ -1229,12 +1230,30 @@ class MainForm extends Form {
         this.Plan.Data = rows;
     }
 
+    /* Which baseline is in hand: the one Save writes and the one the chart
+     * draws. A view choice, so it dies with the window. */
+    CmbBaseline_Select() {
+        const combo = this.CmbBaseline;
+        if (!combo) return;        // the event fires while the form is built
+        this.baselineNumber = Math.max(combo.Index, 0);
+        if (this.Gantt) this.Gantt.Redraw();
+    }
+
     /* The plan as it stands, kept so a later date can be compared with it.
      * It is one undo like any other command. */
-    ActBaseline_Click() {
-        this.edit.setBaseline();
+    saveBaseline() {
+        const number = Math.max(this.CmbBaseline.Index, 0);
+        this.edit.setBaseline(number);
         this.fill(this.selectedUID);
-        this.log(Locale.Text("Baseline saved."));
+        this.log(Locale.Text("Baseline {0} saved.", number));
+    }
+
+    ActBaseline_Click() {
+        this.saveBaseline();
+    }
+
+    BtnBaselineSave_Click() {
+        this.saveBaseline();
     }
 
     ActUndo_Click() {
@@ -1399,6 +1418,16 @@ class MainForm extends Form {
             ok = eq("a missing task type inherits",
                     taskKind(new MspProject({ DefaultTaskType: 0 }),
                              new MspTask({})), 0) && ok;
+
+            /* A task may carry several baselines side by side; the number
+             * picks one and an absent one is null. */
+            const bl = new MspTask({ Baselines: [
+                new MspBaseline({ Number: 0, Start: "2026-09-07T08:00:00" }),
+                new MspBaseline({ Number: 1, Start: "2026-09-09T08:00:00" }),
+            ] });
+            ok = eq("baseline 0", baselineOf(bl, 0).Start, "2026-09-07T08:00:00") && ok;
+            ok = eq("baseline 1", baselineOf(bl, 1).Start, "2026-09-09T08:00:00") && ok;
+            ok = eq("baseline absent", baselineOf(bl, 2), null) && ok;
 
             /* 2026-09-07 is a Monday and the 8th is the holiday. */
             const p = projectOf([
@@ -1944,10 +1973,20 @@ class MainForm extends Form {
             print(`edit custom field=${attrOf(edit.task(2), "188743731")}`);
 
             /* The baseline keeps the plan as it stands, and a hundred per
-             * cent finishes the task: the actual dates follow. */
-            ok = edit.setBaseline() && edit.task(2).Baselines.length === 1 &&
-                 edit.task(2).Baselines[0].Start === edit.task(2).Start && ok;
-            print(`edit baseline start=${edit.task(2).Baselines[0].Start}`);
+             * cent finishes the task: the actual dates follow. Two numbers
+             * are kept side by side, the second one through the panel's own
+             * combo and button, and re-saving replaces rather than stacks. */
+            edit.setBaseline(0);
+            this.CmbBaseline.Index = 1;
+            this.BtnBaselineSave_Click();
+            this.CmbBaseline.Index = 0;
+            this.BtnBaselineSave_Click();
+            ok = edit.task(2).Baselines.length === 2 &&
+                 baselineOf(edit.task(2), 0).Start === edit.task(2).Start &&
+                 baselineOf(edit.task(2), 1).Start === edit.task(2).Start && ok;
+            print(`edit baseline 0=${baselineOf(edit.task(2), 0).Start} ` +
+                  `1=${baselineOf(edit.task(2), 1).Start} ` +
+                  `of=${edit.task(2).Baselines.length}`);
 
             this.fill(2);
             this.SpinPercent.Value = 100;
@@ -2011,7 +2050,7 @@ class MainForm extends Form {
                  second.project.FieldDefs.length === 1 &&
                  saved[3].Attributes.length === 1 &&
                  saved[3].Attributes[0].Value === "4821" &&
-                 saved[3].Baselines.length === 1 &&
+                 saved[3].Baselines.length === 2 &&
                  saved[3].ActualFinish !== "" && ok;
 
             print(`check-edit ${name}: ${ok ? "ok" : "FAILED"}`);
@@ -2038,9 +2077,10 @@ class MainForm extends Form {
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel",
                         "BtnAssignAdd", "BtnAssignDel", "BtnProjApply",
-                        "BtnCalEdit"]
+                        "BtnCalEdit", "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
+                     "CmbBaseline_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "Calendars_Select", "CmbAttr_Select", "TxtFilter_Change",
                      "TxtFilter_IconClick",

@@ -144,6 +144,12 @@
         <Finish>2026-09-03T17:00:00</Finish>
         <Work>PT16H0M0S</Work>
       </Baseline>
+      <Baseline>
+        <Number>1</Number>
+        <Start>2026-09-01T08:00:00</Start>
+        <Finish>2026-09-03T17:00:00</Finish>
+        <Work>PT16H0M0S</Work>
+      </Baseline>
     </Task>
     <Task>
       <UID>1</UID>
@@ -172,6 +178,12 @@
         <Finish>2026-09-02T17:00:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
+      <Baseline>
+        <Number>1</Number>
+        <Start>2026-09-01T08:00:00</Start>
+        <Finish>2026-09-02T17:00:00</Finish>
+        <Work>PT8H0M0S</Work>
+      </Baseline>
     </Task>
     <Task>
       <UID>3</UID>
@@ -195,6 +207,10 @@
       </PredecessorLink>
       <Baseline>
         <Number>0</Number>
+        <Work>PT0H0M0S</Work>
+      </Baseline>
+      <Baseline>
+        <Number>1</Number>
         <Work>PT0H0M0S</Work>
       </Baseline>
     </Task>
@@ -230,6 +246,12 @@
       </ExtendedAttribute>
       <Baseline>
         <Number>0</Number>
+        <Start>2026-09-03T08:00</Start>
+        <Finish>2026-09-03T12:00</Finish>
+        <Work>PT8H0M0S</Work>
+      </Baseline>
+      <Baseline>
+        <Number>1</Number>
         <Start>2026-09-03T08:00</Start>
         <Finish>2026-09-03T12:00</Finish>
         <Work>PT8H0M0S</Work>

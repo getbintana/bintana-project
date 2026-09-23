@@ -84,7 +84,7 @@ function ganttGeometry(project, width, height, step) {
     };
 }
 
-function drawGantt(p, width, height, project, selected, step, drag) {
+function drawGantt(p, width, height, project, selected, step, drag, baseline) {
     const g = ganttGeometry(project, width, height, step);
     const rows = g.rows;
     if (!rows.length) {
@@ -177,11 +177,12 @@ function drawGantt(p, width, height, project, selected, step, drag) {
             p.Fill();
         }
 
-        /* The baseline, when the file carries one: a thin gray bar under the
-         * task's own, which is what Project shows a slip against. */
-        const baseline = baselineOf(task);
-        if (baseline) {
-            const bs = whenMs(baseline.Start), bf = whenMs(baseline.Finish);
+        /* The baseline the view asked for, when the file carries it: a thin
+         * gray bar under the task's own, which is what Project shows a slip
+         * against. */
+        const kept = baselineOf(task, baseline || 0);
+        if (kept) {
+            const bs = whenMs(kept.Start), bf = whenMs(kept.Finish);
             if (bs !== null && bf !== null) {
                 const gx0 = x(Math.min(bs, bf)), gx1 = x(Math.max(bs, bf));
                 p.Color = link;
