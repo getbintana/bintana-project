@@ -13,7 +13,13 @@ which order.
 /home/matias/Proyectos/bintana-project/tests/run.sh                                           # the fidelity harness, headless
 ```
 
-A Project XML dragged onto the window opens too. The list is the WBS as a tree
+The window is a menu bar (File/Edit/View/Tools/Help), an icon toolbar with the
+commands that matter while editing, the WBS and the chart, the properties panel
+and a status bar. Every command is declared once as an `Action`, so the toolbar
+button, the menu item and its key are one command with one `Enabled` and one
+label. A Project XML dragged onto the window opens too.
+
+The list is the WBS as a tree
 keyed by UID -- summaries fold, IsNull rows are skipped, durations read in the
 unit the file's `DurationFormat` says. Selecting a row marks the same task in
 the chart, which draws summaries as brackets and critical tasks in red.
@@ -118,9 +124,9 @@ Five things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
 folder the last file came from, the timescale, which custom field the list
 shows (by `FieldID`, empty for the first), the unit a bare duration is read in,
-and the recent list. **Settings** in the bar is the one dialog that edits them, and it edits the
-same keys the code reads -- what it writes takes effect on Save, and a headless
-check never touches any of it.
+and the recent list. **Settings…** in the Tools menu is the one dialog that
+edits them, and it edits the same keys the code reads -- what it writes takes
+effect on Save, and a headless check never touches any of it.
 
 The interface is translated: form texts when the form is built, the strings
 the code composes through `Locale.Text(...)`, and `Message.*`'s first argument.

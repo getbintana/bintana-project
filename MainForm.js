@@ -66,6 +66,10 @@ class MainForm extends Form {
 
     Form_Open() {
         try {
+            /* The log starts shown; the View menu's tick says so. Assigning
+             * `Value` does not run the command, so this is not a toggle. */
+            this.MnuLog.Value = true;
+
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
                 this.checkCorpus();
                 return;
@@ -137,14 +141,12 @@ class MainForm extends Form {
         this.showRecent(recent);
     }
 
-    /* A flat menu, assigned whole: a `dynamic` item would be a submenu, and a
-     * second level for eight names is a click nobody needs. Each entry has its
-     * own name, so each needs its own one-line handler below. */
+    /* The menu bar's Open Recent, a dynamic submenu: the application assigns
+     * the entries and the click arrives with the index. */
     showRecent(recent) {
         this.recentPaths = recent;
-        this.BtnRecent.Menu = recent.map((p, i) => ({ name: `MnuRecent${i}`,
-                                                      text: File.Name(p) }));
-        this.BtnRecent.Enabled = recent.length > 0;
+        this.MnuRecent.Items = recent.map((p) => File.Name(p));
+        this.MnuRecent.Enabled = recent.length > 0;
     }
 
     openRecent(i) {
@@ -157,14 +159,15 @@ class MainForm extends Form {
         }
     }
 
-    MnuRecent0_Click() { this.openRecent(0); }
-    MnuRecent1_Click() { this.openRecent(1); }
-    MnuRecent2_Click() { this.openRecent(2); }
-    MnuRecent3_Click() { this.openRecent(3); }
-    MnuRecent4_Click() { this.openRecent(4); }
-    MnuRecent5_Click() { this.openRecent(5); }
-    MnuRecent6_Click() { this.openRecent(6); }
-    MnuRecent7_Click() { this.openRecent(7); }
+    MnuRecent_Click(index) { this.openRecent(index); }
+
+    /* The View menu's tick, and the Help menu's one line. */
+    MnuLog_Click(on) { this.Log.Visible = on; }
+
+    MnuAbout_Click() {
+        Message.Info("bintana-project {0} — MSPDI (MS Project XML) in Bintana",
+                     Application.Version);
+    }
 
     /* The bundled sample, so an empty first screen is never the question. */
     openSample() {
@@ -306,9 +309,12 @@ class MainForm extends Form {
                          this.CmbConstraint, this.TxtConstraint,
                          this.TxtDeadline])
             w.Enabled = editable;
-        for (const w of [this.BtnApply, this.BtnDelete,
-                         this.BtnIndent, this.BtnOutdent,
-                         this.BtnUp, this.BtnDown, this.TxtNotes,
+        /* The commands the toolbar, the menu and the panel share are one
+         * `Enabled`: assigning the button's would be refused, and rightly. */
+        for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
+                           this.ActUp, this.ActDown])
+            act.Enabled = has;
+        for (const w of [this.BtnApply, this.TxtNotes,
                          this.CmbPred, this.CmbType, this.SpinLag,
                          this.BtnLinkAdd])
             w.Enabled = has;
@@ -517,7 +523,7 @@ class MainForm extends Form {
 
     /* The one dialog that edits the settings the app reads; what it writes is
      * re-read here, so nothing needs a restart. */
-    BtnSettings_Click() {
+    ActSettings_Click() {
         SettingsForm.open(() => {
             this.applySettings();
             this.fill(this.selectedUID);
@@ -526,7 +532,7 @@ class MainForm extends Form {
 
     /* The chart as a file to send: PNG by the dialog's filter, PDF when the
      * name says so, at the chart's own size so nothing is cropped. */
-    BtnExport_Click() {
+    ActExport_Click() {
         const base = File.BaseName(this.path) || "gantt";
         Dialog.SaveFile(Locale.Text("Export the chart"),
             { Folder: Settings.Get("bintana-project.folder", File.Directory(this.path)),
@@ -613,12 +619,12 @@ class MainForm extends Form {
 
     BtnApply_Click() { this.applyFields(); }
 
-    BtnAdd_Click() {
+    ActAdd_Click() {
         const added = this.edit.addTask(this.selectedUID);
         this.fill(added.UID);
     }
 
-    BtnDelete_Click() {
+    ActDelete_Click() {
         const task = this.selectedTask();
         if (!task) return;
         ConfirmForm.ask(Locale.Text("Delete task"), Locale.Text('Delete "{0}"?', task.Name),
@@ -628,8 +634,8 @@ class MainForm extends Form {
             });
     }
 
-    BtnIndent_Click()  { this.nudge(1); }
-    BtnOutdent_Click() { this.nudge(-1); }
+    ActIndent_Click()  { this.nudge(1); }
+    ActOutdent_Click() { this.nudge(-1); }
 
     nudge(delta) {
         const task = this.selectedTask();
@@ -638,8 +644,8 @@ class MainForm extends Form {
     }
 
     /* Up and Down swap the task with its sibling, subtree and all. */
-    BtnUp_Click()   { this.move(-1); }
-    BtnDown_Click() { this.move(1); }
+    ActUp_Click()   { this.move(-1); }
+    ActDown_Click() { this.move(1); }
 
     move(delta) {
         const task = this.selectedTask();
@@ -649,7 +655,7 @@ class MainForm extends Form {
 
     /* The plan-wide command: place every task from its links. It is one undo
      * and it says how many it placed. */
-    BtnRecalc_Click() {
+    ActRecalc_Click() {
         const result = this.edit.recalculate();
         if (!result.placed) {
             Message.Warning("Nothing to schedule: the project has no start date.");
@@ -712,19 +718,19 @@ class MainForm extends Form {
         if (this.edit.setLinks(task.UID, links)) this.fill(task.UID);
     }
 
-    BtnUndo_Click() {
+    ActUndo_Click() {
         const keep = this.selectedUID;
         if (this.edit.undo()) this.fill(keep);
     }
 
-    BtnRedo_Click() {
+    ActRedo_Click() {
         const keep = this.selectedUID;
         if (this.edit.redo()) this.fill(keep);
     }
 
     /* --- opening, saving and closing ------------------------------------ */
 
-    BtnOpen_Click() {
+    ActOpen_Click() {
         const folder = Settings.Get("bintana-project.folder",
                                     this.path ? File.Directory(this.path)
                                               : File.Join(Application.Directory,
@@ -741,11 +747,11 @@ class MainForm extends Form {
             });
     }
 
-    BtnRecent_Click() { this.BtnRecent.PopupMenu(0, 0); }
+    ActQuit_Click() { this.Close(); }
 
-    BtnSave_Click() { this.save(); }
+    ActSave_Click() { this.save(); }
 
-    BtnSaveAs_Click() {
+    ActSaveAs_Click() {
         Dialog.SaveFile("Save Project XML",
             { Folder: File.Directory(this.path), Name: File.Name(this.path),
               Filters: [["Project XML", "*.xml"]] },
@@ -774,8 +780,8 @@ class MainForm extends Form {
         const dirty = this.edit ? this.edit.dirty : false;
         this.Text = `${File.Name(this.path)}${dirty ? " •" : ""} — bintana-project`;
         this.LblFile.Text    = this.path;
-        this.BtnUndo.Enabled = this.edit ? this.edit.canUndo : false;
-        this.BtnRedo.Enabled = this.edit ? this.edit.canRedo : false;
+        this.ActUndo.Enabled = this.edit ? this.edit.canUndo : false;
+        this.ActRedo.Enabled = this.edit ? this.edit.canRedo : false;
     }
 
     /* Closing with unsaved work asks first. The answer may be Save, Discard or
@@ -1306,13 +1312,11 @@ class MainForm extends Form {
      * afternoon after a rewrite. The check names the pairs the window needs.
      */
     checkWiring() {
-        const wanted = ["BtnOpen", "BtnRecent", "BtnSave", "BtnSaveAs",
-                        "BtnUndo", "BtnRedo", "BtnRecalc", "BtnExport",
-                        "BtnSettings", "BtnApply", "BtnAdd", "BtnDelete",
-                        "BtnIndent", "BtnOutdent", "BtnUp", "BtnDown",
-                        "BtnLinkAdd", "BtnLinkDel",
-                        "MnuRecent0", "MnuRecent1", "MnuRecent2", "MnuRecent3",
-                        "MnuRecent4", "MnuRecent5", "MnuRecent6", "MnuRecent7"]
+        const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
+                        "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
+                        "ActIndent", "ActOutdent", "ActUp", "ActDown",
+                        "ActRecalc", "ActSettings", "BtnApply", "BtnLinkAdd",
+                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
                      "Links_Select", "Gantt_MouseDown", "Gantt_MouseMove",

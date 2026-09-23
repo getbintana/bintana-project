@@ -98,7 +98,14 @@ restricción, deadline, notas y los vínculos; Up/Down reordenan con el subárbo
 Recent guarda los últimos ocho archivos; el cierre con cambios pregunta;
 `OutlineNumber`/`WBS` los deriva Project.
 
-- Queda: el pulido del panel (agrupaciones, atajos de teclado propios).
+**Profesionalizada** (2026-09-22): barra de menú (Archivo/Editar/Ver/
+Herramientas/Ayuda), toolbar de íconos con `Style: "toolbar"`, barra de estado,
+y cada comando declarado una vez como `Action` -- un solo `Enabled` y una sola
+etiqueta para el botón, el ítem de menú y su atajo. Los combos hablan en
+nombres ("Ajustar a la ventana", "Fin a inicio", "Lo antes posible") y el
+catálogo `es.po` los cubre.
+
+- Queda: agrupaciones y atajos propios del panel.
 
 ### 4 — Gantt interactivo
 

@@ -13,6 +13,123 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "_File"
+msgstr "_Archivo"
+
+msgid "_Edit"
+msgstr "_Editar"
+
+msgid "_View"
+msgstr "_Ver"
+
+msgid "_Tools"
+msgstr "_Herramientas"
+
+msgid "_Help"
+msgstr "_Ayuda"
+
+msgid "Open…"
+msgstr "Abrir…"
+
+msgid "Save As…"
+msgstr "Guardar como…"
+
+msgid "Export Chart…"
+msgstr "Exportar gráfico…"
+
+msgid "Quit"
+msgstr "Salir"
+
+msgid "Add Task"
+msgstr "Agregar tarea"
+
+msgid "Delete Task"
+msgstr "Eliminar tarea"
+
+msgid "Move Up"
+msgstr "Subir"
+
+msgid "Move Down"
+msgstr "Bajar"
+
+msgid "Settings…"
+msgstr "Configuración…"
+
+msgid "Open Recent"
+msgstr "Abrir reciente"
+
+msgid "Show log"
+msgstr "Ver log"
+
+msgid "About bintana-project"
+msgstr "Acerca de bintana-project"
+
+msgid "Open a Project XML file"
+msgstr "Abrir un archivo XML de Project"
+
+msgid "Add a task after the selected one"
+msgstr "Agregar una tarea después de la seleccionada"
+
+msgid "Delete the selected task and its subtree"
+msgstr "Eliminar la tarea seleccionada y su subárbol"
+
+msgid "Recalculate the plan"
+msgstr "Recalcular el plan"
+
+msgid "Export the chart as PNG or PDF"
+msgstr "Exportar el gráfico como PNG o PDF"
+
+msgid "Fit to window"
+msgstr "Ajustar a la ventana"
+
+msgid "Days"
+msgstr "Días"
+
+msgid "Weeks"
+msgstr "Semanas"
+
+msgid "Months"
+msgstr "Meses"
+
+msgid "Finish to start"
+msgstr "Fin a inicio"
+
+msgid "Start to start"
+msgstr "Inicio a inicio"
+
+msgid "Finish to finish"
+msgstr "Fin a fin"
+
+msgid "Start to finish"
+msgstr "Inicio a fin"
+
+msgid "As soon as possible"
+msgstr "Lo antes posible"
+
+msgid "As late as possible"
+msgstr "Lo más tarde posible"
+
+msgid "Must start on"
+msgstr "Debe empezar el"
+
+msgid "Must finish on"
+msgstr "Debe terminar el"
+
+msgid "Start no earlier than"
+msgstr "No empezar antes del"
+
+msgid "Start no later than"
+msgstr "No empezar después del"
+
+msgid "Finish no earlier than"
+msgstr "No terminar antes del"
+
+msgid "Finish no later than"
+msgstr "No terminar después del"
+
+msgid "bintana-project {0} — MSPDI (MS Project XML) in Bintana"
+msgstr "bintana-project {0} — MSPDI (XML de MS Project) en Bintana"
+
 msgid "Open"
 msgstr "Abrir"
 
