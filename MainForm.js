@@ -76,6 +76,9 @@ class MainForm extends Form {
     calChoices     = [];
     selectedCalUID = null;
 
+    /* The custom fields the Task page offers, by FieldID. */
+    attrChoices = [];
+
     Form_Open() {
         try {
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
@@ -559,6 +562,37 @@ class MainForm extends Form {
 
         this.fillLinks(has ? task : null);
         this.fillAssignments(has ? task : null);
+        this.fillAttrs(has ? task : null);
+    }
+
+    /* The custom fields the file defines, and the value the selected task
+     * carries in the one the combo shows. */
+    fillAttrs(task) {
+        const project = this.holder.project;
+        const items = [];
+        this.attrChoices = [];
+        for (const def of project.FieldDefs) {
+            this.attrChoices.push(def.FieldID);
+            items.push(def.Alias || def.FieldName || def.FieldID);
+        }
+        this.CmbAttr.Items = items;
+
+        let at = this.attrChoices.indexOf(this.fieldID);
+        if (at < 0) at = items.length ? 0 : -1;
+        this.CmbAttr.Index = at;
+
+        const enabled = !!task && at >= 0;
+        this.CmbAttr.Enabled = enabled;
+        this.TxtAttr.Enabled = enabled;
+        this.TxtAttr.Text = enabled
+            ? attrOf(task, this.attrChoices[at]) : "";
+    }
+
+    CmbAttr_Select() {
+        const task = this.selectedTask();
+        const at = this.CmbAttr.Index;
+        this.TxtAttr.Text = task && at >= 0
+            ? attrOf(task, this.attrChoices[at]) : "";
     }
 
     /* The links of the selected task, as the panel's own table: `linkRows`
@@ -815,8 +849,19 @@ class MainForm extends Form {
         const task = this.selectedTask();
         if (!task) return false;
 
-        /* Notes belong to any task, a summary included. */
+        /* Notes and custom fields belong to any task, a summary included. */
         const values = { Name: this.TxtName.Text, Notes: this.TxtNotes.Text };
+
+        const attrAt = this.CmbAttr.Index;
+        if (attrAt >= 0 && this.attrChoices[attrAt]) {
+            const fieldID = this.attrChoices[attrAt];
+            const kept = task.Attributes.filter((a) => a.FieldID !== fieldID);
+            if (this.TxtAttr.Text !== "")
+                kept.push(new MspFieldValue({ FieldID: fieldID,
+                                              Value: this.TxtAttr.Text }));
+            if (JSON.stringify(task.Attributes) !== JSON.stringify(kept))
+                values.Attributes = kept;
+        }
 
         /* A summary is what Project derives it from: only the name is read. */
         if (!task.Summary) {
@@ -1540,6 +1585,17 @@ class MainForm extends Form {
             ok = edit.calendar(1).WeekDays[0].DayWorking === true && ok;
             print(`edit calendar sunday=${edit.calendar(1).WeekDays[0].DayWorking}`);
 
+            /* A custom field through the panel: the file gets the definition,
+             * the task gets the value. */
+            ok = edit.setProject({ FieldDefs: [new MspFieldDef({
+                     FieldID: "188743731", FieldName: "Text1",
+                     Alias: "External_ID" })] }) && ok;
+            this.fill(2);
+            this.TxtAttr.Text = "4821";
+            ok = this.applyFields() &&
+                 attrOf(edit.task(2), "188743731") === "4821" && ok;
+            print(`edit custom field=${attrOf(edit.task(2), "188743731")}`);
+
             const outPath = File.Join(out, "bintana-project-edit-" + name);
             writeMspdi(outPath, this.holder);
             print(`out=${outPath}`);
@@ -1571,7 +1627,10 @@ class MainForm extends Form {
                  saved[2].Notes === "Edited in the harness" &&
                  second.project.Resources.length === 1 &&
                  second.project.Assignments.length === 1 &&
-                 second.project.Assignments[0].Work === "PT8H0M0S" && ok;
+                 second.project.Assignments[0].Work === "PT8H0M0S" &&
+                 second.project.FieldDefs.length === 1 &&
+                 saved[3].Attributes.length === 1 &&
+                 saved[3].Attributes[0].Value === "4821" && ok;
 
             print(`check-edit ${name}: ${ok ? "ok" : "FAILED"}`);
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
@@ -1600,8 +1659,8 @@ class MainForm extends Form {
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
-                     "Calendars_Select", "Gantt_MouseDown", "Gantt_MouseMove",
-                     "Gantt_MouseUp"]);
+                     "Calendars_Select", "CmbAttr_Select",
+                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp"]);
 
         let ok = true;
         for (const member of wanted) {

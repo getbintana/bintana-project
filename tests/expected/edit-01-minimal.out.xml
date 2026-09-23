@@ -24,6 +24,13 @@
   <WeekStartDay>1</WeekStartDay>
   <StatusDate>2026-09-01T08:00:00</StatusDate>
   <CurrentDate>2026-09-22T08:00:00</CurrentDate>
+  <ExtendedAttributes>
+    <ExtendedAttribute>
+      <FieldID>188743731</FieldID>
+      <FieldName>Text1</FieldName>
+      <Alias>External_ID</Alias>
+    </ExtendedAttribute>
+  </ExtendedAttributes>
   <Calendars>
     <Calendar>
       <UID>1</UID>
@@ -198,6 +205,10 @@
         <Type>1</Type>
         <LagFormat>7</LagFormat>
       </PredecessorLink>
+      <ExtendedAttribute>
+        <FieldID>188743731</FieldID>
+        <Value>4821</Value>
+      </ExtendedAttribute>
     </Task>
   </Tasks>
   <Resources>

@@ -763,6 +763,37 @@
                                 },
                                 {
                                   "type": "Label",
+                                  "name": "LblAttr",
+                                  "properties": {
+                                    "Text": "Custom field",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "ComboBox",
+                                  "name": "CmbAttr",
+                                  "properties": {
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
+                                  "name": "LblAttrValue",
+                                  "properties": {
+                                    "Text": "Value",
+                                    "HAlign": "End"
+                                  }
+                                },
+                                {
+                                  "type": "TextBox",
+                                  "name": "TxtAttr",
+                                  "properties": {
+                                    "HExpand": true,
+                                    "HAlign": "Fill"
+                                  }
+                                },
+                                {
+                                  "type": "Label",
                                   "name": "LblNotes",
                                   "properties": {
                                     "Text": "Notes",

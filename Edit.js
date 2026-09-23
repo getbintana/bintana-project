@@ -236,6 +236,21 @@ class Edit {
         return true;
     }
 
+    /* A custom-field value on a task: empty takes the record out, since a
+     * value with no text is a value the file does not carry. */
+    setFieldValue(taskUID, fieldID, value) {
+        const task = this.task(taskUID);
+        if (!task || !fieldID) return false;
+
+        const kept = task.Attributes.filter((a) => a.FieldID !== fieldID);
+        if (value !== "") kept.push(new MspFieldValue({ FieldID: fieldID, Value: value }));
+        if (JSON.stringify(task.Attributes) === JSON.stringify(kept)) return false;
+
+        task.Attributes = kept;
+        this.commit();
+        return true;
+    }
+
     /* --- the project and its calendars --------------------------------- */
 
     calendar(uid) {

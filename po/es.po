@@ -430,6 +430,9 @@ msgstr "Dónde abre el diálogo"
 msgid "Custom field"
 msgstr "Campo personalizado"
 
+msgid "Value"
+msgstr "Valor"
+
 msgid "FieldID, empty for the first"
 msgstr "FieldID, vacío para el primero"
 

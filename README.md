@@ -45,7 +45,9 @@ The panel on the right is a view of the selected row: type a name, a moment
 (`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, `2ed` for elapsed, or a
 bare number in the task's own unit), a percentage, the milestone, estimated and
 effort-driven ticks, a constraint (`ASAP` through `FNLT`, with its date), a
-deadline or notes, and Apply writes them as one command -- one undo. **Add** puts a new task after the selected one and its
+deadline, notes, or the value of a custom field the file defines -- the same
+`FieldID` the list's column can be pointed at -- and Apply writes them as one
+command -- one undo. **Add** puts a new task after the selected one and its
 subtree, **Delete** takes that subtree and every link into it, and
 **Indent**/**Outdent** move a task a level, recomputing which tasks are
 summaries, and **Up**/**Down** swap it with its sibling, subtree and all.
