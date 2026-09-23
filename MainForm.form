@@ -7,7 +7,7 @@
     "Arrangement": "Vertical",
     "Spacing": 0,
     "Padding": "0",
-    "Width": 1100,
+    "Width": 1240,
     "Height": 720,
     "AcceptFiles": true
   },
@@ -447,7 +447,7 @@
           "name": "BodySplit",
           "properties": {
             "Arrangement": "Horizontal",
-            "Position": 740,
+            "Position": 660,
             "Grows": "End",
             "Expand": true
           },
@@ -570,7 +570,7 @@
                 "Arrangement": "Vertical",
                 "HAlign": "Fill",
                 "VAlign": "Fill",
-                "Scrollbars": "Vertical"
+                "Scrollbars": "Both"
               },
               "children": [
                 {
