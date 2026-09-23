@@ -17,7 +17,9 @@ The window is a menu bar (File/Edit/View/Tools/Help), an icon toolbar with the
 commands that matter while editing, the WBS and the chart, the properties panel
 and a status bar. Every command is declared once as an `Action`, so the toolbar
 button, the menu item and its key are one command with one `Enabled` and one
-label. A Project XML dragged onto the window opens too.
+label. The panel is three tabs -- **Task**, **Links**, **Resources** -- and the
+log starts hidden: **View → Show log** brings it back. A Project XML dragged
+onto the window opens too.
 
 The list is the WBS as a tree
 keyed by UID -- summaries fold, IsNull rows are skipped, durations read in the

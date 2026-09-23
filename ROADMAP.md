@@ -103,9 +103,10 @@ Herramientas/Ayuda), toolbar de íconos con `Style: "toolbar"`, barra de estado,
 y cada comando declarado una vez como `Action` -- un solo `Enabled` y una sola
 etiqueta para el botón, el ítem de menú y su atajo. Los combos hablan en
 nombres ("Ajustar a la ventana", "Fin a inicio", "Lo antes posible") y el
-catálogo `es.po` los cubre.
-
-- Queda: agrupaciones y atajos propios del panel.
+catálogo `es.po` los cubre. El panel de propiedades es un `Switcher` de tres
+pestañas (Tarea/Vínculos/Recursos) dentro de un `Scroller` con `Arrangement`
+--que es lo que lo hace ocupar el ancho--, y el log arranca oculto (Ver → Ver
+log).
 
 ### 4 — Gantt interactivo
 

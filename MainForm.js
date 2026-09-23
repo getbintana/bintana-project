@@ -66,10 +66,6 @@ class MainForm extends Form {
 
     Form_Open() {
         try {
-            /* The log starts shown; the View menu's tick says so. Assigning
-             * `Value` does not run the command, so this is not a toggle. */
-            this.MnuLog.Value = true;
-
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
                 this.checkCorpus();
                 return;

@@ -211,6 +211,9 @@ msgstr "Quitar nivel"
 msgid "Indent"
 msgstr "Indentar"
 
+msgid "Links"
+msgstr "Vínculos"
+
 msgid "Predecessors"
 msgstr "Predecesoras"
 
