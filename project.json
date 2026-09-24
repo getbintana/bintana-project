@@ -1,5 +1,6 @@
 {
-  "name": "bintana-project",
+  "name": "Bintana Project",
+  "id": "io.github.getbintana.Project",
   "startup": "MainForm",
   "sources": [
     "Mspdi.js",

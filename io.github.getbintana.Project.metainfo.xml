@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.getbintana.Project</id>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <name>Bintana Project</name>
+  <summary>Open, edit and write back MS Project (MSPDI) files</summary>
+  <description>
+    <p>Bintana Project opens an MS Project XML file, edits its tasks in a tree beside a Gantt chart, and writes it back without touching what the model does not own.</p>
+    <p>It is a scheduler one phase at a time: task sheets, calendars, resources and their rates.</p>
+  </description>
+  <launchable type="desktop-id">io.github.getbintana.Project.desktop</launchable>
+  <icon type="stock">io.github.getbintana.Project</icon>
+  <categories>
+    <category>Office</category>
+    <category>ProjectManagement</category>
+  </categories>
+  <content_rating type="oars-1.1"/>
+  <releases>
+    <release version="0.1.0" date="2026-09-24"/>
+  </releases>
+  <developer id="io.github.getbintana">
+    <name>Bintana</name>
+  </developer>
+  <url type="homepage">https://github.com/getbintana/bintana-project</url>
+  <url type="bugtracker">https://github.com/getbintana/bintana-project/issues</url>
+  <summary xml:lang="es">Abrí, editá y reescribí archivos de MS Project (MSPDI)</summary>
+  <description xml:lang="es">Bintana Project abre un archivo XML de MS Project, edita sus tareas en un árbol junto a un Gantt y lo vuelve a escribir sin tocar lo que el modelo no posee.</description>
+</component>
