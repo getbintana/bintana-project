@@ -870,3 +870,18 @@ msgstr "Del proyecto"
 
 msgid "Default calendar changed."
 msgstr "Calendario por defecto cambiado."
+
+msgid "Columns…"
+msgstr "Columnas…"
+
+msgid "Columns"
+msgstr "Columnas"
+
+msgid "Columns the plan shows"
+msgstr "Columnas que muestra el plan"
+
+msgid "WBS"
+msgstr "EDT"
+
+msgid "Priority"
+msgstr "Prioridad"

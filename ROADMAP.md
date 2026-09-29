@@ -175,6 +175,20 @@ plan, que puede ser de solo lectura); al abrir, una copia más nueva que el
 archivo se **ofrece** -- no se toma -- y se borra al guardar. Se apaga desde
 Settings.
 
+**Las columnas a la vista** (2026-09-23): **Ver → Columnas…** (`ColumnsForm`)
+elige qué muestra la tabla además del nombre -- que es el árbol y no se va --,
+agregando y sacando: duración, fechas, avance, crítica, hito, trabajo, costo,
+EDT, prioridad, restricción, fecha límite, calendario, tipo de tarea, notas y
+el campo personalizado del archivo. El catálogo `COLUMNS` declara id, ancho y
+alineación, y `cells`/`applyColumns` arman fila y encabezado juntos para que
+una columna que no se muestra no se lea. Es una vista: se recuerda en Settings
+y no toca el archivo (`check-edit` arma la tabla de nuevo y el plan no cambia).
+
+- El clic derecho en la **cabecera** -- el gesto de Project para agregar o
+  sacar una columna -- no llega a la app: la fila de encabezados no emite
+  ningún evento de puntero. Queda pedido al runtime como
+  `docs/issues/ISSUE-table-header-menu.md` de Bintana.
+
 ### 4 — Gantt interactivo
 
 **Hecha** (2026-09-22): selección sincronizada con la tabla, arrastrar una

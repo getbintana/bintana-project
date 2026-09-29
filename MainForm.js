@@ -80,6 +80,7 @@ class MainForm extends Form {
      * is filtered to. */
     attrChoices = [];
     filter = "";
+    columns = ["duration", "start", "finish", "attr", "cost"];
 
     Form_Open() {
         try {
@@ -139,6 +140,14 @@ class MainForm extends Form {
      * written when a file does; these three are read here. */
     applySettings() {
         const scale  = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
+        const stored = Settings.Get("bintana-project.columns", []);
+        const columns = (stored || []).filter(
+            (id) => COLUMNS.some((c) => c.id === id));
+        if (columns.length) {
+            this.columns = columns;
+            this.applyColumns();
+            this.fill(this.selectedUID);
+        }
         this.fieldID = Settings.Get("bintana-project.field", "");
         this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.edit)
@@ -381,13 +390,71 @@ class MainForm extends Form {
         this.TxtFilter_Change();
     }
 
+    /* One value per visible column, in the order `columns` says: the name
+     * first, which is the tree and never goes. */
     cells(task) {
         const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
+        const row  = [name];
+        for (const id of this.columns) row.push(this.columnValue(id, task));
+        return row;
+    }
+
+    columnValue(id, task) {
         const project = this.holder.project;
-        const cost    = taskCost(project, task);
-        return [name, durationText(task, project), shortDate(task.Start),
-                shortDate(task.Finish), attrOf(task, this.fieldID),
-                cost ? Locale.Number(cost, 2) : ""];
+        switch (id) {
+        case "duration":   return durationText(task, project);
+        case "start":      return shortDate(task.Start);
+        case "finish":     return shortDate(task.Finish);
+        case "percent":    return `${task.PercentComplete || 0}%`;
+        case "critical":   return task.Critical ? "◆" : "";
+        case "milestone":  return task.Milestone ? "◆" : "";
+        case "work":       return durationText({ Duration: task.Work,
+                                                 DurationFormat: 5 }, project);
+        case "cost": {
+            const cost = taskCost(project, task);
+            return cost ? Locale.Number(cost, 2) : "";
+        }
+        case "attr":       return attrOf(task, this.fieldID);
+        case "wbs":        return task.WBS;
+        case "priority":   return String(task.Priority);
+        case "constraint": return this.CmbConstraint.Items[task.ConstraintType || 0] || "";
+        case "deadline":   return shortDate(task.Deadline);
+        case "calendar":   return this.calendarName(task.CalendarUID);
+        case "type":       return this.CmbTaskType.Items[taskKind(project, task)] || "";
+        case "notes":      return task.Notes;
+        }
+        return "";
+    }
+
+    /* The table's declaration, rebuilt whole: the rows come from `cells`, so
+     * both move together and a column that is not shown is not read. */
+    applyColumns() {
+        const specs = [{ Text: Locale.Text("Task"), Width: 0 }];
+        for (const id of this.columns) {
+            const column = COLUMNS.find((c) => c.id === id);
+            if (!column) continue;
+            const spec = { Text: Locale.Text(column.Text), Width: column.Width };
+            if (column.Alignment) spec.Alignment = column.Alignment;
+            specs.push(spec);
+        }
+        this.Tasks.Columns = specs;
+    }
+
+    calendarName(uid) {
+        if (!(uid > 0)) return Locale.Text("Project default");
+        const calendar = this.edit.calendar(uid);
+        return calendar ? calendar.Name : `UID ${uid}`;
+    }
+
+    /* The columns the table shows, in their own dialog; the choice is a view
+     * setting, like the timescale, and survives the window. */
+    ActColumns_Click() {
+        ColumnsForm.open(COLUMNS, this.columns, (chosen) => {
+            this.columns = chosen;
+            this.applyColumns();
+            this.fill(this.selectedUID);
+            Settings.Set("bintana-project.columns", chosen);
+        });
     }
 
     /* The plan's resources, with the cost of their assignments added up, and
@@ -2006,6 +2073,19 @@ class MainForm extends Form {
                             () => {}).Close();
             SettingsForm.open(() => {}).Close();
 
+            /* The columns dialog opens with the table's own ticks, refuses
+             * nothing, and hands back what is ticked in the table's order. */
+            let picked = null;
+            const cols = ColumnsForm.open(COLUMNS, this.columns,
+                                          (chosen) => { picked = chosen; });
+            ok = cols.ChkColDuration.Active && !cols.ChkColNotes.Active && ok;
+            cols.ChkColDuration.Active = false;
+            cols.ChkColNotes.Active    = true;
+            cols.BtnOk_Click();
+            ok = picked.indexOf("notes") >= 0 &&
+                 picked.indexOf("duration") < 0 &&
+                 picked.indexOf("start") >= 0 && ok;
+
             /* The panel's own road: select UID 1, type, Apply. */
             this.Tasks.Key = "1";
             this.Tasks_Select();
@@ -2246,6 +2326,21 @@ class MainForm extends Form {
             this.TxtFilter_Change();
             ok = this.Tasks.Count === 4 && ok;
 
+            /* The columns are a view: choosing them rebuilds the table and
+             * leaves the plan alone. */
+            this.columns = ["duration", "percent"];
+            this.applyColumns();
+            this.fill(2);
+            ok = this.Tasks.Columns.length === 3 &&
+                 this.Tasks.Row("2")[1] === durationText(edit.task(2),
+                                                         this.holder.project) &&
+                 String(this.Tasks.Row("2")[2]).endsWith("%") && ok;
+            this.columns = ["duration", "start", "finish", "attr", "cost"];
+            this.applyColumns();
+            this.fill(2);
+            print(`edit columns=${this.Tasks.Columns.length} ` +
+                  `row=${this.Tasks.Row("2").length}`);
+
             /* The report: the bands are declared, the rows are the plan, and
              * the PDF is what a colleague who does not run the app opens. */
             this.buildReport();
@@ -2314,7 +2409,7 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
-                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter",
+                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
@@ -2354,8 +2449,10 @@ class MainForm extends Form {
             if (!this.Tasks.Exists(key)) { ok = false; continue; }
             const row  = this.Tasks.Row(key);
             const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
+            const at   = 1 + this.columns.indexOf("duration");
             if (row[0] !== name ||
-                row[1] !== durationText(task, this.holder.project)) ok = false;
+                (at > 0 && row[at] !== durationText(task, this.holder.project)))
+                ok = false;
         }
 
         this.Tasks.Key = rows.length ? String(rows[0].UID) : "";
@@ -2415,6 +2512,30 @@ class MainForm extends Form {
                calls > 10 && names && scale;
     }
 }
+
+/*
+ * The columns the plan table can show. The name is not here: it is the tree
+ * and never goes. `Width` 0 is the elastic one, and the order is the order
+ * they are offered and drawn in.
+ */
+const COLUMNS = [
+    { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right" },
+    { id: "start",      Text: "Start",            Width: 130 },
+    { id: "finish",     Text: "Finish",           Width: 130 },
+    { id: "percent",    Text: "Percent complete", Width: 70,  Alignment: "Right" },
+    { id: "critical",   Text: "Critical",         Width: 60,  Alignment: "Center" },
+    { id: "milestone",  Text: "Milestone",        Width: 60,  Alignment: "Center" },
+    { id: "work",       Text: "Work",             Width: 84,  Alignment: "Right" },
+    { id: "cost",       Text: "Cost",             Width: 80,  Alignment: "Right" },
+    { id: "attr",       Text: "Custom field",     Width: 90,  Alignment: "Right" },
+    { id: "wbs",        Text: "WBS",              Width: 80 },
+    { id: "priority",   Text: "Priority",         Width: 60,  Alignment: "Right" },
+    { id: "constraint", Text: "Constraint",       Width: 110 },
+    { id: "deadline",   Text: "Deadline",         Width: 130 },
+    { id: "calendar",   Text: "Calendar",         Width: 100 },
+    { id: "type",       Text: "Task type",        Width: 100 },
+    { id: "notes",      Text: "Notes",            Width: 160 },
+];
 
 /* The four link types, in MSPDI's own numbering (0 FF, 1 FS, 2 SF, 3 SS) and
  * in the order the panel's combo shows them: FS, SS, FF, SF. */

@@ -132,6 +132,11 @@
       "text": "Filter tasks",
       "icon": "edit-find-symbolic",
       "shortcut": "<Control>f"
+    },
+    {
+      "name": "ActColumns",
+      "text": "Columns\u2026",
+      "icon": "view-list-symbolic"
     }
   ],
   "menus": [
@@ -235,6 +240,12 @@
         },
         {
           "action": "ActFilter"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActColumns"
         }
       ]
     },
@@ -563,6 +574,12 @@
                       },
                       {
                         "action": "ActDown"
+                      },
+                      {
+                        "separator": true
+                      },
+                      {
+                        "action": "ActColumns"
                       }
                     ]
                   }

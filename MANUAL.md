@@ -24,6 +24,13 @@ muestra el campo personalizado que elijas en Configuración. **Costo** suma lo
 que cuestan las asignaciones de la tarea: unidades por tarifa del recurso, o el
 costo fijo del material; queda vacía si la tarea no cuesta nada.
 
+Las columnas se eligen en **Ver → Columnas…** (o en el menú de la fila,
+**Columnas…**): se agregan y se sacan con un tilde, entre duración, fechas,
+avance, crítica, hito, trabajo, costo, EDT, prioridad, restricción, fecha
+límite, calendario, tipo de tarea, notas y el campo personalizado del archivo.
+El nombre es el árbol y no se va. La elección es una vista, como la escala: se
+recuerda para la próxima ventana y no toca el archivo.
+
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
 `Ctrl+F` lleva el cursor ahí.
@@ -183,7 +190,8 @@ nombre del proyecto y la ruta del archivo.
 **Herramientas → Configuración…** edita lo que la app recuerda: carpeta por
 donde abre el diálogo, escala, campo personalizado que muestra la lista,
 unidad de una duración sin sufijo, y si recalcula solo y si guarda la copia de
-recuperación.
+recuperación. Las **columnas** también se recuerdan, pero se eligen en
+**Ver → Columnas…**.
 
 ## Lo que no hace
 

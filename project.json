@@ -13,6 +13,7 @@
     "RatesForm.js",
     "ProjectForm.js",
     "CalendarsForm.js",
+    "ColumnsForm.js",
     "OptionsForm.js",
     "MainForm.js"
   ],

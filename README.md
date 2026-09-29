@@ -39,6 +39,13 @@ it: a task whose name matches, and the ancestors that give it its place, with
 the magnifier clearing the filter. Selecting a row marks the same task in the
 chart, which draws summaries as brackets and critical tasks in red.
 
+**View → Columns…** (or the row's context menu) chooses what the table shows
+beside the name, which is the tree and never goes: duration, start, finish,
+percent complete, critical, milestone, work, cost, WBS, priority, constraint,
+deadline, calendar, task type, notes and the file's custom field -- added and
+removed with a tick. The choice is a view setting, like the timescale: it
+survives the window and never touches the file.
+
 The chart owns its size: as tall as its rows and as wide as the **Timescale**
 combo asks -- `Auto` fits the view, `Day`/`Week`/`Month` set a day width and the
 scroller beside them shows what does not fit. The table and the chart scroll
@@ -173,13 +180,14 @@ through XML. The corpus measures the road to it; see `ROADMAP.md`.
 
 ## Settings and translation
 
-Seven things are remembered, all under `bintana-project.*` in `Settings` (the
+Eight things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
 folder the last file came from, the timescale, which custom field the list
-shows (by `FieldID`, empty for the first), the unit a bare duration is read in,
-the recent list, whether the plan is recalculated after each change (off by
-default: a date typed by hand is the user's until they ask), and whether the
-recovery copy is kept.
+shows (by `FieldID`, empty for the first), which columns the list shows (chosen
+in View → Columns…, the name always among them), the unit a bare duration is
+read in, the recent list, whether the plan is recalculated after each change
+(off by default: a date typed by hand is the user's until they ask), and
+whether the recovery copy is kept.
 
 **The autosave is a copy, not a save**: while there is unsaved work the app
 writes it every minute to the config directory -- never beside the schedule,
