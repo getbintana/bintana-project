@@ -856,9 +856,6 @@ msgstr "El calendario del proyecto no se puede eliminar."
 msgid "Delete calendar"
 msgstr "Eliminar calendario"
 
-msgid "Delete "{0}"?"
-msgstr "¿Eliminar "{0}"?"
-
 msgid "Close"
 msgstr "Cerrar"
 
