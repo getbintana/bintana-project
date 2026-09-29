@@ -205,6 +205,29 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
 
 ### 4 — Gantt interactivo
 
+**La vista clásica** (2026-09-29): era la meta grande de la fase -- el plan a
+la izquierda, el Gantt a la derecha, filas alineadas y un solo scroll
+vertical. Se hizo en tres partes y ninguna era de la app:
+
+- El runtime no podía decir la geometría de una tabla. `GtkColumnView` no
+  expone la altura de una fila (vive en las fábricas de celdas), ni el scroll
+  (el `GtkScrolledWindow` que este control ya envuelve tenía el ajuste ahí,
+  sin exponerlo), ni el encabezado (que GTK 4 no puede ni esconder). Salieron
+  `RowHeight`, `HeaderHeight`, `ScrollY`/`ScrollMaxY` y el evento `Scroll`, con
+  `TableGeometry` en el runtime afirmándolos.
+- `RowHeight` se corrigió apenas se usó, y por una app: dividía `upper` por las
+  filas, y `upper` es `max(contenido, página)` -- un plan que **entra** en la
+  ventana dividía el viewport entero y contestaba 102 para una fila de 36. Es
+  `gtk_widget_measure`, menos el encabezado, y `0` hasta que la ventana
+  alrededor tiene viewport (una tabla dentro de un `Fixed` nunca lo tiene).
+- La app dibuja el gráfico en las coordenadas de la lista, reusa
+  `bta_scroll_get`/`bta_scroll_watch` en vez de reescribirlos, y `check-view`
+  (25 aserciones) afirma la aritmética y no los píxeles: la extensión de las
+  filas es la cuenta por una, las dos panes son el mismo rectángulo, un puntero
+  sobre la quinta fila es la quinta fila, una muesca sobre el gráfico baja la
+  lista tres filas, plegar una rama no cambia la altura de una fila, y el PNG
+  exportado es tan alto como el plan y no como el panel.
+
 **Hecha** (2026-09-22): selección sincronizada con la tabla, arrastrar una
 barra para mover la tarea, su extremo para estirar (la duración sale del
 tiempo laborable del calendario de la tarea) y Ctrl-arrastrar de una barra a
@@ -309,14 +332,15 @@ real). Cada uno con su trigger para reabrir.
 - **Orden y filtro por columnas**: no por ahora. La tabla es el WBS en orden de
   archivo y el Gantt dibuja ese orden; ordenar rompería la adyacencia
   padre-hijo. Si se quiere, será una vista aparte.
-- **Gantt**: hoy el scroller es suyo (vertical por filas, horizontal por
-  timescale), no sincronizado con la tabla -- comparten identidad, no
-  geometría. **La meta es la vista clásica**: el plan a la izquierda y el
-  Gantt a la derecha, en un `Split` cuyas filas se alinean y cuyo scroll
-  vertical es uno solo. Es el trabajo grande de UI que sigue; la tabla y el
-  gráfico tendrán que compartir la geometría de filas (o el `Split` mostrar
-  dos vistas del mismo modelo de filas), que es justo lo que la simplificación
-  de arriba evitaba.
+- **Gantt**: la vista clásica **está hecha** (2026-09-29) -- el plan a la
+  izquierda y el gráfico a la derecha, en un `Split` cuyas filas se alinean y
+  cuyo scroll vertical es uno solo. La decisión de arriba ("comparten
+  identidad, no geometría") era lo que había que deshacer, y se deshizo
+  pidiendo al runtime lo que la geometría exige: `TableView.RowHeight`,
+  `HeaderHeight` y `ScrollY` con su evento `Scroll`. El gráfico se dibuja en
+  las coordenadas de la lista (fila *i* en `head + i*row - scroll`), la lista
+  es la única que baja, y el scroller del gráfico es horizontal porque lo que
+  no entra es la escala. Ver **La vista clásica** en la fase 4.
 
 ## Abiertas
 

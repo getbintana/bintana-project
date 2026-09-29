@@ -49,14 +49,22 @@ heading** is the gesture Project has for it, and reaches the same place: hide
 the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
 
-The chart owns its size: as tall as its rows and as wide as the **Timescale**
-combo asks -- `Auto` fits the view, `Day`/`Week`/`Month` set a day width and the
-scroller beside them shows what does not fit. The table and the chart scroll
-independently, which is the same simplification as their geometry. **Export
-Chart…** writes the chart at its own size as a PNG or a PDF, and **Report…**
-(File menu, over `lib/report`) writes the plan as a banded document -- tasks
-with dates, duration, progress and cost, totalled -- which is how any of it
-reaches somebody who does not run the app.
+**The chart sits beside the table, in the same view, with one scroll between
+them.** The two panes are in a `Split` you can drag, and the chart is drawn in
+the list's own coordinates: row *i* of the chart is where row *i* of the table
+is, at the height the table's rows are (the theme's, not a constant of this
+program). The list is the only thing that scrolls down -- its scrollbar, the
+wheel over either pane and the keyboard all move both -- and the chart's own
+scroller is horizontal, because what does not fit in a chart is the timescale.
+The divider between the panes' heading row and the rows is the **timescale**:
+weeks over months, the way Project reads it.
+
+The chart's width is what the **Timescale** combo asks -- `Auto` fits the view,
+`Day`/`Week`/`Month` set a day width. **Export Chart…** writes the whole plan
+as a PNG or a PDF, from its first row and with the task names in a gutter, since
+a file has no list beside it; **Report…** (File menu, over `lib/report`) writes
+the plan as a banded document -- tasks with dates, duration, progress and cost,
+totalled -- which is how any of it reaches somebody who does not run the app.
 
 The pointer edits too: click a bar to select it, **drag** it to move the task,
 drag its **end** to resize (the duration follows, measured in working time on

@@ -36,6 +36,11 @@ también lleva a lo mismo: **Ocultar esta columna** saca la que se apretó (sobr
 el nombre no se puede: es el árbol), **Mostrar todas las columnas** vuelve a
 ponerlas todas y **Columnas…** abre el diálogo completo para elegir cuáles.
 
+La lista es la mitad izquierda de la vista: a su derecha está el Gantt, las dos
+en el mismo `Split`, y **la lista es la que baja** — su barra de desplazamiento,
+la rueda sobre cualquiera de las dos y el teclado mueven las dos. Plegar una
+rama saca filas de las dos.
+
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
 `Ctrl+F` lleva el cursor ahí.
@@ -158,9 +163,17 @@ rige para esa tarea o ese recurso: **Del proyecto** o uno en particular.
 
 ## El Gantt
 
+El gráfico está **al lado de la lista, no debajo**: las dos panes comparten el
+divisor que se arrastra, la fila *i* del gráfico es donde está la fila *i* de la
+tabla -- a la altura que tengan las filas, que es la del tema y no una constante
+de la app -- y **la lista es la única que baja**: su barra, la rueda sobre
+cualquiera de las dos y el teclado mueven las dos. El scroller del gráfico es
+horizontal, porque lo que no entra en un gráfico es la escala de tiempo. En la
+banda del encabezado van las **semanas arriba de los meses**.
+
 Muestra las tareas en orden de archivo, con los resúmenes como corchetes, las
 críticas en rojo y el avance como banda dentro de la barra. La fila
-seleccionada se resalta.
+seleccionada se resalta, en las dos panes.
 
 - **Clic** selecciona; **arrastrar** una barra mueve la tarea; arrastrar su
   **extremo** la estira (la duración sale del tiempo laborable del calendario
@@ -169,8 +182,9 @@ seleccionada se resalta.
 - Nada se escribe hasta soltar el botón: un gesto es un Deshacer.
 - **Escala**: Ajustar a la ventana, Días, Semanas, Meses; el gráfico se
   desplaza con sus barras.
-- **Exportar** (barra o menú Archivo) escribe el gráfico como PNG o PDF, para
-  mandárselo a quien no corre la app.
+- **Exportar** (barra o menú Archivo) escribe el gráfico como PNG o PDF -- el
+  plan entero desde su primera fila y con los nombres de las tareas, porque un
+  archivo no tiene una lista al lado -- para mandárselo a quien no corre la app.
 
 ## Informes
 
