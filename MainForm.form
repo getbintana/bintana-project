@@ -14,7 +14,7 @@
   "actions": [
     {
       "name": "ActOpen",
-      "text": "Open\u2026",
+      "text": "Open…",
       "icon": "document-open-symbolic",
       "shortcut": "<Control>o"
     },
@@ -26,13 +26,13 @@
     },
     {
       "name": "ActSaveAs",
-      "text": "Save As\u2026",
+      "text": "Save As…",
       "icon": "document-save-as-symbolic",
       "shortcut": "<Control><Shift>s"
     },
     {
       "name": "ActExport",
-      "text": "Export Chart\u2026",
+      "text": "Export Chart…",
       "icon": "image-x-generic-symbolic"
     },
     {
@@ -99,7 +99,7 @@
     },
     {
       "name": "ActSettings",
-      "text": "Settings\u2026",
+      "text": "Settings…",
       "icon": "preferences-system-symbolic"
     },
     {
@@ -109,22 +109,22 @@
     },
     {
       "name": "ActReport",
-      "text": "Report\u2026",
+      "text": "Report…",
       "icon": "x-office-document-symbolic"
     },
     {
       "name": "ActProjData",
-      "text": "Project data\u2026",
+      "text": "Project data…",
       "icon": "document-properties-symbolic"
     },
     {
       "name": "ActProjOptions",
-      "text": "Project options\u2026",
+      "text": "Project options…",
       "icon": "preferences-system-symbolic"
     },
     {
       "name": "ActCalendar",
-      "text": "Calendars\u2026",
+      "text": "Calendars…",
       "icon": "x-office-calendar-symbolic"
     },
     {
@@ -135,7 +135,7 @@
     },
     {
       "name": "ActColumns",
-      "text": "Columns\u2026",
+      "text": "Columns…",
       "icon": "view-list-symbolic"
     }
   ],
@@ -328,7 +328,7 @@
           "properties": {
             "Action": "ActSaveAs",
             "Icon": "document-save-as-symbolic",
-            "Tooltip": "Save As\u2026",
+            "Tooltip": "Save As…",
             "Style": "flat",
             "Width": 34,
             "Height": 30
@@ -518,78 +518,12 @@
               },
               "children": [
                 {
-                  "type": "TableView",
-                  "name": "Tasks",
-                  "properties": {
-                    "Columns": [
-                      {
-                        "Text": "Task",
-                        "Width": 0
-                      },
-                      {
-                        "Text": "Duration",
-                        "Width": 84,
-                        "Alignment": "Right"
-                      },
-                      {
-                        "Text": "Start",
-                        "Width": 130
-                      },
-                      {
-                        "Text": "Finish",
-                        "Width": 130
-                      },
-                      {
-                        "Text": "Attr",
-                        "Width": 90,
-                        "Alignment": "Right"
-                      },
-                      {
-                        "Text": "Cost",
-                        "Width": 80,
-                        "Alignment": "Right"
-                      }
-                    ],
-                    "Expand": true,
-                    "MinHeight": 160,
-                    "HAlign": "Fill",
-                    "Menu": [
-                      {
-                        "action": "ActAdd"
-                      },
-                      {
-                        "action": "ActDelete"
-                      },
-                      {
-                        "separator": true
-                      },
-                      {
-                        "action": "ActIndent"
-                      },
-                      {
-                        "action": "ActOutdent"
-                      },
-                      {
-                        "action": "ActUp"
-                      },
-                      {
-                        "action": "ActDown"
-                      },
-                      {
-                        "separator": true
-                      },
-                      {
-                        "action": "ActColumns"
-                      }
-                    ]
-                  }
-                },
-                {
                   "type": "Panel",
                   "name": "GanttBar",
                   "properties": {
                     "Arrangement": "Horizontal",
-                    "Spacing": 8
+                    "Spacing": "8",
+                    "HAlign": "Fill"
                   },
                   "children": [
                     {
@@ -639,21 +573,51 @@
                   ]
                 },
                 {
-                  "type": "Scroller",
-                  "name": "GanttScroll",
+                  "type": "Split",
+                  "name": "PlanSplit",
                   "properties": {
-                    "Height": 220,
-                    "MinHeight": 140,
+                    "Arrangement": "Horizontal",
+                    "Position": 520,
+                    "Expand": true,
                     "HAlign": "Fill",
-                    "Scrollbars": "Both"
+                    "VAlign": "Fill"
                   },
                   "children": [
                     {
-                      "type": "DrawingArea",
-                      "name": "Gantt",
+                      "type": "TableView",
+                      "name": "Tasks",
                       "properties": {
-                        "Width": 600,
-                        "Height": 240,
+                        "Columns": [
+                          {
+                            "Text": "Task",
+                            "Width": 0
+                          },
+                          {
+                            "Text": "Duration",
+                            "Width": 84,
+                            "Alignment": "Right"
+                          },
+                          {
+                            "Text": "Start",
+                            "Width": 130
+                          },
+                          {
+                            "Text": "Finish",
+                            "Width": 130
+                          },
+                          {
+                            "Text": "Attr",
+                            "Width": 90,
+                            "Alignment": "Right"
+                          },
+                          {
+                            "Text": "Cost",
+                            "Width": 80,
+                            "Alignment": "Right"
+                          }
+                        ],
+                        "Expand": true,
+                        "HAlign": "Fill",
                         "Menu": [
                           {
                             "action": "ActAdd"
@@ -675,9 +639,48 @@
                           },
                           {
                             "action": "ActDown"
+                          },
+                          {
+                            "separator": true
+                          },
+                          {
+                            "action": "ActColumns"
                           }
-                        ]
+                        ],
+                        "VAlign": "Fill"
                       }
+                    },
+                    {
+                      "type": "Panel",
+                      "name": "ChartCol",
+                      "properties": {
+                        "Arrangement": "Vertical",
+                        "HExpand": true,
+                        "HAlign": "Fill",
+                        "VAlign": "Fill"
+                      },
+                      "children": [
+                        {
+                          "type": "Scroller",
+                          "name": "GanttScroll",
+                          "properties": {
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "VAlign": "Fill",
+                            "Scrollbars": "Horizontal"
+                          },
+                          "children": [
+                            {
+                              "type": "DrawingArea",
+                              "name": "Gantt",
+                              "properties": {
+                                "Width": 600,
+                                "Height": 240
+                              }
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 },
@@ -1440,7 +1443,7 @@
                                   "type": "Button",
                                   "name": "BtnResRates",
                                   "properties": {
-                                    "Text": "Rates\u2026",
+                                    "Text": "Rates…",
                                     "Icon": "view-list-symbolic",
                                     "HExpand": true,
                                     "HAlign": "Fill"
@@ -1589,7 +1592,7 @@
                                   "type": "Button",
                                   "name": "BtnProjData",
                                   "properties": {
-                                    "Text": "Project data\u2026",
+                                    "Text": "Project data…",
                                     "Icon": "document-properties-symbolic",
                                     "HExpand": true,
                                     "HAlign": "Fill",
@@ -1600,7 +1603,7 @@
                                   "type": "Button",
                                   "name": "BtnProjOptions",
                                   "properties": {
-                                    "Text": "Project options\u2026",
+                                    "Text": "Project options…",
                                     "Icon": "preferences-system-symbolic",
                                     "HExpand": true,
                                     "HAlign": "Fill",

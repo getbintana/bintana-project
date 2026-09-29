@@ -1,28 +1,46 @@
 /*
  * Gantt: the project as bars on a timescale. Pure drawing over `Mspdi.js`.
  *
- * One deliberate simplification runs through it: the chart lays out its own
- * rows (every task, in file order) and never tries to line up with the
- * `TableView` beside it. Two controls sharing one row height is a coupling
- * that breaks on every theme; a chart that owns its geometry is a `Save()`
- * away from a PNG and a `Dump()` away from an assertion. The two views share
- * **identity** instead: the selected UID tints a row here. Its size is its own
- * too -- as tall as its rows and as wide as the timescale asks -- and a
- * `Scroller` around it shows the difference.
+ * **The chart's rows are the table's rows.** It used to lay out its own --
+ * every task, in file order, at a row height of its own -- and the two views
+ * shared *identity* only: the selected UID tinted a row here. Now the row
+ * height, the height of the heading row and the scroll are the table's own
+ * numbers (`TableView.RowHeight`, `HeaderHeight`, `ScrollY`), and the chart is
+ * drawn beside the list in one `Split` with one vertical scroll between them.
+ * A chart is still a `Save()` away from a PNG and a `Dump()` away from an
+ * assertion, and a frame drawn at `head + i * row - scroll` is the row the
+ * table is drawing, not a row that agrees with it by luck.
  *
  * A summary is a bracket over its dates, a critical task is red and the rest
  * blue, which is the reading Project taught. Dates are instants
  * (`new Date("2026-10-01T17:00:00")` reads local, which is what a plan drawn
- * on this machine means); durations never enter, only Start/Finish. The
- * header step adapts: days while they fit, weeks below 16 px a day, months
- * below 6.
+ * on this machine means); durations never enter, only Start/Finish. The heading
+ * carries the timescale in two bands -- weeks above, months below, as Project
+ * does -- and the grid steps by whatever fits.
  */
 "use strict";
 
-const GUTTER = 170;   // names live here, clipped
-const HEADER = 24;    // the timescale's own row
-const ROW_H  = 24;
+const GUTTER = 170;   // the names, for a chart that travels on its own
+const PAD    = 8;     // the chart's own margin when the list shows the names
 const BAR_H  = 12;
+
+/* What the chart uses before the table has been laid out, and what an
+ * assertion compares against: a row is never taller than this, and the
+ * fallback keeps a frame drawable while `RowHeight` is still 0. */
+const ROW_H  = 24;
+const HEADER = 24;
+
+/* The chart's own geometry, read from the table beside it. The fallbacks are
+ * what the first frame uses, before GTK has measured a row. */
+function chartGeometry(geom) {
+    const g = geom || {};
+    return {
+        plotX:   g.plotX !== undefined ? g.plotX : GUTTER,
+        rowH:    g.rowH  > 0 ? g.rowH  : ROW_H,
+        headH:   g.headH >= 0 && g.headH !== undefined ? g.headH : HEADER,
+        scrollY: g.scrollY > 0 ? g.scrollY : 0,
+    };
+}
 
 /* What gets drawn, in file order: every task the tree shows, summaries
  * included, and no blank row -- IsNull is nothing. */
@@ -60,32 +78,59 @@ function ganttRange(rows) {
  * between pixels and instants. `drawGantt` paints from it and the mouse
  * handlers hit-test with it, so a bar is exactly where the pointer thinks it
  * is -- two spellings of the geometry would drift.
+ *
+ * `geom` is the table's own: where the plot starts, how tall a row is, how tall
+ * the heading is and how far down the list is scrolled. Row `i` is at
+ * `headH + i * rowH - scrollY`, which is the y the table draws it at, so the
+ * two panes need not know about each other to agree.
  */
-function ganttGeometry(project, width, height, step) {
+function ganttGeometry(project, width, height, step, geom) {
+    const g = chartGeometry(geom);
     const rows  = project ? ganttRows(project) : [];
     const range = ganttRange(rows);
+    /* The heading is drawn *over* the rows -- it is the table's own, and the
+     * table does not scroll it away -- so a point in that band is over the
+     * heading and not over a row, however the arithmetic would place one. */
+    const rowAt = (py) => {
+        if (py < g.headH) return -1;
+        const i = Math.floor((py - g.headH + g.scrollY) / g.rowH);
+        return i >= 0 && i < rows.length ? i : -1;
+    };
     if (!rows.length || !range) {
-        return { rows, range: null, plotX: 0, plotW: 0, dayW: 0,
+        return { rows, range: null, plotX: g.plotX, plotW: 0, dayW: 0,
+                 headH: g.headH, rowH: g.rowH, scrollY: g.scrollY,
                  x: () => 0, msAt: () => 0, rowAt: () => -1 };
     }
 
-    const plotX = GUTTER, plotW = Math.max(width - GUTTER - 8, 50);
+    const plotX = g.plotX, plotW = Math.max(width - g.plotX - 8, 50);
     const spanDays = (range.to - range.from) / DAY_MS;
     const dayW = plotW / spanDays;
 
     return {
         rows, range, plotX, plotW, dayW,
+        headH: g.headH, rowH: g.rowH, scrollY: g.scrollY,
         x: (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW,
         msAt: (px) => range.from + (px - plotX) / plotW * (range.to - range.from),
-        rowAt: (py) => {
-            const i = Math.floor((py - HEADER) / ROW_H);
-            return i >= 0 && i < rows.length ? i : -1;
-        },
+        rowAt,
     };
 }
 
-function drawGantt(p, width, height, project, selected, step, drag, baseline) {
-    const g = ganttGeometry(project, width, height, step);
+/* The two bands of the heading, the way Project reads a timescale: a week over
+ * a month, and the day's gridlines falling from the week's edge. A band whose
+ * labels would not fit is left out rather than drawn on top of each other --
+ * below about six pixels a day a week is unreadable, and a month is the only
+ * band that survives. */
+function ganttTimescaleBands(dayW) {
+    const bands = [];
+    if (dayW >= 6) bands.push({ step: 7, label: (d) => `${d.getDate()}/${d.getMonth() + 1}` });
+    if (dayW >= 3) bands.push({ step: 30, label: (d) =>
+        d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
+                           : `${d.getMonth() + 1}` });
+    return bands;
+}
+
+function drawGantt(p, width, height, project, selected, step, drag, baseline, geom) {
+    const g = ganttGeometry(project, width, height, step, geom);
     const rows = g.rows;
     if (!rows.length) {
         p.Text(Locale.Text("No tasks"), 12, 12);
@@ -106,44 +151,73 @@ function drawGantt(p, width, height, project, selected, step, drag, baseline) {
     const link  = dark ? "#9a9996" : "#5e5c64";
     const today = "#e01b24";
     const band  = dark ? "#2f2f2f" : "#eaeaea";
+    const head  = dark ? "#353535" : "#f6f5f4";
 
     const plotX = g.plotX, plotW = g.plotW;
     const x = g.x;
-    const cy = (i) => HEADER + i * ROW_H + ROW_H / 2;
+    const headH = g.headH, rowH = g.rowH;
+    const top = (i) => headH + i * rowH - g.scrollY;      // row i's first pixel
+    const cy = (i) => top(i) + rowH / 2;
 
     /* By UID, for the dependency elbows and the selection below. */
     const rowOf = {};
     for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
 
-    /* The grid and its labels. `step` is the timescale control's choice in
-     * days; without one it steps to what fits. */
+    /* The heading: the same band the table's column headings sit in, with the
+     * timescale in it. A frame is drawn at the height the table says it is, so
+     * a taller theme's heading is filled to its edge instead of leaving a gap
+     * the list's rows do not. */
+    if (headH > 0) {
+        p.Color = head;
+        p.Rectangle(0, 0, width, headH);
+        p.Fill();
+    }
+
+    /* The grid and its labels, falling from the heading into the rows. */
     const dayMs = DAY_MS;
     const dayW = g.dayW;
-    if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
+    const bands = ganttTimescaleBands(dayW);
+    const bandH = headH > 0 ? headH / bands.length : 0;
     p.Color = grid;
     p.LineWidth = 1;
     const t0 = Math.floor(range.from / dayMs) * dayMs;
+    for (const band of bands) {
+        const y = bandH * (bands.indexOf(band) + 1);
+        p.Color = grid;
+        p.MoveTo(0, y);
+        p.LineTo(width, y);
+        p.Stroke();
+        for (let t = t0, n = 0; t <= range.to; t += band.step * dayMs, n++) {
+            const d = new Date(t);
+            if (n > 400) break;   // a corrupt range must not hang the frame
+            if (x(t) > width) continue;
+            p.Color = grid;
+            p.MoveTo(x(t), y);
+            p.LineTo(x(t), headH);
+            p.Stroke();
+            p.Color = ink;
+            p.Text(band.label(d), x(t) + 3, y - bandH + 3);
+        }
+    }
+    /* One line per step the rows are ruled by, which is a week while a week
+     * fits and whatever else does. */
+    if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
+    p.Color = grid;
     for (let t = t0, n = 0; t <= range.to; t += step * dayMs, n++) {
-        const d = new Date(t);
-        p.MoveTo(x(t), HEADER - 4);
+        if (n > 400) break;
+        p.MoveTo(x(t), headH);
         p.LineTo(x(t), height);
         p.Stroke();
-        p.Color = ink;
-        const label = step === 1 ? String(d.getDate()) :
-                      step === 7 ? `${d.getDate()}/${d.getMonth() + 1}` :
-                      `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`;
-        p.Text(label, x(t) + 3, 4);
-        p.Color = grid;
-        if (n > 400) break;   // a corrupt range must not hang the frame
     }
 
-    /* The selected row, behind its bar: the table and the chart share the UID
-     * and nothing else. */
+    /* The selected row, behind its bar. It is the row the table is highlighting
+     * and it is painted where the table paints it, which is what a chart beside
+     * a list is for. */
     const selRow = selected === null || selected === undefined
                  ? undefined : rowOf[selected];
-    if (selRow !== undefined) {
+    if (selRow !== undefined && top(selRow) < height && top(selRow) + rowH > headH) {
         p.Color = band;
-        p.Rectangle(0, HEADER + selRow * ROW_H, width, ROW_H);
+        p.Rectangle(0, top(selRow), width, rowH);
         p.Fill();
     }
 
@@ -155,14 +229,23 @@ function drawGantt(p, width, height, project, selected, step, drag, baseline) {
         const task = rows[i];
         const colour = task.Critical ? late : bar;
         const s = whenMs(task.Start), f = whenMs(task.Finish);
-        const y = HEADER + i * ROW_H + (ROW_H - BAR_H) / 2;
+        const first = top(i);
+        const y = first + (rowH - BAR_H) / 2;
 
-        /* The name, clipped to the gutter it lives in. */
-        p.Push();
-        p.ClipRectangle(0, 0, GUTTER - 8, height);
-        p.Color = ink;
-        p.Text(task.Milestone ? `◆ ${task.Name}` : task.Name, 8, HEADER + i * ROW_H + 5);
-        p.Pop();
+        /* A row that is off the pane draws nothing: the list scrolls and this
+         * is the same scroll, so a plan of two thousand tasks is not a frame of
+         * two thousand bars clipped to the ones that fit. */
+        if (first + rowH <= headH || first >= height) continue;
+
+        /* The name, only where there is a gutter to hold it -- which is a chart
+         * that travels on its own, since the file of an export has no list. */
+        if (plotX >= 120) {
+            p.Push();
+            p.ClipRectangle(0, 0, plotX - 8, height);
+            p.Color = ink;
+            p.Text(task.Milestone ? `◆ ${task.Name}` : task.Name, 8, first + 4);
+            p.Pop();
+        }
 
         if (s === null || f === null) continue;
         const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
@@ -259,7 +342,7 @@ function drawGantt(p, width, height, project, selected, step, drag, baseline) {
         if (drag.to !== null && drag.to !== undefined &&
             rowOf[drag.to] !== undefined) {
             p.Color = ink;
-            p.Rectangle(GUTTER, HEADER + rowOf[drag.to] * ROW_H, width - GUTTER, ROW_H);
+            p.Rectangle(plotX, top(rowOf[drag.to]), width - plotX, rowH);
             p.Stroke();
         }
     }
@@ -289,7 +372,7 @@ function drawGantt(p, width, height, project, selected, step, drag, baseline) {
     if (now >= range.from && now <= range.to) {
         p.Color = today;
         p.LineDash = [4, 3];
-        p.MoveTo(x(now), HEADER - 4);
+        p.MoveTo(x(now), 0);
         p.LineTo(x(now), height);
         p.Stroke();
         p.LineDash = [];

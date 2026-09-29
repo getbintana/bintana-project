@@ -96,6 +96,10 @@ class MainForm extends Form {
                 this.checkDrag();
                 return;
             }
+            if (Application.Arguments.indexOf("check-view") >= 0) {
+                this.checkView();
+                return;
+            }
             if (Application.Arguments.indexOf("check-edit") >= 0) {
                 this.checkEdit();
                 return;
@@ -937,13 +941,36 @@ class MainForm extends Form {
     ganttWidth()  { const b = this.Gantt.Bounds(); return b.Width  || this.Gantt.Width; }
     ganttHeight() { const b = this.Gantt.Bounds(); return b.Height || this.Gantt.Height; }
 
+    /* How tall a row is, how tall the heading is, and how far down the list
+     * is: the table's own numbers, read every time rather than cached. A row
+     * added in this turn has no height yet, so the first frames after opening
+     * a plan fall back and the next one has the real value. */
+    rowHeight() {
+        const h = this.Tasks ? this.Tasks.RowHeight : 0;
+        return h > 0 ? h : ROW_H;
+    }
+
+    headHeight() {
+        const h = this.Tasks ? this.Tasks.HeaderHeight : 0;
+        return h > 0 ? h : HEADER;
+    }
+
+    /* The chart is drawn in the list's coordinates: row `i` at
+     * `head + i * row - scroll`, which is where the table draws it. The plot
+     * starts at the pane's edge -- the names are in the list beside it -- and
+     * the gutter comes back only for a chart that travels on its own. */
+    planGeom() {
+        return { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+                 scrollY: this.ganttY || 0 };
+    }
+
     /* Which task, and which part of its bar, is under the pointer. */
     ganttHit(x, y) {
         const project = this.holder ? this.holder.project : null;
         if (!project) return null;
 
         const g = ganttGeometry(project, this.ganttWidth(), this.ganttHeight(),
-                                this.step);
+                                this.step, this.planGeom());
         const i = g.rowAt(y);
         if (i < 0 || x < g.plotX) return null;
 
@@ -1010,7 +1037,7 @@ class MainForm extends Form {
         }
 
         const g = ganttGeometry(this.holder.project, this.ganttWidth(),
-                                this.ganttHeight(), this.step);
+                                this.ganttHeight(), this.step, this.planGeom());
         if (!g.dayW) return;
         const days = Math.round((x - drag.x0) / g.dayW);
         if (drag.mode === "move") {
@@ -1070,31 +1097,75 @@ class MainForm extends Form {
     Gantt_Draw(p, width, height) {
         drawGantt(p, width, height, this.holder ? this.holder.project : null,
                   this.selectedUID, this.step, this.drag,
-                  this.baselineNumber || 0);
+                  this.baselineNumber || 0,
+                  this.chartFile ? this.fileGeom() : this.planGeom());
     }
 
     /*
-     * The chart's own size: as tall as its rows and as wide as the timescale
-     * asks, with the scroller around it showing the difference. Auto fits the
-     * view, which is why a window resize recomputes it.
+     * The list scrolled -- the wheel, its scrollbar, the keyboard or an
+     * assignment -- and the chart is the rows the list is showing, so this is
+     * what moves it. The chart's own scroller is horizontal only: the timescale
+     * is what does not fit, and a vertical one would take the rows' alignment
+     * with them.
+     */
+    Tasks_Scroll(x, y) {
+        this.ganttY = y;
+        this.Gantt.Redraw();
+    }
+
+    /* The wheel over the chart belongs to the list, which is the only thing
+     * here that scrolls down: a notch moves three rows. The answer is false on
+     * purpose, so the scroller around the chart still gets the other half. */
+    Gantt_MouseWheel(dx, dy) {
+        if (!dy || !this.Tasks) return false;
+        this.Tasks.ScrollY = this.Tasks.ScrollY + Math.round(dy) * 3 * this.rowHeight();
+        return false;
+    }
+
+    /* A chart that travels on its own: the whole plan, from its first row, with
+     * the names in a gutter -- a file has no list beside it to carry them. */
+    fileGeom() {
+        const project = this.holder ? this.holder.project : null;
+        const rows = project ? ganttRows(project) : [];
+        return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
+                 scrollY: 0, rows: rows.length };
+    }
+
+    fileHeight() {
+        const g = this.fileGeom();
+        return g.headH + (g.rows || 0) * g.rowH + 8;
+    }
+
+    /*
+     * The chart's own size: as tall as the pane it shares with the list -- the
+     * rows are the list's rows, so the chart is the list's height -- and as wide
+     * as the timescale asks, with the horizontal scroller showing the
+     * difference. Auto fits the view, which is why a window resize recomputes
+     * it.
      */
     syncGanttSize() {
-        if (!this.Gantt) return;   // the form is still being built
+        if (!this.Gantt || !this.Tasks) return;   // the form is still being built
         const project = this.holder ? this.holder.project : null;
         const rows = project ? ganttRows(project) : [];
         const range = project ? ganttRange(rows) : null;
 
-        this.Gantt.Height = HEADER + rows.length * ROW_H + 8;
+        const pane = this.Tasks.Height;
+        this.Gantt.Height = pane > 0 ? pane : HEADER + rows.length * ROW_H + 8;
         const view = this.GanttScroll ? this.GanttScroll.Bounds().Width : 0;
         if (this.dayW && range) {
             const days = (range.to - range.from) / (24 * 3600 * 1000);
-            const wanted = Math.round(GUTTER + days * this.dayW + 8);
+            const wanted = Math.round(PAD + days * this.dayW + 8);
             this.Gantt.Width = Math.max(wanted, view ? view - 16 : 0);
         } else {
             this.Gantt.Width = Math.max(view ? view - 16 : 0, 600);
         }
         this.Gantt.Redraw();
     }
+
+    /* The first real rectangle: `Form_Open` is reliably too early for one, and
+     * a pane that has never been measured is not the height the chart has to
+     * draw into. */
+    PlanSplit_Allocated(box) { this.syncGanttSize(); }
 
     /* The window changed size: Auto means the chart fits it again. */
     Form_Resize() { this.syncGanttSize(); }
@@ -1119,18 +1190,32 @@ class MainForm extends Form {
                         [Locale.Text("PDF document"), "*.pdf"]] },
             (path) => {
                 try {
-                    const width  = Math.round(this.Gantt.Width);
-                    const height = Math.round(this.Gantt.Height);
-                    if (File.IsExtension(path, "pdf"))
-                        this.Gantt.SavePdf(path, width, height);
-                    else
-                        this.Gantt.Save(path, width, height);
+                    this.saveChart(path, File.IsExtension(path, "pdf"));
                     this.log(`Exported ${path}.`);
                 } catch (e) {
                     Message.Error("Cannot save {0}: {1}", path, e.message);
                 }
             });
     }
+
+    /* The chart as a file: the whole plan from its first row, and the names in
+     * a gutter, because what the user gets is a picture and not a window with
+     * a list in it. The flag is around the `Save`, which runs the same `Draw`
+     * synchronously -- so the pane on screen is not the thing being written. */
+    saveChart(path, pdf) {
+        const width  = Math.max(Math.round(this.Gantt.Width), GUTTER + 64);
+        const height = this.fileHeight();
+        const was    = this.chartFile;
+        this.chartFile = true;
+        try {
+            if (pdf) this.Gantt.SavePdf(path, width, height);
+            else this.Gantt.Save(path, width, height);
+        } finally {
+            this.chartFile = was;
+            this.Gantt.Redraw();
+        }
+    }
+
 
     /* Auto fits the view; the rest set a day width and let the scroller show
      * what does not fit. */
@@ -1910,11 +1995,15 @@ class MainForm extends Form {
             this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             const edit = this.edit;
 
-            /* Where the first task's bar is, from the chart's own geometry. */
+            /* Where the first task's bar is, from the chart's own geometry --
+             * which is the table's row height and heading, so the y a pointer
+             * is given and the y the table draws the row at are one number. */
             const g = ganttGeometry(this.holder.project, this.ganttWidth(),
-                                    this.ganttHeight(), this.step);
+                                    this.ganttHeight(), this.step, this.planGeom());
+            const at = (rows, task) =>
+                g.headH + rows.indexOf(task) * g.rowH + g.rowH / 2 - g.scrollY;
             const task = edit.task(1);
-            const y    = HEADER + g.rows.indexOf(task) * ROW_H + ROW_H / 2;
+            const y    = at(g.rows, task);
             const mid  = g.x((whenMs(task.Start) + whenMs(task.Finish)) / 2);
             const end  = g.x(whenMs(task.Finish));
 
@@ -1944,11 +2033,11 @@ class MainForm extends Form {
              * the geometry is taken again from the plan as it is now. */
             this.CmbDrawType.Index = 1;
             const g2   = ganttGeometry(this.holder.project, this.ganttWidth(),
-                                       this.ganttHeight(), this.step);
+                                       this.ganttHeight(), this.step, this.planGeom());
             const one  = edit.task(1), two = edit.task(2);
-            const oy   = HEADER + g2.rows.indexOf(two) * ROW_H + ROW_H / 2;
+            const oy   = at(g2.rows, two);
             const omid = g2.x((whenMs(two.Start) + whenMs(two.Finish)) / 2);
-            const y1   = HEADER + g2.rows.indexOf(one) * ROW_H + ROW_H / 2;
+            const y1   = at(g2.rows, one);
             const mid1 = g2.x((whenMs(one.Start) + whenMs(one.Finish)) / 2);
             this.Gantt_MouseDown(omid, oy, 1, true, false);
             this.Gantt_MouseMove(mid1, y1);
@@ -1963,6 +2052,213 @@ class MainForm extends Form {
             Application.Quit(ok ? 0 : 1);
         } catch (e) {
             print(`drag ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /*
+     * The classic view: the plan on the left, the chart on the right, one
+     * scroll between them. Nothing here asserts a pixel -- a row is as tall as
+     * the theme says and the assertion would be the theme's. What is asserted is
+     * the arithmetic the two panes stand on:
+     *
+     *   - the table's own numbers are there to be read (a row, a heading, and
+     *     the rows' extent being the count of them times one, to the pixel);
+     *   - the chart draws in the list's coordinates, so row `i` is at
+     *     `head + i * row - scroll` in both;
+     *   - the two panes are the same rectangle in the `Split`;
+     *   - the list is the only thing that scrolls down, and the chart is where
+     *     it is;
+     *   - folding a branch does not make a row a different height, which is
+     *     what would separate the panes the moment the user closed something.
+     */
+    checkView() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`view ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        const yes = (what, cond, got) => {
+            const same = !!cond;
+            print(`view ${what}: ${got === undefined ? "" : got} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        /* The app's own sample, which is a plan of a real size: a scroll is
+         * only a thing to assert when there is more of the plan than the pane
+         * shows, and the fixtures are four tasks. */
+        this.load(this.resolve(File.Join("examples", "desarrollo-bintana.xml")));
+
+        /* A row added in this turn has no height yet, and a row's height is
+         * asked of a measurement that a half-built window has not done: the
+         * numbers are the next frames'. The same wait the runtime's own suite
+         * writes for a measurement -- **on the allocation and not only on the
+         * row**, because a row's height can be measured before the control that
+         * draws it has been given a rectangle, and a check that read the first
+         * and stopped there would be reading half of what it came for. */
+        this.viewTries = 60;
+        const ready = () => this.Tasks.Height > 0 && this.Tasks.HeaderHeight > 0 &&
+                          this.Tasks.RowHeight > 0;
+        const wait = () => {
+            if (ready() || this.viewTries-- <= 0) {
+                if (!ready())
+                    print(`view the table was never laid out ` +
+                          `(${this.Tasks.Height}px, header ${this.Tasks.HeaderHeight}, ` +
+                          `row ${this.Tasks.RowHeight})`);
+                this.viewAssertions(eq, yes);
+                return;
+            }
+            Timer.After(10, wait);
+        };
+        wait();
+    }
+
+    viewAssertions(eq, yes) {
+        let ok = true;
+        try {
+            const t = this.Tasks;
+            const rowH  = t.RowHeight, headH = t.HeaderHeight;
+            const view  = t.Height - headH;
+            const rows  = ganttRows(this.holder.project).length;
+            ok = yes("the table says how tall a row is", rowH > 0, rowH) && ok;
+            ok = yes("and how tall its heading is", headH > 0, headH) && ok;
+            /* The rows' own height is the count of them times one. A plan that
+             * fits its pane has no scroll and its `ScrollMaxY` is 0, so the
+             * other side of the identity is the rows' natural height -- which
+             * is what `RowHeight` reads, and what a viewport must not change. */
+            const rowsH = rowH * t.Count;
+            ok = eq("the rows are the count of them times one",
+                    rowsH, Math.max(t.ScrollMaxY, 0) + Math.max(view, 0)) && ok;
+
+            /* The two panes, in the Split's own coordinates. */
+            const tb = t.Bounds(this.PlanSplit), gb = this.Gantt.Bounds(this.PlanSplit);
+            ok = eq("the panes share a top", tb.Y, gb.Y) && ok;
+            ok = eq("and a height", tb.Height, gb.Height) && ok;
+            ok = eq("and the chart is drawn into the list's height",
+                    this.Gantt.Height, t.Height) && ok;
+
+            /* The chart's geometry is the list's, in every part. */
+            const g = this.planGeom();
+            ok = eq("the chart's row is the list's row", g.rowH, rowH) && ok;
+            ok = eq("and its heading too", g.headH, headH) && ok;
+            ok = eq("and it starts at the pane's edge, the names being in the list",
+                    g.plotX, PAD) && ok;
+
+            /* One scroll: the list moves, the chart follows, and a pointer
+             * over a row of the chart is a row of the list. */
+            ok = yes("the plan is taller than the pane", t.ScrollMaxY > 0,
+                     `${t.ScrollMaxY} of ${rows}px`) && ok;
+            t.ScrollY = 0;
+            ok = eq("the chart is at the top with it", this.planGeom().scrollY, 0) && ok;
+            const down = Math.min(120, t.ScrollMaxY);
+            t.ScrollY = down;
+            ok = eq("and where the list went", this.planGeom().scrollY, down) && ok;
+
+            /* The row a pointer is over is the row the chart drew, computed the
+             * way the chart computed it -- the hit-test and the frame are one
+             * geometry, and this is where that is said out loud. */
+            const g5 = ganttGeometry(this.holder.project, this.ganttWidth(),
+                                     this.ganttHeight(), this.step, this.planGeom());
+            const y5 = g5.headH + 5 * g5.rowH + g5.rowH / 2 - g5.scrollY;
+            ok = eq("a pointer over the fifth row is the fifth row",
+                    g5.rowAt(y5), 5) && ok;
+            ok = eq("and over the heading, no row", g5.rowAt(g5.headH / 2), -1) && ok;
+
+            /* The wheel over the chart is the list's, since the chart cannot
+             * scroll itself: a notch is three rows. `Emit` is what the runtime's
+             * own suite installs a pointer event with. */
+            const at = t.ScrollY;
+            this.Gantt.Emit("MouseWheel", 0, 1);
+            ok = eq("a notch over the chart moves the list by three rows",
+                    t.ScrollY - at, 3 * rowH) && ok;
+            this.Gantt.Emit("MouseWheel", 1, 0);
+            ok = eq("and a horizontal notch leaves it alone", t.ScrollY - at,
+                    3 * rowH) && ok;
+            t.ScrollY = 0;
+
+            /* And the other way round: the list's own scrollbar moves the
+             * chart, which is the whole of one scroll between the two. */
+            t.ScrollY = 200;
+            ok = eq("the chart is where the list was scrolled to",
+                    this.planGeom().scrollY, t.ScrollY) && ok;
+            ok = yes("and a row moved off the top of the chart",
+                     g5.headH + 5 * g5.rowH - this.planGeom().scrollY < g5.headH) && ok;
+
+            /* A branch closed is the next frame's arithmetic too, so it is
+             * asked in the next phase. */
+            t.ExpandAll();
+            this.viewRow = rowH;
+            this.viewMax = t.ScrollMaxY;
+            this.viewFold(eq, yes, ok);
+        } catch (e) {
+            print(`view ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /*
+     * A branch closed: the rows that stay are the same rows, and the chart is
+     * still lined up with them -- which is the case a row height is easy to get
+     * wrong on, since a tree's `Count` does not move when a branch is folded
+     * and the adjustment is a frame behind either way.
+     */
+    viewFold(eq, yes, ok) {
+        const t = this.Tasks;
+        /* A summary with something under it: what a fold takes rows away from. */
+        const plan = ganttRows(this.holder.project);
+        let key = null;
+        for (let i = 1; i < plan.length; i++) {
+            if (plan[i].OutlineLevel > plan[i - 1].OutlineLevel) {
+                key = String(plan[i - 1].UID);
+                break;
+            }
+        }
+        if (!key || !t.Exists(key) || !t.Expanded(key)) {
+            print("view no branch to fold: the plan is a flat list");
+            this.viewFile(eq, yes, ok);
+            return;
+        }
+        t.CollapseNode(key);
+        Timer.After(30, () => {
+            ok = yes("a folded branch does not change a row's height",
+                     t.RowHeight === this.viewRow,
+                     `${this.viewRow} -> ${t.RowHeight}`) && ok;
+            ok = yes("and there is less of the plan to scroll",
+                     t.ScrollMaxY < this.viewMax,
+                     `${this.viewMax} -> ${t.ScrollMaxY}`) && ok;
+            t.ExpandNode(key);
+            Timer.After(30, () => this.viewFile(eq, yes, ok));
+        });
+    }
+
+    /* A chart that travels: the whole plan and the names in it, which is what
+     * the file is and not what the pane shows. */
+    viewFile(eq, yes, ok) {
+        const t = this.Tasks;
+        try {
+            const rows = ganttRows(this.holder.project).length;
+            const fg = this.fileGeom();
+            ok = eq("a file is as tall as the plan's rows", this.fileHeight(),
+                    fg.headH + rows * fg.rowH + 8) && ok;
+            ok = eq("with the gutter the names need", fg.plotX, GUTTER) && ok;
+            ok = yes("and no scroll of the pane's", fg.scrollY === 0) && ok;
+            const png = File.Join(Environment.TempDirectory, "bintana-project-view.png");
+            this.saveChart(png, false);
+            const pic = new Picture();
+            pic.File = png;
+            ok = eq("and the picture is that tall", pic.SourceHeight,
+                    this.fileHeight()) && ok;
+            ok = yes("and the pane is back to the list's own height",
+                     this.Gantt.Height === t.Height) && ok;
+
+            print(ok ? "CHECK-OK" : "CHECK-FAILED");
+            Application.Quit(ok ? 0 : 1);
+        } catch (e) {
+            print(`view ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
@@ -2535,19 +2831,24 @@ class MainForm extends Form {
 
     /*
      * The chart ran to the end: the same Draw into a PNG (explicit size --
-     * a surface never shown has none of its own), then the file's weight
-     * and the frame's own dump. A handler that threw halfway writes no
-     * file and leaves a dump with no closing Pop.
+     * a surface never shown has none of its own), then the file the Export
+     * button writes, and the frame's own dump. A handler that threw halfway
+     * writes no file and leaves a dump with no closing Pop.
+     *
+     * **The dump is the file's frame, not the pane's**: a `Save` runs the same
+     * `Draw`, and it is the last one that ran. So the names it holds are the
+     * names a chart carries on its own -- which is the promise of a picture --
+     * and the pane's own geometry is what `checkView` measures.
      */
     checkGantt() {
         const png  = File.Join(Environment.TempDirectory, "bintana-project-gantt.png");
-        this.Gantt.Save(png, 900, 320);
+        this.saveChart(png, false);
         const info = File.Info(png);
 
-        /* The export road: a PDF of the chart's own size, which is what the
-         * Export button writes. */
+        /* The export road: a PDF of the chart as a file, which is what the
+         * Export button writes -- the whole plan, not the pane. */
         const pdf = File.Join(Environment.TempDirectory, "bintana-project-gantt.pdf");
-        this.Gantt.SavePdf(pdf, 595, 842);
+        this.saveChart(pdf, true);
         const pinfo = File.Info(pdf);
 
         const dump = this.Gantt.Dump();
@@ -2565,7 +2866,7 @@ class MainForm extends Form {
             const days = (range.to - range.from) / (24 * 3600 * 1000);
             this.CmbScale.Index = 1;   // Day
             this.CmbScale_Select();
-            scale = this.Gantt.Width === Math.round(GUTTER + days * 30 + 8);
+            scale = this.Gantt.Width === Math.round(PAD + days * 30 + 8);
             this.CmbScale.Index = 0;   // back to Auto
             this.CmbScale_Select();
         }
