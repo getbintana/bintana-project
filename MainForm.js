@@ -143,11 +143,7 @@ class MainForm extends Form {
         const stored = Settings.Get("bintana-project.columns", []);
         const columns = (stored || []).filter(
             (id) => COLUMNS.some((c) => c.id === id));
-        if (columns.length) {
-            this.columns = columns;
-            this.applyColumns();
-            this.fill(this.selectedUID);
-        }
+        if (columns.length) this.setColumns(columns);
         this.fieldID = Settings.Get("bintana-project.field", "");
         this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.edit)
@@ -449,12 +445,57 @@ class MainForm extends Form {
     /* The columns the table shows, in their own dialog; the choice is a view
      * setting, like the timescale, and survives the window. */
     ActColumns_Click() {
-        ColumnsForm.open(COLUMNS, this.columns, (chosen) => {
-            this.columns = chosen;
-            this.applyColumns();
-            this.fill(this.selectedUID);
-            Settings.Set("bintana-project.columns", chosen);
-        });
+        ColumnsForm.open(COLUMNS, this.columns,
+                         (chosen) => this.showColumns(chosen));
+    }
+
+    /* One road for the three ways of choosing: the dialog, the heading's menu
+     * and the menu item are the same decision, so they are the same code. */
+    setColumns(chosen) {
+        this.columns = chosen;
+        this.applyColumns();
+        this.fill(this.selectedUID);
+    }
+
+    /* Choosing is a view, and a view is remembered; reading one back is not
+     * a choice, so it does not go through here. */
+    showColumns(chosen) {
+        this.setColumns(chosen);
+        Settings.Set("bintana-project.columns", chosen);
+    }
+
+    /* The gesture of Project: the secondary click on a heading, and the menu
+     * it opens is built for that click -- the name is the tree and cannot go,
+     * so its item is greyed rather than missing, and *Show every column* only
+     * means something while one is hidden. The runtime builds the array and
+     * tells each handler which column the click was over. */
+    Tasks_HeaderClick(column, button, ctrl, shift) {
+        if (button !== 3) return;
+
+        return [
+            { name: "MnuColHide", text: Locale.Text("Hide this column"),
+              enabled: column > 0 },
+            { name: "MnuColShowAll", text: Locale.Text("Show every column"),
+              enabled: this.columns.length < COLUMNS.length },
+            { separator: true },
+            { name: "MnuColDialog", text: Locale.Text("Columns…") },
+        ];
+    }
+
+    /* The heading's own index: zero is the name, so the first real column is
+     * one further along `columns`. The item was greyed; this is the guard. */
+    MnuColHide_Click(column) {
+        const at = column - 1;
+        if (at < 0 || at >= this.columns.length) return;
+        this.showColumns(this.columns.filter((id, i) => i !== at));
+    }
+
+    MnuColShowAll_Click() {
+        this.showColumns(COLUMNS.map((c) => c.id));
+    }
+
+    MnuColDialog_Click() {
+        this.ActColumns_Click();
     }
 
     /* The plan's resources, with the cost of their assignments added up, and
@@ -2327,17 +2368,42 @@ class MainForm extends Form {
             ok = this.Tasks.Count === 4 && ok;
 
             /* The columns are a view: choosing them rebuilds the table and
-             * leaves the plan alone. */
-            this.columns = ["duration", "percent"];
-            this.applyColumns();
-            this.fill(2);
+             * leaves the plan alone.  The choice the window came with is put
+             * back at the end, so the run leaves no trace in the settings. */
+            const remembered = this.columns.slice();
+            this.setColumns(["duration", "percent"]);
             ok = this.Tasks.Columns.length === 3 &&
                  this.Tasks.Row("2")[1] === durationText(edit.task(2),
                                                          this.holder.project) &&
                  String(this.Tasks.Row("2")[2]).endsWith("%") && ok;
-            this.columns = ["duration", "start", "finish", "attr", "cost"];
-            this.applyColumns();
-            this.fill(2);
+            this.setColumns(["duration", "start", "finish", "attr", "cost"]);
+
+            /* The heading's menu: built for the secondary click only, and the
+             * name -- the tree -- cannot be taken away, so its item is greyed.
+             * Hiding a column over a data heading leaves the plan alone. */
+            const menu  = this.Tasks_HeaderClick(2, 3, false, false);
+            const named = this.Tasks_HeaderClick(0, 3, false, false);
+            const item  = (list, name) => list.find((i) => i.name === name);
+            ok = this.Tasks_HeaderClick(2, 1, false, false) === undefined &&
+                 menu && menu.length === 4 &&
+                 item(menu, "MnuColHide").enabled &&
+                 !item(named, "MnuColHide").enabled &&
+                 item(menu, "MnuColShowAll").enabled &&
+                 item(menu, "MnuColDialog").text === Locale.Text("Columns…") &&
+                 ok;
+            this.MnuColHide_Click(2);
+            ok = this.columns.indexOf("start") < 0 &&
+                 this.columns.length === 4 &&
+                 this.Tasks.Columns.length === 5 &&
+                 this.Tasks.Row("2").length === 5 && ok;
+            print(`edit headermenu=${menu.length} ` +
+                  `hidden=${this.columns.length}`);
+            this.MnuColShowAll_Click();
+            ok = this.columns.length === COLUMNS.length &&
+                 this.Tasks.Columns.length === COLUMNS.length + 1 &&
+                 !item(this.Tasks_HeaderClick(2, 3, false, false),
+                       "MnuColShowAll").enabled && ok;
+            this.showColumns(remembered);
             print(`edit columns=${this.Tasks.Columns.length} ` +
                   `row=${this.Tasks.Row("2").length}`);
 
@@ -2412,11 +2478,12 @@ class MainForm extends Form {
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
                         "BtnApply", "BtnLinkAdd",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
+                        "MnuColHide", "MnuColShowAll", "MnuColDialog",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
                         "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar",
                         "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
-            .concat(["Tasks_Select", "Gantt_Draw", "CmbScale_Select",
+            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "CmbScale_Select",
                      "CmbBaseline_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "CmbProjDefault_Select", "CmbAttr_Select", "TxtFilter_Change",

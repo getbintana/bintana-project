@@ -44,7 +44,10 @@ beside the name, which is the tree and never goes: duration, start, finish,
 percent complete, critical, milestone, work, cost, WBS, priority, constraint,
 deadline, calendar, task type, notes and the file's custom field -- added and
 removed with a tick. The choice is a view setting, like the timescale: it
-survives the window and never touches the file.
+survives the window and never touches the file. **A secondary click on a column
+heading** is the gesture Project has for it, and reaches the same place: hide
+the column under the pointer (the name cannot go), show every column again, or
+open the dialog.
 
 The chart owns its size: as tall as its rows and as wide as the **Timescale**
 combo asks -- `Auto` fits the view, `Day`/`Week`/`Month` set a day width and the

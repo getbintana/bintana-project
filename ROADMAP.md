@@ -184,10 +184,24 @@ alineación, y `cells`/`applyColumns` arman fila y encabezado juntos para que
 una columna que no se muestra no se lea. Es una vista: se recuerda en Settings
 y no toca el archivo (`check-edit` arma la tabla de nuevo y el plan no cambia).
 
-- El clic derecho en la **cabecera** -- el gesto de Project para agregar o
-  sacar una columna -- no llega a la app: la fila de encabezados no emite
-  ningún evento de puntero. Queda pedido al runtime como
-  `docs/issues/ISSUE-table-header-menu.md` de Bintana.
+**El menú del encabezado** (2026-09-29): el clic derecho en un encabezado de
+columna -- el gesto de Project para agregar o sacar una columna -- ahora abre su
+propio menú, con **Ocultar esta columna** (la que se apretó; sobre el nombre el
+ítem está grisado, porque el nombre es el árbol), **Mostrar todas las columnas**
+(que solo significa algo mientras falte alguna) y **Columnas…**. El menú se arma
+en cada clic porque lo que puede hacer depende de la columna: `Tasks_HeaderClick`
+devuelve el arreglo y el runtime le pasa la columna a cada handler.
+`check-edit` lo afirma con el clic secundario, el ítem gris sobre el nombre y
+una columna ocultada que no mueve el plan.
+
+El bullet que decía que el encabezado no emitía ningún evento de puntero quedó
+viejo: el runtime lo tuvo (`HeaderMenu`/`HeaderClick`, con su prueba
+`TableHeaderMenu`), así que no hay issue que reportar -- y si lo hubiera, el
+directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
+
+- El menú del encabezado ofrece todo o nada: no hay **Insertar columna…** con la
+  lista de las que faltan, ni reordenar columnas, como en Project. El diálogo
+  cubre la elección; el orden es el del catálogo.
 
 ### 4 — Gantt interactivo
 

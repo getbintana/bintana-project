@@ -31,6 +31,11 @@ límite, calendario, tipo de tarea, notas y el campo personalizado del archivo.
 El nombre es el árbol y no se va. La elección es una vista, como la escala: se
 recuerda para la próxima ventana y no toca el archivo.
 
+El clic derecho en el **encabezado** de una columna es el atajo de Project, y
+también lleva a lo mismo: **Ocultar esta columna** saca la que se apretó (sobre
+el nombre no se puede: es el árbol), **Mostrar todas las columnas** vuelve a
+ponerlas todas y **Columnas…** abre el diálogo completo para elegir cuáles.
+
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
 `Ctrl+F` lleva el cursor ahí.

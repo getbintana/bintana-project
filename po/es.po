@@ -882,3 +882,9 @@ msgstr "EDT"
 
 msgid "Priority"
 msgstr "Prioridad"
+
+msgid "Hide this column"
+msgstr "Ocultar esta columna"
+
+msgid "Show every column"
+msgstr "Mostrar todas las columnas"
