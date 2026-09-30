@@ -61,7 +61,11 @@ weeks over months, the way Project reads it.
 
 What a wider window buys is timescale: the panel of properties has a width of its
 own and the list keeps the one it has, so the chart is the elastic pane. Both
-dividers can be dragged and nothing moves them back.
+dividers can be dragged and nothing moves them back. The window can always be
+made smaller again, maximized or not: the chart is given a *floor* rather than a
+width -- a width would be a minimum request to the toolkit, and every resize
+would feed itself back -- and a floor on the axis that scrolls stays inside the
+scroller, which is what shows the timescale that does not fit.
 
 A filter narrows both panes: the chart draws the rows the list is showing, so a
 bar stays beside the name it belongs to and the timescale closes around what is

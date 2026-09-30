@@ -665,9 +665,10 @@
                           "type": "Scroller",
                           "name": "GanttScroll",
                           "properties": {
-                            "HExpand": true,
+                            "Expand": true,
                             "HAlign": "Fill",
                             "VAlign": "Fill",
+                            "Arrangement": "Horizontal",
                             "Scrollbars": "Horizontal"
                           },
                           "children": [
@@ -675,8 +676,11 @@
                               "type": "DrawingArea",
                               "name": "Gantt",
                               "properties": {
-                                "Width": 600,
-                                "Height": 240
+                                "HAlign": "Fill",
+                                "VAlign": "Fill",
+                                "HExpand": true,
+                                "VExpand": true,
+                                "MinHeight": 120
                               }
                             }
                           ]
@@ -689,11 +693,9 @@
                   "type": "TextEditor",
                   "name": "Log",
                   "properties": {
-                    "ReadOnly": true,
                     "Height": 100,
                     "HAlign": "Fill",
-                    "Style": "frame",
-                    "Visible": false
+                    "MinHeight": 60
                   }
                 }
               ]

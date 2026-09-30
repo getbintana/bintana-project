@@ -1162,16 +1162,29 @@ class MainForm extends Form {
         const rows = this.chartRows();
         const range = ganttRange(rows);
 
-        const pane = this.Tasks.Height;
-        this.Gantt.Height = pane > 0 ? pane : HEADER + rows.length * ROW_H + 8;
-        const view = this.GanttScroll ? this.GanttScroll.Bounds().Width : 0;
+        /* **The chart is not sized, it is floored.** `Width` and `Height` on a
+         * control are a *minimum request* to GTK when the control is not
+         * stretched, and the app had been assigning the pane's own width and
+         * height to it -- so every resize fed itself back: the window grows, the
+         * chart is drawn wider, its request grows, and the window can never be
+         * made narrower than it had been. That is the whole of "after maximizing
+         * it I could not shrink it".
+         *
+         * What is left is the one number that has to be a size: the timescale's
+         * own width, as a floor. The scroller around the chart is arranged, so
+         * its slot is a box, and a box stretches an expanding child across the
+         * view -- that is `Auto`, fitting the window -- and lets it grow past the
+         * view along the axis that scrolls, which is Day/Week/Month. A floor on
+         * the axis that scrolls stays inside the scroller: measured, a child
+         * floored at 2000 in a 640-wide window leaves a scroller with 1956 to
+         * scroll and a window that never moved.
+         */
+        let wanted = 0;
         if (this.dayW && range) {
-            const days = (range.to - range.from) / (24 * 3600 * 1000);
-            const wanted = Math.round(PAD + days * this.dayW + 8);
-            this.Gantt.Width = Math.max(wanted, view ? view - 16 : 0);
-        } else {
-            this.Gantt.Width = Math.max(view ? view - 16 : 0, 600);
+            const days = (range.to - range.from) / DAY_MS;
+            wanted = Math.round(PAD + days * this.dayW + 8);
         }
+        this.Gantt.MinWidth = wanted;
         this.Gantt.Redraw();
     }
 
@@ -2346,31 +2359,6 @@ class MainForm extends Form {
             Application.Quit(1);
         }
     }
-
-    /* A chart that travels: the plan the list is showing, whole, and the names
-     * in it -- which is what the file is and not what the pane shows. */
-    viewGrowProbe(eq, yes) {
-        const t = this.Tasks;
-        const w = (c) => c ? c.Bounds(this.Body).Width : -1;
-        const h = (c) => c ? c.Bounds(this.Body).Height : -1;
-        const show = (when) => print(`grow ${when}: form=${this.Width}x${this.Height} ` +
-            `bodySplit=${w(this.BodySplit)} left=${w(this.Left)} propsScroll=${w(this.PropsScroll)} ` +
-            `planSplit=${w(this.PlanSplit)} tasks=${w(t)} chartScroll=${w(this.GanttScroll)} ` +
-            `positions body=${this.BodySplit.Position} plan=${this.PlanSplit.Position} ` +
-            `heights left=${h(this.Left)} tasks=${h(t)} chart=${h(this.Gantt)}`);
-        show("as it stands");
-        Timer.After(60, () => {
-            this.Resize(1500, 800);
-            Timer.After(120, () => {
-                show("after Resize(1500,800)");
-                Timer.After(120, () => {
-                    show("settled");
-                    Application.Quit(0);
-                });
-            });
-        });
-    }
-
     viewFile(eq, yes, ok) {
         const t = this.Tasks;
         try {
@@ -2414,6 +2402,25 @@ class MainForm extends Form {
      */
     viewGrow(eq, yes, ok) {
         const width = (c) => c.Bounds(this.Body).Width;
+
+        /* **The chart is floored, not sized.** `Auto` asks for no floor and the
+         * chart is the pane's own width; a scale asks for the timescale's width
+         * and the scroller shows the rest, while the window is never asked for
+         * it. A floor is a size, and a size is the next frame's, so the scroller
+         * is asked a turn later. */
+        const pane = this.GanttScroll.Bounds();
+        ok = eq("Auto is the pane's own width", this.Gantt.Bounds().Width,
+                pane.Width) && ok;
+        ok = eq("and there is nothing to scroll sideways",
+                this.GanttScroll.ScrollMaxX, 0) && ok;
+
+        this.CmbScale.Index = 1;   // Day: a day per 30 px
+        this.CmbScale_Select();
+        const span = ganttRange(this.chartRows());
+        const days = span ? (span.to - span.from) / DAY_MS : 0;
+        ok = eq("a scale asks the timescale's width as a floor",
+                this.Gantt.MinWidth, Math.round(PAD + days * 30 + 8)) && ok;
+
         ok = eq("the plan area takes the room, not the panel",
                 this.BodySplit.Grows, "Start") && ok;
         ok = eq("and inside it, the chart and not the list",
@@ -2440,16 +2447,28 @@ class MainForm extends Form {
          * a turn later -- the same rule every measurement in this app follows. */
         const at = this.PlanSplit.Position;
         this.PlanSplit.Position = at - 120;
-        this.viewGrows = { plan, at, tasks };
+        this.viewGrows = { eq, yes, ok, width, plan, at, tasks, pane };
         Timer.After(60, () => {
-            ok = eq("moving the divider moves the list with it", width(this.Tasks),
-                    at - 120) && ok;
-            ok = eq("and the chart takes the difference", width(this.GanttScroll),
-                    plan - 1 - (at - 120)) && ok;
-            this.PlanSplit.Position = at;
+            const g = this.viewGrows;
+            const chartW = this.Gantt.Bounds().Width;
+            ok = yes("and the scroller is what shows the difference",
+                     this.GanttScroll.ScrollMaxX > 0,
+                     `maxX ${this.GanttScroll.ScrollMaxX}`) && ok;
+            ok = yes("with the chart wider than the pane", chartW > g.pane.Width,
+                     `${chartW} in ${g.pane.Width}`) && ok;
+            ok = yes("while the window is never asked for it",
+                     this.Bounds().Width < chartW,
+                     `window ${this.Bounds().Width}`) && ok;
+            this.CmbScale.Index = 0;   // back to Auto
+            this.CmbScale_Select();
+            ok = eq("moving the divider moves the list with it", g.width(this.Tasks),
+                    g.at - 120) && ok;
+            ok = eq("and the chart takes the difference", g.width(this.GanttScroll),
+                    g.plan - 1 - (g.at - 120)) && ok;
+            this.PlanSplit.Position = g.at;
             Timer.After(60, () => {
-                ok = eq("and it comes back", width(this.Tasks),
-                        this.viewGrows.tasks) && ok;
+                ok = eq("and it comes back", g.width(this.Tasks),
+                        g.tasks) && ok;
                 print(ok ? "CHECK-OK" : "CHECK-FAILED");
                 Application.Quit(ok ? 0 : 1);
             });
@@ -3061,9 +3080,12 @@ class MainForm extends Form {
             const days = (range.to - range.from) / (24 * 3600 * 1000);
             this.CmbScale.Index = 1;   // Day
             this.CmbScale_Select();
-            scale = this.Gantt.Width === Math.round(PAD + days * 30 + 8);
+            scale = this.Gantt.MinWidth === Math.round(PAD + days * 30 + 8);
             this.CmbScale.Index = 0;   // back to Auto
             this.CmbScale_Select();
+            /* And `Auto` asks for no floor at all, which is what leaves the
+             * chart the pane's own width. */
+            scale = scale && this.Gantt.MinWidth === 0;
         }
 
         print(`gantt ${File.Name(this.path)} png=${info ? info.Size : -1} ` +

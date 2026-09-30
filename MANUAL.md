@@ -46,6 +46,13 @@ propiedades tiene un ancho propio —es un formulario, no un espacio— y la lis
 conserva el suyo, así que una ventana más ancha compra timescale y no aire. Los
 dos divisores se arrastran a mano y la app no los mueve después.
 
+**La ventana se achica todo lo que quieras, también después de maximizar.** Por
+debajo: el gráfico no se le asigna un ancho —eso sería un *piso* para la ventana
+y realimentaría cada redimensionamiento— sino un mínimo, y ese mínimo se queda
+dentro del scroller horizontal, que es el que muestra lo que no entra. Con
+**Días** o **Semanas** el gráfico es más ancho que su panel y hay que
+desplazarlo; con **Ajustar a la ventana** es exactamente el ancho del panel.
+
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
 `Ctrl+F` lleva el cursor ahí. **El Gantt filtra con la lista**: el gráfico dibuja
