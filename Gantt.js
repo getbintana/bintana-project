@@ -252,15 +252,21 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * rather than a second surface with a seam down the divider.
      *
      * The ground is the theme's own name for the surface a list is drawn on:
-     * the chart declares `Background: @view_bg_color`, and the stylesheet takes
-     * the reference as it stands. **Not a colour read back, because there is
-     * none to read**: GTK removed the resolver -- `gtk_style_context_get_property`
-     * is gone and `gtk_style_context_lookup_color` answers `false` for every
-     * name in 4.22, `white` included -- so "what colour is that list" has no
-     * answer, and a fully transparent background only leaves the scroll view's
-     * ground showing, which on a theme that does not paint a viewport and a
-     * list alike is the grey the divider was showing before. Naming it is the
-     * way to be the same as the list, and it follows the theme for free.
+     * `@view_bg_color`, declared on the pane, on the scroller and on the chart
+     * alike, and the stylesheet takes the reference as it stands. **All three,
+     * because a drawing area does not paint a background of its own in GTK4** --
+     * so a declaration on the chart alone is a no-op and what shows is whatever
+     * the scroller's viewport is, which is the grey this was: declaring a
+     * background on the one control that never paints one is how two attempts
+     * went nowhere. Which of the three is the one that shows is the toolkit's
+     * business, and it does not matter, because they are all the same name.
+     *
+     * **A name and not a colour read back, because there is none to read**: GTK
+     * removed the resolver -- `gtk_style_context_get_property` is gone and
+     * `gtk_style_context_lookup_color` answers `false` for every name in 4.22,
+     * `white` included -- so "what colour is that list" has no answer, and a hex
+     * copied into a form is a value that goes stale the moment the theme
+     * changes.
      *
      * **The hairline under it is what makes the two headers read as one strip.**
      * A tinted band that stops without an edge looks like two panels; a rule

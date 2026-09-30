@@ -656,6 +656,7 @@
                       "type": "Panel",
                       "name": "ChartCol",
                       "properties": {
+                        "Background": "@view_bg_color",
                         "Arrangement": "Vertical",
                         "HExpand": true,
                         "HAlign": "Fill",
@@ -666,6 +667,7 @@
                           "type": "Scroller",
                           "name": "GanttScroll",
                           "properties": {
+                            "Background": "@view_bg_color",
                             "Expand": true,
                             "HAlign": "Fill",
                             "VAlign": "Fill",
@@ -677,12 +679,12 @@
                               "type": "DrawingArea",
                               "name": "Gantt",
                               "properties": {
+                                "Background": "@view_bg_color",
                                 "HAlign": "Fill",
                                 "VAlign": "Fill",
                                 "HExpand": true,
                                 "VExpand": true,
-                                "MinHeight": 120,
-                                "Background": "@view_bg_color"
+                                "MinHeight": 120
                               }
                             }
                           ]
