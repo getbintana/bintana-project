@@ -682,7 +682,7 @@
                                 "HExpand": true,
                                 "VExpand": true,
                                 "MinHeight": 120,
-                                "Background": "rgba(0,0,0,0)"
+                                "Background": "@view_bg_color"
                               }
                             }
                           ]

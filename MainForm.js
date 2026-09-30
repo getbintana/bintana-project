@@ -2518,8 +2518,8 @@ class MainForm extends Form {
         /* And the ground: the chart declares a transparent one, and what it
          * draws never covers the frame -- which is the whole of how the two
          * panes end up on the same surface. */
-        ok = eq("the chart's ground is the toolkit's", this.Gantt.Background,
-                "rgba(0,0,0,0)") && ok;
+        ok = eq("the chart sits on the surface a list is drawn on, by name",
+                this.Gantt.Background, "@view_bg_color") && ok;
 
         /* **The chart is floored, not sized.** `Auto` asks for no floor and the
          * chart is the pane's own width; a scale asks for the timescale's width

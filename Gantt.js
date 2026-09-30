@@ -251,15 +251,16 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * chart and the list are on the *same ground* and the band is a tint of it
      * rather than a second surface with a seam down the divider.
      *
-     * The ground under the band is the toolkit's own: the chart declares
-     * `Background: rgba(0,0,0,0)` -- a fully transparent background, and *not*
-     * the word `transparent`, which the runtime's parser refuses because
-     * `gdk_rgba_parse` knows the spellings that carry a value and not the
-     * keyword -- so what is behind the chart is the scroll view it is in, which
-     * is the same surface a list is on. Painting a ground of its own is what
-     * put a seam down the divider, and the runtime's note on colours is
-     * explicit that the supported way to have one is to let the widget's own
-     * CSS do it.
+     * The ground is the theme's own name for the surface a list is drawn on:
+     * the chart declares `Background: @view_bg_color`, and the stylesheet takes
+     * the reference as it stands. **Not a colour read back, because there is
+     * none to read**: GTK removed the resolver -- `gtk_style_context_get_property`
+     * is gone and `gtk_style_context_lookup_color` answers `false` for every
+     * name in 4.22, `white` included -- so "what colour is that list" has no
+     * answer, and a fully transparent background only leaves the scroll view's
+     * ground showing, which on a theme that does not paint a viewport and a
+     * list alike is the grey the divider was showing before. Naming it is the
+     * way to be the same as the list, and it follows the theme for free.
      *
      * **The hairline under it is what makes the two headers read as one strip.**
      * A tinted band that stops without an edge looks like two panels; a rule
