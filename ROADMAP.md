@@ -222,11 +222,14 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   cache: un comando reemplaza los registros de tarea (el Deshacer lo hace) y una
   lista cacheada dibujaba el plan de antes de la edición, que es lo que
   `check-drag` vio cuando el redimensionado dejó de mover nada.
-- **La superficie y los encabezados** (2026-09-29): el gráfico ya no pinta
-  fondo propio (`Background: rgba(0,0,0,0)` — la palabra `transparent` la
-  rechaza el parser del runtime, que conoce las formas con valor y no la
-  palabra clave), así que las dos panes quedan sobre la misma superficie y la
-  costura del divisor desaparece; y el encabezado de la lista tiene un alto
+- **La superficie y los encabezados** (2026-09-29): el gráfico se apoya en la
+  superficie **por el nombre que el tema le da** (`Background:
+  "@view_bg_color"`), no en un color copiado — no hay valor que leer porque GTK4
+  quitó el resolver (medido: `get_property` ya no existe y `lookup_color` devuelve
+  `false` para todos los nombres, `white` incluido), y lo que sobrevive es el
+  nombre, que además sigue al tema solo. Un fondo transparente no alcanzaba:
+  deja ver el del scroller, que en un tema que no pinta igual un viewport y una
+  lista sigue siendo el gris de antes. Y el encabezado de la lista tiene un alto
   mínimo de 34 px, porque **el encabezado no sigue la tipografía de la lista**
   (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
   36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin

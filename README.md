@@ -50,10 +50,13 @@ the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
 
 **The chart sits beside the table, in the same view, with one scroll between
-them.** The two are on the same ground -- the chart's background is transparent,
-so what is behind it is the scroll view it is in, which is the surface a list is
-on, and a chart *written to a file* carries a ground of its own because a file
-has none to inherit. Their headings are one strip: the list's heading row has a
+them.** The two are on the same ground, and it is named rather than copied: the chart
+declares `Background: "@view_bg_color"`, the surface a list is drawn on, and the
+stylesheet takes the reference as it stands -- so there is nothing to read back
+and nothing to go stale, and a theme change is free. (GTK 4 removed the resolver
+that would have answered *what colour is that list*; the name was always the way
+through, and that is measured.) A chart *written to a file* carries a ground of
+its own, because a file has none to inherit. Their headings are one strip: the list's heading row has a
 floor of 34 pixels (`TableView.HeaderMinHeight`, which exists because the heading
 does not follow the list's font) and the chart fills exactly that band with the
 timescale -- a week over a month -- under a rule the list's own header has. The days the project's calendar does not work are shaded behind the
