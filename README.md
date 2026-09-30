@@ -49,6 +49,23 @@ heading** is the gesture Project has for it, and reaches the same place: hide
 the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
 
+**The two panes are the same rows, and folding is where that is decided.**
+`chartRows()` is the one call both the drawing and the hit-test read, and it
+returns `visibleTasks()` **with the branches the list has closed taken out**.
+Nothing in the runtime reports a fold -- there is no event for the disclosure
+arrow and a tree answers `Row` and `Cell` by key, so nothing enumerates what it
+is showing -- which is why the branch is asked directly, per frame, and not
+kept. For the same reason a fold is **noticed by looking**: the chart remembers
+the rows it last drew and a timer asks, every 150 ms, whether those are still
+the rows, redrawing only when they are not (`startFoldWatch`). Skipping it was a
+broken promise rather than a missing feature, and a costly one -- the chart kept
+drawing all forty-one rows while the list showed thirty-seven, so thirty-five of
+the rows a reader could see carried another task's bar, and clicking one
+selected that other task. The timescale is the plan's (`chartRange()`), not the
+rows a fold left showing, so folding never moves a bar sideways. `check-view`
+folds a nested branch without moving the scroll, so no `Scroll` redraws it, and
+asserts that what the chart drew and row `i` are the same task on both sides.
+
 **The chart sits beside the table, in the same view, with one scroll between
 them.** The two are on the same ground because they are the same kind of node: the chart
 wears the theme's `view` class, which is the class a theme paints a surface with

@@ -88,10 +88,16 @@ function ganttRange(rows) {
  * row is, how tall the heading is and how far down the list is scrolled. Row
  * `i` is at `headH + i * rowH - scrollY`, which is the y the table draws it at,
  * so the two panes need not know about each other to agree.
+ *
+ * `geom.range`, when there is one, is the time the chart spans, and it wins
+ * over the rows': the rows are what the list is **showing**, and folding a
+ * branch that holds the plan's first start is not a reason for every bar to
+ * move sideways.
  */
 function ganttGeometry(rows, width, height, step, geom) {
     const g = chartGeometry(geom);
-    const range = ganttRange(rows || []);
+    const range = geom && geom.range !== undefined ? geom.range
+                                                   : ganttRange(rows || []);
     /* The heading is drawn *over* the rows -- it is the table's own, and the
      * table does not scroll it away -- so a point in that band is over the
      * heading and not over a row, however the arithmetic would place one. */

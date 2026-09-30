@@ -333,13 +333,56 @@ reconstrucción conserva el scroll, y un click sobre una barra **no reconstruye
 nada** -- lo atestigua una línea que el propio check escribe en el log, porque
 `fill` lo limpia y el resumen del plan lo vuelve a escribir igual.
 
-Lo que **sigue** en la misma costura y no se tocó: `TableView.Key` *revela* el
-camino al nodo -- abre los resumenes plegados entre medio -- y el Gantt dibuja
-**todas** las tareas en orden de archivo, no las que la lista tiene abiertas, así
-que se puede clickear la barra de una tarea que la lista está escondiendo. Con el
-scroll ya a salvo el efecto es discreto: se despliega el resumen y la lista se
-posiciona en la fila elegida, que es lo que una selección tiene que hacer. Queda
-anotado para cuando el corpus traiga planes con ramas plegadas de verdad.
+**Plegar una rama se las saca a las dos** (2026-09-30): el manual ya decía
+"plegar una rama saca filas de las dos" y el código no lo hacía. `chartRows()`
+devolvía el plan entero en orden de archivo, así que con una rama plegada la
+lista mostraba 37 de 41 filas y el gráfico seguía dibujando las 41: **35 de
+las filas que el lector veía llevaban la barra de otra tarea**, y como
+`ganttHit` lee las mismas filas, un click en esa barra elegía esa otra tarea.
+
+El arreglo es una línea de idea: `chartRows()` es `visibleTasks()` **menos las
+ramas que la lista tiene cerradas**, y como el dibujo y el hit-test leen esa
+misma llamada, los dos paneles vuelven a decir qué tarea es cada fila.
+
+Lo interesante es **cómo se pregunta**. En el runtime no hay ningún aviso de un
+plegado: la flecha no levanta evento, y un árbol contesta `Row` y `Cell` por
+clave, así que nada enumera lo que la tabla está mostrando. Por eso la rama se
+pregunta directo y **no se guarda**: medido en un plan de 1025 filas con 200
+ramas, una pasada por todas son 0.40 ms -- 2% de un cuadro -- y una rama bajo
+otra cerrada ni se pregunta, porque sus filas ya están fuera.
+
+Medir antes fue lo que decidió el diseño: la pregunta obvia era "cachear el
+estado de los pliegues", que además necesita un evento que no existe. La
+segunda, "preguntar por frame", parecía cara hasta que salió a 2 us.
+
+Preguntar al dibujar no alcanza si **nadie pide el dibujo**: plegar con la lista
+scrolleada en cualquier lado que no sea el final deja `ScrollY` donde estaba, no
+llega ningún `Scroll`, y el gráfico se quedaba con el cuadro viejo hasta que un
+click lo redibujaba por casualidad. Así que el gráfico recuerda qué filas dibujó
+(`drawnRows`) y un timer de 150 ms (`startFoldWatch`) pregunta si siguen siendo
+esas, y pide un cuadro sólo cuando cambiaron. Es un sondeo porque el runtime no
+ofrece otra cosa; un evento `Expand(key, open)` en `TableView` lo reemplazaría.
+
+La escala de tiempo es la del plan (`chartRange()`, sobre `visibleTasks()`) y no
+la de las filas que dejó el pliegue. Hoy da lo mismo, porque un resumen abarca
+las fechas de sus hijos, pero un archivo con resúmenes desactualizados movería
+todas las barras al plegar.
+
+`check-view` pliega una rama **anidada** --con filas debajo y filas después, que
+es donde los dos paneles coinciden arriba y divergen abajo-- y afirma que la fila
+`i` es la misma tarea de los dos lados y que **lo dibujado** son esas filas --
+con el scroll quieto, para que el redibujo sea del sondeo y no de un `Scroll`
+(sin el sondeo falla: `drew 41 of 37`). Para leer la fila visible de una tabla
+en árbol no hay API: `Select(i)` toma una posición visible y contesta si se
+movió, y `Key` es el nodo que quedó ahí. Verificado que **las cuatro aserciones
+fallan sin el arreglo** (`view every visible row is the same task on both
+sides` nombra el caso: `row 2: list Fase 1 — Editor mínimo, chart Corpus
+MSPDI sintético`).
+
+Lo que queda, y ya es menor: `fill()` reconstruye el árbol y **cada comando
+despliega lo que estaba plegado**, porque un árbol recién construido es
+`AutoExpand`. Guardar los pliegues del lector en `fill` es el mismo problema que
+guardar el scroll, y se resuelve igual.
 
 ### 5 — Recursos y costos
 

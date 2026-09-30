@@ -66,6 +66,11 @@ class MainForm extends Form {
     recentPaths   = [];
     autosaveTimer = null;
 
+    /* Which rows the chart last drew, and the timer that notices a fold made
+     * them stale -- see `startFoldWatch`. */
+    drawnRows = null;
+    foldTimer = null;
+
     /* The Resources page: the table's records, the resource being edited and
      * the assignments of the selected task, each parallel to its control. */
     resRows       = [];
@@ -80,6 +85,7 @@ class MainForm extends Form {
     columns = ["duration", "start", "finish", "attr", "cost"];
 
     Form_Open() {
+        this.startFoldWatch();
         try {
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
                 this.checkCorpus();
@@ -973,16 +979,70 @@ class MainForm extends Form {
      * rows out of one takes them out of the other and the two cannot disagree
      * about what row `i` is.
      *
+     * **And the branches the list has closed come out too**, which is what
+     * folding a summary means: it takes rows away from both panes, and the two
+     * are one view. Without this the chart kept drawing the whole plan while
+     * the list showed thirty-seven of forty-one rows, and thirty-five of the
+     * rows the reader could see had a bar that belonged to another task --
+     * `ganttHit` reads the same rows, so a click on it selected that other
+     * task. That is the manual's promise broken in the one place it is
+     * visible.
+     *
      * **Asked again every time rather than kept.** A command replaces the task
      * records (the undo does, and so does `setDates`), and a chart holding the
      * objects it was handed an edit ago would draw the plan as it was before
      * that edit -- which is what a cached list did, and `check-drag` caught it
      * the moment the resize stopped moving anything. The walk is the same one
      * `fill` does to build the list, so a frame that draws 4000 bars already
-     * pays for it.
+     * pays for it. **Nor is the fold state kept**, and for a sharper reason:
+     * nothing in the runtime reports a fold -- there is no event for the
+     * disclosure arrow and no way to enumerate what a tree is showing -- so the
+     * branch's own answer is the only truth there is. It is cheap: measured on
+     * a plan of a thousand rows with two hundred branches, a pass over every
+     * branch is 0.4 ms, two per cent of a frame, and a branch under a closed
+     * one is never asked because its rows are already out.
      */
     chartRows() {
-        return this.holder ? this.visibleTasks(this.holder.project) : [];
+        const all = this.holder ? this.visibleTasks(this.holder.project) : [];
+        if (!this.Tasks) return all;
+
+        /* A branch is a task the next row is deeper than -- the shape `fill`
+         * gives the tree, and not the `Summary` flag, which a file can carry
+         * wrong. Inside a closed one every row is skipped until the outline
+         * comes back to its depth, so nothing under it is asked. */
+        const rows = [];
+        let closed = null;
+        for (let i = 0; i < all.length; i++) {
+            const task = all[i];
+            const level = task.OutlineLevel || 0;
+            if (closed !== null) {
+                if (level > closed) continue;
+                closed = null;
+            }
+            rows.push(task);
+            const branch = i + 1 < all.length &&
+                           (all[i + 1].OutlineLevel || 0) > level;
+            if (branch && !this.branchOpen(task)) closed = level;
+        }
+        return rows;
+    }
+
+    /* The time the chart spans: the **plan's** as the list has it filtered,
+     * not the rows a fold left showing. A filter is a different plan to look
+     * at; a fold is the same one with less of it open, and its timescale does
+     * not move. */
+    chartRange() {
+        return this.holder ? ganttRange(this.visibleTasks(this.holder.project))
+                           : null;
+    }
+
+    /* Whether the list has this branch open. A node the table does not have
+     * reads as open: that is a rebuild in flight, and the answer that keeps the
+     * rows is the safer one -- `Expanded` refuses a key that is not there. */
+    branchOpen(task) {
+        const key = String(task.UID);
+        if (!this.Tasks.Exists(key)) return true;
+        return this.Tasks.Expanded(key);
     }
 
     /* The chart is drawn in the list's coordinates: row `i` at
@@ -995,7 +1055,8 @@ class MainForm extends Form {
      * starts under its own headings. */
     planGeom() {
         return { plotX: PAD, rowH: this.rowHeight(), headH: 0,
-                 scrollY: this.ganttY || 0, calendar: this.chartCal || null };
+                 scrollY: this.ganttY || 0, calendar: this.chartCal || null,
+                 range: this.chartRange() };
     }
 
     /* The strip's frame: the heading's height is the list's, so the marks in it
@@ -1003,7 +1064,8 @@ class MainForm extends Form {
      * is painted for it. */
     rulerGeom() {
         return { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
-                 scrollY: 0, calendar: this.chartCal || null, strip: true };
+                 scrollY: 0, calendar: this.chartCal || null, strip: true,
+                 range: this.chartRange() };
     }
 
     /* Which task, and which part of its bar, is under the pointer. */
@@ -1167,9 +1229,33 @@ class MainForm extends Form {
     }
 
     Gantt_Draw(p, width, height) {
-        drawGantt(p, width, height, this.chartRows(), this.selectedUID,
+        const rows = this.chartRows();
+        if (!this.chartFile) this.drawnRows = rowsKey(rows);
+        drawGantt(p, width, height, rows, this.selectedUID,
                   this.step, this.drag, BASELINE,
                   this.chartFile ? this.fileGeom() : this.planGeom());
+    }
+
+    /*
+     * **A fold is noticed by looking, because nothing says one happened.** The
+     * disclosure arrow raises no event, and a fold only moves the scroll when
+     * it has to clamp it -- folding with the list scrolled anywhere else, which
+     * is where a reader folds, leaves `ScrollY` where it was and no `Scroll`
+     * comes. So the chart kept the frame it had: the rows were right the next
+     * time it was asked and nothing asked, and the reader saw the wrong bars
+     * until a click happened to redraw them.
+     *
+     * The chart remembers which rows it last drew and this asks, a few times a
+     * second, whether those are still the rows. The walk is `chartRows`'s own,
+     * 0.4 ms on a thousand rows, and a frame is only asked for when the answer
+     * changed -- which a fold is, and a redraw already on its way is not.
+     */
+    startFoldWatch() {
+        if (this.foldTimer) this.foldTimer.Stop();
+        this.foldTimer = Timer.Every(FOLD_POLL_MS, () => {
+            if (!this.Gantt || this.drawnRows === null) return;
+            if (rowsKey(this.chartRows()) !== this.drawnRows) this.redrawChart();
+        });
     }
 
     /*
@@ -1198,7 +1284,8 @@ class MainForm extends Form {
     fileGeom() {
         return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
                  scrollY: 0, rows: this.chartRows().length,
-                 calendar: this.chartCal || null, paper: true };
+                 calendar: this.chartCal || null, paper: true,
+                 range: this.chartRange() };
     }
 
     fileHeight() {
@@ -1215,8 +1302,7 @@ class MainForm extends Form {
      */
     syncGanttSize() {
         if (!this.Gantt || !this.Tasks) return;   // the form is still being built
-        const rows = this.chartRows();
-        const range = ganttRange(rows);
+        const range = this.chartRange();
 
         /* **The chart is not sized, it is floored.** `Width` and `Height` on a
          * control are a *minimum request* to GTK when the control is not
@@ -2563,31 +2649,153 @@ class MainForm extends Form {
      */
     viewFold(eq, yes, ok) {
         const t = this.Tasks;
-        /* A summary with something under it: what a fold takes rows away from. */
-        const plan = this.chartRows();
-        let key = null;
-        for (let i = 1; i < plan.length; i++) {
-            if (plan[i].OutlineLevel > plan[i - 1].OutlineLevel) {
-                key = String(plan[i - 1].UID);
-                break;
-            }
+        /* A **nested** branch to fold: one with a few rows under it and rows
+         * after it, which is the case where the two panes agree above the fold
+         * and diverge below it. The root would fold to a single row and settle
+         * nothing. */
+        const plan = this.visibleTasks(this.holder.project);
+        let key = null, fallback = null;
+        for (let i = 0; i < plan.length && !key; i++) {
+            if (!plan[i].Summary) continue;
+            let below = 0;
+            for (let k = i + 1;
+                 k < plan.length && plan[k].OutlineLevel > plan[i].OutlineLevel; k++) below++;
+            if (!below) continue;
+            if (!fallback) fallback = String(plan[i].UID);
+            if ((plan[i].OutlineLevel || 0) < 1) continue;
+            if (below >= 2 && plan.length - i - 1 - below >= 3)
+                key = String(plan[i].UID);
         }
+        if (!key) key = fallback;
         if (!key || !t.Exists(key) || !t.Expanded(key)) {
             print("view no branch to fold: the plan is a flat list");
             this.viewFile(eq, yes, ok);
             return;
         }
+        /* The fold is made with the first row selected and the list at the
+         * top, so nothing has a reason to scroll: a selection further down is
+         * one GTK keeps in view, and that scroll would raise the `Scroll` that
+         * redraws the chart on its own. A frame is let through first, so the
+         * chart has drawn the plan unfolded before it is folded. */
+        const selected = this.selectedUID;
+        t.Key = String(plan[0].UID);
+        this.Tasks_Select();
+        t.ScrollY = 0;
+        Timer.After(FOLD_POLL_MS * 2, () => this.viewFoldNow(eq, yes, ok, key, selected));
+    }
+
+    viewFoldNow(eq, yes, ok, key, selected, tries = 0) {
+        const t = this.Tasks;
+        /* A reveal the earlier phases queued lands after the first tick and
+         * takes the list to the end; once it has, the top is asked for again. */
+        if (t.ScrollY !== 0 && tries < 3) {
+            t.ScrollY = 0;
+            Timer.After(FOLD_POLL_MS * 2,
+                        () => this.viewFoldNow(eq, yes, ok, key, selected, tries + 1));
+            return;
+        }
+        const span = this.chartRange();
+        const scrolled = t.ScrollY;
         t.CollapseNode(key);
-        Timer.After(30, () => {
+        /* Past one turn of the fold watch and the frame it asks for. */
+        Timer.After(FOLD_POLL_MS * 3, () => {
             ok = yes("a folded branch does not change a row's height",
                      t.RowHeight === this.viewRow,
                      `${this.viewRow} -> ${t.RowHeight}`) && ok;
             ok = yes("and there is less of the plan to scroll",
                      t.ScrollMaxY < this.viewMax,
                      `${this.viewMax} -> ${t.ScrollMaxY}`) && ok;
+            /* The fold is made where the list was scrolled, so no `Scroll`
+             * came and nothing else asked for a frame: what the chart drew is
+             * the watch's doing. Asked before `viewFoldRows`, whose walk of the
+             * selection redraws on every row and would hide a stale frame. */
+            ok = eq("the fold did not move the scroll, so nothing reported it",
+                    t.ScrollY, scrolled) && ok;
+            const drawn = this.drawnRows === null ? 0
+                        : this.drawnRows.split(",").length;
+            ok = yes("and the chart redrew with the rows the fold left",
+                     this.drawnRows === rowsKey(this.chartRows()),
+                     `drew ${drawn} of ${this.chartRows().length}`) && ok;
+            /* A guard more than a witness: a summary's dates cover its
+             * children's, so the rows left showing span the same time anyway,
+             * and only a file whose summaries say otherwise would move. */
+            const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                    this.ganttHeight(), this.step, this.planGeom());
+            ok = yes("a fold does not move the timescale",
+                     !!span && !!g.range &&
+                     g.range.from === span.from && g.range.to === span.to,
+                     span ? `${new Date(span.from).toISOString().slice(0, 10)} .. ` +
+                            `${new Date(span.to).toISOString().slice(0, 10)}` : "no range") && ok;
+            ok = this.viewFoldRows(eq, yes, ok, key);
+            if (selected !== null && t.Exists(String(selected))) {
+                t.Key = String(selected);
+                this.Tasks_Select();
+            }
             t.ExpandNode(key);
             Timer.After(30, () => this.viewFilterPhase(eq, yes, ok));
         });
+    }
+
+    /*
+     * **The fold takes rows away from the chart too, and the two keep saying
+     * which task each row is.** The chart reads its rows from the same call the
+     * list is built from, so row `i` is one task on both sides of the divider;
+     * that is the whole of this application, and a fold is where it broke --
+     * the list showed thirty-seven of forty-one rows while the chart drew all
+     * forty-one, so thirty-five of the rows the reader could see carried another
+     * task's bar, and `ganttHit` reads those same rows, so clicking one
+     * selected that other task.
+     *
+     * How the visible row is asked for is the only interesting part: on a tree
+     * the table answers `Row` and `Cell` by **key**, and nothing enumerates what
+     * it is showing, so the road is the selection's -- `Select(i)` takes a
+     * visible position and answers whether it moved, and `Key` is the node that
+     * landed there.
+     */
+    viewFoldRows(eq, yes, ok, key) {
+        const t = this.Tasks;
+        const chart = this.chartRows();
+        const rows = this.visibleTasks(this.holder.project);
+        let shown = 0, wrong = 0, first = null;
+
+        for (let i = 0; i < rows.length; i++) {
+            if (!t.Select(i) || t.Index !== i) break;
+            const uid = this.selectedUID;
+            if (uid === null || uid === undefined) break;
+            shown++;
+            if (chart[i] && uid !== chart[i].UID) {
+                wrong++;
+                if (first === null) first = `row ${i}: list ` +
+                    `${this.byUID[String(uid)].Name}, chart ${chart[i].Name}`;
+            }
+        }
+        ok = yes("a fold takes rows away from the chart too",
+                 chart.length < rows.length,
+                 `${rows.length} -> ${chart.length}`) && ok;
+        ok = eq("and the chart has exactly the rows the list is showing",
+                chart.length, shown) && ok;
+        ok = yes("every visible row is the same task on both sides",
+                 wrong === 0, first || "none out of line") && ok;
+        /* The branch itself is still there -- folding hides what is under it, not
+         * the summary -- so what has to be gone is **its subtree**: the tasks
+         * that follow it until one comes back at or above its own depth, which
+         * is the walk the outline already defines. */
+        const branch = this.byUID[key];
+        const level = (branch ? branch.OutlineLevel : 0) || 0;
+        const under = [];
+        let inside = false;
+        for (const task of rows) {
+            if (String(task.UID) === key) { inside = true; continue; }
+            if (inside && (task.OutlineLevel || 0) <= level) inside = false;
+            if (inside) under.push(task);
+        }
+        const drawn = under.filter((task) =>
+            chart.some((c) => c.UID === task.UID));
+        ok = yes("the branch had rows to hide", under.length > 0,
+                 `${under.length} under "${branch ? branch.Name : key}"`) && ok;
+        ok = yes("and not one of them is on the chart", drawn.length === 0,
+                 drawn.length ? drawn[0].Name : "none drawn") && ok;
+        return ok;
     }
 
     /* A name the filter will match, and that has an ancestor to keep: a task
@@ -2843,7 +3051,7 @@ class MainForm extends Form {
 
         this.CmbScale.Index = 1;   // Day: a day per 30 px
         this.CmbScale_Select();
-        const span = ganttRange(this.chartRows());
+        const span = this.chartRange();
         const days = span ? (span.to - span.from) / DAY_MS : 0;
         ok = eq("a scale asks the timescale's width as a floor",
                 this.Gantt.MinWidth, Math.round(PAD + days * 30 + 8)) && ok;
@@ -3601,7 +3809,7 @@ class MainForm extends Form {
         /* The timescale control changes what the chart measures, not only
          * what it labels: a day per 30 px is the width of the span. */
         let scale = true;
-        const range = ganttRange(rows);
+        const range = this.chartRange();
         if (range) {
             const days = (range.to - range.from) / (24 * 3600 * 1000);
             this.CmbScale.Index = 1;   // Day
@@ -3654,6 +3862,10 @@ class MainForm extends Form {
  * squeezed under a plan is neither readable nor usable. */
 const PANEL_W = 380;
 const MIN_PLAN_W = 420;
+
+/* How often the chart asks whether a fold left it drawing the wrong rows:
+ * short enough that the bars follow the arrow, long enough to be nothing. */
+const FOLD_POLL_MS = 150;
 
 /*
  * The columns the plan table can show. The name is not here: it is the tree
@@ -3766,6 +3978,12 @@ const SCALES = [
     { dayW: 10, step: 7 },       // Week
     { dayW: 3,  step: 30 },      // Month
 ];
+
+/* Which rows these are, as one string: the tasks' UIDs in order, which is
+ * what two frames have to agree on to be the same frame. */
+function rowsKey(rows) {
+    return rows.map((task) => task.UID).join(",");
+}
 
 /* A number typed in a field, with the comma a keyboard may give it; NaN when
  * it is not one, which the caller refuses. */
