@@ -1178,7 +1178,37 @@ class MainForm extends Form {
     /* The first real rectangle: `Form_Open` is reliably too early for one, and
      * a pane that has never been measured is not the height the chart has to
      * draw into. */
-    PlanSplit_Allocated(box) { this.syncGanttSize(); }
+    PlanSplit_Allocated(box) {
+        this.syncGanttSize();
+        this.placePanels();
+    }
+
+    BodySplit_Allocated(box) { this.placePanels(); }
+
+    /*
+     * The panel of properties is a form, not a space: it is given a width of
+     * its own and the plan takes whatever the window has left, which is what
+     * `Grows: "Start"` then keeps. **A `Split`'s `Position` is a count of
+     * pixels from the start**, so the 660 a `.form` declares would hand the
+     * panel everything past it on a wide screen -- 1236 pixels of panel on a
+     * 1920 one, with a chart of 139. So the divider is put where the panel ends
+     * the first time the body is measured, once: after that the user drags it
+     * wherever they want it and nothing moves it back.
+     */
+    placePanels() {
+        const body = this.Body.Bounds().Width;
+        if (!(body > 0) || this.panelsPlaced) return;
+        this.panelsPlaced = true;
+
+        /* One turn later, and this is the rule the whole runtime measures by: a
+         * pane that has just been given a rectangle has not measured its
+         * children yet, and the paned's own minimums are still the ones it had
+         * a frame ago. A divider put now is a divider the paned puts back. */
+        Timer.After(0, () => {
+            const wide = this.Body.Bounds().Width;
+            this.BodySplit.Position = Math.max(MIN_PLAN_W, wide - PANEL_W);
+        });
+    }
 
     /* The window changed size: Auto means the chart fits it again. */
     Form_Resize() { this.syncGanttSize(); }
@@ -2319,6 +2349,28 @@ class MainForm extends Form {
 
     /* A chart that travels: the plan the list is showing, whole, and the names
      * in it -- which is what the file is and not what the pane shows. */
+    viewGrowProbe(eq, yes) {
+        const t = this.Tasks;
+        const w = (c) => c ? c.Bounds(this.Body).Width : -1;
+        const h = (c) => c ? c.Bounds(this.Body).Height : -1;
+        const show = (when) => print(`grow ${when}: form=${this.Width}x${this.Height} ` +
+            `bodySplit=${w(this.BodySplit)} left=${w(this.Left)} propsScroll=${w(this.PropsScroll)} ` +
+            `planSplit=${w(this.PlanSplit)} tasks=${w(t)} chartScroll=${w(this.GanttScroll)} ` +
+            `positions body=${this.BodySplit.Position} plan=${this.PlanSplit.Position} ` +
+            `heights left=${h(this.Left)} tasks=${h(t)} chart=${h(this.Gantt)}`);
+        show("as it stands");
+        Timer.After(60, () => {
+            this.Resize(1500, 800);
+            Timer.After(120, () => {
+                show("after Resize(1500,800)");
+                Timer.After(120, () => {
+                    show("settled");
+                    Application.Quit(0);
+                });
+            });
+        });
+    }
+
     viewFile(eq, yes, ok) {
         const t = this.Tasks;
         try {
@@ -2336,14 +2388,72 @@ class MainForm extends Form {
                     this.fileHeight()) && ok;
             ok = yes("and the pane is back to the list's own height",
                      this.Gantt.Height === t.Height) && ok;
-
-            print(ok ? "CHECK-OK" : "CHECK-FAILED");
-            Application.Quit(ok ? 0 : 1);
+            this.viewGrow(eq, yes, ok);
         } catch (e) {
             print(`view ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
+    }
+
+    /*
+     * Who takes the room when the window grows. A plan is read in a table of a
+     * sensible width and a chart as wide as the timescale needs, and a panel of
+     * properties is a form, not a space: so the *chart* is the elastic one and
+     * the list and the panel keep the width they have. That is what `Grows` on
+     * the two splits says -- the plan area is the start half of the body's and
+     * the chart the end half of the plan's.
+     *
+     * **A wider window cannot be asked for here.** `Widget.Width` is a requested
+     * minimum rather than a size, and a window that is mapped keeps the size it
+     * was given, so `Resize` on the form is a no-op under a virtual display and
+     * there is nothing to measure. What is measured is the rule: the
+     * declarations, the invariant they make visible (each pane is its own half,
+     * and the list's is the divider), and the mechanism -- move the divider and
+     * the start half is what moves, which is the same paned the growth uses.
+     */
+    viewGrow(eq, yes, ok) {
+        const width = (c) => c.Bounds(this.Body).Width;
+        ok = eq("the plan area takes the room, not the panel",
+                this.BodySplit.Grows, "Start") && ok;
+        ok = eq("and inside it, the chart and not the list",
+                this.PlanSplit.Grows, "End") && ok;
+
+        const body  = this.Body.Bounds().Width;
+        const panel = width(this.PropsScroll);
+        ok = yes("the panel is a form of its own width and not the space the window has",
+                 panel * 2 < body, `${panel} of ${body}`) && ok;
+        ok = yes("and the divider is where the panel ends",
+                 Math.abs(this.BodySplit.Position - (body - panel)) <= 1,
+                 `${this.BodySplit.Position} against ${body - panel}`) && ok;
+
+        const plan  = width(this.PlanSplit);
+        const tasks = width(this.Tasks);
+        const chart = width(this.GanttScroll);
+        ok = eq("the list is the divider's half", tasks, this.PlanSplit.Position) && ok;
+        ok = eq("and the chart is what is left of the plan",
+                tasks + chart, plan - 1) && ok;
+
+        /* The mechanism the growth uses, from the other side: the divider moved
+         * from code, and the half in front of it is the one that moved. A
+         * divider set from code is laid out on the next frame, so this is asked
+         * a turn later -- the same rule every measurement in this app follows. */
+        const at = this.PlanSplit.Position;
+        this.PlanSplit.Position = at - 120;
+        this.viewGrows = { plan, at, tasks };
+        Timer.After(60, () => {
+            ok = eq("moving the divider moves the list with it", width(this.Tasks),
+                    at - 120) && ok;
+            ok = eq("and the chart takes the difference", width(this.GanttScroll),
+                    plan - 1 - (at - 120)) && ok;
+            this.PlanSplit.Position = at;
+            Timer.After(60, () => {
+                ok = eq("and it comes back", width(this.Tasks),
+                        this.viewGrows.tasks) && ok;
+                print(ok ? "CHECK-OK" : "CHECK-FAILED");
+                Application.Quit(ok ? 0 : 1);
+            });
+        });
     }
 
     /*
@@ -2965,6 +3075,12 @@ class MainForm extends Form {
                calls > 10 && names && scale;
     }
 }
+
+/* The width the panel of properties is given, and the least the plan can be
+ * left: below that the panel is the thing that has to give way, and a form
+ * squeezed under a plan is neither readable nor usable. */
+const PANEL_W = 380;
+const MIN_PLAN_W = 420;
 
 /*
  * The columns the plan table can show. The name is not here: it is the tree

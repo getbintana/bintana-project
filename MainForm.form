@@ -504,7 +504,7 @@
           "properties": {
             "Arrangement": "Horizontal",
             "Position": 660,
-            "Grows": "End",
+            "Grows": "Start",
             "Expand": true
           },
           "children": [
@@ -580,7 +580,8 @@
                     "Position": 520,
                     "Expand": true,
                     "HAlign": "Fill",
-                    "VAlign": "Fill"
+                    "VAlign": "Fill",
+                    "Grows": "End"
                   },
                   "children": [
                     {

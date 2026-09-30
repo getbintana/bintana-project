@@ -59,6 +59,10 @@ scroller is horizontal, because what does not fit in a chart is the timescale.
 The divider between the panes' heading row and the rows is the **timescale**:
 weeks over months, the way Project reads it.
 
+What a wider window buys is timescale: the panel of properties has a width of its
+own and the list keeps the one it has, so the chart is the elastic pane. Both
+dividers can be dragged and nothing moves them back.
+
 A filter narrows both panes: the chart draws the rows the list is showing, so a
 bar stays beside the name it belongs to and the timescale closes around what is
 left. **Export Chart…** writes the same rows.

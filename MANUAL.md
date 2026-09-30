@@ -41,6 +41,11 @@ en el mismo `Split`, y **la lista es la que baja** — su barra de desplazamient
 la rueda sobre cualquiera de las dos y el teclado mueven las dos. Plegar una
 rama saca filas de las dos.
 
+**Lo que crece cuando agrandás la ventana es el gráfico.** El panel de
+propiedades tiene un ancho propio —es un formulario, no un espacio— y la lista
+conserva el suyo, así que una ventana más ancha compra timescale y no aire. Los
+dos divisores se arrastran a mano y la app no los mueve después.
+
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
 `Ctrl+F` lleva el cursor ahí. **El Gantt filtra con la lista**: el gráfico dibuja
