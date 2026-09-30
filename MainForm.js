@@ -955,6 +955,23 @@ class MainForm extends Form {
         return h > 0 ? h : HEADER;
     }
 
+    /* The rows the chart draws, and **the rows the list drew them from**: the
+     * same call, on the same plan, at the same moment -- so a filter that takes
+     * rows out of one takes them out of the other and the two cannot disagree
+     * about what row `i` is.
+     *
+     * **Asked again every time rather than kept.** A command replaces the task
+     * records (the undo does, and so does `setDates`), and a chart holding the
+     * objects it was handed an edit ago would draw the plan as it was before
+     * that edit -- which is what a cached list did, and `check-drag` caught it
+     * the moment the resize stopped moving anything. The walk is the same one
+     * `fill` does to build the list, so a frame that draws 4000 bars already
+     * pays for it.
+     */
+    chartRows() {
+        return this.holder ? this.visibleTasks(this.holder.project) : [];
+    }
+
     /* The chart is drawn in the list's coordinates: row `i` at
      * `head + i * row - scroll`, which is where the table draws it. The plot
      * starts at the pane's edge -- the names are in the list beside it -- and
@@ -969,8 +986,8 @@ class MainForm extends Form {
         const project = this.holder ? this.holder.project : null;
         if (!project) return null;
 
-        const g = ganttGeometry(project, this.ganttWidth(), this.ganttHeight(),
-                                this.step, this.planGeom());
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                this.ganttHeight(), this.step, this.planGeom());
         const i = g.rowAt(y);
         if (i < 0 || x < g.plotX) return null;
 
@@ -1036,7 +1053,7 @@ class MainForm extends Form {
             return;
         }
 
-        const g = ganttGeometry(this.holder.project, this.ganttWidth(),
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                 this.ganttHeight(), this.step, this.planGeom());
         if (!g.dayW) return;
         const days = Math.round((x - drag.x0) / g.dayW);
@@ -1095,9 +1112,8 @@ class MainForm extends Form {
 
     /* Every frame is drawn from the data; there is nothing to keep. */
     Gantt_Draw(p, width, height) {
-        drawGantt(p, width, height, this.holder ? this.holder.project : null,
-                  this.selectedUID, this.step, this.drag,
-                  this.baselineNumber || 0,
+        drawGantt(p, width, height, this.chartRows(), this.selectedUID,
+                  this.step, this.drag, this.baselineNumber || 0,
                   this.chartFile ? this.fileGeom() : this.planGeom());
     }
 
@@ -1125,10 +1141,8 @@ class MainForm extends Form {
     /* A chart that travels on its own: the whole plan, from its first row, with
      * the names in a gutter -- a file has no list beside it to carry them. */
     fileGeom() {
-        const project = this.holder ? this.holder.project : null;
-        const rows = project ? ganttRows(project) : [];
         return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
-                 scrollY: 0, rows: rows.length };
+                 scrollY: 0, rows: this.chartRows().length };
     }
 
     fileHeight() {
@@ -1145,9 +1159,8 @@ class MainForm extends Form {
      */
     syncGanttSize() {
         if (!this.Gantt || !this.Tasks) return;   // the form is still being built
-        const project = this.holder ? this.holder.project : null;
-        const rows = project ? ganttRows(project) : [];
-        const range = project ? ganttRange(rows) : null;
+        const rows = this.chartRows();
+        const range = ganttRange(rows);
 
         const pane = this.Tasks.Height;
         this.Gantt.Height = pane > 0 ? pane : HEADER + rows.length * ROW_H + 8;
@@ -1998,7 +2011,7 @@ class MainForm extends Form {
             /* Where the first task's bar is, from the chart's own geometry --
              * which is the table's row height and heading, so the y a pointer
              * is given and the y the table draws the row at are one number. */
-            const g = ganttGeometry(this.holder.project, this.ganttWidth(),
+            const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                     this.ganttHeight(), this.step, this.planGeom());
             const at = (rows, task) =>
                 g.headH + rows.indexOf(task) * g.rowH + g.rowH / 2 - g.scrollY;
@@ -2032,7 +2045,7 @@ class MainForm extends Form {
              * second item and MSPDI's 3. The undo replaced the records, so
              * the geometry is taken again from the plan as it is now. */
             this.CmbDrawType.Index = 1;
-            const g2   = ganttGeometry(this.holder.project, this.ganttWidth(),
+            const g2   = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                        this.ganttHeight(), this.step, this.planGeom());
             const one  = edit.task(1), two = edit.task(2);
             const oy   = at(g2.rows, two);
@@ -2160,7 +2173,7 @@ class MainForm extends Form {
             /* The row a pointer is over is the row the chart drew, computed the
              * way the chart computed it -- the hit-test and the frame are one
              * geometry, and this is where that is said out loud. */
-            const g5 = ganttGeometry(this.holder.project, this.ganttWidth(),
+            const g5 = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                      this.ganttHeight(), this.step, this.planGeom());
             const y5 = g5.headH + 5 * g5.rowH + g5.rowH / 2 - g5.scrollY;
             ok = eq("a pointer over the fifth row is the fifth row",
@@ -2192,6 +2205,7 @@ class MainForm extends Form {
             t.ExpandAll();
             this.viewRow = rowH;
             this.viewMax = t.ScrollMaxY;
+            this.viewFilter = this.pickFilter();
             this.viewFold(eq, yes, ok);
         } catch (e) {
             print(`view ERROR ${e.message}`);
@@ -2209,7 +2223,7 @@ class MainForm extends Form {
     viewFold(eq, yes, ok) {
         const t = this.Tasks;
         /* A summary with something under it: what a fold takes rows away from. */
-        const plan = ganttRows(this.holder.project);
+        const plan = this.chartRows();
         let key = null;
         for (let i = 1; i < plan.length; i++) {
             if (plan[i].OutlineLevel > plan[i - 1].OutlineLevel) {
@@ -2231,16 +2245,84 @@ class MainForm extends Form {
                      t.ScrollMaxY < this.viewMax,
                      `${this.viewMax} -> ${t.ScrollMaxY}`) && ok;
             t.ExpandNode(key);
-            Timer.After(30, () => this.viewFile(eq, yes, ok));
+            Timer.After(30, () => this.viewFilterPhase(eq, yes, ok));
         });
     }
 
-    /* A chart that travels: the whole plan and the names in it, which is what
-     * the file is and not what the pane shows. */
+    /* A name the filter will match, and that has an ancestor to keep: a task
+     * below a summary, so filtering brings three rows out of a plan of forty. */
+    pickFilter() {
+        for (const task of this.chartRows()) {
+            if (task.OutlineLevel >= 2 && task.Name) return task.Name;
+        }
+        return "";
+    }
+
+    /*
+     * A filtered list. The two panes are two views of the same rows, and a
+     * filter takes rows out of both -- if the chart kept drawing the whole plan,
+     * its row `i` would be another task's row and every bar would sit beside the
+     * wrong name. What is asserted: the chart has the list's rows and not the
+     * plan's, and the list it has is the filter's own rule -- a match, or an
+     * ancestor that gives a match its place -- checked against the rows
+     * themselves and not against the function that produced them.
+     */
+    viewFilterPhase(eq, yes, ok) {
+        const t = this.Tasks;
+        try {
+            const whole = ganttRows(this.holder.project).length;
+            const name = this.viewFilter;
+            this.TxtFilter.Text = name;
+            this.TxtFilter_Change();
+
+            const drawn = this.chartRows();
+            ok = yes("the filter leaves fewer rows in the chart than the plan has",
+                     drawn.length < whole, `${drawn.length} of ${whole}`) && ok;
+            ok = eq("and the chart has exactly the rows the list has",
+                    drawn.length, t.Count) && ok;
+
+            /* The rule, on the rows: every row that is not a match has a deeper
+             * row after it that is one. */
+            let placed = true;
+            for (let i = 0; i < drawn.length; i++) {
+                if (Locale.Matches(drawn[i].Name, name)) continue;
+                placed = drawn.slice(i + 1)
+                              .some((r) => r.OutlineLevel > drawn[i].OutlineLevel &&
+                                           Locale.Matches(r.Name, name));
+                if (!placed) break;
+            }
+            ok = yes("every row left is a match or an ancestor that gives it place",
+                     placed, name) && ok;
+
+            /* And the two are still one geometry: the chart's last row is where
+             * the list's last row is. */
+            const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                    this.ganttHeight(), this.step, this.planGeom());
+            const last = drawn.length - 1;
+            ok = eq("the chart's last row is the list's last row",
+                    g.rows[last].UID, drawn[last].UID) && ok;
+            ok = eq("and it is a row of the table's height",
+                    g.headH + last * g.rowH - g.scrollY,
+                    g.headH + last * this.rowHeight() - g.scrollY) && ok;
+
+            this.TxtFilter.Text = "";
+            this.TxtFilter_Change();
+            ok = eq("and the whole plan comes back to both",
+                    this.chartRows().length, whole) && ok;
+            this.viewFile(eq, yes, ok);
+        } catch (e) {
+            print(`view ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /* A chart that travels: the plan the list is showing, whole, and the names
+     * in it -- which is what the file is and not what the pane shows. */
     viewFile(eq, yes, ok) {
         const t = this.Tasks;
         try {
-            const rows = ganttRows(this.holder.project).length;
+            const rows = this.chartRows().length;
             const fg = this.fileGeom();
             ok = eq("a file is as tall as the plan's rows", this.fileHeight(),
                     fg.headH + rows * fg.rowH + 8) && ok;
@@ -2804,7 +2886,10 @@ class MainForm extends Form {
      * numbers are not the assertion.
      */
     checkTree() {
-        const rows = ganttRows(this.holder.project);
+        /* The list's own rows, not the plan's: with no filter the two are the
+         * same list, and a check that counted the plan would only be right
+         * until somebody filters. */
+        const rows = this.chartRows();
         let ok = this.Tasks.Count === rows.length;
 
         for (const task of rows) {
@@ -2853,7 +2938,7 @@ class MainForm extends Form {
 
         const dump = this.Gantt.Dump();
         const calls = dump ? dump.split("\n").length : 0;
-        const rows = ganttRows(this.holder.project);
+        const rows = this.chartRows();
         let names = rows.length > 0;
         for (let i = 0; i < Math.min(rows.length, 2); i++) {
             if (dump.indexOf(rows[i].Name) < 0) names = false;

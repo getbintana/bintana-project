@@ -43,7 +43,10 @@ rama saca filas de las dos.
 
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
-`Ctrl+F` lleva el cursor ahí.
+`Ctrl+F` lleva el cursor ahí. **El Gantt filtra con la lista**: el gráfico dibuja
+las mismas filas que la tabla, así que con un filtro las barras quedan al lado
+del nombre que les corresponde —no del resto del plan— y la escala de tiempo se
+acorta a lo que se está viendo. **Exportar** sale con las mismas filas.
 
 **Clic derecho** sobre una fila abre el menú de la tarea —agregar, eliminar,
 indentar, quitar nivel, subir y bajar—, y **doble clic** (o Enter) deja el

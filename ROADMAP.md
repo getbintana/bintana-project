@@ -215,6 +215,13 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   sin exponerlo), ni el encabezado (que GTK 4 no puede ni esconder). Salieron
   `RowHeight`, `HeaderHeight`, `ScrollY`/`ScrollMaxY` y el evento `Scroll`, con
   `TableGeometry` en el runtime afirmándolos.
+- **El filtro toma filas de las dos panes.** El gráfico recibía el plan entero
+  y la lista el plan filtrado, así que con un filtro la fila *i* del gráfico era
+  otra tarea y cada barra quedaba al lado del nombre equivocado. Ahora ambas
+  panes llaman a `visibleTasks` en el mismo momento -- una función, no un
+  cache: un comando reemplaza los registros de tarea (el Deshacer lo hace) y una
+  lista cacheada dibujaba el plan de antes de la edición, que es lo que
+  `check-drag` vio cuando el redimensionado dejó de mover nada.
 - `RowHeight` se corrigió apenas se usó, y por una app: dividía `upper` por las
   filas, y `upper` es `max(contenido, página)` -- un plan que **entra** en la
   ventana dividía el viewport entero y contestaba 102 para una fila de 36. Es

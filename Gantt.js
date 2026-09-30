@@ -42,8 +42,10 @@ function chartGeometry(geom) {
     };
 }
 
-/* What gets drawn, in file order: every task the tree shows, summaries
- * included, and no blank row -- IsNull is nothing. */
+/* The plan's own rows, in file order: every task, summaries included, and no
+ * blank row -- IsNull is nothing. **This is the whole plan, not the view**: the
+ * chart draws the rows it is handed, and what it is handed is whatever the
+ * table is showing, so a filtered list takes its rows out of the chart too. */
 function ganttRows(project) {
     const rows = [];
     for (const task of project.Tasks) {
@@ -79,15 +81,16 @@ function ganttRange(rows) {
  * handlers hit-test with it, so a bar is exactly where the pointer thinks it
  * is -- two spellings of the geometry would drift.
  *
- * `geom` is the table's own: where the plot starts, how tall a row is, how tall
- * the heading is and how far down the list is scrolled. Row `i` is at
- * `headH + i * rowH - scrollY`, which is the y the table draws it at, so the
- * two panes need not know about each other to agree.
+ * `rows` is **the table's own list**, not the plan: the two panes are two views
+ * of the same rows, and a filter that takes rows out of the list takes them out
+ * of the chart. `geom` is the table's too: where the plot starts, how tall a
+ * row is, how tall the heading is and how far down the list is scrolled. Row
+ * `i` is at `headH + i * rowH - scrollY`, which is the y the table draws it at,
+ * so the two panes need not know about each other to agree.
  */
-function ganttGeometry(project, width, height, step, geom) {
+function ganttGeometry(rows, width, height, step, geom) {
     const g = chartGeometry(geom);
-    const rows  = project ? ganttRows(project) : [];
-    const range = ganttRange(rows);
+    const range = ganttRange(rows || []);
     /* The heading is drawn *over* the rows -- it is the table's own, and the
      * table does not scroll it away -- so a point in that band is over the
      * heading and not over a row, however the arithmetic would place one. */
@@ -129,9 +132,9 @@ function ganttTimescaleBands(dayW) {
     return bands;
 }
 
-function drawGantt(p, width, height, project, selected, step, drag, baseline, geom) {
-    const g = ganttGeometry(project, width, height, step, geom);
-    const rows = g.rows;
+function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
+    const g = ganttGeometry(rows, width, height, step, geom);
+    rows = g.rows;
     if (!rows.length) {
         p.Text(Locale.Text("No tasks"), 12, 12);
         return;

@@ -59,6 +59,10 @@ scroller is horizontal, because what does not fit in a chart is the timescale.
 The divider between the panes' heading row and the rows is the **timescale**:
 weeks over months, the way Project reads it.
 
+A filter narrows both panes: the chart draws the rows the list is showing, so a
+bar stays beside the name it belongs to and the timescale closes around what is
+left. **Export Chart…** writes the same rows.
+
 The chart's width is what the **Timescale** combo asks -- `Auto` fits the view,
 `Day`/`Week`/`Month` set a day width. **Export Chart…** writes the whole plan
 as a PNG or a PDF, from its first row and with the task names in a gutter, since
