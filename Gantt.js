@@ -39,6 +39,7 @@ function chartGeometry(geom) {
         rowH:    g.rowH  > 0 ? g.rowH  : ROW_H,
         headH:   g.headH >= 0 && g.headH !== undefined ? g.headH : HEADER,
         scrollY: g.scrollY > 0 ? g.scrollY : 0,
+        strip:   !!g.strip,
     };
 }
 
@@ -101,7 +102,7 @@ function ganttGeometry(rows, width, height, step, geom) {
     };
     if (!rows.length || !range) {
         return { rows, range: null, plotX: g.plotX, plotW: 0, dayW: 0,
-                 headH: g.headH, rowH: g.rowH, scrollY: g.scrollY,
+                 headH: g.headH, rowH: g.rowH, scrollY: g.scrollY, strip: g.strip,
                  x: () => 0, msAt: () => 0, rowAt: () => -1 };
     }
 
@@ -111,11 +112,28 @@ function ganttGeometry(rows, width, height, step, geom) {
 
     return {
         rows, range, plotX, plotW, dayW,
-        headH: g.headH, rowH: g.rowH, scrollY: g.scrollY,
+        headH: g.headH, rowH: g.rowH, scrollY: g.scrollY, strip: g.strip,
         x: (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW,
         msAt: (px) => range.from + (px - plotX) / plotW * (range.to - range.from),
         rowAt,
     };
+}
+
+/* A colour at an opacity: `#rrggbb`, or `rgb()`/`rgba()` the way the painter
+ * reports its ink. Anything else comes back as it came. */
+function fade(color, alpha) {
+    const s = String(color || "");
+    let m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(s);
+    if (m) {
+        const [r, g, b] = m.slice(1).map((h) => parseInt(h, 16));
+        return `rgba(${r},${g},${b},${alpha})`;
+    }
+    m = /^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/.exec(s);
+    if (m) {
+        const a = (m[4] === undefined ? 1 : Number(m[4])) * alpha;
+        return `rgba(${m[1]},${m[2]},${m[3]},${a})`;
+    }
+    return color;
 }
 
 /*
@@ -129,8 +147,12 @@ function ganttGeometry(rows, width, height, step, geom) {
  */
 function ganttPalette(p) {
     const dark = p.Dark;
+    const ink = p.Foreground || (dark ? "#eeeeec" : "#2e3436");
     return {
-        ink:      p.Foreground || (dark ? "#eeeeec" : "#2e3436"),
+        ink,
+        /* A column heading's type: the theme's ink at 40%, the way Adwaita
+         * writes it (`color-mix(currentColor 40%, transparent)`). */
+        headInk:  fade(ink, 0.4),
         dim:      dark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.12)",
         faint:    dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
         head:     dark ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.035)",
@@ -211,9 +233,9 @@ function ganttIdleDays(range, calendar) {
  * The timescale, in the band the table's column headings occupy.
  *
  * **On screen that band is a control**, the strip above the chart, which wears
- * the `button` class -- the class a theme paints a header with, and the one a
- * column view's own heading is (it is a box, classed `button`, and this is the
- * theme's look for it). So the two headings are the same kind of thing rather
+ * the `view` class -- the ground a column view's heading sits on (its own
+ * buttons are transparent, with dimmed type; `button` painted a grey
+ * button instead). So the two headings are the same kind of thing rather
  * than one real and one drawn, and they cannot drift: same class, same height.
  * `strip` says the band is painted for us and only the marks are ours to draw.
  *
@@ -239,6 +261,13 @@ function drawGanttRuler(p, width, g, c) {
         p.MoveTo(0, headH - 0.5);
         p.LineTo(width, headH - 0.5);
         p.Stroke();
+    } else {
+        /* The list's heading sits on the ground with a rule under it. */
+        p.Color = c.dim;
+        p.LineWidth = 1;
+        p.MoveTo(0, headH - 0.5);
+        p.LineTo(width, headH - 0.5);
+        p.Stroke();
     }
 
     /* **The type gives way before a band does**, down the ladder above, and a
@@ -250,7 +279,12 @@ function drawGanttRuler(p, width, g, c) {
     let font = 0;
     while (font < RULER_FONTS.length - 1 &&
            bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
-    p.Font = RULER_FONTS[font];
+    /* On screen the type is in the family the list writes in (a description
+     * with no family is Pango's `Sans`, not the theme's). A file keeps the
+     * ladder as written. */
+    const family = String(bodyFont || "").replace(/\s+[\d.]+(px)?$/, "");
+    p.Font = g.strip && family
+        ? RULER_FONTS[font].replace(/^Sans/, family) : RULER_FONTS[font];
     while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
     const bandH = bands.length ? headH / bands.length : 0;
     const t0 = Math.floor(range.from / dayMs) * dayMs;
@@ -273,7 +307,7 @@ function drawGanttRuler(p, width, g, c) {
             p.Stroke();
             const label = band.label(new Date(t));
             if (p.TextWidth(label) + 6 <= band.step * dayW) {
-                p.Color = c.ink;
+                p.Color = g.strip ? c.headInk : c.ink;
                 p.Text(label, at + 3, y - bandH + 2);
             }
         }

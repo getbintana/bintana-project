@@ -2263,8 +2263,8 @@ class MainForm extends Form {
             /* **A heading is a control, not a picture**, and it is a header the
              * way the list's is: the `button` class, which is what a column
              * view's own heading is. */
-            ok = eq("the strip wears the class a column view's heading wears",
-                    this.Header.Style, "button") && ok;
+            ok = eq("the strip sits on the ground the list's heading does",
+                    this.Header.Style, "view") && ok;
 
             /* The chart's geometry is the list's, in every part. */
             const g = this.planGeom();

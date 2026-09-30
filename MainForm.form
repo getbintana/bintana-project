@@ -666,10 +666,10 @@
                           "type": "DrawingArea",
                           "name": "Header",
                           "properties": {
-                            "Description": "The timescale, in a strip as tall as the table's column headings and wearing the same class a column view's own heading wears -- `button`. **A heading is a control, not a picture**: the list's is, so the chart's should be, and then the two cannot drift apart in colour, in height or in the theme that paints them. What is drawn on it is only the marks, over a band the theme fills.",
+                            "Description": "The timescale, in a strip as tall as the table's column headings and wearing `view`, the ground a column view's heading sits on. **A heading is a control, not a picture**: the list's is, so the chart's should be, and then the two cannot drift apart in colour, in height or in the theme that paints them. What is drawn on it is only the marks, over a band the theme fills.",
                             "Width": 0,
                             "Height": 0,
-                            "Style": "button",
+                            "Style": "view",
                             "HAlign": "Fill",
                             "VAlign": "Start"
                           }
