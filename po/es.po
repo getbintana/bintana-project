@@ -334,12 +334,6 @@ msgstr "Pico"
 msgid "Rate"
 msgstr "Tasa"
 
-msgid "Cost"
-msgstr "Costo"
-
-msgid "Total cost"
-msgstr "Costo total"
-
 msgid "Type"
 msgstr "Tipo"
 
@@ -885,3 +879,117 @@ msgstr "Ocultar esta columna"
 
 msgid "Show every column"
 msgstr "Mostrar todas las columnas"
+
+msgid "Statistics…"
+msgstr "Estadísticas…"
+
+msgid "Project statistics"
+msgstr "Estadísticas del proyecto"
+
+msgid "Statistics of {0}"
+msgstr "Estadísticas de {0}"
+
+msgid "the plan"
+msgstr "el plan"
+
+msgid "{0} ({1})"
+msgstr "{0} ({1})"
+
+msgid "the status date"
+msgstr "la fecha de estado"
+
+msgid "today"
+msgstr "hoy"
+
+msgid "Cost"
+msgstr "Costo"
+
+msgid "Behind"
+msgstr "Atrasos"
+
+msgid "Progress"
+msgstr "Avance"
+
+msgid "Total cost"
+msgstr "Costo total"
+
+msgid "Baseline cost"
+msgstr "Costo de la línea base"
+
+msgid "Cost variance"
+msgstr "Desvío de costo"
+
+msgid "Work resources"
+msgstr "Costo de recursos de trabajo"
+
+msgid "Material resources"
+msgstr "Costo de recursos de material"
+
+msgid "Cost resources"
+msgstr "Costo de recursos de costo"
+
+msgid "Over-allocated"
+msgstr "Sobreasignados"
+
+msgid "Tasks late"
+msgstr "Tareas atrasadas"
+
+msgid "Worst slip (days)"
+msgstr "Mayor atraso (días)"
+
+msgid "Past deadline"
+msgstr "Pasadas de fecha límite"
+
+msgid "Past baseline"
+msgstr "Pasadas de la línea base"
+
+msgid "Constraints not met"
+msgstr "Restricciones incumplidas"
+
+msgid "Plan days behind"
+msgstr "Días de atraso del plan"
+
+msgid "Read at"
+msgstr "Leído el"
+
+msgid "Duration (working days)"
+msgstr "Duración (días laborables)"
+
+msgid "Calendar days"
+msgstr "Días de calendario"
+
+msgid "Elapsed (working days)"
+msgstr "Transcurridos (días laborables)"
+
+msgid "Remaining (working days)"
+msgstr "Restantes (días laborables)"
+
+msgid "Tasks"
+msgstr "Tareas"
+
+msgid "Summaries"
+msgstr "Resúmenes"
+
+msgid "Milestones"
+msgstr "Hitos"
+
+msgid "Done"
+msgstr "Terminadas"
+
+msgid "In progress"
+msgstr "En curso"
+
+msgid "Not started"
+msgstr "Sin empezar"
+
+msgid "Tasks behind their promise"
+msgstr "Tareas que no llegaron a su fecha"
+
+msgid "No task is past the date it was given"
+msgstr "Ninguna tarea pasó la fecha que tenía"
+
+msgid "Promised"
+msgstr "Prometido"
+
+msgid "Days late"
+msgstr "Días tarde"

@@ -352,6 +352,30 @@ de tasa del archivo se conservan (una fila nueva nace en horas).
 - Falta: contornos de trabajo y calendario de recurso. Nivelación queda afuera
   por ahora.
 
+**Las estadísticas del plan** (2026-09-30): **Proyecto → Estadísticas…** abre
+`StatsForm`, un diálogo de solo lectura que lee el plan como número: costo
+(total, por tipo de recurso, línea base y desvío, sobreasignados), fechas
+(inicio, fin, fecha de estado, duración en días laborables, días de calendario,
+transcurrido y restante), avance (porcentaje pesado por trabajo y el reparto en
+terminadas/en curso/sin empezar) y atrasos (tareas pasado su fecha, pasado la
+línea base, mayor atraso, restricciones incumplidas, días de atraso del plan) con
+la lista de las tareas que no llegaron a su fecha, su fecha prometida y lo que
+cuestan.
+
+La aritmética vive en `projectStats` (`Stats.js`), no en el diálogo: **no
+recalcula**, no escribe nada y por eso no tiene Aceptar — abrirlo no es un
+edit. El atraso se mide contra **la promesa del archivo** (el fin de su línea
+base, o su fecha límite) en días de calendario y sin mirar los feriados del
+medio, que es la misma cuenta que hace `recalculate` para el registro, así que
+el diálogo y el log no pueden discrepar. `check-stats` afirma los números, sin
+golden porque los valores son la afirmación.
+
+Lo que **no** hay y es lo siguiente si el corpus lo pide: fechas tardías
+(`LateStart`/`LateFinish`, hoy el pase hacia atrás no las deja) y con ellas el
+desvío de cronograma y la holgura al estilo de Project, y presupuesto —que el
+modelo no tiene, porque `Cost` se calcula y no se guarda— para poder hablar de
+desvío de costo contra algo.
+
 ### 6 — Distribución
 
 **Adelantado**: export del gráfico a PNG/PDF y **Archivo → Informe…**, que

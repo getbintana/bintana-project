@@ -5,6 +5,7 @@
   "sources": [
     "Mspdi.js",
     "Schedule.js",
+    "Stats.js",
     "Edit.js",
     "Gantt.js",
     "ConfirmForm.js",
@@ -15,6 +16,7 @@
     "CalendarsForm.js",
     "ColumnsForm.js",
     "OptionsForm.js",
+    "StatsForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

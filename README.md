@@ -174,6 +174,22 @@ percentage in the panel moves the actual dates the way Project reads them:
 above zero the task has an `ActualStart`, at a hundred it has an
 `ActualFinish`, and back at zero it has neither.
 
+**Project → Statistics…** reads the plan as a number, in four sheets: cost
+(total, by resource kind, baseline and variance, over-allocated), dates (start,
+finish, status date, duration in working days, calendar days, elapsed,
+remaining), progress (work-weighted percent, and the split into done, in
+progress and not started) and behind (past a deadline, past a baseline, worst
+slip, constraints not met, days the plan is past its own finish), with the list
+of the tasks that missed their date and what each costs. **It is a reading and
+not an edit**, and that is why it has no OK: opening it is not a command, it
+writes nothing, and **it does not recalculate** either -- a plan that was never
+scheduled is shown as it stands. The arithmetic is `projectStats` in `Stats.js`,
+one pass over the shape, and it says in its own header what it counts and what
+it leaves out. A slip is measured against **the promise the file made** (a
+baseline finish, or a deadline) in calendar days without looking at the
+holidays in between -- the same reading `recalculate` counts for the log, so
+the dialog and the log cannot disagree. `check-stats` asserts the numbers.
+
 ## The rule that makes it an interchange
 
 `SaveXml` writes into the tree it was handed and touches only what the shapes

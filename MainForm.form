@@ -128,6 +128,11 @@
       "icon": "x-office-calendar-symbolic"
     },
     {
+      "name": "ActStats",
+      "text": "Statistics…",
+      "icon": "view-list-ordered-symbolic"
+    },
+    {
       "name": "ActFilter",
       "text": "Filter tasks",
       "icon": "edit-find-symbolic",
@@ -264,6 +269,12 @@
         },
         {
           "action": "ActCalendar"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActStats"
         }
       ]
     },

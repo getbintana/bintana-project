@@ -186,6 +186,39 @@ excepciones, que es como se cargan los feriados. Muestra la semana **efectiva**
 En la pestaña **Tarea** y en el editor de recursos, **Calendario** elige cuál
 rige para esa tarea o ese recurso: **Del proyecto** o uno en particular.
 
+## Estadísticas
+
+**Proyecto → Estadísticas…** abre el plan leído como un número: **costo**,
+**fechas**, **avance** y **atrasos**. Es de solo lectura y no tiene Aceptar:
+abrirlo no ensucia el archivo, no agrega un Deshacer y **no recalcula** — un
+plan que todavía no fue calculado se muestra como está, con lo que el archivo
+trae.
+
+- **Costo**: el total del plan y su reparto entre recursos de trabajo,
+  material y costo; el costo y el trabajo de la **línea base** y el desvío,
+  cuando el plan tiene línea base; y cuántos recursos están **sobreasignados**
+  (el pico de unidades supera su máximo, que es lo que dice la columna Pico).
+  El dinero sale con el símbolo y las posiciones decimales que trae el archivo
+  —la moneda del plan— y con el orden de símbolos de este escritorio.
+- **Fechas**: inicio y fin del plan, la **fecha de estado** (o la fecha de la
+  máquina, si el archivo no escribió ninguna) y los tres tramos: duración en
+  **días laborables** sobre el calendario del proyecto, días de calendario, y
+  lo transcurrido y lo restante.
+- **Avance**: el porcentaje del plan **pesado por trabajo** —una tarea con mil
+  horas pesa lo que mil tareas sin ninguna— y el reparto en terminadas, en
+  curso, sin empezar, con los resúmenes, los hitos y las críticas aparte.
+- **Atrasos**: cuántas tareas pasaron su fecha y cuántas la línea base, el
+  mayor atraso en días, las **restricciones incumplidas** y los días que el
+  plan lleva de atraso sobre su propio fin. Abajo, la lista de las tareas que
+  no llegaron a la fecha que tenían, con la fecha prometida, la fecha que
+  tienen, los días de atraso y lo que cuestan.
+
+Una tarea está atrasada contra **la fecha que el archivo le dio**: el fin de
+su línea base si tiene una, su **fecha límite** si no, y nada si no tiene
+ninguna de las dos. Se cuenta en días de calendario y sin mirar los feriados
+del medio, porque un feriado no la hace tarde antes — que es la misma cuenta
+que hace **Recalcular** para el registro.
+
 ## El Gantt
 
 El gráfico está **al lado de la lista, no debajo**: las dos panes comparten el

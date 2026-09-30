@@ -105,6 +105,10 @@ class MainForm extends Form {
                 this.checkOracle();
                 return;
             }
+            if (Application.Arguments.indexOf("check-stats") >= 0) {
+                this.checkStats();
+                return;
+            }
             if (Application.Arguments.indexOf("check") >= 0) {
                 this.check();
                 return;
@@ -612,6 +616,17 @@ class MainForm extends Form {
             },
             edit: (uid, done) => this.openCalendar(uid, done),
         });
+    }
+
+    /* The plan read back: what it costs, how long it runs, how far along it
+     * is and what it is late on. It is a reading and not an edit, so it is not
+     * a command and there is nothing to undo -- and **it does not recalculate
+     * either**, or opening a window about the plan would quietly move it and
+     * a dialog nobody asked to edit would be the one edit nobody could take
+     * back. A plan that was never scheduled is shown as it stands. */
+    ActStats_Click() {
+        if (!this.holder) return;
+        StatsForm.open(this.holder.project);
     }
 
     /* A resource picked: the editor shows it, so Apply updates it. */
@@ -2085,6 +2100,155 @@ class MainForm extends Form {
     }
 
     /*
+     * The statistics the Project menu shows, asserted as numbers: what the
+     * plan costs, how far along it is and which tasks broke which promise.
+     * There is no golden for this one -- the values *are* the assertion, the
+     * way they are for `check-cpm`.
+     */
+    checkStats() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`stats ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        try {
+            /* A Monday-to-Friday week, the same shape `check-cpm` builds, and
+             * four working days across the plan's own span. */
+            const week = [];
+            for (let day = 1; day <= 7; day++) {
+                const working = day >= 2 && day <= 6;
+                week.push(new MspWeekDay({
+                    DayType: day, DayWorking: working,
+                    WorkingTimes: working ? [
+                        new MspWorkingTime({ FromTime: "08:00:00", ToTime: "12:00:00" }),
+                        new MspWorkingTime({ FromTime: "13:00:00", ToTime: "17:00:00" }),
+                    ] : [],
+                }));
+            }
+            const calendar = new MspCalendar({
+                UID: 1, Name: "Test", IsBaseCalendar: true, WeekDays: week,
+            });
+            const project = new MspProject({
+                StartDate: "2026-09-07T08:00:00",
+                StatusDate: "2026-09-09T08:00:00",
+                CalendarUID: 1, Calendars: [calendar], CurrencyCode: "EUR",
+                Tasks: [
+                    /* A summary is structure, not a task: it is counted apart
+                     * and weighs nothing in the percentage. */
+                    new MspTask({ UID: 0, ID: 0, Name: "Plan", IsNull: false,
+                                  Summary: true, OutlineLevel: 0 }),
+                    new MspTask({ UID: 1, ID: 1, Name: "Design", IsNull: false,
+                                  OutlineLevel: 1, Start: "2026-09-07T08:00:00",
+                                  Finish: "2026-09-07T17:00:00",
+                                  Work: "PT16H0M0S", PercentComplete: 100 }),
+                    new MspTask({ UID: 2, ID: 2, Name: "Build", IsNull: false,
+                                  OutlineLevel: 1, Start: "2026-09-08T08:00:00",
+                                  Finish: "2026-09-10T17:00:00",
+                                  Work: "PT16H0M0S", PercentComplete: 50,
+                                  Deadline: "2026-09-09T08:00:00",
+                                  Critical: true,
+                                  Baselines: [new MspBaseline({
+                                      Number: BASELINE, Finish: "2026-09-09T08:00:00",
+                                      Work: "PT16H0M0S", Cost: 300 })] }),
+                    new MspTask({ UID: 3, ID: 3, Name: "Ship", IsNull: false,
+                                  OutlineLevel: 1, Milestone: true,
+                                  Start: "2026-09-10T17:00:00",
+                                  Finish: "2026-09-10T17:00:00" }),
+                    /* A blank row is structure too, and is left out. */
+                    new MspTask({ UID: 4, ID: 4, IsNull: true }),
+                ],
+                Resources: [
+                    new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                      MaxUnits: 1, StandardRate: 50 }),
+                    new MspResource({ UID: 2, Name: "Bricks", Type: 0,
+                                      MaxUnits: 1, StandardRate: 120 }),
+                ],
+                Assignments: [
+                    new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                        Units: 1, Work: "PT8H0M0S" }),
+                    /* Both of Design's tasks overlap on the Tuesday, so Ana is
+                     * at two units where her maximum is one. */
+                    new MspAssignment({ UID: 2, TaskUID: 2, ResourceUID: 1,
+                                        Units: 1, Work: "PT8H0M0S" }),
+                    new MspAssignment({ UID: 3, TaskUID: 2, ResourceUID: 2,
+                                        Units: 10, Work: "PT0H0M0S" }),
+                ],
+            });
+
+            const s = projectStats(project);
+
+            /* The span: Monday to Friday is five calendar days and four
+             * working ones, and the reading sits on the Wednesday, which is
+             * two working days in and three out -- the Tuesday's holiday is
+             * why. */
+            ok = eq("tasks", s.tasks, 3) && ok;
+            ok = eq("summaries are not tasks", s.summaries, 1) && ok;
+            ok = eq("milestones", s.milestones, 1) && ok;
+            ok = eq("critical", s.critical, 1) && ok;
+            ok = eq("done", s.done, 1) && ok;
+            ok = eq("in progress", s.running, 1) && ok;
+            ok = eq("not started", s.waiting, 1) && ok;
+            /* Weighed by work: 16h at a hundred and 16h at fifty is 75 per
+             * cent, and the milestone with no work weighs nothing at all. */
+            ok = eq("complete", `${Math.round(s.percent * 1000) / 1000}%`, "75%") && ok;
+            ok = eq("calendar days", s.calendarDays, 4) && ok;
+            ok = eq("working days", s.workingDays, 4) && ok;
+            ok = eq("elapsed", s.elapsed, 2) && ok;
+            ok = eq("remaining", s.remaining, 2) && ok;
+            ok = eq("not behind", s.behind, 0) && ok;
+
+            /* The cost: Ana's two assignments at 8h and 50 are 800,
+             * and ten units of brick at 120 are 1200 -- the material is by
+             * units, not by hours. */
+            ok = eq("total cost", s.cost, 2000) && ok;
+            ok = eq("work resources", s.kindWork, 800) && ok;
+            ok = eq("material resources", s.kindMaterial, 1200) && ok;
+            ok = eq("cost resources", s.kindCost, 0) && ok;
+            ok = eq("baseline cost", s.baselineCost, 300) && ok;
+            ok = eq("cost variance", s.cost - s.baselineCost, 1700) && ok;
+            ok = eq("work", s.work, "PT32H0M0S") && ok;
+
+            /* The delay: Build finishes on the Thursday against a Wednesday
+             * deadline and a Wednesday baseline finish -- **one** day late,
+             * because a delay counts the days between and not the day it
+             * landed in as well. */
+            ok = eq("tasks late", s.late.length, 1) && ok;
+            ok = eq("worst slip", s.worstLate, 1) && ok;
+            ok = eq("past deadline", s.lateDeadline, 1) && ok;
+            ok = eq("past baseline", s.lateBaseline, 1) && ok;
+            ok = eq("the late task", s.late[0].Name, "Build") && ok;
+            ok = eq("its promise", s.late[0].Promised,
+                    whenMs("2026-09-09T08:00:00")) && ok;
+            ok = eq("and its finish", s.late[0].Finished,
+                    whenMs("2026-09-10T17:00:00")) && ok;
+            ok = eq("constraints not met", s.notMet, 0) && ok;
+
+            /* Over-allocation is read here as it is in the Peak column and in
+             * the log: two units where the maximum is one. */
+            ok = eq("over-allocated", s.overAllocated, 1) && ok;
+
+            /* A plan the file never scheduled has no dates and no promises:
+             * nothing is late, and no date is invented to say so. */
+            const empty = projectStats(new MspProject({
+                Calendars: [calendar],
+                Tasks: [new MspTask({ UID: 1, ID: 1, Name: "T", IsNull: false })],
+            }));
+            ok = eq("an unscheduled plan has no start", empty.start, null) && ok;
+            ok = eq("and is not behind", empty.behind, 0) && ok;
+            ok = eq("and nothing is late", empty.late.length, 0) && ok;
+
+            print(ok ? "CHECK-OK" : "CHECK-FAILED");
+            Application.Quit(ok ? 0 : 1);
+        } catch (e) {
+            print(`stats ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /*
      * The chart's pointer, headless: the same handlers a drag calls, with the
      * coordinates the chart's own geometry gives, so a moved bar is a moved
      * date and a resize is a duration.
@@ -2317,6 +2481,8 @@ class MainForm extends Form {
                     this.planGeom().scrollY, t.ScrollY) && ok;
             ok = yes("and a row moved off the top of the chart",
                      5 * g5.rowH - this.planGeom().scrollY < 0) && ok;
+
+            t.ScrollY = 0;
 
             /* A branch closed is the next frame's arithmetic too, so it is
              * asked in the next phase. */
@@ -3431,11 +3597,6 @@ class MainForm extends Form {
  * squeezed under a plan is neither readable nor usable. */
 const PANEL_W = 380;
 const MIN_PLAN_W = 420;
-
-/* Which baseline the chart draws, and which "Save baseline" writes. It was a
- * combo in the side panel; the number is the current one, which is zero, and a
- * constant says so where a control used to. */
-const BASELINE = 0;
 
 /*
  * The columns the plan table can show. The name is not here: it is the tree
