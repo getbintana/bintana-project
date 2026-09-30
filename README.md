@@ -50,7 +50,11 @@ the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
 
 **The chart sits beside the table, in the same view, with one scroll between
-them.** The two panes are in a `Split` you can drag, and the chart is drawn in
+them.** The days the project's calendar does not work are shaded behind the
+rows, dependencies are drawn under the bars rather than over them, the heading
+carries a week over a month in a smaller type, and every colour is either the
+theme's own ink or an `rgba()` shade over whatever ground the theme has -- so the
+chart follows a light or a dark theme instead of carrying one of its own. The two panes are in a `Split` you can drag, and the chart is drawn in
 the list's own coordinates: row *i* of the chart is where row *i* of the table
 is, at the height the table's rows are (the theme's, not a constant of this
 program). The list is the only thing that scrolls down -- its scrollbar, the

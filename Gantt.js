@@ -118,11 +118,51 @@ function ganttGeometry(rows, width, height, step, geom) {
     };
 }
 
-/* The two bands of the heading, the way Project reads a timescale: a week over
- * a month, and the day's gridlines falling from the week's edge. A band whose
- * labels would not fit is left out rather than drawn on top of each other --
- * below about six pixels a day a week is unreadable, and a month is the only
- * band that survives. */
+/*
+ * The palette, in one place and named by role. **The ink is the theme's** --
+ * `Painter.Foreground` is the resolved text colour of the widget, which is the
+ * theme's unless a form set one -- and everything that is a *shade* rather than
+ * a colour is an `rgba()` over whatever ground the widget has, so the chart
+ * follows a light or a dark theme and the user's own accent instead of guessing
+ * a background to sit on. What is left is the chart's own palette: two
+ * coherent sets, one per ground, and every colour a frame can draw is here.
+ */
+function ganttPalette(p) {
+    const dark = p.Dark;
+    return {
+        ink:      p.Foreground || (dark ? "#eeeeec" : "#2e3436"),
+        dim:      dark ? "rgba(255,255,255,0.13)" : "rgba(0,0,0,0.12)",
+        faint:    dark ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.06)",
+        head:     dark ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.035)",
+        idle:     dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
+        select:   dark ? "rgba(53,132,228,0.20)" : "rgba(28,113,216,0.13)",
+        bar:      dark ? "#3584e4" : "#1c71d8",
+        late:     dark ? "#e01b24" : "#c01c28",   // critical, as Project reads
+        done:     dark ? "#1a5fb4" : "#0b4ea2",
+        link:     dark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.34)",
+        baseline: dark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.40)",
+        today:    dark ? "#ff6b6b" : "#e01b24",
+    };
+}
+
+/* The type of a ruler is not the type of a list: an axis wants a small one, and
+ * the heading is 25 pixels tall whatever the theme says. **The two bands are
+ * the point of the ruler -- a week over a month -- so the type gives way
+ * before a band does**, down this ladder, and only a heading that cannot hold
+ * two lines of the smallest of them loses the month. */
+const RULER_FONTS = ["Sans 9", "Sans 8", "Sans 7"];
+
+/* What a line of each of those needs, measured: the toolkit answers 19 pixels
+ * for one line of the widget's own 13-point face, and a line of 9 points is
+ * thirteen, of 8 is twelve, of 7 is eleven. Written down rather than asked for
+ * in the loop below, because a painter's font and the measurement of it do not
+ * take effect in the same turn -- the ladder is measured here, once, and the
+ * frame only compares numbers. */
+const RULER_LINE = [13, 12, 11];
+
+/* The bands of the heading, the way Project reads a timescale: a week over a
+ * month, and a day's gridlines falling from the week's edge. A band whose labels
+ * would not fit is left out rather than drawn on top of each other. */
 function ganttTimescaleBands(dayW) {
     const bands = [];
     if (dayW >= 6) bands.push({ step: 7, label: (d) => `${d.getDate()}/${d.getMonth() + 1}` });
@@ -130,6 +170,35 @@ function ganttTimescaleBands(dayW) {
         d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
                            : `${d.getMonth() + 1}` });
     return bands;
+}
+
+/*
+ * The days in the range the project's calendar does not work, as spans of
+ * instants -- the shade behind the rows that makes a chart of a plan read as a
+ * plan and not as a bar chart. It is the *project's* calendar, which is what
+ * Project shades, and it is the file's own: a plan worked Monday to Friday gets
+ * the weekend and nothing else, one worked Saturdays gets those.
+ *
+ * Capped at 2000 days, and the cap is the honest end of it: a file with a task
+ * in 1970 and another in 2100 has a range no ruler could show either, and a
+ * frame is not the place to find out. The grid has the same cap for the same
+ * reason, and the two use the same day boundaries, so a shaded day is always a
+ * ruled day.
+ */
+function ganttIdleDays(range, calendar) {
+    const spans = [];
+    if (!calendar || !range) return spans;
+
+    const dayMs = DAY_MS;
+    let t = Math.floor(range.from / dayMs) * dayMs;
+    let open = null;
+    for (let n = 0; n < 2000 && t <= range.to; n++, t += dayMs) {
+        const idle = calendar.between(t, t + dayMs) <= 0;
+        if (idle && open === null) open = t;
+        if (!idle && open !== null) { spans.push([open, t]); open = null; }
+    }
+    if (open !== null) spans.push([range.to, t]);
+    return spans;
 }
 
 function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
@@ -144,68 +213,86 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         return;
     }
     const range = g.range;
-
-    const dark  = p.Dark;
-    const ink   = dark ? "#eeeeec" : "#2e3436";
-    const grid  = dark ? "#3d3d3d" : "#d6d6d6";
-    const bar   = dark ? "#78aeed" : "#1c71d8";
-    const late  = dark ? "#f66151" : "#c01c28";   // critical, as Project reads
-    const done  = dark ? "#1c71d8" : "#0b4ea2";
-    const link  = dark ? "#9a9996" : "#5e5c64";
-    const today = "#e01b24";
-    const band  = dark ? "#2f2f2f" : "#eaeaea";
-    const head  = dark ? "#353535" : "#f6f5f4";
+    const c = ganttPalette(p);
 
     const plotX = g.plotX, plotW = g.plotW;
     const x = g.x;
     const headH = g.headH, rowH = g.rowH;
     const top = (i) => headH + i * rowH - g.scrollY;      // row i's first pixel
     const cy = (i) => top(i) + rowH / 2;
+    /* A bar is a fraction of the row rather than a constant: the row is the
+     * theme's and a fixed 12 is a third of one theme's row and half of
+     * another's. */
+    const barH = Math.max(6, Math.min(14, Math.round(rowH * 0.38)));
 
     /* By UID, for the dependency elbows and the selection below. */
     const rowOf = {};
     for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
 
     /* The heading: the same band the table's column headings sit in, with the
-     * timescale in it. A frame is drawn at the height the table says it is, so
-     * a taller theme's heading is filled to its edge instead of leaving a gap
-     * the list's rows do not. */
+     * timescale in it, filled to the height the table says it is. It is a shade
+     * and not a colour so that it sits on the theme's own background. */
     if (headH > 0) {
-        p.Color = head;
+        p.Color = c.head;
         p.Rectangle(0, 0, width, headH);
         p.Fill();
     }
 
-    /* The grid and its labels, falling from the heading into the rows. */
+    /* The days that are not worked, behind the rows and behind the heading: the
+     * same shade in both, so a shaded column reads as one column. */
+    p.Color = c.idle;
+    for (const [from, to] of ganttIdleDays(range, geom.calendar)) {
+        const x0 = x(from), x1 = x(to);
+        if (x1 <= plotX || x0 >= width) continue;
+        p.Rectangle(x0, 0, Math.max(x1 - x0, 1), height);
+        p.Fill();
+    }
+
+    /* The timescale. **The type gives way before a band does**, down the ladder
+     * above, and a label that does not fit its own cell is not drawn at all: a
+     * month squeezed into six pixels is four labels on top of each other, which
+     * is what the first ruler did at a narrow timescale. */
     const dayMs = DAY_MS;
     const dayW = g.dayW;
+    const bodyFont = p.Font;
     const bands = ganttTimescaleBands(dayW);
-    const bandH = headH > 0 ? headH / bands.length : 0;
-    p.Color = grid;
-    p.LineWidth = 1;
+    let font = 0;
+    while (font < RULER_FONTS.length - 1 &&
+           bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
+    p.Font = RULER_FONTS[font];
+    while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
+    const bandH = headH > 0 && bands.length ? headH / bands.length : 0;
     const t0 = Math.floor(range.from / dayMs) * dayMs;
-    for (const band of bands) {
-        const y = bandH * (bands.indexOf(band) + 1);
-        p.Color = grid;
-        p.MoveTo(0, y);
+    p.LineWidth = 1;
+
+    for (let b = 0; b < bands.length; b++) {
+        const band = bands[b];
+        const y = bandH * (b + 1);
+        p.Color = c.faint;
+        p.MoveTo(plotX, y);
         p.LineTo(width, y);
         p.Stroke();
+        p.Color = c.dim;
         for (let t = t0, n = 0; t <= range.to; t += band.step * dayMs, n++) {
-            const d = new Date(t);
             if (n > 400) break;   // a corrupt range must not hang the frame
-            if (x(t) > width) continue;
-            p.Color = grid;
-            p.MoveTo(x(t), y);
-            p.LineTo(x(t), headH);
+            const at = x(t);
+            if (at > width) continue;
+            p.MoveTo(at, y);
+            p.LineTo(at, headH);
             p.Stroke();
-            p.Color = ink;
-            p.Text(band.label(d), x(t) + 3, y - bandH + 3);
+            const label = band.label(new Date(t));
+            if (p.TextWidth(label) + 6 <= band.step * dayW) {
+                p.Color = c.ink;
+                p.Text(label, at + 3, y - bandH + 2);
+            }
         }
     }
-    /* One line per step the rows are ruled by, which is a week while a week
-     * fits and whatever else does. */
+    p.Font = bodyFont;
+
+    /* One line per step the rows are ruled by, which is a week while a week fits
+     * and whatever else does. */
     if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
-    p.Color = grid;
+    p.Color = c.dim;
     for (let t = t0, n = 0; t <= range.to; t += step * dayMs, n++) {
         if (n > 400) break;
         p.MoveTo(x(t), headH);
@@ -213,146 +300,22 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Stroke();
     }
 
-    /* The selected row, behind its bar. It is the row the table is highlighting
-     * and it is painted where the table paints it, which is what a chart beside
-     * a list is for. */
+    /* The selected row, behind its bar. It is the row the table is
+     * highlighting and it is painted where the table paints it, which is what a
+     * chart beside a list is for. */
     const selRow = selected === null || selected === undefined
                  ? undefined : rowOf[selected];
     if (selRow !== undefined && top(selRow) < height && top(selRow) + rowH > headH) {
-        p.Color = band;
+        p.Color = c.select;
         p.Rectangle(0, top(selRow), width, rowH);
         p.Fill();
     }
 
-    /* The bars: a summary is a bracket over its dates, a milestone a diamond,
-     * a zero span a tick, the rest a bar with its PercentComplete painted over
-     * in a darker shade. Critical is red and the rest blue, as Project reads
-     * a plan. */
-    for (let i = 0; i < rows.length; i++) {
-        const task = rows[i];
-        const colour = task.Critical ? late : bar;
-        const s = whenMs(task.Start), f = whenMs(task.Finish);
-        const first = top(i);
-        const y = first + (rowH - BAR_H) / 2;
-
-        /* A row that is off the pane draws nothing: the list scrolls and this
-         * is the same scroll, so a plan of two thousand tasks is not a frame of
-         * two thousand bars clipped to the ones that fit. */
-        if (first + rowH <= headH || first >= height) continue;
-
-        /* The name, only where there is a gutter to hold it -- which is a chart
-         * that travels on its own, since the file of an export has no list. */
-        if (plotX >= 120) {
-            p.Push();
-            p.ClipRectangle(0, 0, plotX - 8, height);
-            p.Color = ink;
-            p.Text(task.Milestone ? `◆ ${task.Name}` : task.Name, 8, first + 4);
-            p.Pop();
-        }
-
-        if (s === null || f === null) continue;
-        const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
-
-        /* A deadline the task is past, marked where it was promised: the
-         * little red arrow Project draws over the bar. */
-        const deadline = whenMs(task.Deadline);
-        if (deadline !== null && deadline < f) {
-            p.Color = late;
-            p.Polygon([x(deadline), y - 2, x(deadline) + 5, y - 9,
-                       x(deadline) - 5, y - 9]);
-            p.Fill();
-        }
-
-        /* The baseline the view asked for, when the file carries it: a thin
-         * gray bar under the task's own, which is what Project shows a slip
-         * against. */
-        const kept = baselineOf(task, baseline || 0);
-        if (kept) {
-            const bs = whenMs(kept.Start), bf = whenMs(kept.Finish);
-            if (bs !== null && bf !== null) {
-                const gx0 = x(Math.min(bs, bf)), gx1 = x(Math.max(bs, bf));
-                p.Color = link;
-                p.Rectangle(gx0, y + BAR_H + 1, Math.max(gx1 - gx0, 2), 3);
-                p.Fill();
-            }
-        }
-
-        if (task.Summary) {
-            const top = y + 2;
-            p.Color = colour;
-            p.LineWidth = 2;
-            p.Polyline([x0, top, x0, top + 8, x1, top + 8, x1, top]);
-            p.Stroke();
-            p.LineWidth = 1;
-            continue;
-        }
-        if (task.Milestone) {
-            const cx = x(s), midY = cy(i), r = 7;
-            p.Color = colour;
-            p.Polygon([cx, midY - r, cx + r, midY, cx, midY + r, cx - r, midY]);
-            p.Fill();
-            continue;
-        }
-        if (x1 - x0 < 2) {
-            p.Color = colour;
-            p.LineWidth = 3;
-            p.MoveTo(x0, y);
-            p.LineTo(x0, y + BAR_H);
-            p.Stroke();
-            p.LineWidth = 1;
-            continue;
-        }
-        p.Color = colour;
-        p.Rectangle(x0, y, x1 - x0, BAR_H);
-        p.Fill();
-        /* The progress is a thinner band inside the bar, not a repaint of it:
-         * at 100% a critical task is still visibly critical. */
-        if (task.PercentComplete > 0) {
-            const band = 4, by = y + (BAR_H - band) / 2;
-            p.Color = done;
-            p.Rectangle(x0, by, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
-            p.Fill();
-        }
-
-        /* What the pointer is doing: an outline where the bar would land. The
-         * model is not touched until the button is let go, so this is the
-         * whole of the feedback and the whole of the undo. */
-        if (drag && drag.uid === task.UID && drag.mode !== "link") {
-            const px0 = x(Math.min(drag.start, drag.finish));
-            const px1 = x(Math.max(drag.start, drag.finish));
-            p.Color = ink;
-            p.LineWidth = 2;
-            p.Rectangle(px0, y - 2, Math.max(px1 - px0, 2), BAR_H + 4);
-            p.Stroke();
-            p.LineWidth = 1;
-        }
-    }
-
-    /* A dependency being drawn: an elbow from the dragged bar to the pointer,
-     * and the row it would land on outlined. */
-    if (drag && drag.mode === "link") {
-        const from = rowOf[drag.uid];
-        if (from !== undefined) {
-            const f = whenMs(rows[from].Finish);
-            if (f !== null) {
-                p.Color = link;
-                p.LineWidth = 2;
-                p.Polyline([x(f), cy(from), drag.px, cy(from), drag.px, drag.py]);
-                p.Stroke();
-                p.LineWidth = 1;
-            }
-        }
-        if (drag.to !== null && drag.to !== undefined &&
-            rowOf[drag.to] !== undefined) {
-            p.Color = ink;
-            p.Rectangle(plotX, top(rowOf[drag.to]), width - plotX, rowH);
-            p.Stroke();
-        }
-    }
-
-    /* Dependencies as elbows: out of the predecessor's end, down/across,
-     * into the successor's start. One shape for every link type in cut 1. */
-    p.Color = link;
+    /* Dependencies as elbows: out of the predecessor's end, down/across, into
+     * the successor's start. **Under the bars and not over them** -- an elbow
+     * crossing a bar is the one thing that made a dense plan unreadable, and
+     * Project draws its arrows the same way round. */
+    p.Color = c.link;
     p.LineWidth = 1;
     for (let i = 0; i < rows.length; i++) {
         const task = rows[i];
@@ -370,10 +333,139 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         }
     }
 
-    /* Today, when it is on the chart. Dashed, so it reads as a ruler. */
+    /* The bars: a summary is a bracket over its dates, a milestone a diamond, a
+     * zero span a tick, the rest a bar with its PercentComplete painted over in
+     * a darker shade. Critical is red and the rest blue, as Project reads a
+     * plan. */
+    for (let i = 0; i < rows.length; i++) {
+        const task = rows[i];
+        const colour = task.Critical ? c.late : c.bar;
+        const s = whenMs(task.Start), f = whenMs(task.Finish);
+        const first = top(i);
+        const y = first + (rowH - barH) / 2;
+
+        /* A row that is off the pane draws nothing: the list scrolls and this
+         * is the same scroll, so a plan of two thousand tasks is not a frame of
+         * two thousand bars clipped to the ones that fit. */
+        if (first + rowH <= headH || first >= height) continue;
+
+        /* The name, only where there is a gutter to hold it -- which is a chart
+         * that travels on its own, since the file of an export has no list. */
+        if (plotX >= 120) {
+            p.Push();
+            p.ClipRectangle(0, 0, plotX - 8, height);
+            p.Color = c.ink;
+            p.Text(task.Milestone ? `◆ ${task.Name}` : task.Name, 8, first + 4);
+            p.Pop();
+        }
+
+        if (s === null || f === null) continue;
+        const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
+
+        /* The baseline the view asked for, when the file carries it: a thin bar
+         * under the task's own, which is what a slip is read against. */
+        const kept = baselineOf(task, baseline || 0);
+        if (kept) {
+            const bs = whenMs(kept.Start), bf = whenMs(kept.Finish);
+            if (bs !== null && bf !== null) {
+                const gx0 = x(Math.min(bs, bf)), gx1 = x(Math.max(bs, bf));
+                p.Color = c.baseline;
+                p.Rectangle(gx0, y + barH + 1, Math.max(gx1 - gx0, 2), 2);
+                p.Fill();
+            }
+        }
+
+        /* A deadline the task is past, marked where it was promised: the little
+         * red arrow Project draws over the bar. */
+        const deadline = whenMs(task.Deadline);
+        if (deadline !== null && deadline < f) {
+            p.Color = c.late;
+            const arrow = Math.max(5, barH * 0.55);
+            p.Polygon([x(deadline), y - 1, x(deadline) + arrow / 2, y - 1 - arrow,
+                       x(deadline) - arrow / 2, y - 1 - arrow]);
+            p.Fill();
+        }
+
+        if (task.Summary) {
+            const cap = y + 1, drop = Math.max(5, barH * 0.7);
+            p.Color = colour;
+            p.LineWidth = 2;
+            p.Polyline([x0, cap, x0, cap + drop, x1, cap + drop, x1, cap]);
+            p.Stroke();
+            p.LineWidth = 1;
+            continue;
+        }
+        if (task.Milestone) {
+            const cx = x(s), midY = cy(i), r = Math.max(5, Math.round(barH * 0.62));
+            p.Color = colour;
+            p.Polygon([cx, midY - r, cx + r, midY, cx, midY + r, cx - r, midY]);
+            p.Fill();
+            continue;
+        }
+        if (x1 - x0 < 2) {
+            p.Color = colour;
+            p.LineWidth = 3;
+            p.MoveTo(x0, y);
+            p.LineTo(x0, y + barH);
+            p.Stroke();
+            p.LineWidth = 1;
+            continue;
+        }
+        p.Color = colour;
+        p.Rectangle(x0, y, x1 - x0, barH);
+        p.Fill();
+        /* The progress is a thinner band inside the bar, not a repaint of it: at
+         * 100% a critical task is still visibly critical. */
+        if (task.PercentComplete > 0) {
+            const band = Math.max(2, Math.round(barH * 0.34));
+            p.Color = c.done;
+            p.Rectangle(x0, y + (barH - band) / 2,
+                        (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
+            p.Fill();
+        }
+
+        /* What the pointer is doing: an outline where the bar would land. The
+         * model is not touched until the button is let go, so this is the whole
+         * of the feedback and the whole of the undo. */
+        if (drag && drag.uid === task.UID && drag.mode !== "link") {
+            const px0 = x(Math.min(drag.start, drag.finish));
+            const px1 = x(Math.max(drag.start, drag.finish));
+            p.Color = c.ink;
+            p.LineWidth = 2;
+            p.Rectangle(px0, y - 2, Math.max(px1 - px0, 2), barH + 4);
+            p.Stroke();
+            p.LineWidth = 1;
+        }
+    }
+
+    /* A dependency being drawn: an elbow from the dragged bar to the pointer,
+     * and the row it would land on outlined. */
+    if (drag && drag.mode === "link") {
+        const from = rowOf[drag.uid];
+        if (from !== undefined) {
+            const f = whenMs(rows[from].Finish);
+            if (f !== null) {
+                p.Color = c.link;
+                p.LineWidth = 2;
+                p.Polyline([x(f), cy(from), drag.px, cy(from), drag.px, drag.py]);
+                p.Stroke();
+                p.LineWidth = 1;
+            }
+        }
+        if (drag.to !== null && drag.to !== undefined &&
+            rowOf[drag.to] !== undefined) {
+            p.Color = c.ink;
+            p.Rectangle(plotX, top(rowOf[drag.to]), width - plotX, rowH);
+            p.Stroke();
+        }
+    }
+
+    /* Today, when it is on the chart. Dashed, so it reads as a ruler rather than
+     * as a task. */
     const now = new Date().getTime();
     if (now >= range.from && now <= range.to) {
-        p.Color = today;
+        p.Color = c.today;
+        p.LineWidth = 1;
         p.LineDash = [4, 3];
         p.MoveTo(x(now), 0);
         p.LineTo(x(now), height);

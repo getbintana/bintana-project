@@ -222,6 +222,17 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   cache: un comando reemplaza los registros de tarea (el Deshacer lo hace) y una
   lista cacheada dibujaba el plan de antes de la edición, que es lo que
   `check-drag` vio cuando el redimensionado dejó de mover nada.
+- **Los estilos del gráfico** (2026-09-29): la paleta pasa a estar en un lugar
+  y con nombre de rol, la tinta es la del texto del tema (`Painter.Foreground`,
+  que viene resuelta) y todo lo que es sombra es `rgba()` sobre el fondo que
+  haya. Los **días que no se trabaja quedan sombreados** con el calendario del
+  proyecto -- el propio archivo, no una regla fija de lunes a viernes --, los
+  **vínculos van debajo de las barras**, la altura de la barra es una fracción
+  de la fila (que es del tema) y no una constante, y la regla lleva **semanas
+  arriba de meses** con el tipo bajando de 9 a 7 puntos antes de que se caiga una
+  banda. Un painter que **escribe en vez de dibujar** (`CallLog`) es lo que hace
+  afirmable todo esto: el orden en que se dibuja es parte del estilo y el dump de
+  un frame real no lo dice.
 - `RowHeight` se corrigió apenas se usó, y por una app: dividía `upper` por las
   filas, y `upper` es `max(contenido, página)` -- un plan que **entra** en la
   ventana dividía el viewport entero y contestaba 102 para una fila de 36. Es

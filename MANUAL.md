@@ -190,6 +190,17 @@ Muestra las tareas en orden de archivo, con los resúmenes como corchetes, las
 críticas en rojo y el avance como banda dentro de la barra. La fila
 seleccionada se resalta, en las dos panes.
 
+**Los días que no se trabaja quedan sombreados**, y el que se sombrea es el del
+calendario del proyecto: una plan que trabaja de lunes a viernes tiene sombreado
+el fin de semana y nada más. **La regla lleva semanas arriba de meses** (la
+banda del mes se cae sola si el encabezado no da para dos líneas de letra chica,
+y la letra baja de 9 a 8 y a 7 puntos antes de que se caiga una banda). Los
+vínculos se dibujan **debajo** de las barras, que es como los dibuja Project y
+lo que hace legible un plan apretado. Los colores vienen del tema: la tinta es
+la del texto del tema y lo que es sombreado es una capa `rgba()` sobre el fondo
+que haya, así que el gráfico sigue a un tema claro o oscuro sin adivinar un
+fondo.
+
 - **Clic** selecciona; **arrastrar** una barra mueve la tarea; arrastrar su
   **extremo** la estira (la duración sale del tiempo laborable del calendario
   de la tarea); **Ctrl + arrastrar** dibuja un vínculo del tipo elegido en

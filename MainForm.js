@@ -314,6 +314,10 @@ class MainForm extends Form {
         const project = this.holder.project;
         this.byUID = {};
         this.selectedUID = null;
+        /* The calendar the chart shades its idle days with: the project's own,
+         * which is what Project shades. Built here because a calendar is of the
+         * plan, and a plan that changed is one that was filled. */
+        this.chartCal = new WorkCalendar(project, -1);
 
         this.Tasks.Clear();
         const stack = [];
@@ -978,7 +982,7 @@ class MainForm extends Form {
      * the gutter comes back only for a chart that travels on its own. */
     planGeom() {
         return { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
-                 scrollY: this.ganttY || 0 };
+                 scrollY: this.ganttY || 0, calendar: this.chartCal || null };
     }
 
     /* Which task, and which part of its bar, is under the pointer. */
@@ -1142,7 +1146,8 @@ class MainForm extends Form {
      * the names in a gutter -- a file has no list beside it to carry them. */
     fileGeom() {
         return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
-                 scrollY: 0, rows: this.chartRows().length };
+                 scrollY: 0, rows: this.chartRows().length,
+                 calendar: this.chartCal || null };
     }
 
     fileHeight() {
@@ -2385,6 +2390,79 @@ class MainForm extends Form {
     }
 
     /*
+     * The style, with a painter that records. Two claims that need a plan with
+     * a weekend in it, which the four-task fixtures are not: **the shade of a
+     * day the calendar does not work is drawn, and it is drawn where the
+     * calendar says**, under the row that is chosen and under everything else.
+     */
+    viewStyle() {
+        let ok = true;
+        const rows = this.chartRows();
+        const log = this.checkGanttStyle(new CallLog(), 900, 320, rows,
+                                        { plotX: PAD, rowH: this.rowHeight(),
+                                          headH: this.headHeight() });
+        const pal = ganttPalette(log);
+        const geom = {
+            plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+            scrollY: 0, calendar: this.chartCal,
+        };
+        const g = ganttGeometry(rows, 900, 320, 0, geom);
+        const spans = ganttIdleDays(g.range, this.chartCal);
+        const drawn = log.calls.filter((c) => c.name === "Rectangle" &&
+                                            c.color === pal.idle);
+
+        ok = this.styleYes("the plan has a day that is not worked",
+                           spans.length > 0, `${spans.length} spans`) && ok;
+        const one = spans[spans.length - 1];
+        const x0 = g.x(one[0]), x1 = g.x(one[1]);
+        const covers = drawn.some((c) => c.args[0] <= x0 + 1 &&
+                                         c.args[0] + c.args[2] >= x1 - 1);
+        ok = this.styleYes("and it is shaded where the calendar puts it", covers,
+                           `${drawn.length} bands, ${Math.round(x0)}..${Math.round(x1)}`) && ok;
+
+        const bar = log.firstOf("Rectangle", pal.bar);
+        const idle = log.firstOf("Rectangle", pal.idle);
+        const select = log.firstOf("Rectangle", pal.select);
+        ok = this.styleYes("the shade is under the row that is chosen",
+                           idle >= 0 && select >= 0 && idle < select && select < bar,
+                           `idle ${idle}, select ${select}, bar ${bar}`) && ok;
+
+        /* And here, where the plan has forty-four links, the elbow is a real
+         * one and its place under the bars is asserted rather than skipped. */
+        const link = log.firstOf("Polyline", pal.link);
+        ok = this.styleYes("with a dependency under the bars and not over them",
+                           link >= 0 && link < bar, `link ${link}, bar ${bar}`) && ok;
+
+        /* The ruler is a week over a month, which is what was asked for: the two
+         * bands are two label sets in the ruler's own (smaller) type, and they
+         * are told apart by their shape -- the week carries a slash, the month
+         * does not. Both are visible here because the frame is wide enough for
+         * the type to give way rather than a band to go. */
+        const ruler = log.calls.filter((c) => c.name === "Text" &&
+                                            c.font !== log.Font);
+        const week = ruler.filter((c) => String(c.args[0]).indexOf("/") >= 0);
+        const month = ruler.filter((c) => String(c.args[0]).indexOf("/") < 0);
+        ok = this.styleYes("the ruler carries a week over a month",
+                           ruler.length > 0 && week.length > 0 && month.length > 0,
+                           `${week.length} weeks, ${month.length} months, ` +
+                           `type ${ruler.length ? ruler[0].font : "-"}`) && ok;
+
+        /* A label that does not fit its cell is not drawn: a month squeezed into
+         * six pixels is four labels on top of each other. The same frame 80
+         * pixels narrower is asked for a second time, and it must say less. */
+        const roomy = log.texts().length;
+        const log2 = new CallLog();
+        drawGantt(log2, 90, 320, rows, rows.length ? rows[0].UID : null, 0,
+                  null, 0, { plotX: PAD, rowH: this.rowHeight(),
+                             headH: this.headHeight(),
+                             calendar: this.chartCal });
+        ok = this.styleYes("a timescale too narrow to label says less of it",
+                           log2.texts().length < roomy,
+                           `${roomy} labels, ${log2.texts().length} in 90px`) && ok;
+        this.viewStyleOk = ok;
+    }
+
+    /*
      * Who takes the room when the window grows. A plan is read in a table of a
      * sensible width and a chart as wide as the timescale needs, and a panel of
      * properties is a form, not a space: so the *chart* is the elastic one and
@@ -2402,6 +2480,10 @@ class MainForm extends Form {
      */
     viewGrow(eq, yes, ok) {
         const width = (c) => c.Bounds(this.Body).Width;
+        /* The style, with a painter that records: the two claims that need a
+         * plan with a weekend in it, which the four-task fixtures are not. */
+        this.viewStyle();
+        ok = this.viewStyleOk && ok;
 
         /* **The chart is floored, not sized.** `Auto` asks for no floor and the
          * chart is the pane's own width; a scale asks for the timescale's width
@@ -3054,6 +3136,49 @@ class MainForm extends Form {
      * names a chart carries on its own -- which is the promise of a picture --
      * and the pane's own geometry is what `checkView` measures.
      */
+    /*
+     * The chart's style, asserted with a painter that writes down instead of
+     * drawing. **A frame is not a picture of a test**: what the dump of a real
+     * draw can say is that some calls happened, while the order things are drawn
+     * in is part of the style -- an elbow under a bar and the same elbow over it
+     * draw exactly the same calls -- and only a recording says which came first.
+     * So this is a painter with the same verbs that remembers, and every
+     * assertion below is about a call, a colour or an order.
+     */
+    checkGanttStyle(log, w, h, rows, geom, selected) {
+        const g = geom || {};
+        /* The calendar is the plan's own, as the pane's geometry carries it.
+         * Spelled out rather than merged: `Object.assign` is not in this
+         * language, and the runtime's working notes say so twice. */
+        drawGantt(log, w, h, rows,
+                  selected !== undefined ? selected
+                          : (rows.length ? rows[0].UID : null),
+                  0, null, 0, {
+            plotX: g.plotX !== undefined ? g.plotX : PAD,
+            rowH:  g.rowH  !== undefined ? g.rowH  : 36,
+            headH: g.headH !== undefined ? g.headH : 25,
+            scrollY: g.scrollY || 0,
+            calendar: g.calendar || new WorkCalendar(this.holder.project, -1),
+        });
+        return log;
+    }
+
+    /* One assertion about the frame: what it drew, in what colour, and in what
+     * order. */
+    styleEq(what, got, want) {
+        const same = got === want;
+        print(`style ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+              `${same ? "ok" : "FAILED"}`);
+        return same;
+    }
+
+    styleYes(what, cond, got) {
+        const same = !!cond;
+        print(`style ${what}: ${got === undefined ? "" : got} ` +
+              `${same ? "ok" : "FAILED"}`);
+        return same;
+    }
+
     checkGantt() {
         const png  = File.Join(Environment.TempDirectory, "bintana-project-gantt.png");
         this.saveChart(png, false);
@@ -3088,13 +3213,38 @@ class MainForm extends Form {
             scale = scale && this.Gantt.MinWidth === 0;
         }
 
+        /* The style, with a painter that records: the palette and the order.
+         * Neither depends on the plan, so they are asked of every fixture. The
+         * two that do -- a day the calendar does not work, and the row that is
+         * chosen -- are asked where there is one: `check-view`'s plan. */
+        const style = this.checkGanttStyle(new CallLog(), 900, 320,
+                                           this.chartRows(),
+                                           { plotX: PAD, rowH: 36, headH: 25 });
+        const ink = this.styleEq("the ink is the theme's own",
+                                 style.hasColor(style.Foreground), true);
+        const pal = ganttPalette(style);
+        const bar  = style.firstOf("Rectangle", pal.bar);
+        const link = style.firstOf("Polyline", pal.link);
+        /* A plan with no dependency has no elbow to place, and saying so is
+         * better than a claim that passes because it had nothing to look at:
+         * the fixture that does have links is asked in `check-view`, which is a
+         * plan of forty tasks and forty-four of them. */
+        const elbow = this.chartRows().some((t) => t.Links.length > 0);
+        const under = elbow
+            ? this.styleYes("and a dependency is drawn under the bars",
+                            link >= 0 && bar >= 0 && link < bar,
+                            `link ${link}, bar ${bar}`)
+            : this.styleYes("a plan with no links draws no elbow", link < 0,
+                            `bar ${bar}`);
+
         print(`gantt ${File.Name(this.path)} png=${info ? info.Size : -1} ` +
               `pdf=${pinfo ? pinfo.Size : -1} ` +
               `calls=${calls} names=${names ? "yes" : "no"} ` +
               `scale=${scale ? "ok" : "FAILED"}`);
         if (Application.Arguments.indexOf("dump-gantt") >= 0) print(dump);
         return info && info.Size > 0 && pinfo && pinfo.Size > 0 &&
-               calls > 10 && names && scale;
+               calls > 10 && names && scale &&
+               ink && under;
     }
 }
 
@@ -3109,6 +3259,78 @@ const MIN_PLAN_W = 420;
  * and never goes. `Width` 0 is the elastic one, and the order is the order
  * they are offered and drawn in.
  */
+/*
+ * A painter with the same verbs that writes down instead of drawing. It is what
+ * makes the chart's style assertable: the *order* the calls come in is part of
+ * the style and a real frame's dump cannot say it, while this can.
+ *
+ * It answers the three questions a drawing asks of its painter honestly rather
+ * than conveniently: the ink it was given is the text colour it reports, its
+ * text is measured in fixed cells (six pixels a character, a line for the rest)
+ * so a fit test has something to be right about, and a colour it is given is
+ * the one it keeps -- `Painter.Color` reads back the string it was set to, so a
+ * palette that reaches for `var(--accent)` and does not get it fails here rather
+ * than in a frame.
+ */
+class CallLog {
+    calls = [];
+    Dark = false;
+    Foreground = "rgb(46,52,54)";
+    Font = "Sans 13.333px";
+    LineWidth = 1;
+    LineDash = [];
+    LineCap = "Butt";
+    LineJoin = "Miter";
+    Antialias = true;
+    Color = "#000000";
+
+    note(name, args) {
+        this.calls.push({ name, args, color: this.Color, font: this.Font });
+    }
+
+    Rectangle(...a)  { this.note("Rectangle", a); }
+    MoveTo(...a)     { this.note("MoveTo", a); }
+    LineTo(...a)     { this.note("LineTo", a); }
+    Text(text, x, y) { this.note("Text", [text, x, y]); }
+    Polyline(pts)   { this.note("Polyline", pts); }
+    Polygon(pts)    { this.note("Polygon", pts); }
+    Fill()           { this.note("Fill", []); }
+    Stroke()         { this.note("Stroke", []); }
+    Clip()           { this.note("Clip", []); }
+    ClosePath()      { this.note("ClosePath", []); }
+    Push()           { this.note("Push", []); }
+    Pop()            { this.note("Pop", []); }
+    ClipRectangle(...a) { this.note("ClipRectangle", a); }
+
+    TextWidth(text)  { return String(text).length * 6; }
+    TextHeight()     { return 12; }
+
+    /* Where the first call of a kind was drawn in a given colour, `-1` for
+     * never: the order of two things is two numbers compared. */
+    firstOf(name, color) {
+        for (let i = 0; i < this.calls.length; i++) {
+            const call = this.calls[i];
+            if (call.name === name && call.color === color) return i;
+        }
+        return -1;
+    }
+
+    countOf(name, color) {
+        let n = 0;
+        for (const call of this.calls)
+            if (call.name === name && call.color === color) n++;
+        return n;
+    }
+
+    hasColor(color) {
+        for (const call of this.calls) if (call.color === color) return true;
+        return false;
+    }
+
+    /* The texts it drew, in order. */
+    texts() { return this.calls.filter((c) => c.name === "Text").map((c) => c.args[0]); }
+}
+
 const COLUMNS = [
     { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right" },
     { id: "start",      Text: "Start",            Width: 130 },
