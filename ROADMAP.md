@@ -235,8 +235,20 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   mínimo de 34 px, porque **el encabezado no sigue la tipografía de la lista**
   (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
   36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin
-  encoger la letra ni perder el mes, y un filete bajo las dos las lee como una
-  sola franja.
+  encoger la letra ni perder el mes.
+- **El encabezado del gráfico es un control** (2026-09-30): una franja con la
+  clase `button` -- la que el tema pinta para un encabezado, y la que el
+  encabezado de una `ColumnView` lleva puesta, porque es un `Box` -- sobre el
+  gráfico, con la regla dibujada encima. Antes la banda era dibujada dentro del
+  propio gráfico: se veía parecida y no era lo mismo, porque dos Pintores
+  pueden apartarse y un control y un control no. La franja toma su alto del
+  encabezado de la lista y, si el tema la da más alta, es la lista la que se
+  avisa (`HeaderMinHeight`), así que las dos cabeceras concuerdan sea cual sea
+  el mayor. Y el alto se pide **en el `Draw` de la franja**: un pedido de tamaño
+  durante el allocate es un pedido para el siguiente, y como el pane no cambia de
+  tamaño nadie lo pedía (medido: se pedían 34 y se recibían 24). Con la franja,
+  el gráfico ya no lleva encabezado: sus filas arrancan en el borde de su pane y
+  quedan a la altura de las de la lista por construcción y no por acuerdo.
 - **Los estilos del gráfico** (2026-09-29): la paleta pasa a estar en un lugar
   y con nombre de rol, la tinta es la del texto del tema (`Painter.Foreground`,
   que viene resuelta) y todo lo que es sombra es `rgba()` sobre el fondo que

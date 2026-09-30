@@ -207,6 +207,80 @@ function ganttIdleDays(range, calendar) {
     return spans;
 }
 
+/*
+ * The timescale, in the band the table's column headings occupy.
+ *
+ * **On screen that band is a control**, the strip above the chart, which wears
+ * the `button` class -- the class a theme paints a header with, and the one a
+ * column view's own heading is (it is a box, classed `button`, and this is the
+ * theme's look for it). So the two headings are the same kind of thing rather
+ * than one real and one drawn, and they cannot drift: same class, same height.
+ * `strip` says the band is painted for us and only the marks are ours to draw.
+ *
+ * Where there is no strip -- a file, which carries its ruler in its own frame --
+ * the band is drawn here as a shade over the ground, so it sits on the theme's
+ * rather than guessing one.
+ */
+function drawGanttRuler(p, width, g, c) {
+    const headH = g.headH;
+    if (!(headH > 0)) return;
+    /* The range is the geometry's, or the rows' own -- a file's frame carries
+     * the one, a strip's the other, and both come from the same call. */
+    const range = g.range || ganttRange(g.rows);
+    const dayMs = DAY_MS;
+    const dayW = g.dayW;
+
+    if (!g.strip) {
+        p.Color = c.head;
+        p.Rectangle(0, 0, width, headH);
+        p.Fill();
+        p.Color = c.dim;
+        p.LineWidth = 1;
+        p.MoveTo(0, headH - 0.5);
+        p.LineTo(width, headH - 0.5);
+        p.Stroke();
+    }
+
+    /* **The type gives way before a band does**, down the ladder above, and a
+     * label that does not fit its own cell is not drawn at all: a month squeezed
+     * into six pixels is four labels on top of each other, which is what the
+     * first ruler did at a narrow timescale. */
+    const bodyFont = p.Font;
+    const bands = ganttTimescaleBands(dayW);
+    let font = 0;
+    while (font < RULER_FONTS.length - 1 &&
+           bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
+    p.Font = RULER_FONTS[font];
+    while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
+    const bandH = bands.length ? headH / bands.length : 0;
+    const t0 = Math.floor(range.from / dayMs) * dayMs;
+    p.LineWidth = 1;
+
+    for (let b = 0; b < bands.length; b++) {
+        const band = bands[b];
+        const y = bandH * (b + 1);
+        p.Color = c.faint;
+        p.MoveTo(g.plotX, y);
+        p.LineTo(width, y);
+        p.Stroke();
+        p.Color = c.dim;
+        for (let t = t0, n = 0; t <= range.to; t += band.step * dayMs, n++) {
+            if (n > 400) break;   // a corrupt range must not hang the frame
+            const at = g.x(t);
+            if (at > width) continue;
+            p.MoveTo(at, y);
+            p.LineTo(at, headH);
+            p.Stroke();
+            const label = band.label(new Date(t));
+            if (p.TextWidth(label) + 6 <= band.step * dayW) {
+                p.Color = c.ink;
+                p.Text(label, at + 3, y - bandH + 2);
+            }
+        }
+    }
+    p.Font = bodyFont;
+}
+
 function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
     const g = ganttGeometry(rows, width, height, step, geom);
     rows = g.rows;
@@ -270,16 +344,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * A tinted band that stops without an edge looks like two panels; a rule
      * under both is the one thing that says they are a header, and it is the
      * rule GTK draws under a column view's own. */
-    if (headH > 0) {
-        p.Color = c.head;
-        p.Rectangle(0, 0, width, headH);
-        p.Fill();
-        p.Color = c.dim;
-        p.LineWidth = 1;
-        p.MoveTo(0, headH - 0.5);
-        p.LineTo(width, headH - 0.5);
-        p.Stroke();
-    }
+    if (headH > 0) drawGanttRuler(p, width, g, c);
 
     /* The days that are not worked, behind the rows and behind the heading: the
      * same shade in both, so a shaded column reads as one column. */
@@ -291,50 +356,11 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Fill();
     }
 
-    /* The timescale. **The type gives way before a band does**, down the ladder
-     * above, and a label that does not fit its own cell is not drawn at all: a
-     * month squeezed into six pixels is four labels on top of each other, which
-     * is what the first ruler did at a narrow timescale. */
-    const dayMs = DAY_MS;
-    const dayW = g.dayW;
-    const bodyFont = p.Font;
-    const bands = ganttTimescaleBands(dayW);
-    let font = 0;
-    while (font < RULER_FONTS.length - 1 &&
-           bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
-    p.Font = RULER_FONTS[font];
-    while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
-    const bandH = headH > 0 && bands.length ? headH / bands.length : 0;
-    const t0 = Math.floor(range.from / dayMs) * dayMs;
-    p.LineWidth = 1;
-
-    for (let b = 0; b < bands.length; b++) {
-        const band = bands[b];
-        const y = bandH * (b + 1);
-        p.Color = c.faint;
-        p.MoveTo(plotX, y);
-        p.LineTo(width, y);
-        p.Stroke();
-        p.Color = c.dim;
-        for (let t = t0, n = 0; t <= range.to; t += band.step * dayMs, n++) {
-            if (n > 400) break;   // a corrupt range must not hang the frame
-            const at = x(t);
-            if (at > width) continue;
-            p.MoveTo(at, y);
-            p.LineTo(at, headH);
-            p.Stroke();
-            const label = band.label(new Date(t));
-            if (p.TextWidth(label) + 6 <= band.step * dayW) {
-                p.Color = c.ink;
-                p.Text(label, at + 3, y - bandH + 2);
-            }
-        }
-    }
-    p.Font = bodyFont;
-
     /* One line per step the rows are ruled by, which is a week while a week fits
      * and whatever else does. */
-    if (!step) step = dayW >= 16 ? 1 : dayW >= 6 ? 7 : 30;
+    const dayMs = DAY_MS;
+    const t0 = Math.floor(range.from / dayMs) * dayMs;
+    if (!step) step = g.dayW >= 16 ? 1 : g.dayW >= 6 ? 7 : 30;
     p.Color = c.dim;
     for (let t = t0, n = 0; t <= range.to; t += step * dayMs, n++) {
         if (n > 400) break;

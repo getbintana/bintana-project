@@ -190,8 +190,12 @@ divisor que se arrastra, la fila *i* del gráfico es donde está la fila *i* de 
 tabla -- a la altura que tengan las filas, que es la del tema y no una constante
 de la app -- y **la lista es la única que baja**: su barra, la rueda sobre
 cualquiera de las dos y el teclado mueven las dos. El scroller del gráfico es
-horizontal, porque lo que no entra en un gráfico es la escala de tiempo. En la
-banda del encabezado van las **semanas arriba de los meses**.
+horizontal, porque lo que no entra en un gráfico es la escala de tiempo. La banda del
+encabezado del gráfico es **un control propio**, una franja con la clase `button`
+del tema -- la misma clase que lleva el encabezado de la lista -- y del alto que
+tiene ese encabezado: por eso las dos cabeceras se leen como una sola y las
+filas empiezan en la misma línea a los dos lados del divisor. En la banda van las
+**semanas arriba de los meses**.
 
 Muestra las tareas en orden de archivo, con los resúmenes como corchetes, las
 críticas en rojo y el avance como banda dentro de la barra. La fila
@@ -202,7 +206,10 @@ calendario del proyecto: una plan que trabaja de lunes a viernes tiene sombreado
 el fin de semana y nada más. **La regla lleva semanas arriba de meses**, y las dos bandas entran
 porque el encabezado de la lista tiene un alto propio de 34 px: sin ese alto,
 dos líneas de letra de regla en 25 px obligaban a letra de 7 puntos o a perder
-el mes. Los
+el mes. Ese alto lo fija la lista y la franja del gráfico lo sigue, con un alto
+declarado en el `Draw` de la franja: **un pedido de tamaño hecho durante el
+allocate es un pedido para el siguiente**, y como el pane no cambia de tamaño
+nadie lo pedía -- medido, se pedían 34 y se recibían 24. Los
 vínculos se dibujan **debajo** de las barras, que es como los dibuja Project y
 lo que hace legible un plan apretado. Los colores vienen del tema: la tinta es
 la del texto del tema y lo que es sombreado es una capa `rgba()` sobre el fondo

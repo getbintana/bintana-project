@@ -928,7 +928,7 @@ class MainForm extends Form {
         const key = this.Tasks.Key;
         this.selectedUID = key === "" ? null : Number(key);
         this.showTask(this.selectedTask());
-        this.Gantt.Redraw();
+        this.redrawChart();
     }
 
     /* Ctrl+F: the filter field takes the keyboard. */
@@ -980,9 +980,21 @@ class MainForm extends Form {
      * `head + i * row - scroll`, which is where the table draws it. The plot
      * starts at the pane's edge -- the names are in the list beside it -- and
      * the gutter comes back only for a chart that travels on its own. */
+    /* The chart's own frame: **no heading**, because the heading is a control
+     * above it (`Header`) and the rows start at the top of the pane -- one row's
+     * height lower than before, and so level with the list's first row, which
+     * starts under its own headings. */
     planGeom() {
-        return { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+        return { plotX: PAD, rowH: this.rowHeight(), headH: 0,
                  scrollY: this.ganttY || 0, calendar: this.chartCal || null };
+    }
+
+    /* The strip's frame: the heading's height is the list's, so the marks in it
+     * sit where the list's own headings do, and `strip` tells the ruler the band
+     * is painted for it. */
+    rulerGeom() {
+        return { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+                 scrollY: 0, calendar: this.chartCal || null, strip: true };
     }
 
     /* Which task, and which part of its bar, is under the pointer. */
@@ -1036,7 +1048,7 @@ class MainForm extends Form {
             this.Tasks.Key = String(hit.task.UID);
             this.Tasks_Select();
         }
-        this.Gantt.Redraw();
+        this.redrawChart();
     }
 
     Gantt_DblClick(x, y, button, ctrl, shift) {
@@ -1053,7 +1065,7 @@ class MainForm extends Form {
         if (drag.mode === "link") {
             const hit = this.ganttHit(x, y);
             drag.to = hit && hit.task.UID !== drag.uid ? hit.task.UID : null;
-            this.Gantt.Redraw();
+            this.redrawChart();
             return;
         }
 
@@ -1068,7 +1080,7 @@ class MainForm extends Form {
             drag.finish = Math.max(drag.originStart,
                                    drag.originFinish + days * DAY_MS);
         }
-        this.Gantt.Redraw();
+        this.redrawChart();
     }
 
     Gantt_MouseUp() {
@@ -1084,15 +1096,15 @@ class MainForm extends Form {
                                          Type: LINK_ORDER[this.CmbDrawType.Index] || 1,
                                          LinkLag: 0, LagFormat: 3 }));
                 if (this.edit.setLinks(succ.UID, links)) this.fill(succ.UID);
-                else this.Gantt.Redraw();
+                else this.redrawChart();
             } else {
-                this.Gantt.Redraw();
+                this.redrawChart();
             }
             return;
         }
 
         const task = this.edit.task(drag.uid);
-        if (!task) { this.Gantt.Redraw(); return; }
+        if (!task) { this.redrawChart(); return; }
 
         const values = { Start: isoLocal(drag.start),
                          Finish: isoLocal(drag.finish) };
@@ -1115,6 +1127,30 @@ class MainForm extends Form {
     }
 
     /* Every frame is drawn from the data; there is nothing to keep. */
+    /*
+     * The heading: the same marks, in a strip the theme paints.
+     *
+     * **The height is asked for here and not in the sizing pass**, because a size
+     * request assigned *during* an allocation is a request for the next one --
+     * and nothing was asking for one: the pane's own size had not changed, so
+     * the strip kept the theme's natural and the two headings disagreed by
+     * however much that was. Measured, with the request set and read back at 34:
+     * the strip was given 24. A draw is outside that pass, so the number lands,
+     * and the guard makes it land once. The rule is the same one
+     * `placePanels` follows -- a child given a rectangle has not measured yet --
+     * and it is worth having in both places because it costs nothing to obey.
+     */
+    Header_Draw(p, width, height) {
+        const headH = this.headHeight();
+        if (this.Header.Height !== headH) {
+            this.Header.Height = headH;
+            return;   /* the box has no height for these marks yet */
+        }
+        const g = ganttGeometry(this.chartRows(), width, height, this.step,
+                                this.rulerGeom());
+        drawGanttRuler(p, width, g, ganttPalette(p));
+    }
+
     Gantt_Draw(p, width, height) {
         drawGantt(p, width, height, this.chartRows(), this.selectedUID,
                   this.step, this.drag, this.baselineNumber || 0,
@@ -1130,7 +1166,7 @@ class MainForm extends Form {
      */
     Tasks_Scroll(x, y) {
         this.ganttY = y;
-        this.Gantt.Redraw();
+        this.redrawChart();
     }
 
     /* The wheel over the chart belongs to the list, which is the only thing
@@ -1190,7 +1226,43 @@ class MainForm extends Form {
             wanted = Math.round(PAD + days * this.dayW + 8);
         }
         this.Gantt.MinWidth = wanted;
-        this.Gantt.Redraw();
+
+        /* **One number for a heading, and the chart's is the list's.** The strip
+         * is floored to the height the table's own heading has, and then read
+         * back: a `Height` is a floor and a box gives a child that does not
+         * expand at least its floor, so a theme whose `button` is *taller* than
+         * that floor -- which is what the theme decides, not a number written
+         * here -- would leave the strip taller than the list's heading and the
+         * plan a pixel or two out of true. So when the strip turns out taller,
+         * the table's heading is told to match it, and the two agree whichever
+         * of the two is the larger.
+         *
+         * The alignment is then true by construction rather than by agreement:
+         * the chart's pane begins one strip below the list's and its rows start
+         * at the top of it, while the list's rows start one heading below its
+         * own -- and those are the same number, so the first row on either side
+         * of the divider is on one line whatever the theme does. */
+        const headH = this.headHeight();
+        const strip = Math.round(this.Header ? this.Header.Bounds().Height : 0);
+        if (strip > headH) this.Tasks.HeaderMinHeight = strip;
+
+        /* The chart is floored to the rows' area, which is the scroller's own
+         * height -- the pane less the strip above it, and the pane less the
+         * heading on the other side. A floor, not a size, for the reason written
+         * above this function: a size here would feed the window's own minimum
+         * back into itself. */
+        const view = this.GanttScroll ? this.GanttScroll.Bounds().Height : 0;
+        if (view > 0) this.Gantt.MinHeight = Math.max(this.rowHeight(), view);
+
+        this.redrawChart();
+    }
+
+    /* The chart and its heading are one thing on screen, so they are redrawn
+     * together: a scroll that moves the rows has to move the marks that label
+     * them, and a resize that changes the range has to redraw both. */
+    redrawChart() {
+        if (this.Header) this.Header.Redraw();
+        if (this.Gantt) this.Gantt.Redraw();
     }
 
     /* The first real rectangle: `Form_Open` is reliably too early for one, and
@@ -1273,7 +1345,7 @@ class MainForm extends Form {
             else this.Gantt.Save(path, width, height);
         } finally {
             this.chartFile = was;
-            this.Gantt.Redraw();
+            this.redrawChart();
         }
     }
 
@@ -1584,7 +1656,7 @@ class MainForm extends Form {
         const combo = this.CmbBaseline;
         if (!combo) return;        // the event fires while the form is built
         this.baselineNumber = Math.max(combo.Index, 0);
-        if (this.Gantt) this.Gantt.Redraw();
+        this.redrawChart();
     }
 
     /* The plan as it stands, kept so a later date can be compared with it.
@@ -2161,8 +2233,13 @@ class MainForm extends Form {
          * draws it has been given a rectangle, and a check that read the first
          * and stopped there would be reading half of what it came for. */
         this.viewTries = 60;
+        /* The strip is in the waiting too, and it is the newest number here: its
+         * height is asked for in its own draw (the sizing pass would not take
+         * it), so the first frames have it at nothing and the row alignment is
+         * only true once it has been given a rectangle. */
         const ready = () => this.Tasks.Height > 0 && this.Tasks.HeaderHeight > 0 &&
-                          this.Tasks.RowHeight > 0;
+                          this.Tasks.RowHeight > 0 &&
+                          this.Header.Bounds().Height > 0;
         const wait = () => {
             if (ready() || this.viewTries-- <= 0) {
                 if (!ready())
@@ -2194,19 +2271,38 @@ class MainForm extends Form {
             ok = eq("the rows are the count of them times one",
                     rowsH, Math.max(t.ScrollMaxY, 0) + Math.max(view, 0)) && ok;
 
-            /* The two panes, in the Split's own coordinates. */
-            const tb = t.Bounds(this.PlanSplit), gb = this.Gantt.Bounds(this.PlanSplit);
-            ok = eq("the panes share a top", tb.Y, gb.Y) && ok;
-            ok = eq("and a height", tb.Height, gb.Height) && ok;
-            ok = eq("and the chart is drawn into the list's height",
-                    this.Gantt.Height, t.Height) && ok;
+            /* The two panes, in the Split's own coordinates: **the heading is a
+             * control now**, so the table and the strip are what share a top,
+             * and the strip's height is the table's own heading. That one number
+             * is what keeps the first row on each side of the divider on the same
+             * line -- the strip a pixel short and the whole plan is skewed by
+             * one. */
+            const tb = t.Bounds(this.PlanSplit), hb = this.Header.Bounds(this.PlanSplit);
+            const gb = this.Gantt.Bounds(this.PlanSplit);
+            ok = eq("the list and the strip share a top", tb.Y, hb.Y) && ok;
+            ok = eq("the strip is as tall as the list's heading",
+                    Math.round(hb.Height), headH) && ok;
+            ok = eq("so the chart starts one heading lower",
+                    Math.round(gb.Y - tb.Y), headH) && ok;
+            ok = eq("and the two end on the same line",
+                    Math.round(tb.Y + tb.Height), Math.round(gb.Y + gb.Height)) && ok;
+
+            /* **A heading is a control, not a picture**, and it is a header the
+             * way the list's is: the `button` class, which is what a column
+             * view's own heading is. */
+            ok = eq("the strip wears the class a column view's heading wears",
+                    this.Header.Style, "button") && ok;
 
             /* The chart's geometry is the list's, in every part. */
             const g = this.planGeom();
             ok = eq("the chart's row is the list's row", g.rowH, rowH) && ok;
-            ok = eq("and its heading too", g.headH, headH) && ok;
+            ok = eq("and the chart carries no heading of its own", g.headH, 0) && ok;
             ok = eq("and it starts at the pane's edge, the names being in the list",
                     g.plotX, PAD) && ok;
+            /* And the ruler's frame is the heading the list says it is. */
+            const rg = this.rulerGeom();
+            ok = eq("the ruler's frame is the list's heading", rg.headH, headH) && ok;
+            ok = yes("and it is told the band is painted for it", rg.strip === true) && ok;
 
             /* One scroll: the list moves, the chart follows, and a pointer
              * over a row of the chart is a row of the list. */
@@ -2223,10 +2319,11 @@ class MainForm extends Form {
              * geometry, and this is where that is said out loud. */
             const g5 = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                      this.ganttHeight(), this.step, this.planGeom());
-            const y5 = g5.headH + 5 * g5.rowH + g5.rowH / 2 - g5.scrollY;
+            const y5 = 5 * g5.rowH + g5.rowH / 2 - g5.scrollY;
             ok = eq("a pointer over the fifth row is the fifth row",
                     g5.rowAt(y5), 5) && ok;
-            ok = eq("and over the heading, no row", g5.rowAt(g5.headH / 2), -1) && ok;
+            ok = eq("and over the strip above the chart, no row",
+                    g5.rowAt(-4), -1) && ok;
 
             /* The wheel over the chart is the list's, since the chart cannot
              * scroll itself: a notch is three rows. `Emit` is what the runtime's
@@ -2246,7 +2343,7 @@ class MainForm extends Form {
             ok = eq("the chart is where the list was scrolled to",
                     this.planGeom().scrollY, t.ScrollY) && ok;
             ok = yes("and a row moved off the top of the chart",
-                     g5.headH + 5 * g5.rowH - this.planGeom().scrollY < g5.headH) && ok;
+                     5 * g5.rowH - this.planGeom().scrollY < 0) && ok;
 
             /* A branch closed is the next frame's arithmetic too, so it is
              * asked in the next phase. */
@@ -2379,8 +2476,14 @@ class MainForm extends Form {
             pic.File = png;
             ok = eq("and the picture is that tall", pic.SourceHeight,
                     this.fileHeight()) && ok;
+            /* The pane is the list's again, and what the strip took off the top
+             * is what the heading was: the rows' areas on the two sides are the
+             * same area, which is the thing that has to be true for a row to be
+             * on one line with its name. */
+            const strip = Math.round(this.Header.Bounds(this.PlanSplit).Height);
             ok = yes("and the pane is back to the list's own height",
-                     this.Gantt.Height === t.Height) && ok;
+                     strip + Math.round(this.Gantt.Bounds(this.PlanSplit).Height) ===
+                     Math.round(t.Bounds(this.PlanSplit).Height)) && ok;
             this.viewGrow(eq, yes, ok);
         } catch (e) {
             print(`view ERROR ${e.message}`);
@@ -3118,7 +3221,8 @@ class MainForm extends Form {
                         "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar",
                         "BtnBaselineSave"]
             .map((name) => `${name}_Click`)
-            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "CmbScale_Select",
+            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw",
+                     "CmbScale_Select",
                      "CmbBaseline_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "CmbProjDefault_Select", "CmbAttr_Select", "TxtFilter_Change",
