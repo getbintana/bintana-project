@@ -316,6 +316,31 @@ botón llaman al mismo comando, que sigue siendo un undo. `check-edit` guarda
 
 - Queda: dibujar desde el extremo para enlazar en vez de redimensionar.
 
+**El scroll no se pierde al reconstruir** (2026-09-30): hacer click en una barra
+del Gantt **movía el scroll**, y no por el click: por lo que venía después.
+`Gantt_MouseUp` llamaba a `fill()` siempre, y un click es un gesto que no movió
+nada -- o sea, un comando que no cambia nada. Y `fill()` perdía el scroll por su
+cuenta: `Clear` vacía la tabla, una tabla vacía no tiene a dónde scrollear, y el
+ajuste queda **clampeado** al pasar; las filas volvían arriba y el lector con
+ellas. Como **todos** los comandos terminan en `fill`, la primera tecla de
+cualquier edición devolvía el plan al principio.
+
+Las dos están arregladas. `fill` ahora **se queda donde estaba el lector** -- que
+es la otra mitad de la selección, y lo mismo que ya hacía con `keep` --, clampeado
+a lo que el plan nuevo pueda mostrar; y `Gantt_MouseUp` **reconstruye solo si el
+gesto cambió algo**, como hace la rama del vínculo. `check-view` afirma las dos: la
+reconstrucción conserva el scroll, y un click sobre una barra **no reconstruye
+nada** -- lo atestigua una línea que el propio check escribe en el log, porque
+`fill` lo limpia y el resumen del plan lo vuelve a escribir igual.
+
+Lo que **sigue** en la misma costura y no se tocó: `TableView.Key` *revela* el
+camino al nodo -- abre los resumenes plegados entre medio -- y el Gantt dibuja
+**todas** las tareas en orden de archivo, no las que la lista tiene abiertas, así
+que se puede clickear la barra de una tarea que la lista está escondiendo. Con el
+scroll ya a salvo el efecto es discreto: se despliega el resumen y la lista se
+posiciona en la fila elegida, que es lo que una selección tiene que hacer. Queda
+anotado para cuando el corpus traiga planes con ramas plegadas de verdad.
+
 ### 5 — Recursos y costos
 
 **Hecha en lo esencial** (2026-09-22): recursos (tipo, unidades máximas, tasas

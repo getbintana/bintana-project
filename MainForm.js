@@ -320,6 +320,16 @@ class MainForm extends Form {
          * plan, and a plan that changed is one that was filled. */
         this.chartCal = new WorkCalendar(project, -1);
 
+        /* **The scroll is the other half of the selection and is kept with
+         * it.** A rebuild is a redraw of the same view, not a move within it,
+         * and the table does not know that: `Clear` empties it, an empty table
+         * has nowhere to scroll to, and the adjustment is clamped to the top
+         * on the way past -- so the rows go in at the top and the reader is
+         * back at the first task. Every command ends here, so that one clamp
+         * was the first keystroke of every edit throwing the plan away.
+         * Asked for before the rows go, handed back after they are in. */
+        const at = this.Tasks.ScrollY;
+
         this.Tasks.Clear();
         const stack = [];
         for (const task of this.visibleTasks(project)) {
@@ -332,6 +342,10 @@ class MainForm extends Form {
             this.Tasks.Add(this.cells(task), options);
             stack.push({ level: task.OutlineLevel, key: key });
         }
+
+        /* Clamped to what the new plan can show: a filter that leaves three
+         * rows has nothing to scroll to, and where it lands is the end of it. */
+        this.Tasks.ScrollY = Math.min(at, Math.max(this.Tasks.ScrollMaxY, 0));
 
         const s = summarize(project);
         const problems = this.holder.problems.length;
@@ -1106,8 +1120,14 @@ class MainForm extends Form {
         if (drag.mode === "resize")
             values.Duration = mspdiDuration(
                 this.workingMinutes(task, drag.start, drag.finish));
-        this.edit.setFields(task.UID, values);
-        this.fill(task.UID);
+        /* **A gesture that moved nothing is not an edit**, and a click on a
+         * bar is exactly that: the button goes down and comes up with the
+         * pointer where it was. Rebuilding the table for it would cost the
+         * reader where in the plan they were and every branch they had folded
+         * -- `fill` brings the rows back open -- to say nothing that changed.
+         * The link branch above is the same shape for the same reason. */
+        if (this.edit.setFields(task.UID, values)) this.fill(task.UID);
+        else this.redrawChart();
     }
 
     /* The working time between two dates on the task's own calendar, which is
@@ -2482,6 +2502,43 @@ class MainForm extends Form {
             ok = yes("and a row moved off the top of the chart",
                      5 * g5.rowH - this.planGeom().scrollY < 0) && ok;
 
+            /* **A rebuild is a redraw of the same view and not a move within
+             * it**, so the list stays where the reader put it -- which it does
+             * not do by itself: `Clear` empties it, an empty table has nowhere
+             * to scroll to, and the adjustment is clamped to the top on the
+             * way past. Every command ends in `fill`, so that one clamp was the
+             * first keystroke of every edit throwing the reader back to the
+             * first task. */
+            t.ScrollY = Math.min(200, t.ScrollMaxY);
+            const kept = t.ScrollY;
+            this.fill(this.selectedUID);
+            ok = eq("a rebuild keeps the scroll", t.ScrollY, kept) && ok;
+            ok = eq("and the chart where it was", this.planGeom().scrollY, kept) && ok;
+
+            /* And a click on a bar is not a command at all: a press and a
+             * release with the pointer where it was has nothing to write, so
+             * the table is not rebuilt. The log is the witness -- `fill` clears
+             * it and writes the plan's summary back, and nothing else does. */
+            const g6 = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                     this.ganttHeight(), this.step, this.planGeom());
+            let bar = null;
+            for (let i = 0; i < g6.rows.length && !bar; i++) {
+                const from = whenMs(g6.rows[i].Start), to = whenMs(g6.rows[i].Finish);
+                const y = g6.headH + i * g6.rowH + g6.rowH / 2 - g6.scrollY;
+                if (from === null || to === null || from === to) continue;
+                if (y < g6.rowH || y > this.ganttHeight() - g6.rowH) continue;
+                bar = { x: g6.x((from + to) / 2), y: y };
+            }
+            if (!bar) {
+                print("view no bar on screen to click: the plan has none dated");
+            } else {
+                const said = this.Log.Text;
+                this.Gantt_MouseDown(bar.x, bar.y, 1, false, false);
+                this.Gantt_MouseUp();
+                ok = yes("a click on a bar that moves nothing writes nothing",
+                         this.Log.Text === said) && ok;
+                ok = eq("and leaves the scroll alone", t.ScrollY, kept) && ok;
+            }
             t.ScrollY = 0;
 
             /* A branch closed is the next frame's arithmetic too, so it is
