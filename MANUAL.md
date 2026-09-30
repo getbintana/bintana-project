@@ -46,10 +46,12 @@ propiedades tiene un ancho propio —es un formulario, no un espacio— y la lis
 conserva el suyo, así que una ventana más ancha compra timescale y no aire. Los
 dos divisores se arrastran a mano y la app no los mueve después.
 
-**El gráfico se apoya en la misma superficie que la lista**, por el nombre que el
-tema le da a esa superficie (`@view_bg_color`): no es un color copiado de acá,
-así que sigue al tema y no hay nada que quede viejo. Lo que sí lleva fondo
-propio es el **archivo exportado**, que no tiene nada atrás.
+**El gráfico se apoya en la misma superficie que la lista**: lleva puesta la
+misma clase que lleva la lista (`view`), que es la que el tema usa para pintar
+una superficie —el tema escribe la lista como `columnview.view`—, así que el
+fondo y el color del texto son los del tema y no hay ningún valor copiado que
+pueda quedar viejo. Lo que sí lleva fondo propio es el **archivo exportado**,
+que no tiene nada atrás.
 
 **La ventana se achica todo lo que quieras, también después de maximizar.** Por
 debajo: el gráfico no se le asigna un ancho —eso sería un *piso* para la ventana

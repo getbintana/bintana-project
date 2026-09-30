@@ -223,13 +223,15 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   lista cacheada dibujaba el plan de antes de la edición, que es lo que
   `check-drag` vio cuando el redimensionado dejó de mover nada.
 - **La superficie y los encabezados** (2026-09-29): el gráfico se apoya en la
-  superficie **por el nombre que el tema le da** (`Background:
-  "@view_bg_color"`), no en un color copiado — no hay valor que leer porque GTK4
-  quitó el resolver (medido: `get_property` ya no existe y `lookup_color` devuelve
-  `false` para todos los nombres, `white` incluido), y lo que sobrevive es el
-  nombre, que además sigue al tema solo. Un fondo transparente no alcanzaba:
-  deja ver el del scroller, que en un tema que no pinta igual un viewport y una
-  lista sigue siendo el gris de antes. Y el encabezado de la lista tiene un alto
+  misma superficie que la lista porque lleva **la misma clase** —`view`—, que es
+  la que el tema usa para pintar una superficie y la que la lista ya lleva
+  puesta (el tema escribe la lista como `columnview.view`). Con ella el fondo y
+  la tinta son los del tema, sin ningún valor copiado que pueda quedar viejo.
+  La clase la encontró quien miró la pantalla, después de dos valores que no
+  cambiaron nada, y el motivo de que fallaran está medido: **un control no
+  pinta fondo propio**, así que un `Background` en un `DrawingArea` es un
+  no-op, y un valor puesto encima de la clase que sí funciona es peor que nada
+  (el runtime lo escribe por encima del tema y los dos pelean). Y el encabezado de la lista tiene un alto
   mínimo de 34 px, porque **el encabezado no sigue la tipografía de la lista**
   (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
   36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin

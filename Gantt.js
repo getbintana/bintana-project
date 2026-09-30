@@ -251,22 +251,20 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * chart and the list are on the *same ground* and the band is a tint of it
      * rather than a second surface with a seam down the divider.
      *
-     * The ground is the theme's own name for the surface a list is drawn on:
-     * `@view_bg_color`, declared on the pane, on the scroller and on the chart
-     * alike, and the stylesheet takes the reference as it stands. **All three,
-     * because a drawing area does not paint a background of its own in GTK4** --
-     * so a declaration on the chart alone is a no-op and what shows is whatever
-     * the scroller's viewport is, which is the grey this was: declaring a
-     * background on the one control that never paints one is how two attempts
-     * went nowhere. Which of the three is the one that shows is the toolkit's
-     * business, and it does not matter, because they are all the same name.
+     * The ground is not drawn here at all: the chart wears the theme's own
+     * `view` class, which is the class a theme paints a surface with and the
+     * one a `GtkColumnView` wears itself -- the theme writes the list as
+     * `columnview.view`, which is how this was found, on a real screen, after
+     * two declarations of a colour that changed nothing.
      *
-     * **A name and not a colour read back, because there is none to read**: GTK
-     * removed the resolver -- `gtk_style_context_get_property` is gone and
-     * `gtk_style_context_lookup_color` answers `false` for every name in 4.22,
-     * `white` included -- so "what colour is that list" has no answer, and a hex
-     * copied into a form is a value that goes stale the moment the theme
-     * changes.
+     * **The class and not a value, twice over.** A drawing area paints no
+     * background of its own, so a `Background` set on it is a no-op -- and a
+     * *drawn* one would be worse than no-op: the runtime writes a colour set on a
+     * control into a stylesheet above the theme's, so it would mask the class
+     * that works and the two would fight. The ink follows the same way round:
+     * `.view` sets `color` as well as `background-color`, and `Painter.Foreground`
+     * is the resolved ink of the widget, so the chart's text is the list's text
+     * because the chart is the same kind of node.
      *
      * **The hairline under it is what makes the two headers read as one strip.**
      * A tinted band that stops without an edge looks like two panels; a rule

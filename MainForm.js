@@ -2518,16 +2518,18 @@ class MainForm extends Form {
         /* And the ground: the chart declares a transparent one, and what it
          * draws never covers the frame -- which is the whole of how the two
          * panes end up on the same surface. */
-        /* The ground is named on the three controls of the pane that could be
-         * the one showing it, and a drawing area is not one of them: GTK4 gives
-         * it no background to paint, so a declaration on the chart alone leaves
-         * the scroller's viewport -- and its grey -- on screen. */
-        for (const [what, pane] of [["the chart", this.Gantt],
-                                    ["the scroller", this.GanttScroll],
-                                    ["the pane", this.ChartCol]]) {
-            ok = eq(`${what} sits on the surface a list is drawn on, by name`,
-                    pane.Background, "@view_bg_color") && ok;
-        }
+        /* The ground is the theme's **class**, not a value: a theme paints a
+         * surface with `.view`, and a `GtkColumnView` wears that class itself
+         * (`columnview.view` is how the theme writes it). The chart wears it
+         * now, which is the whole of the fix -- and it is the class, not a
+         * colour, because a colour set on the control is written into a
+         * stylesheet above the theme's and would mask the class that works. */
+        ok = eq("the chart wears the class a list wears", this.Gantt.Style,
+                "view") && ok;
+        ok = eq("and paints no ground of its own over it", this.Gantt.Background,
+                "") && ok;
+        ok = eq("nor the scroller around it", this.GanttScroll.Background,
+                "") && ok;
 
         /* **The chart is floored, not sized.** `Auto` asks for no floor and the
          * chart is the pane's own width; a scale asks for the timescale's width
