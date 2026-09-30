@@ -1147,7 +1147,7 @@ class MainForm extends Form {
     fileGeom() {
         return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
                  scrollY: 0, rows: this.chartRows().length,
-                 calendar: this.chartCal || null };
+                 calendar: this.chartCal || null, paper: true };
     }
 
     fileHeight() {
@@ -2427,6 +2427,26 @@ class MainForm extends Form {
                            idle >= 0 && select >= 0 && idle < select && select < bar,
                            `idle ${idle}, select ${select}, bar ${bar}`) && ok;
 
+        /* No ground of its own: nothing in the frame covers all of it, which is
+         * what leaves the chart on the surface the list is on. A file is the
+         * other way round -- it has nothing behind it -- and is asked for it. */
+        const whole = log.calls.find((c) => c.name === "Rectangle" &&
+                                         c.args[0] === 0 &&
+                                         c.args[2] >= 900 && c.args[3] >= 320);
+        ok = this.styleYes("a chart on the screen paints no ground of its own",
+                           !whole, whole ? JSON.stringify(whole.args) : "none") && ok;
+        const file = this.checkGanttStyle(new CallLog(), 900, 320, rows,
+                                          { plotX: GUTTER, rowH: this.rowHeight(),
+                                            headH: this.headHeight(), paper: true });
+        const covered = file.calls[0];
+        ok = this.styleYes("and a chart written to a file carries one",
+                           covered && covered.name === "Rectangle" &&
+                           covered.args[2] >= 900 && covered.args[3] >= 320 &&
+                           covered.color === ganttPalette(file).paper,
+                           covered ? `${covered.color} ` +
+                                     `${covered.args[2]}x${covered.args[3]}`
+                                   : "nothing") && ok;
+
         /* And here, where the plan has forty-four links, the elbow is a real
          * one and its place under the bars is asserted rather than skipped. */
         const link = log.firstOf("Polyline", pal.link);
@@ -2480,10 +2500,26 @@ class MainForm extends Form {
      */
     viewGrow(eq, yes, ok) {
         const width = (c) => c.Bounds(this.Body).Width;
-        /* The style, with a painter that records: the two claims that need a
-         * plan with a weekend in it, which the four-task fixtures are not. */
+        /* The style, with a painter that records: the claims that need a plan
+         * with a weekend in it, which the four-task fixtures are not. */
         this.viewStyle();
         ok = this.viewStyleOk && ok;
+
+        /* The heading is the room the ruler is drawn in, and it was bought with
+         * a floor: two rows of 9-point type in a 25-pixel band is 7-point type,
+         * and the band now holds both at the size an axis wants. */
+        ok = eq("the list's heading is given a floor",
+                this.Tasks.HeaderMinHeight, 34) && ok;
+        ok = yes("and it reaches it", this.Tasks.HeaderHeight >= 34,
+                 this.Tasks.HeaderHeight) && ok;
+        ok = eq("and the chart draws its ruler in that height", this.headHeight(),
+                this.Tasks.HeaderHeight) && ok;
+
+        /* And the ground: the chart declares a transparent one, and what it
+         * draws never covers the frame -- which is the whole of how the two
+         * panes end up on the same surface. */
+        ok = eq("the chart's ground is the toolkit's", this.Gantt.Background,
+                "rgba(0,0,0,0)") && ok;
 
         /* **The chart is floored, not sized.** `Auto` asks for no floor and the
          * chart is the pane's own width; a scale asks for the timescale's width
@@ -3159,6 +3195,10 @@ class MainForm extends Form {
             headH: g.headH !== undefined ? g.headH : 25,
             scrollY: g.scrollY || 0,
             calendar: g.calendar || new WorkCalendar(this.holder.project, -1),
+            /* A file is the one geometry that carries a ground of its own, and
+             * it has to be asked for by name or the frame under test is a
+             * pane's and says nothing about a PNG. */
+            paper: g.paper === true,
         });
         return log;
     }

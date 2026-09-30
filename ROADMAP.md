@@ -222,6 +222,16 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   cache: un comando reemplaza los registros de tarea (el Deshacer lo hace) y una
   lista cacheada dibujaba el plan de antes de la edición, que es lo que
   `check-drag` vio cuando el redimensionado dejó de mover nada.
+- **La superficie y los encabezados** (2026-09-29): el gráfico ya no pinta
+  fondo propio (`Background: rgba(0,0,0,0)` — la palabra `transparent` la
+  rechaza el parser del runtime, que conoce las formas con valor y no la
+  palabra clave), así que las dos panes quedan sobre la misma superficie y la
+  costura del divisor desaparece; y el encabezado de la lista tiene un alto
+  mínimo de 34 px, porque **el encabezado no sigue la tipografía de la lista**
+  (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
+  36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin
+  encoger la letra ni perder el mes, y un filete bajo las dos las lee como una
+  sola franja.
 - **Los estilos del gráfico** (2026-09-29): la paleta pasa a estar en un lugar
   y con nombre de rol, la tinta es la del texto del tema (`Painter.Foreground`,
   que viene resuelta) y todo lo que es sombra es `rgba()` sobre el fondo que

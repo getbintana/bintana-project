@@ -648,7 +648,8 @@
                             "action": "ActColumns"
                           }
                         ],
-                        "VAlign": "Fill"
+                        "VAlign": "Fill",
+                        "HeaderMinHeight": 34
                       }
                     },
                     {
@@ -680,7 +681,8 @@
                                 "VAlign": "Fill",
                                 "HExpand": true,
                                 "VExpand": true,
-                                "MinHeight": 120
+                                "MinHeight": 120,
+                                "Background": "rgba(0,0,0,0)"
                               }
                             }
                           ]

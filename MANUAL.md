@@ -192,9 +192,10 @@ seleccionada se resalta, en las dos panes.
 
 **Los días que no se trabaja quedan sombreados**, y el que se sombrea es el del
 calendario del proyecto: una plan que trabaja de lunes a viernes tiene sombreado
-el fin de semana y nada más. **La regla lleva semanas arriba de meses** (la
-banda del mes se cae sola si el encabezado no da para dos líneas de letra chica,
-y la letra baja de 9 a 8 y a 7 puntos antes de que se caiga una banda). Los
+el fin de semana y nada más. **La regla lleva semanas arriba de meses**, y las dos bandas entran
+porque el encabezado de la lista tiene un alto propio de 34 px: sin ese alto,
+dos líneas de letra de regla en 25 px obligaban a letra de 7 puntos o a perder
+el mes. Los
 vínculos se dibujan **debajo** de las barras, que es como los dibuja Project y
 lo que hace legible un plan apretado. Los colores vienen del tema: la tinta es
 la del texto del tema y lo que es sombreado es una capa `rgba()` sobre el fondo

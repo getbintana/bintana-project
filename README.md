@@ -50,7 +50,13 @@ the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
 
 **The chart sits beside the table, in the same view, with one scroll between
-them.** The days the project's calendar does not work are shaded behind the
+them.** The two are on the same ground -- the chart's background is transparent,
+so what is behind it is the scroll view it is in, which is the surface a list is
+on, and a chart *written to a file* carries a ground of its own because a file
+has none to inherit. Their headings are one strip: the list's heading row has a
+floor of 34 pixels (`TableView.HeaderMinHeight`, which exists because the heading
+does not follow the list's font) and the chart fills exactly that band with the
+timescale -- a week over a month -- under a rule the list's own header has. The days the project's calendar does not work are shaded behind the
 rows, dependencies are drawn under the bars rather than over them, the heading
 carries a week over a month in a smaller type, and every colour is either the
 theme's own ink or an `rgba()` shade over whatever ground the theme has -- so the

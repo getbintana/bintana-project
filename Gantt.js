@@ -142,6 +142,12 @@ function ganttPalette(p) {
         link:     dark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.34)",
         baseline: dark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.40)",
         today:    dark ? "#ff6b6b" : "#e01b24",
+        /* Only a *file* gets a ground of its own, and only because a file has
+         * none to inherit: the pane is the toolkit's and a picture is not. It is
+         * a derivation, and it is the same one the runtime states for `Dark` --
+         * if the ink is light the ground is dark -- rather than a guess at the
+         * theme's, which no painter can ask for. */
+        paper:    dark ? "#1e1e1e" : "#ffffff",
     };
 }
 
@@ -229,13 +235,45 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     const rowOf = {};
     for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
 
+    /* A chart on the screen has no ground of its own -- the widget's is
+     * transparent and the scroll view it is in is the surface a list is on --
+     * but a chart written to a file has nothing behind it at all, so the file
+     * carries one, put down before anything else. */
+    if (geom.paper) {
+        p.Color = c.paper;
+        p.Rectangle(0, 0, width, height);
+        p.Fill();
+    }
+
     /* The heading: the same band the table's column headings sit in, with the
      * timescale in it, filled to the height the table says it is. It is a shade
-     * and not a colour so that it sits on the theme's own background. */
+     * and not a colour -- and the widget's own background is left alone, so the
+     * chart and the list are on the *same ground* and the band is a tint of it
+     * rather than a second surface with a seam down the divider.
+     *
+     * The ground under the band is the toolkit's own: the chart declares
+     * `Background: rgba(0,0,0,0)` -- a fully transparent background, and *not*
+     * the word `transparent`, which the runtime's parser refuses because
+     * `gdk_rgba_parse` knows the spellings that carry a value and not the
+     * keyword -- so what is behind the chart is the scroll view it is in, which
+     * is the same surface a list is on. Painting a ground of its own is what
+     * put a seam down the divider, and the runtime's note on colours is
+     * explicit that the supported way to have one is to let the widget's own
+     * CSS do it.
+     *
+     * **The hairline under it is what makes the two headers read as one strip.**
+     * A tinted band that stops without an edge looks like two panels; a rule
+     * under both is the one thing that says they are a header, and it is the
+     * rule GTK draws under a column view's own. */
     if (headH > 0) {
         p.Color = c.head;
         p.Rectangle(0, 0, width, headH);
         p.Fill();
+        p.Color = c.dim;
+        p.LineWidth = 1;
+        p.MoveTo(0, headH - 0.5);
+        p.LineTo(width, headH - 0.5);
+        p.Stroke();
     }
 
     /* The days that are not worked, behind the rows and behind the heading: the
