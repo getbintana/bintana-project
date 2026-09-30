@@ -120,10 +120,10 @@ cuántas restricciones incumplidas.
 - La **fecha límite** es un objetivo: no mueve nada, y las tareas que la pasan
   llevan una flecha roja sobre la barra.
 - **Editar → Guardar línea base** guarda el plan tal como está; el Gantt dibuja
-  esa línea como barra fina gris debajo de cada tarea, para leer el desvío. El
-  combo **Línea base** de la pestaña Proyecto elige el número (0 a 10, como
-  Project): Guardar escribe esa y el Gantt dibuja esa; guardar dos veces el
-  mismo número la reemplaza sin tocar las demás.
+  esa línea como barra fina gris debajo de cada tarea, para leer el desvío.
+  Guarda el número 0 y dibuja el 0: **la línea base en curso**, que es lo que
+  el menú puede decir sin preguntar nada. Guardar dos veces el mismo número la
+  reemplaza sin tocar las demás.
 - El **avance** mueve las fechas reales: arriba de cero hay inicio real, al
   cien por ciento hay fin real, y en cero no hay ninguno.
 - Las tareas **terminadas** (con fin real) y las **programadas manualmente**
@@ -158,17 +158,20 @@ tabla y el período en que arranca el trabajo fija el costo por uso.
 
 ## Proyecto y calendarios
 
-La pestaña **Proyecto** asigna y abre diálogos: **Datos del proyecto…** edita
-la identidad y la información (nombre, título, asunto, autor, gerente,
-compañía, categoría, revisión, fecha de creación y último guardado —esos dos
-de solo lectura—, fecha de inicio, fecha de estado y la moneda), y
-**Opciones del proyecto…** los valores por defecto y los switches del archivo
-(tipo de tarea, tasas y formato de trabajo, minutos por día y por semana —lo
-que significa un `1d` tipeado—, holgura crítica, año fiscal, respetar
-restricciones, valor ganado y demás). Cada uno es un solo Deshacer. En el
-panel se **asigna** el **Calendario por defecto** del plan; abajo, **Costo
-total** es lo que suman las asignaciones y **Línea base** elige cuál se guarda
-y se dibuja.
+Las tres pestañas del panel lateral son **Tarea**, **Vínculos** y
+**Recursos**: lo que es de *esta* tarea. Lo que es del plan entero está en el
+menú **Proyecto**, porque lo del plan no cambia con la selección y una pestaña
+para eso ocupaba lugar sin contenido propio.
+
+**Datos del proyecto…** edita la identidad y la información (nombre, título,
+asunto, autor, gerente, compañía, categoría, revisión, fecha de creación y
+último guardado —esos dos de solo lectura—, fecha de inicio, fecha de estado,
+**calendario por defecto**, **costo total** —de solo lectura, lo que suman las
+asignaciones— y la moneda), y **Opciones del proyecto…** los valores por defecto
+y los switches del archivo (tipo de tarea, tasas y formato de trabajo, minutos
+por día y por semana —lo que significa un `1d` tipeado—, holgura crítica, año
+fiscal, respetar restricciones, valor ganado y demás). Cada uno es un solo
+Deshacer.
 
 Los calendarios se **administran** desde el menú **Proyecto → Calendarios…**:
 la lista con **Nuevo…** (copia el elegido, o el del proyecto, y abre el

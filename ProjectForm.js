@@ -26,8 +26,12 @@ function fillProjectForm(dlg, project, tables) {
         dlg[tables.TIME[prop]].Text = project[prop];
     for (const prop in tables.CHECK)
         dlg[tables.CHECK[prop]].Active = project[prop];
+    /* A combo whose items do not cover the value the file wrote shows nothing
+     * and changes nothing, which is what an empty calendar list is: a plan with
+     * no calendars of its own has no default to choose. */
     for (const prop in tables.COMBO) {
-        const [control, choices] = tables.COMBO[prop];
+        const [control, choices, labels] = tables.COMBO[prop];
+        dlg[control].Items = labels || choices.map((value) => String(value));
         dlg[control].Index = choices.indexOf(project[prop]);
     }
 }
@@ -85,6 +89,31 @@ class ProjectForm extends Form {
         CurrencySymbolPosition: ["CmbProjCurrencyPosition", [0, 1, 2, 3]],
     };
 
+    /* **The calendars are the file's own, so their items are the plan's** and
+     * cannot be written down here: they are read when the dialog opens and put
+     * in a copy of the map, because a static map is one for every dialog and two
+     * plans open at once would fight over it. The names are what a person reads
+     * and the UIDs are what the file keeps, which is why the entry carries
+     * both -- the third element of a combo, and the only one that uses it. */
+    static tablesFor(project) {
+        const uids = [], names = [];
+        for (const calendar of project.Calendars || []) {
+            uids.push(calendar.UID);
+            names.push(calendar.Name);
+        }
+        return {
+            TEXT: ProjectForm.TEXT,
+            NUMBER: ProjectForm.NUMBER,
+            DATE: ProjectForm.DATE,
+            TIME: ProjectForm.TIME,
+            CHECK: ProjectForm.CHECK,
+            COMBO: {
+                CurrencySymbolPosition: ProjectForm.COMBO.CurrencySymbolPosition,
+                CalendarUID: ["CmbProjCalendar", uids, names],
+            },
+        };
+    }
+
     static open(project, onSaved) {
         const dlg = new ProjectForm();
 
@@ -92,12 +121,20 @@ class ProjectForm extends Form {
         dlg.onSaved = onSaved;
         dlg.Modal   = true;
 
-        fillProjectForm(dlg, project, ProjectForm);
+        const tables = ProjectForm.tablesFor(project);
+        fillProjectForm(dlg, project, tables);
+        dlg.tables = tables;
 
-        /* The three the file owns, shown and never written. */
+        /* The three the file owns, shown and never written, and the plan's own
+         * total: **the cost is a number this app calculates**, not one the file
+         * keeps, so it is written nowhere and shown beside the calendar it comes
+         * from. It was in the side panel, where it took a tab of its own for a
+         * line of text. */
         dlg.TxtProjCreation.Text = shortDate(project.CreationDate);
         dlg.TxtProjSaved.Text    = shortDate(project.LastSaved);
         dlg.TxtProjFinish.Text   = shortDate(project.FinishDate);
+        const cost = projectCost(project);
+        dlg.TxtProjTotal.Text    = cost ? Locale.Number(cost, 2) : "";
 
         dlg.Show();
         dlg.TxtProjName.SetFocus();
@@ -106,7 +143,7 @@ class ProjectForm extends Form {
 
     BtnOk_Click() {
         const project = this.project;
-        const values  = projectFormValues(this, project, ProjectForm);
+        const values  = projectFormValues(this, project, this.tables);
         if (!values) {
             Message.Error(Locale.Text("The project's numbers must be numbers."));
             return;

@@ -865,9 +865,6 @@ msgstr "Calendarios…"
 msgid "Project default"
 msgstr "Del proyecto"
 
-msgid "Default calendar changed."
-msgstr "Calendario por defecto cambiado."
-
 msgid "Columns…"
 msgstr "Columnas…"
 

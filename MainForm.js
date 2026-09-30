@@ -73,9 +73,6 @@ class MainForm extends Form {
     selectedResUID = null;
     assignRows    = [];
 
-    /* The Project page: its calendars and the one picked. */
-    calChoices     = [];
-
     /* The custom fields the Task page offers, by FieldID, and what the table
      * is filtered to. */
     attrChoices = [];
@@ -347,7 +344,6 @@ class MainForm extends Form {
         for (const p of this.holder.problems) this.log(`not modelled: ${p}`);
 
         this.fillResources();
-        this.fillProject();
 
         /* The data changed: the chart is a frame behind until asked, and its
          * own size depends on how many rows there now are. */
@@ -539,51 +535,35 @@ class MainForm extends Form {
         this.CmbAssignRes.Index = items.length ? 0 : -1;
 
         /* The calendars a task or a resource may name, with the plan's own in
-         * front, and the plan's, which is assigned and not chosen. */
-        this.calChoices = [];
+         * front. **The plan's own is chosen in the project dialog** -- it is a
+         * property of the file, and a tab of the side panel for it was a tab
+         * that took space to say something the menu already says. */
         this.workCalChoices = [-1];
-        const calNames = [], workNames = [Locale.Text("Project default")];
+        const workNames = [Locale.Text("Project default")];
         for (const calendar of project.Calendars) {
-            this.calChoices.push(calendar.UID);
-            calNames.push(calendar.Name);
             this.workCalChoices.push(calendar.UID);
             workNames.push(calendar.Name);
         }
-        this.CmbProjDefault.Items  = calNames;
         this.CmbTaskCalendar.Items = workNames;
         this.CmbResCalendar.Items  = workNames;
-        const at = this.calChoices.indexOf(project.CalendarUID);
-        this.CmbProjDefault.Index = at >= 0 ? at : (calNames.length ? 0 : -1);
-    }
-
-    /* The project's own settings: the default calendar, assigned here, and
-     * the total. The calendars themselves are administered from the menu. */
-    fillProject() {
-        const project = this.holder ? this.holder.project : null;
-        if (!project) return;
-
-        const cost = projectCost(project);
-        this.TxtProjCost.Text = cost ? Locale.Number(cost, 2) : "";
-    }
-
-    /* Assigning the plan's calendar: the choice is the edit, one undo. */
-    CmbProjDefault_Select() {
-        const combo = this.CmbProjDefault;
-        if (!combo) return;            // the event fires while the form is built
-        const uid = this.calChoices[combo.Index];
-        if (uid === undefined || uid === this.holder.project.CalendarUID) return;
-        if (!this.edit.setProject({ CalendarUID: uid })) return;
-        this.fill(this.selectedUID);
-        this.log(Locale.Text("Default calendar changed."));
     }
 
     /* The project's data -- the document's metadata, the scheduling settings
      * and the currency -- in its own dialog; the values come back whole and
      * are one undo like any edit. */
+    /* The dialog hands the values back whole and they are applied as one undo,
+     * like any other edit. **A method and not a lambda inside the click**,
+     * because this is the road the check drives too: a check that copied it
+     * would be testing the copy. */
+    applyProject(values) {
+        if (!this.edit.setProject(values)) return false;
+        this.fill(this.selectedUID);
+        return true;
+    }
+
     ActProjData_Click() {
         ProjectForm.open(this.holder.project, (values) => {
-            if (!this.edit.setProject(values)) return;
-            this.fill(this.selectedUID);
+            if (!this.applyProject(values)) return;
             this.log(Locale.Text("Project data saved."));
         });
     }
@@ -1153,7 +1133,7 @@ class MainForm extends Form {
 
     Gantt_Draw(p, width, height) {
         drawGantt(p, width, height, this.chartRows(), this.selectedUID,
-                  this.step, this.drag, this.baselineNumber || 0,
+                  this.step, this.drag, BASELINE,
                   this.chartFile ? this.fileGeom() : this.planGeom());
     }
 
@@ -1650,29 +1630,22 @@ class MainForm extends Form {
         this.Plan.Data = rows;
     }
 
-    /* Which baseline is in hand: the one Save writes and the one the chart
-     * draws. A view choice, so it dies with the window. */
-    CmbBaseline_Select() {
-        const combo = this.CmbBaseline;
-        if (!combo) return;        // the event fires while the form is built
-        this.baselineNumber = Math.max(combo.Index, 0);
-        this.redrawChart();
-    }
-
-    /* The plan as it stands, kept so a later date can be compared with it.
-     * It is one undo like any other command. */
-    saveBaseline() {
-        const number = Math.max(this.CmbBaseline.Index, 0);
+    /* The plan as it stands, kept so a later date can be compared with it: one
+     * undo like any other command.
+     *
+     * **The number is an argument and the menu passes the current one.** It was
+     * a combo in the side panel, next to a button that duplicated the menu item
+     * beside it -- two controls for one line of work, on a tab that existed for
+     * them. `setBaseline` was always ready to take any number; the dialog that
+     * would ask for a different one is not here, and a parameter nobody passes
+     * is not a control. */
+    saveBaseline(number = 0) {
         this.edit.setBaseline(number);
         this.fill(this.selectedUID);
         this.log(Locale.Text("Baseline {0} saved.", number));
     }
 
     ActBaseline_Click() {
-        this.saveBaseline();
-    }
-
-    BtnBaselineSave_Click() {
         this.saveBaseline();
     }
 
@@ -2852,6 +2825,61 @@ class MainForm extends Form {
                             () => {}).Close();
             SettingsForm.open(() => {}).Close();
 
+            /* **The project dialog carries what the side panel's Project tab
+             * carried** -- the plan's default calendar and its total -- so it is
+             * opened here and read, because a control that moved is a control
+             * that can be left behind: a combo whose items never arrive is empty
+             * and writes nothing, and it looks exactly like one that works. */
+            let applied = null;
+            const pdlg = ProjectForm.open(this.holder.project, (values) => {
+                applied = values;
+                this.applyProject(values);
+            });
+            const cals = this.holder.project.Calendars;
+            ok = pdlg.CmbProjCalendar.Items.length === cals.length &&
+                 pdlg.CmbProjCalendar.Items[0] === cals[0].Name && ok;
+            const shown = cals[pdlg.CmbProjCalendar.Index];
+            ok = !!shown && shown.UID === this.holder.project.CalendarUID && ok;
+            const total = projectCost(this.holder.project);
+            ok = pdlg.TxtProjTotal.Text ===
+                 (total ? Locale.Number(total, 2) : "") && ok;
+            print(`edit project dialog calendar ${pdlg.CmbProjCalendar.Index}` +
+                  ` of ${pdlg.CmbProjCalendar.Items.length}, ` +
+                  `total ${pdlg.TxtProjTotal.Text || "(none)"}`);
+            /* **Choosing another one is the edit, one undo like any other.** No
+             * fixture carries two calendars -- the corpus is one plan with one
+             * calendar, like most -- so the second is added here through the same
+             * road the app has for adding one, the dialog is opened again over the
+             * two, and the whole of the move is undone at the end with the rest. */
+            const wasCalendar = this.holder.project.CalendarUID;
+            pdlg.Close();
+            let maxUID = 0;
+            for (const calendar of cals)
+                if (calendar.UID > maxUID) maxUID = calendar.UID;
+            const newCal = this.edit.addCalendar(Locale.Text("Calendar {0}", maxUID + 1),
+                                                 cals[0].UID);
+            ok = !!newCal && newCal.UID > maxUID && ok;
+            const two = this.holder.project.Calendars;
+            let chosen = null;
+            const overTwo = ProjectForm.open(this.holder.project, (values) => {
+                chosen = values;
+                this.applyProject(values);
+            });
+            ok = overTwo.CmbProjCalendar.Items.length === two.length &&
+                 overTwo.CmbProjCalendar.Index === 0 && ok;
+            overTwo.CmbProjCalendar.Index = 1;
+            overTwo.BtnOk_Click();
+            ok = this.holder.project.CalendarUID === two[1].UID &&
+                 !!chosen && chosen.CalendarUID === two[1].UID && ok;
+            print(`edit project dialog calendar 1 of ` +
+                  `${overTwo.CmbProjCalendar.Items.length} -> ` +
+                  `${this.holder.project.CalendarUID}`);
+            ok = this.edit.undo() &&
+                 this.holder.project.CalendarUID === wasCalendar && ok;
+            ok = this.edit.undo() && ok;      /* and the calendar itself */
+            print(`edit project dialog back to ${this.holder.project.CalendarUID}` +
+                  ` of ${this.holder.project.Calendars.length}`);
+
             /* The columns dialog opens with the table's own ticks, refuses
              * nothing, and hands back what is ticked in the table's order. */
             let picked = null;
@@ -3077,10 +3105,8 @@ class MainForm extends Form {
              * are kept side by side, the second one through the panel's own
              * combo and button, and re-saving replaces rather than stacks. */
             edit.setBaseline(0);
-            this.CmbBaseline.Index = 1;
-            this.BtnBaselineSave_Click();
-            this.CmbBaseline.Index = 0;
-            this.BtnBaselineSave_Click();
+            this.saveBaseline(1);
+            this.saveBaseline(0);
             ok = edit.task(2).Baselines.length === 2 &&
                  baselineOf(edit.task(2), 0).Start === edit.task(2).Start &&
                  baselineOf(edit.task(2), 1).Start === edit.task(2).Start && ok;
@@ -3218,14 +3244,12 @@ class MainForm extends Form {
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
-                        "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar",
-                        "BtnBaselineSave"]
+                        "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw",
                      "CmbScale_Select",
-                     "CmbBaseline_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
-                     "CmbProjDefault_Select", "CmbAttr_Select", "TxtFilter_Change",
+                     "CmbAttr_Select", "TxtFilter_Change",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp",
                      "Tasks_Activate", "Gantt_DblClick"]);
@@ -3407,6 +3431,11 @@ class MainForm extends Form {
  * squeezed under a plan is neither readable nor usable. */
 const PANEL_W = 380;
 const MIN_PLAN_W = 420;
+
+/* Which baseline the chart draws, and which "Save baseline" writes. It was a
+ * combo in the side panel; the number is the current one, which is zero, and a
+ * constant says so where a control used to. */
+const BASELINE = 0;
 
 /*
  * The columns the plan table can show. The name is not here: it is the tree

@@ -236,6 +236,22 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
   36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin
   encoger la letra ni perder el mes.
+- **La pestaña Proyecto sale del panel** (2026-09-30): el panel lateral tiene
+  tres pestañas y las tres son de la tarea —Tarea, Vínculos, Recursos— porque
+  es lo que cambia con la selección. Lo del plan entero estaba en una cuarta,
+  y sus dos primeros botones eran duplicados exactos de dos ítems del menú
+  **Proyecto**. Lo que no estaba en el menú se movió a donde corresponde:
+  el **calendario por defecto** y el **costo total** al diálogo de **Datos del
+  proyecto…** —el `CalendarUID` es una propiedad del archivo y su diálogo ya lo
+  edita, así que el combo arma sus ítems con los calendarios del plan al abrir
+  (`tablesFor`, porque un mapa estático es uno para todos los diálogos)—, y
+  **Guardar línea base** se quedó en el menú guardando el número 0, que es
+  `BASELINE` y la línea que el Gantt dibuja. Lo que se movió se **checked en el
+  mismo lugar por el que se usa**: `check-edit` abre el diálogo, lee el combo y
+  el total, y cambia de calendario por la ruta del menú —que por eso es un
+  método y no una lambda dentro del click— y lo deshace. Ningún fixture tiene
+  dos calendarios, así que el segundo se agrega por la misma vía que la app
+  usa para agregar uno.
 - **El encabezado del gráfico es un control** (2026-09-30): una franja con la
   clase `button` -- la que el tema pinta para un encabezado, y la que el
   encabezado de una `ColumnView` lleva puesta, porque es un `Box` -- sobre el

@@ -212,6 +212,41 @@
       },
       "children": [
         {
+          "type": "Label",
+          "name": "LblProjCalendar",
+          "properties": {
+            "Text": "Default calendar",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbProjCalendar",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "Items": [],
+            "Index": -1
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblProjTotal",
+          "properties": {
+            "Text": "Total cost",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtProjTotal",
+          "properties": {
+            "HExpand": true,
+            "HAlign": "Fill",
+            "ReadOnly": true
+          }
+        },
+        {
           "type": "CheckButton",
           "name": "ChkProjFromStart",
           "properties": {
