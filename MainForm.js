@@ -3284,6 +3284,21 @@ class MainForm extends Form {
             const again = doc.addTask(null);
             ok = eq("ni despues de deshacer", again.UID > fresh.UID, true) && ok;
 
+            /* **Indentar mueve la rama entera.** t3 es hija de t2; indentar t2
+             * bajo t1 la lleva a ella un nivel más abajo también, y desindentar
+             * la devuelve -- antes t3 quedaba hermana de t2, o a dos niveles. */
+            const t1 = doc.addTask(null);
+            const t2 = doc.addTask(t1.UID);
+            const t3 = doc.addTask(t2.UID);
+            doc.indent(t3.UID, 1);
+            const lv = () => [t1, t2, t3].map((t) =>
+                taskOf(this.holder.project, t.UID).OutlineLevel - t1.OutlineLevel).join(",");
+            ok = eq("t3 es hija de t2", lv(), "0,0,1") && ok;
+            doc.indent(t2.UID, 1);
+            ok = eq("indentar t2 se lleva a t3", lv(), "0,1,2") && ok;
+            doc.indent(t2.UID, -1);
+            ok = eq("y desindentar la trae", lv(), "0,0,1") && ok;
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */

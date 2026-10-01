@@ -550,7 +550,14 @@ class Edit {
         level = Math.max(level, 1);
         if (level === task.OutlineLevel) return false;
 
-        task.OutlineLevel = level;
+        /* **The subtree goes with it**, by the same step, which is what Project
+         * does: moving only the row would turn an indented summary's children
+         * into its siblings, and an outdented one's into a jump of two levels
+         * the outline cannot hold. */
+        let end = i + 1;
+        while (end < tasks.length && tasks[end].OutlineLevel > task.OutlineLevel) end++;
+        const step = level - task.OutlineLevel;
+        for (let k = i; k < end; k++) tasks[k].OutlineLevel += step;
         this.#recomputeSummary();
         this.commit();
         return true;
