@@ -167,13 +167,13 @@
       <Work>PT8H0M0S</Work>
       <Summary>true</Summary>
       <Critical>true</Critical>
-      <PercentComplete>75</PercentComplete>
-      <ActualStart>2026-09-01T08:00:00</ActualStart>
-      <ActualFinish>2026-09-02T17:00:00</ActualFinish>
       <LateStart>2026-09-01T08:00:00</LateStart>
       <LateFinish>2026-09-03T08:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>
       <TotalSlack>0</TotalSlack>
+      <PercentComplete>75</PercentComplete>
+      <ActualStart>2026-09-01T08:00:00</ActualStart>
+      <ActualFinish>2026-09-02T17:00:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
       <Baseline>
         <Number>0</Number>
@@ -233,13 +233,13 @@
       <Work>PT8H0M0S</Work>
       <EffortDriven>true</EffortDriven>
       <Critical>true</Critical>
-      <PercentComplete>100</PercentComplete>
-      <ActualStart>2026-09-03T08:00:00</ActualStart>
-      <ActualFinish>2026-09-03T12:00:00</ActualFinish>
       <LateStart>2026-09-03T08:00:00</LateStart>
       <LateFinish>2026-09-03T17:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>
       <TotalSlack>0</TotalSlack>
+      <PercentComplete>100</PercentComplete>
+      <ActualStart>2026-09-03T08:00:00</ActualStart>
+      <ActualFinish>2026-09-03T12:00:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>

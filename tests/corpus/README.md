@@ -32,8 +32,13 @@ por Project).
 ## Validación
 
 - Bien-formado XML: sí (python `xml.dom.minidom`, 2026-09-22).
-- Conformidad XSD: **los 6 validan contra `mspdi_pj12.xsd`** (xmllint, 2026-09-22)
-  **con una salvedad**: el XSD oficial declara
+- Conformidad XSD: **9 de los 10 validan contra `mspdi_pj12.xsd`** (xmllint,
+  2026-10-01); `08-namespace-2007` no trae `CurrencyCode`, que el XSD pide, y
+  se deja así porque lo que fija es el namespace. `XSD=/ruta/mspdi_pj12.xsd
+  tests/run.sh` valida además **cada salida** del harness, y falla cuando una
+  salida es inválida y su entrada no lo era: es el chequeo que ve un campo
+  insertado fuera de orden, que ningún golden ve.
+- **Una salvedad** (la misma en el harness): el XSD oficial declara
   `targetNamespace="http://schemas.microsoft.com/project/2007"` pero los
   ficheros usan `xmlns="http://schemas.microsoft.com/project"`, que es lo que
   Project escribe de verdad. La validación se hizo remapeando el namespace;

@@ -97,6 +97,11 @@ class MspTask extends Record {
         UID:              Field.Int({ key: true }),
         ID:               Field.Int(),
         Name:             Field.Text(),
+        /* Manually scheduled: its dates are the user's and the pass leaves
+         * them alone. Absent means automatic, which is what a file older than
+         * the flag can only mean. **Right after `Name`**, where Project 2010+
+         * writes it (`Name`, `Active`, `Manual`, `Type`); pj12 has no slot. */
+        Manual:           Field.Bool(),
         /* 0 Fixed Units, 1 Fixed Duration, 2 Fixed Work -- and -1 for a file
          * that left it out, which the schema says means the project's
          * `DefaultTaskType`, not Fixed Units. */
@@ -120,16 +125,9 @@ class MspTask extends Record {
          * estimated) keeps it and the `true` Project always writes is the
          * omission. */
         Estimated:        Field.Bool(true),
-        /* Manually scheduled: its dates are the user's and the pass leaves
-         * them alone. Absent means automatic, which is what a file older than
-         * the flag can only mean. */
-        Manual:           Field.Bool(),
         Milestone:        Field.Bool(),
         Summary:          Field.Bool(),
         Critical:         Field.Bool(),
-        PercentComplete:  Field.Int(),
-        ActualStart:      Field.DateTime(),
-        ActualFinish:     Field.DateTime(),
         /* What the backward pass works out and the file keeps: when the task
          * could still finish without moving the plan, and how much room it has
          * to do it in. The two dates are `DateTime`, whose absent is `""` and
@@ -147,13 +145,23 @@ class MspTask extends Record {
          *
          * All four are **tenths of a working minute**, the file's unit. The
          * variances are signed: **positive is late**, the task's dates being
-         * later than the ones the baseline caught. */
+         * later than the ones the baseline caught.
+         *
+         * **In the schema's order, which is the order a new element is
+         * inserted in** (`Record` puts it before the first sibling declared
+         * after it): between `Critical` and `PercentComplete`, variances
+         * before slacks. Out of order, the first Recalculate on a task the
+         * file had not dated wrote `LateStart` after `ActualFinish`, and the
+         * file stopped validating. */
         LateStart:        Field.DateTime(),
         LateFinish:       Field.DateTime(),
-        FreeSlack:        Field.Number({ def: NO_MINUTES }),
-        TotalSlack:       Field.Number({ def: NO_MINUTES }),
         StartVariance:    Field.Number({ def: NO_MINUTES }),
         FinishVariance:   Field.Number({ def: NO_MINUTES }),
+        FreeSlack:        Field.Number({ def: NO_MINUTES }),
+        TotalSlack:       Field.Number({ def: NO_MINUTES }),
+        PercentComplete:  Field.Int(),
+        ActualStart:      Field.DateTime(),
+        ActualFinish:     Field.DateTime(),
         ConstraintType:   Field.Int(),
         CalendarUID:      Field.Int(),
         ConstraintDate:   Field.DateTime(),
@@ -193,8 +201,8 @@ class MspResource extends Record {
         Type:               Field.Int(),
         IsNull:             Field.Bool(),
         Initials:           Field.Text(),
-        Group:              Field.Text(),
         MaterialLabel:      Field.Text(),
+        Group:              Field.Text(),
         /* 1.0 is the schema's own default: an absent MaxUnits is one unit,
          * not none, and a file that wrote 1 loses only the number it already
          * meant. */
@@ -227,11 +235,30 @@ class MspAssignment extends Record {
         Cost:                Field.Number(),
         CostRateTable:       Field.Int(),
         Finish:              Field.DateTime(),
+        /* **The assignment's variance, and against what?** An assignment has no
+         * baseline of its own -- `urbano v5.05052026.xml` carries 49
+         * `<Assignment>` and not one `<Baseline>` between them -- because in
+         * Project the baseline is a property of the *task*, and what an
+         * assignment's variance says is how far *this resource* drifted from the
+         * plan that was set for the task it works on. So it is measured against
+         * the task's baseline, on the task's calendar, and the sentinel means the
+         * same thing here as on the task: no baseline, no answer.
+         *
+         * All 49 of that file's assignments write `<StartVariance>0` and
+         * `<FinishVariance>0` because the plan never caught a baseline at all,
+         * and so this drops them -- the same modelled-default trade the slacks
+         * and the budget are, `tests/FIDELITY.md` §B. What is new here is only
+         * that the rule is now *one* rule at both levels instead of one for
+         * tasks and silence for assignments.
+         *
+         * Each one sits beside its date, which is the schema's order. */
+        FinishVariance:      Field.Number({ def: NO_MINUTES }),
         OvertimeCost:        Field.Number(),
         OvertimeWork:        Field.Text(),
         RegularWork:         Field.Text(),
         RemainingWork:       Field.Text(),
         Start:               Field.DateTime(),
+        StartVariance:       Field.Number({ def: NO_MINUTES }),
         Units:               Field.Number(),
         Work:                Field.Text(),
         WorkContour:         Field.Int(),
@@ -253,23 +280,6 @@ class MspAssignment extends Record {
          * the empty string, so a real file's zero duration survives untouched. */
         BudgetCost:          Field.Number(),
         BudgetWork:          Field.Text(),
-        /* **The assignment's variance, and against what?** An assignment has no
-         * baseline of its own -- `urbano v5.05052026.xml` carries 49
-         * `<Assignment>` and not one `<Baseline>` between them -- because in
-         * Project the baseline is a property of the *task*, and what an
-         * assignment's variance says is how far *this resource* drifted from the
-         * plan that was set for the task it works on. So it is measured against
-         * the task's baseline, on the task's calendar, and the sentinel means the
-         * same thing here as on the task: no baseline, no answer.
-         *
-         * All 49 of that file's assignments write `<StartVariance>0` and
-         * `<FinishVariance>0` because the plan never caught a baseline at all,
-         * and so this drops them -- the same modelled-default trade the slacks
-         * and the budget are, `tests/FIDELITY.md` §B. What is new here is only
-         * that the rule is now *one* rule at both levels instead of one for
-         * tasks and silence for assignments. */
-        StartVariance:       Field.Number({ def: NO_MINUTES }),
-        FinishVariance:      Field.Number({ def: NO_MINUTES }),
     };
 }
 
