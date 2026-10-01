@@ -40,6 +40,12 @@ class Edit {
 
     markSaved() { this.saved = this.at; }
 
+    /* **Different from every step the history holds**, which is what a
+     * recovered autosave is: what the window shows was never written to the
+     * file it is called. No step is ever at -1, so nothing undoes back to
+     * clean. */
+    markUnsaved() { this.saved = -1; }
+
     task(uid) {
         for (const task of this.holder.project.Tasks)
             if (task.UID === uid) return task;
@@ -47,14 +53,19 @@ class Edit {
     }
 
     /* One accepted command, and the state it left behind. The redo tail is
-     * dropped, and the oldest step goes when the stack is full. */
+     * dropped, and the oldest step goes when the stack is full.
+     *
+     * **When the saved state is one of the steps dropped, nothing is saved any
+     * more** -- the index it had is about to name a different state, and an
+     * undo that landed there would read clean without being the file. */
     commit() {
         if (this.auto) recalculate(this.holder.project);
+        if (this.saved > this.at) this.saved = -1;
         this.states.length = this.at + 1;
         this.states.push(this.holder.project.Serialize(true));
         if (this.states.length > Edit.LIMIT) {
             this.states.shift();
-            this.saved = Math.max(0, this.saved - 1);
+            this.saved = this.saved > 0 ? this.saved - 1 : -1;
         }
         this.at = this.states.length - 1;
     }

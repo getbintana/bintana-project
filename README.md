@@ -259,8 +259,12 @@ duration typed by hand stays the user's number.
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
 schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place
-and `Ctrl+Shift+S` asks where; closing with unsaved work asks first, and the
-title carries a `•` while there is any.
+and `Ctrl+Shift+S` asks where -- the new name becomes the document's only once
+the file is written. Closing with unsaved work asks first, and so does every
+door that replaces the document (`openFile`/`confirmDiscard`); the title
+carries a `•` while there is any. **Saved is a state, not a step number**: a
+redo tail or a full stack that drops the saved state leaves the history with
+no clean step at all (`saved = -1`).
 
 The history is a stack of snapshots of the record tree, not a set of inverse
 commands: a deletion that another task linked to comes back whole. Nothing is
@@ -366,7 +370,10 @@ whether the recovery copy is kept.
 **The autosave is a copy, not a save**: while there is unsaved work the app
 writes it every minute to the config directory -- never beside the schedule,
 which may be read-only -- and a copy newer than the file is offered at open
-time rather than taken. Saving deletes it. It is closed again by the same
+time rather than taken. **It is named by the whole path** (a hash beside the
+file's name), so two `plan.xml` are two copies. Saving or discarding deletes
+it; a recovered copy opens dirty and stays until one of the two, because it is
+the only place that work exists. It is closed again by the same
 switch in Settings. **Settings…** in the Tools menu is the one dialog that
 edits them, and it edits the same keys the code reads -- what it writes takes
 effect on Save, and a headless check never touches any of it.

@@ -30,7 +30,13 @@ XML.
 - Al abrir, si hay una **copia de recuperación más nueva** que el archivo (de
   una sesión que quedó sin guardar), la app pregunta si querés abrirla. La
   copia se escribe cada minuto mientras hay cambios sin guardar, en el
-  directorio de configuración — nunca al lado del plan. Se borra al guardar.
+  directorio de configuración — nunca al lado del plan, y una por archivo: dos
+  `plan.xml` de carpetas distintas no se pisan. Se borra al guardar o al
+  descartar los cambios. Lo recuperado queda **sin guardar** (el título lleva
+  el `•`) hasta que guardes.
+- Abrir otro plan —por cualquier camino: Abrir, recientes, arrastrar, Nuevo o
+  el ejemplo— con cambios sin guardar **pregunta antes**: Guardar, Descartar o
+  Cancelar, igual que al cerrar.
 
 Con un archivo nombrado en la línea de comandos no hay página de bienvenida: la
 ventana abre directamente el plan.

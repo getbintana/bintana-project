@@ -628,6 +628,9 @@ msgstr "Cambios sin guardar"
 msgid "Save changes to {0} before closing?"
 msgstr "¿Guardar los cambios de {0} antes de cerrar?"
 
+msgid "Save changes to {0} first?"
+msgstr "¿Guardar antes los cambios de {0}?"
+
 msgid "Discard"
 msgstr "Descartar"
 

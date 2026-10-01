@@ -253,12 +253,7 @@ class MainForm extends Form {
 
     openRecent(i) {
         const path = this.recentPaths[i];
-        if (!path) return;
-        try {
-            this.load(path);
-        } catch (e) {
-            Message.Error("Cannot open {0}: {1}", path, e.message);
-        }
+        if (path) this.openFile(path);
     }
 
     MnuRecent_Click(index) { this.openRecent(index); }
@@ -309,9 +304,10 @@ class MainForm extends Form {
      * The folder it opens on is the last one a file came from, which is where a
      * new plan belongs until somebody says otherwise. */
     ActNew_Click() {
-        NewProjectForm.ask(Settings.Get("bintana-project.folder",
-                                        Environment.HomeDirectory),
-                           (values) => this.newProject(values));
+        this.confirmDiscard(() =>
+            NewProjectForm.ask(Settings.Get("bintana-project.folder",
+                                            Environment.HomeDirectory),
+                               (values) => this.newProject(values)));
     }
 
     /* The plan is written and then **read back**, so what the window shows is
@@ -332,17 +328,38 @@ class MainForm extends Form {
      * something. It is here and not in the list of recents because it is not
      * something the user opened -- the recents are theirs, and the sample is
      * ours. */
-    BtnWelcomeSample_Click() { this.openSample(); }
+    BtnWelcomeSample_Click() { this.confirmDiscard(() => this.openSample()); }
 
     /* A file dragged from the file manager, anywhere on the window. */
     Form_FileDrop(paths) {
         const xml = paths.find((p) => File.IsExtension(p, "xml"));
-        if (!xml) return;
-        try {
-            this.load(xml);
-        } catch (e) {
-            Message.Error("Cannot open {0}: {1}", xml, e.message);
-        }
+        if (xml) this.openFile(xml);
+    }
+
+    /* **Every door that replaces the document goes through here**: a plan
+     * with unsaved work is asked about first, the way closing the window asks,
+     * and a file that cannot be read says so and leaves the one on screen. */
+    openFile(path) {
+        this.confirmDiscard(() => {
+            try {
+                this.load(path);
+            } catch (e) {
+                Message.Error("Cannot open {0}: {1}", path, e.message);
+            }
+        });
+    }
+
+    /* Unsaved work is Save, Discard or Cancel before anything takes its place.
+     * Discard drops the autosave as well: the copy is the work the user just
+     * chose not to keep, and offering it back on the next open would be
+     * asking the same question twice. */
+    confirmDiscard(then) {
+        if (!this.edit || !this.edit.dirty) { then(); return; }
+        ConfirmForm.ask(Locale.Text("Unsaved changes"),
+            Locale.Text("Save changes to {0} first?", File.Name(this.path)),
+            Locale.Text("Discard"),
+            () => { this.dropAutosave(); then(); },
+            { Text: Locale.Text("Save"), Run: () => { if (this.save()) then(); } });
     }
 
     /* `keepPath` is the file the document is *called* while its bytes came
@@ -373,9 +390,18 @@ class MainForm extends Form {
     /* A copy in the config directory, refreshed while there is unsaved work.
      * It is never beside the schedule: a project tree may be read-only, and
      * somebody else's copy of a plan is not theirs to find. */
-    autosavePath() {
+    /* **Named by the whole path, not the file's name**: `a/plan.xml` and
+     * `b/plan.xml` are two plans, and one copy for both would offer the work
+     * of one as the recovery of the other -- and a Save would then write it
+     * over the wrong file. The name stays readable; the hash tells them apart. */
+    autosavePath(path = this.path) {
         return File.Join(Application.ConfigDirectory,
-                         "autosave-" + File.BaseName(this.path) + ".xml");
+                         `autosave-${File.BaseName(path)}-${pathHash(path)}.xml`);
+    }
+
+    dropAutosave(path = this.path) {
+        const copy = this.autosavePath(path);
+        if (File.Exists(copy)) File.Delete(copy);
     }
 
     startAutosave() {
@@ -419,9 +445,13 @@ class MainForm extends Form {
             Locale.Text("There is a newer autosave of {0}. Open it?",
                         File.Name(this.path)),
             Locale.Text("Open"), () => {
+                /* **Recovered work is unsaved work**: the file on disk is still
+                 * the old one, so the window is dirty and the copy stays until a
+                 * Save or a Discard -- it is the only place that work exists. */
                 try {
                     this.load(copy, this.path, true);
-                    if (File.Exists(copy)) File.Delete(copy);
+                    this.edit.markUnsaved();
+                    this.updateTitle();
                     this.log(`Recovered ${copy}.`);
                 } catch (e) {
                     Message.Error("Cannot open {0}: {1}", copy, e.message);
@@ -1946,13 +1976,7 @@ class MainForm extends Form {
         Dialog.OpenFile("Open Project XML",
             { Folder: folder,
               Filters: [["Project XML", "*.xml"], ["All files", "*"]] },
-            (path) => {
-                try {
-                    this.load(path);
-                } catch (e) {
-                    Message.Error("Cannot open {0}: {1}", path, e.message);
-                }
-            });
+            (path) => this.openFile(path));
     }
 
     ActQuit_Click() { this.Close(); }
@@ -1963,27 +1987,37 @@ class MainForm extends Form {
         Dialog.SaveFile("Save Project XML",
             { Folder: File.Directory(this.path), Name: File.Name(this.path),
               Filters: [["Project XML", "*.xml"]] },
-            (path) => {
-                this.path = path;
-                this.save();
-            });
+            (path) => this.save(path));
     }
 
     /* The one road that writes. It answers whether it wrote, so the close
-     * question can keep the window when it did not. */
-    save() {
+     * question can keep the window when it did not.
+     *
+     * **A new name is the document's only once the file is written**: a Save
+     * As that failed leaves the title, the next Ctrl+S and the autosave on the
+     * file that still holds the plan. One that worked takes the old name's
+     * autosave with it -- that work is saved now, under the new name -- and
+     * goes to the recents like any file opened. */
+    save(path = this.path) {
         try {
-            writeMspdi(this.path, this.holder);
-            const copy = this.autosavePath();
-            if (File.Exists(copy)) File.Delete(copy);
-            this.edit.markSaved();
-            this.updateTitle();
-            this.log(`Saved ${this.path}.`);
-            return true;
+            writeMspdi(path, this.holder);
         } catch (e) {
-            Message.Error("Cannot save {0}: {1}", this.path, e.message);
+            Message.Error("Cannot save {0}: {1}", path, e.message);
             return false;
         }
+        this.dropAutosave();
+        if (path !== this.path) {
+            this.path = path;
+            this.dropAutosave();
+            if (this.settingsReady) {
+                Settings.Set("bintana-project.folder", File.Directory(path));
+                this.rememberRecent(path);
+            }
+        }
+        this.edit.markSaved();
+        this.updateTitle();
+        this.log(`Saved ${this.path}.`);
+        return true;
     }
 
     updateTitle() {
@@ -2003,7 +2037,7 @@ class MainForm extends Form {
         const name = File.Name(this.path);
         ConfirmForm.ask(Locale.Text("Unsaved changes"),
             Locale.Text("Save changes to {0} before closing?", name), Locale.Text("Discard"),
-            () => { this.forceClose = true; this.Close(); },
+            () => { this.dropAutosave(); this.forceClose = true; this.Close(); },
             { Text: Locale.Text("Save"), Run: () => {
                 if (this.save()) { this.forceClose = true; this.Close(); }
             } });
@@ -3191,6 +3225,62 @@ class MainForm extends Form {
 
             this.ActFilter.Click();
             ok = eq("el filtro toma el foco", this.TxtFilter.Focused, true) && ok;
+
+            /* **Lo guardado es un estado, no un número de paso.** Guardar,
+             * deshacer dos y hacer dos ediciones vuelve al mismo índice con
+             * otro plan; y una pila llena que se llevó el estado guardado no
+             * puede volver a él. Las dos tienen que seguir sucias. */
+            const history = new Edit(this.holder);
+            const step = (name, on = history) => {
+                taskOf(this.holder.project, 1).Name = name;
+                on.commit();
+            };
+            step("a"); step("b"); step("c");
+            history.markSaved();
+            history.undo(); history.undo();
+            step("x"); step("y");
+            ok = eq("el mismo paso con otro plan sigue sucio", history.dirty, true) && ok;
+
+            const full = new Edit(this.holder);
+            full.markSaved();
+            for (let k = 0; k <= Edit.LIMIT; k++) step(`n${k}`, full);
+            while (full.canUndo) full.undo();
+            ok = eq("con la pila llena el guardado no vuelve", full.dirty, true) && ok;
+
+            const recovered = new Edit(this.holder);
+            recovered.markUnsaved();
+            ok = eq("lo recuperado nace sucio", recovered.dirty, true) && ok;
+
+            /* Dos `plan.xml` son dos planes, y dos autoguardados. */
+            ok = eq("el autoguardado distingue la carpeta",
+                    this.autosavePath("/a/plan.xml") !== this.autosavePath("/b/plan.xml"),
+                    true) && ok;
+            ok = eq("y conserva el nombre",
+                    File.Name(this.autosavePath("/a/plan.xml")).startsWith("autosave-plan-"),
+                    true) && ok;
+
+            /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
+             * trabajo no. La pregunta se intercepta: lo que se afirma es que
+             * se hace y que el plan no se reemplaza antes de la respuesta. */
+            const realAsk = ConfirmForm.ask;
+            let asked = 0, accept = null;
+            ConfirmForm.ask = (title, message, yes, onConfirm) => {
+                asked++; accept = onConfirm;
+            };
+            try {
+                this.edit = new Edit(this.holder);
+                let opened = 0;
+                this.confirmDiscard(() => { opened++; });
+                ok = eq("sin cambios no pregunta", asked + ":" + opened, "0:1") && ok;
+                taskOf(this.holder.project, 1).Name = "sin guardar";
+                this.edit.commit();
+                this.confirmDiscard(() => { opened++; });
+                ok = eq("con cambios pregunta antes", asked + ":" + opened, "1:1") && ok;
+                accept();
+                ok = eq("y descartar abre", opened, 2) && ok;
+            } finally {
+                ConfirmForm.ask = realAsk;
+            }
 
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
             Application.Quit(ok ? 0 : 1);
@@ -4852,6 +4942,17 @@ function rowsKey(rows) {
  * it is not one, which the caller refuses. */
 function resourceNumber(text) {
     return Number(String(text || "").replace(",", "."));
+}
+
+/* Eight hex digits that tell two paths apart (FNV-1a): a name, not a
+ * secret, so a collision costs a recovery question and nothing more. */
+function pathHash(path) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < path.length; i++) {
+        h ^= path.charCodeAt(i);
+        h = Math.imul(h, 0x01000193) >>> 0;
+    }
+    return h.toString(16).padStart(8, "0");
 }
 
 /* "2026-10-01T17:00:00" reads better as "2026-10-01 17:00" in a row. */
