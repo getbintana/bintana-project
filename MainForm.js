@@ -130,6 +130,10 @@ class MainForm extends Form {
                 this.checkStats();
                 return;
             }
+            if (Application.Arguments.indexOf("check-commands") >= 0) {
+                this.checkCommands();
+                return;
+            }
             if (Application.Arguments.indexOf("check-welcome") >= 0) {
                 this.checkWelcome();
                 return;
@@ -2457,6 +2461,51 @@ class MainForm extends Form {
             ok = eq("another baseline is another question",
                     other.Tasks[0].FinishVariance, NO_MINUTES) && ok;
 
+            /* **The same question, one level down.** An assignment has no
+             * baseline of its own, so it is measured against its task's -- and
+             * that is not the task's answer said twice. Here A's task starts a
+             * day late while the assignment on it did not: a resource that got
+             * to work when it was supposed to. B's assignment is exactly on.
+             * Writing the task's number on the assignment instead would have
+             * made the first `480` and lost the distinction entirely. */
+            const asg = projectOf([
+                task(1, "PT8H0M0S", [], { ConstraintType: 4,
+                                          ConstraintDate: "2026-09-09T08:00:00" }),
+                task(2, "PT8H0M0S", [link(1, 1)]),
+            ]);
+            asg.Tasks[0].Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-07T08:00:00",
+                Finish: "2026-09-07T17:00:00" })];
+            asg.Tasks[1].Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-10T08:00:00",
+                Finish: "2026-09-10T17:00:00" })];
+            asg.Assignments = [
+                new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                    Start:  "2026-09-07T08:00:00",
+                                    Finish: "2026-09-07T17:00:00" }),
+                new MspAssignment({ UID: 2, TaskUID: 2, ResourceUID: 1,
+                                    Start:  "2026-09-10T08:00:00",
+                                    Finish: "2026-09-10T17:00:00" }),
+            ];
+            recalculate(asg);
+            ok = eq("la asignacion se mide contra la tarea, no contra si misma",
+                    asg.Assignments[0].StartVariance, 0) && ok;
+            ok = eq("mientras la tarea sigue tarde",
+                    asg.Tasks[0].StartVariance, 480) && ok;
+            ok = eq("y en su propio calendario: un dia, no 1440",
+                    asg.Assignments[1].FinishVariance, 0) && ok;
+            /* **No baseline, no answer**, at this level too -- and it is the
+             * sentinel rather than a zero that says so. */
+            const asgNone = projectOf([task(1, "PT8H0M0S")]);
+            asgNone.Assignments = [new MspAssignment({
+                UID: 1, TaskUID: 1, ResourceUID: 1,
+                Start: "2026-09-07T08:00:00", Finish: "2026-09-07T17:00:00" })];
+            recalculate(asgNone);
+            ok = eq("sin linea base la asignacion tampoco responde",
+                    [asgNone.Assignments[0].StartVariance,
+                     asgNone.Assignments[0].FinishVariance].join("/"),
+                    "-1/-1") && ok;
+
             /* **And it survives the file**, which is the whole claim: a number
              * nobody can read back is a number in memory. The claim is
              * **written equals what the pass held**, not a date -- the shape of
@@ -3028,6 +3077,125 @@ class MainForm extends Form {
             Application.Quit(ok ? 0 : 1);
         } catch (e) {
             print(`welcome ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /* The commands, pressed as commands.
+     *
+     * `checkWiring` asks whether a handler exists. This asks whether the command
+     * **does something**: `Action.Click()` is the same road the menu, the toolbar
+     * and the keyboard take, so what is asserted here is what a reader presses and
+     * not a method call.
+     *
+     * **Only the commands that edit the plan.** The rest open a dialog -- Open,
+     * Save As, Export, Report, Settings, Columns, Calendar, Statistics, New
+     * project -- and from here there is nobody to close it, because a modal
+     * window is a modal window. Those keep `checkWiring`'s question, which is all
+     * that can honestly be asked of them.
+     */
+    checkCommands() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`commands ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        try {
+            /* **A grey command refuses, and says so.** `Action.Click()` on a
+             * disabled one throws `TypeError`, which is a better answer than
+             * doing nothing quietly -- and it is the only thing that makes the
+             * gate of `documentCommands` observable from here. */
+            let ran = 0;
+            const realFilter = this.ActFilter_Click;
+            this.ActFilter_Click = () => { ran++; };
+            this.ActDelete.Enabled = false;
+            try {
+                this.ActDelete.Click();
+                ok = eq("a grey command no se aprieta", ran, 0) && ok;
+            } catch (e) {
+                ok = eq("y lo dice", e.message, "ActDelete is disabled") && ok;
+            }
+            this.ActFilter_Click = realFilter;
+
+/* The fixture the fidelity corpus uses: tasks in a chain, so a
+             * command has something to move.
+             *
+             * **Picked by UID, not by row.** Every command rebuilds the table,
+             * and the row an index named a moment ago is a different task by the
+             * time the next command runs -- which is the whole of what a scripted
+             * round of editing has to get right, and the reason the row is looked
+             * up again each time instead of once at the start. */
+            this.settingsReady = false;
+            this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
+            const tasks = () => this.holder.project.Tasks.length;
+            const level = (uid) => taskOf(this.holder.project, uid).OutlineLevel;
+            const pick  = (uid) => {
+                const rows = this.visibleTasks(this.holder.project);
+                this.Tasks.Select(rows.findIndex((t) => t.UID === uid));
+                this.Tasks_Select();
+            };
+
+            /* A task that is not the summary, with room to be indented. */
+            pick(1);
+            ok = eq("hay una fila elegida", this.selectedUID === null, false) && ok;
+
+            const before = tasks();
+            this.ActAdd.Click();
+            ok = eq("agregar una tarea es una de mas", tasks(), before + 1) && ok;
+            ok = eq("y es un undo", this.edit.canUndo, true) && ok;
+            this.edit.undo();
+            this.fill();
+            ok = eq("deshecha vuelve al numero", tasks(), before) && ok;
+
+            /* **Uid 2, not 1.** Both are level 1, and a first child cannot be
+             * indented -- there is no sibling above it to become the parent --
+             * so the command refuses, correctly. Asking for the second task is
+             * what makes the assertion mean something. */
+            pick(2);
+            const was = level(2);
+            this.ActIndent.Click();
+            ok = eq("indentar baja un nivel", level(2), was + 1) && ok;
+            this.ActOutdent.Click();
+            ok = eq("y desindentar lo devuelve", level(2), was) && ok;
+
+            /* Move down and back: the order is what the reader sees. */
+            const order = () => this.holder.project.Tasks.map((t) => t.UID).join(",");
+            pick(1);
+            const first = order();
+            this.ActDown.Click();
+            const moved = order();
+            ok = eq("mover abajo cambia el orden", moved !== first, true) && ok;
+            this.ActUp.Click();
+            ok = eq("y mover arriba lo devuelve", order(), first) && ok;
+
+            /* Recalculate is the one that has no visible effect on a plan that
+             * is already scheduled, so what it is asserted on is the log: it
+             * says what it did either way. */
+            const said = this.Log.Text;
+            this.ActRecalc.Click();
+            ok = eq("recalcular dice que hizo", this.Log.Text !== said, true) && ok;
+
+            /* Set Baseline touches every task, and it is the road that gives the
+             * variance something to compare against. */
+            this.ActBaseline.Click();
+            let baselined = 0;
+            for (const t of this.holder.project.Tasks)
+                if (t.Baselines.length) baselined++;
+            ok = eq("la linea base alcanza a todas", baselined, tasks()) && ok;
+            this.ActBaseline.Click();
+            ok = eq("y volver a guardarla reemplaza, no apila",
+                    taskOf(this.holder.project, 1).Baselines.length, 1) && ok;
+
+            this.ActFilter.Click();
+            ok = eq("el filtro toma el foco", this.TxtFilter.Focused, true) && ok;
+
+            print(ok ? "CHECK-OK" : "CHECK-FAILED");
+            Application.Quit(ok ? 0 : 1);
+        } catch (e) {
+            print(`commands ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
@@ -3839,7 +4007,20 @@ class MainForm extends Form {
               `${run.placed} placed, ${run.skipped} kept, ${same} same, ` +
               `${starts} starts off, ${finishes} finishes off, ` +
               `${criticals} critical off`);
-        Application.Quit(0);
+        /* **And it fails when it disagrees.**
+         *
+         * This was a report: it printed the numbers and exited `0` whatever they
+         * said, which meant a real plan whose dates the engine got wrong would
+         * not have failed anything -- the corpus would have gone on being green
+         * over synthetic fixtures. It is the only check in the harness that runs
+         * against Project's own output on a real project, so it is the one that
+         * has to be an assertion.
+         *
+         * Tasks the pass skipped are not counted as disagreements: a
+         * manually-scheduled task keeps the dates the file gave it, and
+         * comparing them would be asking the engine to do something it is
+         * supposed to leave alone. */
+        Application.Quit(starts + finishes + criticals === 0 ? 0 : 1);
     }
 
     checkCorpus() {

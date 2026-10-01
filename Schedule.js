@@ -690,5 +690,27 @@ function recalculate(project) {
         task.StartVariance  = varianceOf(work, base.Start,  task.Start);
         task.FinishVariance = varianceOf(work, base.Finish, task.Finish);
     }
+
+    /*
+     * **And the assignments, against their task's baseline.**
+     *
+     * The same measurement one level down, and against the same baseline: an
+     * assignment has none of its own, so it inherits the task's. It is not
+     * redundant with the task's variance -- a task can start on time while one
+     * of its three resources starts a week later, and that difference is the
+     * one an assignment's own two numbers are for.
+     *
+     * Written after the task pass on purpose, so it reads the dates the task
+     * pass has already fixed rather than the ones it started with.
+     */
+    for (const assignment of project.Assignments) {
+        const task = taskOf(project, assignment.TaskUID);
+        if (!task) continue;
+        const base = baselineOf(task, BASELINE);
+        if (!base) continue;
+        const work = workOf(task.CalendarUID);
+        assignment.StartVariance  = varianceOf(work, base.Start,  assignment.Start);
+        assignment.FinishVariance = varianceOf(work, base.Finish, assignment.Finish);
+    }
     return { placed, skipped, notMet };
 }

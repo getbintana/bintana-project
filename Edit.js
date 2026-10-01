@@ -112,10 +112,14 @@ class Edit {
             tasks.splice(i, block.length);
             for (let k = 0; k < block.length; k++) tasks.splice(at + k, 0, block[k]);
         } else {
-            /* After the next sibling's whole subtree, which is what makes the
-             * move a swap and not an insert into somebody's children. */
+            /* After the next sibling's whole subtree, so the move is a swap and not an
+             * insert into somebody's children -- and so a leaf moves *past* its
+             * neighbour instead of onto it. The scan starts one past the sibling,
+             * because at `end` the level is equal and not greater: starting there
+             * the loop stopped on the sibling itself and put the task back where
+             * it had been, so moving down silently did nothing. */
             if (end >= tasks.length || tasks[end].OutlineLevel !== level) return false;
-            let after = end;
+            let after = end + 1;
             while (after < tasks.length && tasks[after].OutlineLevel > level) after++;
             tasks.splice(i, block.length);
             const at = after - block.length;

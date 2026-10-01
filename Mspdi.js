@@ -244,6 +244,23 @@ class MspAssignment extends Record {
          * the empty string, so a real file's zero duration survives untouched. */
         BudgetCost:          Field.Number(),
         BudgetWork:          Field.Text(),
+        /* **The assignment's variance, and against what?** An assignment has no
+         * baseline of its own -- `urbano v5.05052026.xml` carries 49
+         * `<Assignment>` and not one `<Baseline>` between them -- because in
+         * Project the baseline is a property of the *task*, and what an
+         * assignment's variance says is how far *this resource* drifted from the
+         * plan that was set for the task it works on. So it is measured against
+         * the task's baseline, on the task's calendar, and the sentinel means the
+         * same thing here as on the task: no baseline, no answer.
+         *
+         * All 49 of that file's assignments write `<StartVariance>0` and
+         * `<FinishVariance>0` because the plan never caught a baseline at all,
+         * and so this drops them -- the same modelled-default trade the slacks
+         * and the budget are, `tests/FIDELITY.md` §B. What is new here is only
+         * that the rule is now *one* rule at both levels instead of one for
+         * tasks and silence for assignments. */
+        StartVariance:       Field.Number({ def: NO_MINUTES }),
+        FinishVariance:      Field.Number({ def: NO_MINUTES }),
     };
 }
 

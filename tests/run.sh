@@ -98,10 +98,10 @@ else
     run_one "edit-01-minimal" check-edit "$PWD/tests/corpus/01-minimal.xml" || fail=1
 
     # The engine's arithmetic, the chart's pointer, the view's geometry, the
-    # statistics the Project menu shows and the welcome page a bare start lands
-    # on, asserted inside the app -- no golden, because the values are the
-    # assertion.
-    for what in cpm drag view stats welcome; do
+    # statistics the Project menu shows, the welcome page a bare start lands on
+    # and the commands themselves pressed as commands -- asserted inside the app
+    # -- no golden, because the values are the assertion.
+    for what in cpm drag view stats welcome commands; do
         if "$TRY" "$PWD" "check-$what" > "$OUT/$what.report" 2>&1; then
             echo "check $what: $(grep -c "^$what " "$OUT/$what.report") assertions ok"
         else
@@ -110,6 +110,28 @@ else
             fail=1
         fi
     done
+
+    # **The real plan, when there is one to point at.** `ORACLE=/ruta/plan.xml`
+    # is opt-in because the file is not in the repository: the corpus is small
+    # and synthetic, and the oracle is Project's own output on a real project.
+    # Without it the oracle is only ever checked by hand, which is a habit
+    # rather than a check -- so with it, the harness says out loud how many
+    # elements of a real file the app does not model, and that number is the
+    # measure of what is left to do.
+    if [[ -n ${ORACLE-} ]]; then
+        if [[ ! -f $ORACLE ]]; then
+            echo "check oracle: NO SUCH FILE $ORACLE"
+            fail=1
+        else
+            if "$TRY" "$PWD" check-oracle "$ORACLE" > "$OUT/oracle.report" 2>&1; then
+                echo "check oracle: ok ($(grep '^oracle ' "$OUT/oracle.report" | tail -1 | cut -d: -f2-))"
+            else
+                echo "check oracle: FAILED"
+                grep '^oracle ' "$OUT/oracle.report" | tail -25
+                fail=1
+            fi
+        fi
+    fi
 fi
 
 if [[ $fail -eq 0 ]]; then
