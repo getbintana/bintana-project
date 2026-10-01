@@ -217,6 +217,26 @@ class Edit {
      * task's `Type` and `EffortDriven` decide what the units do to the
      * duration, and the work a work resource carries is that duration at its
      * units; a material is measured by the units and has none. */
+    /* **One assignment's budget, which is the only budget there is**: MSPDI
+     * keeps it on the assignment and not on the task or the plan, so this is
+     * where a number the user typed becomes a file's number. Zero is a real
+     * answer (no money budgeted) and so is "no answer at all", because that is
+     * what an absent element reads as -- which is why there is no sentinel here
+     * and why the field is money and not minutes.
+     *
+     * One undo, like every other field: a budget nobody wrote is not an edit. */
+    setAssignmentBudget(uid, cost) {
+        const assignment = this.assignment(uid);
+        if (!assignment) return false;
+
+        const budget = Number(cost) || 0;
+        if (assignment.BudgetCost === budget) return false;
+
+        assignment.BudgetCost = budget;
+        this.commit();
+        return true;
+    }
+
     addAssignment(taskUID, resourceUID, units) {
         const project  = this.holder.project;
         const task     = this.task(taskUID);

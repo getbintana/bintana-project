@@ -7,6 +7,22 @@ XML.
 
 ## Abrir
 
+- Al arrancar **sin ningún archivo en la línea de comandos** la ventana abre la
+  **página de bienvenida**: el ícono de la aplicación y, al lado, lo único que
+  una ventana sin plan abierto puede hacer — **Nuevo proyecto…**, **Abrir…**,
+  **Abrir el ejemplo** y la lista de los **recientes**. Cada fila trae el
+  nombre del archivo y la carpeta al lado, porque dos planes llamados
+  `plan.xml` son dos planes. Con la lista vacía, en vez de filas dice
+  *(ninguno todavía)*.
+- **Archivo → Nuevo proyecto…** (`Ctrl+Shift+N`) hace lo mismo desde el menú.
+  Abre un diálogo con cuatro cosas: el **nombre** del plan (el único campo
+  obligatorio), el **título** que Project muestra encima, la **fecha de inicio**
+  —que si la dejás vacía es hoy— y la **carpeta** y el **archivo** donde va.
+  La carpeta arranca donde vino el último archivo y se puede cambiar con el ícono
+  o escribiéndola. Debajo se ve la ruta completa, y **Crear se pone gris si esa
+  ruta ya tiene un archivo**: un plan nuevo nunca reemplaza a otro.
+  Lo que se escribe es un plan en blanco —calendario Standard de lunes a
+  viernes, dos turnos, sin tareas— con la fecha de estado leída como el inicio.
 - **Archivo → Abrir…** (`Ctrl+O`), o arrastrá un XML a la ventana, o pasá el
   archivo en la línea de comandos:
   `bintana /ruta/al/proyecto plan.xml`.
@@ -15,6 +31,9 @@ XML.
   una sesión que quedó sin guardar), la app pregunta si querés abrirla. La
   copia se escribe cada minuto mientras hay cambios sin guardar, en el
   directorio de configuración — nunca al lado del plan. Se borra al guardar.
+
+Con un archivo nombrado en la línea de comandos no hay página de bienvenida: la
+ventana abre directamente el plan.
 
 ## La tabla
 
@@ -26,10 +45,27 @@ costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 Las columnas se eligen en **Ver → Columnas…** (o en el menú de la fila,
 **Columnas…**): se agregan y se sacan con un tilde, entre duración, fechas,
-avance, crítica, hito, trabajo, costo, EDT, prioridad, restricción, fecha
-límite, calendario, tipo de tarea, notas y el campo personalizado del archivo.
-El nombre es el árbol y no se va. La elección es una vista, como la escala: se
+avance, crítica, holgura, desvío, hito, trabajo, costo, EDT, prioridad,
+restricción, fecha límite, calendario, tipo de tarea, notas y el campo
+personalizado del archivo. El nombre es el árbol y no se va. La elección es una vista, como la escala: se
 recuerda para la próxima ventana y no toca el archivo.
+
+La **holgura** es lo que el pase hacia atrás calcula y hasta ahora no guardaba:
+cuánto puede correrse la tarea antes de que se mueva el **fin del plan**. La
+**holgura libre** es otra cosa y también se guarda, aunque no tiene columna: es
+lo que puede correrse antes de que se mueva lo que depende de esta tarea. Una
+tarea puede tener un día entero contra el plan y cero contra su sucesora. La
+que nadie espera puede correrse todo su total. Si el paso no/programó esa tarea
+—es ALAP, o el archivo nunca la fechados— la celda queda **vacía y no en cero**,
+porque un `0` ahí sería decir que no hay margen cuando nadie miró.
+
+El **desvío** es la otra mitad de la línea base y va con signo: **positivo es
+tarde**, y el signo va en la celda (`-1d` es un día antes). Compara el fin de
+la tarea con el fin que la línea base le había atrapado, en la unidad de la
+propia tarea. Solo se calcula contra la línea base 0 —la que escribe *Guardar
+línea base*—, así que un archivo que trae varias tiene desvío solo contra esa.
+Si la tarea no tiene línea base, o al lado no hay fecha, la celda queda vacía: un
+plan sin línea base no está *en su* línea base, está sin una.
 
 El clic derecho en el **encabezado** de una columna es el atajo de Project, y
 también lleva a lo mismo: **Ocultar esta columna** saca la que se apretó (sobre
@@ -149,6 +185,13 @@ y lo que las unidades le hacen a la duración depende del tipo de tarea y de
 si es condicionada por esfuerzo (una tarea que ya carga una unidad tarda la
 mitad cuando llega otra).
 
+El **presupuesto** de cada asignación se edita con el campo **Presupuesto** y
+el botón del mismo nombre, sobre la asignación elegida en la tabla: el
+presupuesto del plan **es la suma de las asignaciones** y no hay un total que se
+escriba aparte —en el archivo el campo está en la asignación, y por eso no
+está en otro lado—. Es un Deshacer y se puede dejar en cero, que es lo mismo
+que no presupuestar.
+
 El costo sale del trabajo por la tasa en un recurso de trabajo, de las
 unidades por la tasa en uno material, más el costo por uso; si el archivo trae
 su propio costo, ese manda. Si el recurso trae **tasas por fecha** (tablas A–E,
@@ -195,11 +238,22 @@ plan que todavía no fue calculado se muestra como está, con lo que el archivo
 trae.
 
 - **Costo**: el total del plan y su reparto entre recursos de trabajo,
-  material y costo; el costo y el trabajo de la **línea base** y el desvío,
-  cuando el plan tiene línea base; y cuántos recursos están **sobreasignados**
-  (el pico de unidades supera su máximo, que es lo que dice la columna Pico).
-  El dinero sale con el símbolo y las posiciones decimales que trae el archivo
-  —la moneda del plan— y con el orden de símbolos de este escritorio.
+  material y costo; el **presupuesto** que suman las asignaciones y su
+  desvío, con lo que ya se gastó del presupuesto en porcentaje; el costo y el
+  trabajo de la **línea base** y el desvío, cuando el plan tiene línea base; y
+  cuántos recursos están **sobreasignados** (el pico de unidades supera su
+  máximo, que es lo que dice la columna Pico). El dinero sale con el símbolo y
+  las posiciones decimales que trae el archivo —la moneda del plan— y con el
+  orden de símbolos de este escritorio. Un plan sin presupuesto muestra la
+  fila vacía y no en cero: no tener presupuesto no es estar exactamente en él.
+- **Cronograma**: el **tramo de la línea base** (las fechas que atrapó, de
+  inicio a fin) contra el tramo que tiene el plan ahora, y el **desvío de
+  cronograma** en **días de calendario** —con signo, y `en línea base` cuando
+  es cero—. Son días de calendario y no laborables a propósito, porque esa es
+  la pregunta que uno hace de voz alta ("¿cuánto vamos de tarde?"), mientras
+  el desvío por tarea sí va en el calendario de la tarea. Una línea base que
+  solo trae el fin **todavía desvía** pero **no es un tramo**: el desvío
+  necesita una fecha de cada lado y el tramo necesita dos de la línea base.
 - **Fechas**: inicio y fin del plan, la **fecha de estado** (o la fecha de la
   máquina, si el archivo no escribió ninguna) y los tres tramos: duración en
   **días laborables** sobre el calendario del proyecto, días de calendario, y

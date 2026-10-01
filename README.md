@@ -11,7 +11,7 @@ whoever works on it.
 ## Run it
 
 ```sh
-/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project           # window, opens a copy of the sample
+/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project           # window, the welcome page
 /home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project plan.xml  # or a file of your own
 /home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project \
     examples/desarrollo-bintana.xml                                                          # this project's own plan
@@ -24,13 +24,55 @@ round trip to Project -- made with the app itself and scheduled by its own
 engine (33 tasks, 7 milestones, 35 links). It is also the demo: open it and
 press F5, nothing moves.
 
+**A window with nothing open shows what it can do, not an empty workspace.**
+`Pages` is a `Switcher` with `Strip: "None"` -- a bare stack -- and the two
+things the window can be are its pages: the welcome page and the workspace. A
+bare start (no file on the command line) lands on the welcome one, where the
+application's own icon sits beside **New Project...**, **Open...** and the list
+of recents; the workspace comes up as soon as there is a document, from
+whichever of the four doors opened it. Nothing goes back, because nothing closes
+a project.
+
+The recents are **the menu's list by index** -- `showRecent()` is the one place
+that decides whether there is anything to open, so the submenu and the page
+cannot disagree -- with the folder beside the name, because two plans called
+`plan.xml` are two plans. A row drops its own selection afterwards, so the same
+plan can be opened twice.
+
+**New Project is a file before it is a document**, so it asks first:
+`NewProjectForm` takes the plan's name (the only required field), the title
+Project shows over it, the start the whole schedule hangs off, and the folder
+and file it goes to -- the folder being the last one a file came from, editable
+by typing or by the chooser, with the whole path shown below. **It never
+replaces a file**: a taken path greys `Create` and says so, before rather than
+after. `newMspdi()` then builds a blank plan -- one Standard calendar of two
+shifts over a five-day week, no tasks -- as text, parses it, and hands the tree
+to `writeMspdi` like any other document, so **the first Save writes what the
+shapes model rather than the text it was built from**, and the file is read back
+before the window shows it.
+
+**There is no currency in a blank plan, on purpose.** There is no honest way to
+guess one from this side of the desk: an absent one costs nothing -- `StatsForm`
+then spends the money the way the desktop spells it, which is right until
+somebody says otherwise -- and a guessed one is a wrong number somebody has to
+find. `Project Information` is where it is set.
+
+One thing the stack changed: the workspace's inset is a **`Margin` on `Body`,
+where it used to be `Padding`**. A container's `Padding` is a CSS property on
+the widget, and inside a stack page it stops being honoured -- measured, the
+plan area went flush with the window's edges and the panel with the right one.
+`Margin` is applied by the layout manager and survives, at the cost of a uniform
+12 rather than `10 12 4 12`.
+
 The window is a menu bar (File/Edit/View/Tools/Help), an icon toolbar with the
 commands that matter while editing, the WBS and the chart, the properties panel
 and a status bar. Every command is declared once as an `Action`, so the toolbar
 button, the menu item and its key are one command with one `Enabled` and one
-label. The panel is four tabs -- **Task**, **Links**, **Resources**,
-**Project** -- and the log starts hidden: **View → Show log** brings it back. A
-Project XML dragged onto the window opens too.
+label -- which is why **New Project** and **Open** on the welcome page are the
+File menu's own `ActNew`/`ActOpen` and not buttons of their own. The panel is
+four tabs -- **Task**, **Links**, **Resources**, **Project** -- and the log
+starts hidden: **View → Show log** brings it back. A Project XML dragged onto
+the window opens too.
 
 The list is the WBS as a tree
 keyed by UID -- summaries fold, IsNull rows are skipped, durations read in the
@@ -41,13 +83,72 @@ chart, which draws summaries as brackets and critical tasks in red.
 
 **View → Columns…** (or the row's context menu) chooses what the table shows
 beside the name, which is the tree and never goes: duration, start, finish,
-percent complete, critical, milestone, work, cost, WBS, priority, constraint,
-deadline, calendar, task type, notes and the file's custom field -- added and
-removed with a tick. The choice is a view setting, like the timescale: it
-survives the window and never touches the file. **A secondary click on a column
+percent complete, critical, slack, variance, milestone, work, cost, WBS,
+priority, constraint, deadline, calendar, task type, notes and the file's custom
+field -- added and removed with a tick. The choice is a view setting, like the timescale:
+it survives the window and never touches the file. **A secondary click on a column
 heading** is the gesture Project has for it, and reaches the same place: hide
 the column under the pointer (the name cannot go), show every column again, or
 open the dialog.
+
+**The backward pass's answer is kept, as the four fields the file carries.** It
+has always computed the latest dates a task could take and thrown them away,
+using them only to mark zero slack as critical; now `LateStart`, `LateFinish`,
+`TotalSlack` and `FreeSlack` are modelled and written, which is what Project's
+Tracking tab shows. **Total and free are two numbers and not one**: total is the
+room before the plan's *finish* moves, free is the room before whatever depends
+on this task moves -- a task with a successor starting the next morning can slip
+a whole day against the plan and not an hour against its successor, and a task
+nothing waits on has all of its total as free.
+
+**The sentinel is `NO_MINUTES` when nobody worked it out, and that is not `0`.**
+It is outside the value space (neither slack nor variance is ever negative)
+precisely because zero is a real answer: it is what Project writes for every critical task, and a shape
+whose default were `0` would read "the file said zero" and "the file said
+nothing" as one value and **delete the element on the way out**. A task the pass
+never placed -- ALAP, or one the file never dated -- keeps the sentinel and the
+column shows a blank, because a row reading "0d" for a task nobody looked at is
+the one number in that table that would be a lie rather than a reading. The
+same bargain `MspLink.Type` makes.
+
+**The variance is the other half of the baseline, and it is signed.** `MspBaseline`
+already carried the dates the baseline caught; comparing them with the plan's own
+gives `StartVariance` and `FinishVariance`, which is what Project writes and what
+the Variance column shows -- **positive is late**, in the task's unit, with the
+sign in the reading rather than left to the reader. It is computed at the very end
+of the pass, because that is the point where both dates are final, and only for
+a task that has baseline 0: a file can carry several and "the baseline" is the
+one *Set Baseline* writes, so a task baselined only as number 1 has no variance
+here -- the same bargain `MspBaseline` and `baselineOf` already make.
+
+
+**The budget is on the assignment, because that is where the file keeps it.**
+`urbano v5.05052026.xml` -- a real plan from Project 16.0 -- carries
+`<BudgetCost>` and `<BudgetWork>` once per assignment (49 of each, inside the
+`<Assignment>`), so the plan's budget is the sum of its assignments' and there
+is nothing to read at the project level. **The Resources tab's assignment panel
+edits it**: a *Budget* field and its own button, because an assignment has no
+Apply of its own and the two numbers a budget means -- money and work -- live in
+different places in the file.
+
+**A budget has no sentinel and a slack does, and the difference is the point.**
+For money, absent and zero say the same thing -- nothing budgeted -- so there is
+no answer only zero can give, and a shape carrying a sentinel would make the
+editor offer a value that means nothing. For slack they are different answers,
+which is why `NO_MINUTES` exists there. The price of the simple choice is
+measured and recorded: round-tripping the real plan now **removes its 49
+`<BudgetCost>0</BudgetCost>` elements** (`touched` 871 -> 920), which is the
+modelled-default trade `tests/FIDELITY.md` §B is about rather than a loss. Its
+`BudgetWork`, whose default is the empty string, survives untouched.
+
+At the plan's size, `projectStats` reports the baseline's span against the plan's
+and the **calendar** days the finish moved -- calendar because that is the
+question asked out loud ("how late are we?"), while the per-task number belongs
+on the task's own calendar. `Project → Statistics…` shows both. **A baseline
+with only a finish still varies and is still not a span**: a variance needs one
+date from each side, a span needs both from the baseline, and half a baseline is
+not a plan to compare a plan against. `check-stats` asserts exactly that shape,
+because it is the one Project writes.
 
 **The two panes are the same rows, and folding is where that is decided.**
 `chartRows()` is the one call both the drawing and the hit-test read, and it
@@ -238,9 +339,11 @@ acceptance is a real `Save As → XML` from MS Project, opened back by Project.
 `tests/run.sh` is the harness: it round-trips every fixture, and on a full run
 also plays one scripted round of the editing commands over `01-minimal`, holding
 each saved output and its `touched` report against the goldens in
-`tests/expected/` (`--update` rewrites them after a deliberate change).
-`tests/FIDELITY.md` classifies what they measure -- including the first upstream
-bug the corpus found; `tests/run.sh <name>` runs one file.
+`tests/expected/` (`--update` rewrites them after a deliberate change), and then
+runs the five in-app roads -- `check-cpm`, `check-drag`, `check-view`,
+`check-stats` and `check-welcome` -- where the values are the assertion and
+there is no golden. `tests/FIDELITY.md` classifies what they measure -- including
+the first upstream bug the corpus found; `tests/run.sh <name>` runs one file.
 
 ## What is not here yet
 

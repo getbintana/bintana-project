@@ -56,6 +56,24 @@
         },
         {
           "type": "CheckButton",
+          "name": "ChkColSlack",
+          "properties": {
+            "Text": "Slack",
+            "HAlign": "Start",
+            "Tooltip": "How long the task can slip before the plan's finish moves"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColVariance",
+          "properties": {
+            "Text": "Variance",
+            "HAlign": "Start",
+            "Tooltip": "How late the task's finish is against its baseline; a minus means ahead"
+          }
+        },
+        {
+          "type": "CheckButton",
           "name": "ChkColMilestone",
           "properties": { "Text": "Milestone", "HAlign": "Start" }
         },

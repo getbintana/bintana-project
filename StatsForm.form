@@ -100,6 +100,44 @@
                         },
                         {
                           "type": "Label",
+                          "name": "LblBaselineSpan",
+                          "properties": {
+                            "Text": "Baseline span",
+                            "HAlign": "End",
+                            "Tooltip": "The dates the baseline caught, and the working days they covered"
+                          }
+                        },
+                        {
+                          "type": "TextBox",
+                          "name": "TxtBaselineSpan",
+                          "properties": {
+                            "Width": 150,
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "ReadOnly": true
+                          }
+                        },
+                        {
+                          "type": "Label",
+                          "name": "LblScheduleVariance",
+                          "properties": {
+                            "Text": "Schedule variance",
+                            "HAlign": "End",
+                            "Tooltip": "Calendar days the plan's finish moved against its baseline; a minus means it finished early"
+                          }
+                        },
+                        {
+                          "type": "TextBox",
+                          "name": "TxtScheduleVariance",
+                          "properties": {
+                            "Width": 150,
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "ReadOnly": true
+                          }
+                        },
+                        {
+                          "type": "Label",
                           "name": "LblBaselineCost",
                           "properties": {
                             "Text": "Baseline cost",
@@ -127,6 +165,62 @@
                         {
                           "type": "TextBox",
                           "name": "TxtVariance",
+                          "properties": {
+                            "Width": 150,
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "ReadOnly": true
+                          }
+                        },
+                        {
+                          "type": "Label",
+                          "name": "LblBudget",
+                          "properties": {
+                            "Text": "Budget",
+                            "HAlign": "End",
+                            "Tooltip": "What the assignments say this plan will cost; empty when it took no budget"
+                          }
+                        },
+                        {
+                          "type": "TextBox",
+                          "name": "TxtBudget",
+                          "properties": {
+                            "Width": 150,
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "ReadOnly": true
+                          }
+                        },
+                        {
+                          "type": "Label",
+                          "name": "LblBudgetVariance",
+                          "properties": {
+                            "Text": "Budget variance",
+                            "HAlign": "End",
+                            "Tooltip": "How far over or under the budget the plan is; a minus means under"
+                          }
+                        },
+                        {
+                          "type": "TextBox",
+                          "name": "TxtBudgetVariance",
+                          "properties": {
+                            "Width": 150,
+                            "HExpand": true,
+                            "HAlign": "Fill",
+                            "ReadOnly": true
+                          }
+                        },
+                        {
+                          "type": "Label",
+                          "name": "LblBudgetPercent",
+                          "properties": {
+                            "Text": "Budget used",
+                            "HAlign": "End"
+                          }
+                        },
+                        {
+                          "type": "TextBox",
+                          "name": "TxtBudgetPercent",
                           "properties": {
                             "Width": 150,
                             "HExpand": true,

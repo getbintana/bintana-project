@@ -14,6 +14,8 @@ const COLUMN_CHECKS = {
     finish:     "ChkColFinish",
     percent:    "ChkColPercent",
     critical:   "ChkColCritical",
+    slack:      "ChkColSlack",
+    variance:  "ChkColVariance",
     milestone:  "ChkColMilestone",
     work:       "ChkColWork",
     cost:       "ChkColCost",

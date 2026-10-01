@@ -438,11 +438,69 @@ medio, que es la misma cuenta que hace `recalculate` para el registro, así que
 el diálogo y el log no pueden discrepar. `check-stats` afirma los números, sin
 golden porque los valores son la afirmación.
 
-Lo que **no** hay y es lo siguiente si el corpus lo pide: fechas tardías
-(`LateStart`/`LateFinish`, hoy el pase hacia atrás no las deja) y con ellas el
-desvío de cronograma y la holgura al estilo de Project, y presupuesto —que el
-modelo no tiene, porque `Cost` se calcula y no se guarda— para poder hablar de
-desvío de costo contra algo.
+**Fechas tardías y holgura** (2026-09-30): el pase hacia atrás ya calculaba los
+fechos tardíos de cada tarea y los tiraba —los usaba solo para marcar la
+holgura cero como crítica—, así que la fase se cerró **guardando lo que ya se
+calculaba**: `Task.LateStart`, `Task.LateFinish`, `Task.TotalSlack` y
+`Task.FreeSlack` modelados y escritos, que es lo que muestra la pestaña
+*Tracking* de Project. **Total y libre son dos números**: el total es lo que
+puede correrse antes de que se mueva el fin del plan y el libre lo que puede
+correrse antes de que se mueva lo que depende de la tarea, y por eso una tarea
+puede tener un día entero contra el plan y cero contra su sucesora; una tarea
+sin sucesoras tiene todo su total como libre, y los vínculos SS y SF dan cero
+libre porque el inicio (o el fin) del sucesor cuelga del nuestro. La holgura se
+mide en **minutos laborables** en el calendario de la tarea.
+
+Lo que la ausente obliga a decidir es el centinela: `NO_SLACK` es `-1` y no `0`,
+porque `0` es la respuesta de una tarea crítica y es lo que Project escribe en
+cada una de ellas —un `Field.Number` a secas leería "el archivo dijo cero" y
+"no dijo nada" como el mismo valor y la ida y vuelta borraría el elemento—, y
+porque una tarea que el pase no colocó (ALAP, o nunca fechada) tiene que poder
+decir que **nadie calculó** en vez de decir que no hay margen. La columna
+**Holgura** muestra la celda vacía en ese caso. Ninguno de los diez fixtures
+traía estos elementos, así que sus goldens no se movieron; `check-cpm` afirma
+los números.
+
+**Desvío de cronograma** (2026-09-30): `MspBaseline` ya guardaba las fechas que
+la línea base atrapó, así que compararlas con las del plan da
+`Task.StartVariance` y `Task.FinishVariance`, que es lo que escribe Project. Se
+calculan **al final del pase**, que es el punto donde las dos fechas son
+definitivas, y solo para la línea base 0 —la que escribe *Guardar línea base*,
+que es lo que `baselineOf` ya hablaba—. Van con signo (positivo es tarde), en
+minutos laborables sobre el calendario de la tarea, y el centinela es el mismo
+`NO_MINUTES` de la holgura: **una tarea sin línea base no tiene desvío, y eso no
+es lo mismo que tener cero**. La columna **Desvío** muestra el de fin; el de
+inicio queda en el archivo, que es donde Project lo lee.
+
+A nivel de plan, `projectStats` agrega el **tramo de la línea base** (las fechas
+que atrapó) contra el del plan y los **días de calendario** que el fin se movió,
+que van con signo; **Proyecto → Estadísticas…** muestra los dos. Son días de
+calendario a propósito —es la pregunta que se hace de voz alta— mientras el
+desvío por tarea va en el calendario de la tarea. Una línea base con solo el
+fin **todavía desvía y no es un tramo**, y `check-stats` afirma justamente esa
+forma porque es la que Project escribe. Ningún golden se movió: **ninguno de
+los diez fixtures trae línea base**, así que no hay varianza que escribir.
+
+**Presupuesto** (2026-09-30): la fase se cierra con el número que le faltaba
+al desvío de costo. **Dónde está el presupuesto lo decidió el archivo real y no
+el schema**: el campo se llama `BudgetCost` y vive en la **asignación** —
+`urbano v5.05052026.xml` trae 49 `<BudgetCost>` y 49 `<BudgetWork>`, uno por
+asignación, entre `CreationDate` y `TimephasedData`—, así que el presupuesto del
+plan es la suma de las asignaciones y no hay número a nivel de proyecto que
+leer. `projectStats` agrega `budget`, `budgetVariance` y `budgetPercent`, y
+**Proyecto → Estadísticas…** los muestra junto al costo; la pestaña Recursos
+edita el de cada asignación con un campo y su propio botón, porque una
+asignación no tiene Aplicar propio.
+
+**El presupuesto no lleva centinela y la holgura sí, y la diferencia es el
+motivo**: para dinero, ausente y cero dicen lo mismo —no hay presupuesto—, así
+que no hay respuesta que solo el cero pueda dar y un centinela haría que el
+editor ofreciera un valor que no significa nada. **El precio está medido**:
+la ida y vuelta del archivo real ahora borra sus 49 `<BudgetCost>0</BudgetCost>`
+(`touched` 871 → 920), que es el intercambio de la §B de `tests/FIDELITY.md` y
+no una pérdida; el `BudgetWork` sobrevive porque su default es la cadena vacía.
+Queda pendiente de la aceptación en Project si la ausencia le parece igual a un
+cero, que es lo que dice el schema.
 
 ### 6 — Distribución
 

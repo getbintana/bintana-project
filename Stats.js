@@ -39,11 +39,6 @@
  */
 "use strict";
 
-/* The number `Edit → Save Baseline` writes, which is the one the chart draws
- * and the one "the baseline" means everywhere in this app. It lives here
- * beside `baselineOf`, which reads it. */
-const BASELINE = 0;
-
 /* Which of two instants came first and which came last, where both are an
  * instant or `null` -- and `null` here is "the file never wrote this date",
  * which is not the same as the date zero and is the ordinary case for a plan
@@ -97,8 +92,12 @@ function projectStats(project) {
      * numbers, so it is walked once: `assignmentCost` is the expensive part
      * and it is not walked again per task on top of it. */
     const byTask = {}, byKind = [0, 0, 0];
-    let cost = 0;
+    /* Budget and cost are added up on the same walk: one is what the file said
+     * the assignment would cost and one is what this app derives for it, and
+     * reading them together is the whole point of having both. */
+    let cost = 0, budget = 0;
     for (const assignment of project.Assignments) {
+        budget += assignment.BudgetCost || 0;
         const own = assignmentCost(project, assignment);
         if (!own) continue;
         cost += own;
@@ -118,6 +117,7 @@ function projectStats(project) {
     let start = whenMs(project.StartDate), finish = whenMs(project.FinishDate);
     let work = 0, earned = 0, percentSum = 0;
     let baselineCost = 0, baselined = 0;
+    let baselineStart = null, baselineFinish = null;
     let named = 0, summaries = 0, milestones = 0, critical = 0;
     let done = 0, running = 0, waiting = 0;
     let lateDeadline = 0, lateBaseline = 0, notMet = 0, late = [];
@@ -160,6 +160,14 @@ function projectStats(project) {
         if (base) {
             baselined++;
             if (base.Cost) baselineCost += base.Cost;
+            /* **And the plan's baseline span**, which is the span of the dates
+             * the baseline caught and not of the ones the plan has now: the
+             * whole point of a baseline is to say how long the thing was
+             * supposed to take, and the span of those dates is that answer.
+             * Summaries were left out of the walk already and their baselines
+             * go with them. */
+            baselineStart  = earlierOf(baselineStart,  whenMs(base.Start));
+            baselineFinish = laterOf(baselineFinish, whenMs(base.Finish));
         }
 
         /* Two promises and two counts, read the way `recalculate` reads them:
@@ -230,6 +238,26 @@ function projectStats(project) {
         behind: (start !== null && finish !== null && readAt > finish)
                      ? daysBetween(finish, readAt) : 0,
 
+        /* **The schedule variance, at the plan's own size**: the span the
+         * baseline caught against the span the plan has now, and how many
+         * calendar days the finish moved. Signed, because a plan that finished
+         * early is a different reading from one that finished late, and `null`
+         * rather than zero when there is no baseline -- the same bargain the
+         * per-task variances make. **Calendar days and not working ones**,
+         * because this is the question a reader asks out loud ("how late are
+         * we?"), and the per-task `FinishVariance` is the one that belongs on
+         * the task's own calendar. */
+        baselineStart: baselineStart, baselineFinish: baselineFinish,
+        baselineWorkingDays: (baselineStart === null || baselineFinish === null)
+                                 ? null
+                                 : workingDays(project, calendar,
+                                               baselineStart, baselineFinish),
+        variance: (baselineFinish === null || finish === null)
+                      ? null
+                      : (finish >= baselineFinish
+                             ? daysBetween(baselineFinish, finish)
+                             : -daysBetween(finish, baselineFinish)),
+
         tasks: named, summaries: summaries, milestones: milestones,
         critical: critical, done: done, running: running, waiting: waiting,
         /* The work-weighted advance, and the plain average for the plan whose
@@ -238,6 +266,14 @@ function projectStats(project) {
         percent: work > 0 ? earned / work : (named ? percentSum / named : 0),
 
         cost: cost, baselineCost: baselineCost, baselined: baselined,
+        /* **The budget is the other reading of the same money**: what the plan
+         * said it would spend, out of the assignments, summed rather than
+         * derived. The two variances are different questions -- against what
+         * was planned and against what was promised -- and `budgetVariance` is
+         * `null` and not zero when there is no budget, because a plan that took
+         * none is not a plan that is exactly on budget. */
+        budget: budget, budgetVariance: budget > 0 ? cost - budget : null,
+        budgetPercent: budget > 0 ? (cost / budget) * 100 : null,
         work: mspdiDuration(work),
         kindWork: byKind[1], kindMaterial: byKind[0], kindCost: byKind[2],
         overAllocated: over,

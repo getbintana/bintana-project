@@ -105,6 +105,58 @@ y los valores por defecto y switches de cálculo el suyo (`OptionsForm`); las
 banderas administrativas quedan modeladas sin diálogo. Los `problems` caen a
 cero en ocho de los diez fixtures y el archivo real baja de 5337 a 5302.
 
+Octava medición, 2026-09-30, con las fechas tardías y la holgura modeladas
+(`Task.LateStart`, `Task.LateFinish`, `Task.TotalSlack`, `Task.FreeSlack`), que
+el pase hacia atrás ya calculaba y tiraba. **Ninguno de los diez fixtures trae
+esos cuatro elementos**, así que ninguno se escribe y **los diez goldens no se
+mueven**: la ausencia se lee como el centinela `NO_SLACK` (`-1`), que es
+distinto de `0` justamente porque `0` es la respuesta de una tarea crítica y
+es lo que Project escribe en cada una de ellas. Un shape con `Field.Number()`
+a secas habría leído "el archivo dijo cero" y "el archivo no dijo nada" como
+el mismo valor, y la ida y vuelta habría borrado el elemento. Se puede ver el
+bargaño en `MspLink.Type`, que lo hace por la misma razón.
+
+Lo único que se mueve es `edit-01-minimal`, porque su ronda guiada recalcula
+y ahora el pase escribe lo que siempre calculó: `touched` gana cuatro `added`
+en `Task[2]` y cuatro en `Task[4]` (`LateStart`, `LateFinish`, `FreeSlack`,
+`TotalSlack`) y el XML de salida los lleva. Es una decisión deliberada, no una
+pérdida: son valores que el archivo de entrada no traía y que el motor ahora
+publica, que es justo lo que dice la pestaña *Tracking* de Project.
+
+Una tarea que el pase **no** coloca (ALAP) conserva el centinela: no hay
+respuesta que escribir y escribir `0` sería una mentira. `check-cpm` lo afirma.
+
+Novena medición, el mismo día, con el **desvío de cronograma**
+(`Task.StartVariance`, `Task.FinishVariance`): sale de comparar las fechas que
+`MspBaseline` ya guardaba con las del plan, con el mismo centinela `NO_MINUTES`
+—que por eso se renombró desde `NO_SLACK`, porque ya no era solo de la
+holgura—. **Ningún golden se movió otra vez**: ninguno de los diez fixtures
+trae línea base, así que no hay varianza que escribir, y `edit-01-minimal` —que
+su ronda guiada baselinea después de recalcular, no antes— tampoco. La ida y
+vuelta del campo sí está afirmada en `check-cpm`, sobre un plan en blanco al
+que se le agregan tareas con línea base, precisamente porque **ningún fixture
+cubre el caso que importa**: una tarea *en* su línea base, que escribe `0` y es
+la que un shape con default `0` habría borrado del archivo.
+
+Décima medición, el mismo día, con el **presupuesto**
+(`Assignment.BudgetCost`, `Assignment.BudgetWork`). **Dónde está el presupuesto
+lo decidió el archivo real, no el schema que yo tenía en la cabeza**: el campo
+se llama `BudgetCost` y **está en la asignación**, no en la tarea ni en el
+plan — `urbano v5.05052026.xml` trae 49 de cada uno, uno por asignación, entre
+`CreationDate` y `TimephasedData`—. Así que el presupuesto del plan es la suma
+de las asignaciones y no hay número a nivel de proyecto que leer.
+
+**Y acá está el precio, medido sobre el archivo real**: `touched` sube de 871 a
+**920**, y las 49 líneas nuevas son todas `BudgetCost` removidas
+(`/Project/Assignments[n]/Assignment[m]/BudgetCost[1]: removed (was "0")`). Es
+el intercambio de §B y no una pérdida: **para dinero, ausente y cero dicen lo
+mismo** —no hay presupuesto— mientras que para la holgura no, y por eso uno lleva
+centinela y el otro no. `BudgetWork` sí sobrevive: es una duración como texto
+(`PT0H0M0S`) cuyo default es la cadena vacía, así que el cero del archivo no es
+un default y queda. Queda pendiente de la aceptación en Project si la ausencia
+de `<BudgetCost>` le parece igual a un cero —que es lo que dice el schema, y es
+lo único que este trabajo puede afirmar sin abrirlo.
+
 ## D. El oráculo: un archivo de Project (2026-09-23)
 
 El primer archivo real: `urbano v5.05052026.xml`, guardado por Project 16.0

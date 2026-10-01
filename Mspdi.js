@@ -22,6 +22,15 @@
  */
 "use strict";
 
+/* **A number of working minutes that nobody worked out**, which is what a slack
+ * and a variance both are when there is nothing to compare against. Not `0`:
+ * zero is the answer for a critical task and for a task exactly on its
+ * baseline, and the file writes it as such, so a sentinel that is also zero
+ * would make "no room" and "no news" the same value and writing the file out
+ * would delete the element it came in with. Neither is ever negative, so `-1`
+ * is outside the space and reads as the omission. */
+const NO_MINUTES = -1;
+
 /* <PredecessorLink>, repeated bare under its task (no wrapper).
  *
  * `Type` is one of the few fields the schema gives no default: there is no
@@ -113,6 +122,29 @@ class MspTask extends Record {
         PercentComplete:  Field.Int(),
         ActualStart:      Field.DateTime(),
         ActualFinish:     Field.DateTime(),
+        /* What the backward pass works out and the file keeps: when the task
+         * could still finish without moving the plan, and how much room it has
+         * to do it in. The two dates are `DateTime`, whose absent is `""` and
+         * which no real moment can be.
+         *
+         * **The two slacks and the two variances are `Number`s whose absent is
+         * `NO_MINUTES`, and that sentinel is the whole point.** `0` is a real
+         * answer -- it is what Project writes for every critical task, and for
+         * every task exactly on its baseline -- and a plain `Field.Number`
+         * defaults to `0` too, so "the file said zero" and "the file said
+         * nothing" would be one value and writing the file would delete an
+         * element the file had. `-1` is outside the value space (neither is
+         * ever negative) and it writes as the omission, which is the same
+         * bargain `MspLink.Type` makes for the same reason.
+         *
+         * The variances are signed working minutes: **positive is late**, the
+         * task's dates being later than the ones the baseline caught. */
+        LateStart:        Field.DateTime(),
+        LateFinish:       Field.DateTime(),
+        FreeSlack:        Field.Number({ def: NO_MINUTES }),
+        TotalSlack:       Field.Number({ def: NO_MINUTES }),
+        StartVariance:    Field.Number({ def: NO_MINUTES }),
+        FinishVariance:   Field.Number({ def: NO_MINUTES }),
         ConstraintType:   Field.Int(),
         CalendarUID:      Field.Int(),
         ConstraintDate:   Field.DateTime(),
@@ -194,6 +226,24 @@ class MspAssignment extends Record {
         Units:               Field.Number(),
         Work:                Field.Text(),
         WorkContour:         Field.Int(),
+        /* **The budget is on the assignment and not on the task or the plan**,
+         * which is where a real file puts it: `urbano v5.05052026.xml` (Project
+         * 16.0) carries `<BudgetCost>` and `<BudgetWork>` once per assignment --
+         * 49 of them, 49 assignments -- inside the `<Assignment>`, between its
+         * `CreationDate` and its `TimephasedData`. A budget is what one resource
+         * costs on one task, so a plan's budget is the sum of its assignments'
+         * and there is nothing to sum at the project level.
+         *
+         * `BudgetCost` has no sentinel, unlike the slacks, and the difference is
+         * the point: **for money, absent and zero say the same thing** -- no
+         * money budgeted -- so there is no answer that only zero can give, and
+         * a shape that kept a sentinel would only make the editor offer a value
+         * that means nothing. A real file writes `0` and this drops it, which is
+         * the modelled-default trade `tests/FIDELITY.md` §B is about and says
+         * so. `BudgetWork` is a duration as text (`PT0H0M0S`), whose default is
+         * the empty string, so a real file's zero duration survives untouched. */
+        BudgetCost:          Field.Number(),
+        BudgetWork:          Field.Text(),
     };
 }
 
@@ -603,6 +653,13 @@ function projectCost(project) {
 
 /* The baseline a task carries under one number -- 0 is the one Project's Set
  * Baseline writes first, up to 10 -- or null when it has none. */
+/* The baseline Project's own "Set Baseline" writes, and the one every
+ * comparison here is against: 0 is the baseline a plan carries until somebody
+ * clears it. Next to `baselineOf` because it is that function's argument, and
+ * the two are said once -- a variance read against a different number is a
+ * different question and not one this app asks. */
+const BASELINE = 0;
+
 function baselineOf(task, number) {
     for (const baseline of task.Baselines)
         if (baseline.Number === number) return baseline;
@@ -651,4 +708,116 @@ function writeMspdi(path, holder) {
     /* The whole document, not just the root: a comment before it is a node in
      * the tree too, and `Xml.Stringify` takes a document. */
     File.SaveXml(path, holder.doc);
+}
+
+/*
+ * A blank plan, in the shape `readMspdi` reads: the document MSPDI's own
+ * defaults describe -- one Standard calendar, a five-day week of two shifts, and
+ * no tasks at all -- so **a new project opens as a plan that already schedules**
+ * rather than as an empty grid of unstated defaults.
+ *
+ * `values` carries what a new plan is actually made of: its `Name`, the `Title`
+ * shown over it and the `Start` the whole schedule hangs off. The rest are the
+ * defaults the format declares.
+ *
+ * **There is no currency, on purpose.** There is no honest way to guess one
+ * from this side of the desk, an absent one costs nothing -- `StatsForm` then
+ * spends the money the way the desktop spells it, which is right until somebody
+ * says otherwise -- and a guessed one is a wrong number somebody has to find.
+ * `CurrencyDigits` stays because it is two nearly everywhere and is what the
+ * dialog's own rounding is read against.
+ *
+ * Written as text and parsed, because a document is a tree and the only two
+ * roads to one are a file and a parse. **The tree is then owned like any
+ * other's**: the holder this returns is the one `writeMspdi` writes into, so the
+ * first Save writes what the shapes model rather than the text above -- the same
+ * road a read file takes.
+ */
+const BLANK_PLAN = `<?xml version="1.0" encoding="UTF-8"?>
+<Project xmlns="http://schemas.microsoft.com/project">
+  <SaveVersion>14</SaveVersion>
+  <Name>$NAME</Name>
+$TITLE  <CreationDate>$MADE</CreationDate>
+  <ScheduleFromStart>true</ScheduleFromStart>
+  <StartDate>$START</StartDate>
+  <FYStartDate>1</FYStartDate>
+  <CriticalSlackLimit>0</CriticalSlackLimit>
+  <CurrencyDigits>2</CurrencyDigits>
+  <CurrencySymbolPosition>0</CurrencySymbolPosition>
+  <CalendarUID>1</CalendarUID>
+  <DefaultStartTime>$MORNING</DefaultStartTime>
+  <DefaultFinishTime>$EVENING</DefaultFinishTime>
+  <MinutesPerDay>480</MinutesPerDay>
+  <MinutesPerWeek>2400</MinutesPerWeek>
+  <DaysPerMonth>20</DaysPerMonth>
+  <DefaultTaskType>1</DefaultTaskType>
+  <DurationFormat>7</DurationFormat>
+  <WorkFormat>2</WorkFormat>
+  <WeekStartDay>1</WeekStartDay>
+  <StatusDate>$START</StatusDate>
+  <Calendars>
+    <Calendar>
+      <UID>1</UID>
+      <Name>Standard</Name>
+      <IsBaseCalendar>true</IsBaseCalendar>
+      <WeekDays>
+        <WeekDay><DayType>1</DayType><DayWorking>false</DayWorking></WeekDay>
+$WEEKDAYS
+        <WeekDay><DayType>7</DayType><DayWorking>false</DayWorking></WeekDay>
+        <WeekDay><DayType>8</DayType><DayWorking>false</DayWorking></WeekDay>
+      </WeekDays>
+    </Calendar>
+  </Calendars>
+</Project>
+`;
+
+/*
+ * The working day a blank plan starts with: Project's own default morning and
+ * evening, and the two ends of one shift split in two further down. **They are
+ * said once and written into the text**, because a plan that starts at eight and
+ * says it finishes at a different time than the text declared is a plan whose
+ * day does not add up.
+ */
+const DAY_START  = "08:00:00";
+const DAY_FINISH = "17:00:00";
+const SHIFT = [[DAY_START, "12:00:00"], ["13:00:00", DAY_FINISH]];
+
+/* A day is enough to start a plan and a time is not. What arrives here is what
+ * the dialog's field holds, so it may be either, and a bare day takes the
+ * default start of the day above. */
+function planStart(text) {
+    const typed = String(text || "").trim();
+    if (!typed)              return Day.Today + "T" + DAY_START;
+    return typed.indexOf("T") >= 0 ? typed : typed + "T" + DAY_START;
+}
+
+/* Monday to Friday, one shift split in two: the week Project writes when it
+ * writes nothing, and the one `WorkCalendar` measures a task's dates in. */
+function planWeekdays() {
+    const shift = SHIFT.map(([from, to]) =>
+        `<WorkingTime><FromTime>${from}</FromTime><ToTime>${to}</ToTime></WorkingTime>`).join("");
+    return [2, 3, 4, 5].map((day) =>
+        `        <WeekDay><DayType>${day}</DayType><DayWorking>true</DayWorking>` +
+        `<WorkingTimes>${shift}</WorkingTimes></WeekDay>`).join("\n");
+}
+
+function newMspdi(values) {
+    const v = values || {};
+    const start = planStart(v.Start);
+    const title = String(v.Title || "").trim();
+
+    const text = BLANK_PLAN
+        /* `Text.Escape` covers the three characters XML text content cannot
+         * carry, which is exactly what a name or a title typed by hand is. */
+        .replace("$NAME", Text.Escape(String(v.Name || "").trim() || "Project"))
+        .replace("$TITLE", title ? `<Title>${Text.Escape(title)}</Title>\n` : "")
+        .replace("$MADE", Day.Today + "T" + Time.Now)
+        .replace("$MORNING", DAY_START)
+        .replace("$EVENING", DAY_FINISH)
+        .replace(/\$START/g, start)
+        .replace("$WEEKDAYS", planWeekdays());
+
+    const doc     = Xml.Parse(text);
+    const project = MspProject.LoadXml(doc.Root);
+    return { doc, project, problems: project.Problems };
 }

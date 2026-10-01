@@ -21,6 +21,21 @@
  */
 "use strict";
 
+/*
+ * The two things the window can be, as pages of `Pages` -- a `Switcher` with no
+ * strip, which is a bare stack: one of them on screen and nothing to click
+ * between them.
+ *
+ * **A window with nothing open is the whole workspace with nothing in it** -- an
+ * empty tree, a dead toolbar, a panel whose every field edits a task that is not
+ * there -- and what it should show instead is what it can *do*: start one, open
+ * one, or go back to one. The list of recents is beside the application's own
+ * icon rather than under a menu nobody has opened yet, so the way back into the
+ * last plan is where the eye already is.
+ */
+const PAGE_WELCOME = 0;
+const PAGE_WORK    = 1;
+
 class MainForm extends Form {
 
     /* What was read, and the document it came out of -- SaveXml writes into
@@ -115,6 +130,10 @@ class MainForm extends Form {
                 this.checkStats();
                 return;
             }
+            if (Application.Arguments.indexOf("check-welcome") >= 0) {
+                this.checkWelcome();
+                return;
+            }
             if (Application.Arguments.indexOf("check") >= 0) {
                 this.check();
                 return;
@@ -125,9 +144,10 @@ class MainForm extends Form {
         }
     }
 
-    /* A path on the command line wins over the sample: the window opens the
+    /* A path on the command line wins over the welcome page: the window opens the
      * file it was pointed at, which is how a real Project file gets looked at
-     * without a dialog. */
+     * without a dialog. With nothing named, the window offers the ways in
+     * instead of picking one. */
     openStartup() {
         /* The form is built, so the window owns the settings now. */
         this.settingsReady = true;
@@ -141,10 +161,42 @@ class MainForm extends Form {
                 this.openSample();
             }
         } else {
-            this.openSample();
+            /* **Nothing was named, so nothing is open**, and the welcome page is
+             * the answer rather than the sample: a window that opened a plan of
+             * its own would be showing a file nobody asked for, and a Save on it
+             * would write to the config directory. What is offered instead is the
+             * way in -- New, Open and the recents -- and the sample is one click
+             * away, beside the rest of the doors. */
+            this.Pages.Current = PAGE_WELCOME;
+            this.documentCommands(false);
         }
         this.applySettings();
         this.startAutosave();
+    }
+
+    /* The workspace, which is where the window goes back to as soon as there is
+     * a document to show. Nothing returns to the welcome page, because nothing
+     * closes a project. */
+    showWork() { this.Pages.Current = PAGE_WORK; }
+
+    /* **The menu bar is on the window, not on the workspace page**, so with no
+     * plan open Edit and Project are still there -- and a command that found no
+     * document would be a crash rather than a grey line. This is the one place
+     * that lists the commands that need a plan, so a new one is greyed here as
+     * well as everywhere else.
+     *
+     * It only opens and closes the door: **Undo and Redo follow the history and
+     * the row commands follow the selection**, and both are answered where they
+     * are (`updateTitle` and `showTask`) -- which is why `load` calls this
+     * before `fill` and not after it. */
+    documentCommands(on) {
+        for (const act of [this.ActSave, this.ActSaveAs, this.ActExport,
+                           this.ActReport, this.ActUndo, this.ActRedo,
+                           this.ActAdd, this.ActDelete, this.ActIndent,
+                           this.ActOutdent, this.ActUp, this.ActDown,
+                           this.ActRecalc, this.ActBaseline, this.ActProjData,
+                           this.ActProjOptions, this.ActCalendar, this.ActStats])
+            act.Enabled = on;
     }
 
     /* What the last run left. The folder is read where the dialog opens and
@@ -177,12 +229,22 @@ class MainForm extends Form {
         this.showRecent(recent);
     }
 
-    /* The menu bar's Open Recent, a dynamic submenu: the application assigns
-     * the entries and the click arrives with the index. */
+    /* The menu bar's Open Recent and the welcome page's list, one decision:
+     * **a window with no file open is the only place either of them is wrong**,
+     * so one place answers whether there is anything to open at all -- and the
+     * folder is shown beside the name, because two plans called `plan.xml` are
+     * two plans and the menu's column of names does not say which. */
     showRecent(recent) {
         this.recentPaths = recent;
-        this.MnuRecent.Items = recent.map((p) => File.Name(p));
+        this.MnuRecent.Items   = recent.map((p) => File.Name(p));
         this.MnuRecent.Enabled = recent.length > 0;
+
+        const empty = recent.length === 0;
+        this.WelcomeRecent.Items    = empty
+            ? [Locale.Text("(none yet)")]
+            : recent.map((p) => `${File.Name(p)}  —  ${File.Directory(p)}`);
+        this.LblWelcomeRecent.Visible = !empty;
+        this.WelcomeRecent.Enabled    = !empty;
     }
 
     openRecent(i) {
@@ -197,6 +259,16 @@ class MainForm extends Form {
 
     MnuRecent_Click(index) { this.openRecent(index); }
 
+    /* A row of the welcome page's list is the menu's entry of the same index, so
+     * it is opened the same way. The selection is dropped afterwards: choosing
+     * the plan that is already chosen is not a change, and GTK rightly does not
+     * report one -- so the same row twice would do nothing the second time. */
+    WelcomeRecent_Select() {
+        const index = this.WelcomeRecent.Index;
+        this.WelcomeRecent.Index = -1;
+        if (index >= 0) this.openRecent(index);
+    }
+
     /* The View menu's tick, and the Help menu's one line. */
     MnuLog_Click(on) { this.Log.Visible = on; }
 
@@ -205,7 +277,8 @@ class MainForm extends Form {
                      Application.Version);
     }
 
-    /* The bundled sample, so an empty first screen is never the question. */
+    /* The bundled sample, which is one of the welcome page's three doors and the
+     * fallback for a file on the command line that cannot be read. */
     /* The sample is a template, not a file of the user's: it is copied into
      * the config directory and that copy is what the window opens, so a Save
      * writes the copy and never the fixture the repo ships -- which is one of
@@ -223,6 +296,39 @@ class MainForm extends Form {
         }
         this.load(File.Exists(copy) ? copy : source);
     }
+
+    /* **A new plan is a file before it is a document**, so it asks first -- what
+     * the plan is called and where it goes, which is `NewProjectForm` and not
+     * the save dialog: Save As names a file that already exists in memory, and
+     * this one has no document to save yet.
+     *
+     * The folder it opens on is the last one a file came from, which is where a
+     * new plan belongs until somebody says otherwise. */
+    ActNew_Click() {
+        NewProjectForm.ask(Settings.Get("bintana-project.folder",
+                                        Environment.HomeDirectory),
+                           (values) => this.newProject(values));
+    }
+
+    /* The plan is written and then **read back**, so what the window shows is
+     * the file and not the tree it was built from: a blank document that does
+     * not survive its own round trip is a New Project that opens broken. */
+    newProject(values) {
+        const path = File.Join(values.Folder, values.File);
+        try {
+            writeMspdi(path, newMspdi(values));
+            this.load(path);
+        } catch (e) {
+            Message.Error("Cannot create {0}: {1}", path, e.message);
+        }
+    }
+
+    /* The welcome page's third door: the demo this app ships with, which is
+     * where a first run looks if it would rather see something than make
+     * something. It is here and not in the list of recents because it is not
+     * something the user opened -- the recents are theirs, and the sample is
+     * ours. */
+    BtnWelcomeSample_Click() { this.openSample(); }
 
     /* A file dragged from the file manager, anywhere on the window. */
     Form_FileDrop(paths) {
@@ -243,7 +349,14 @@ class MainForm extends Form {
         this.edit   = new Edit(this.holder);
         this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
         this.forceClose = false;
+        this.documentCommands(true);
         this.fill();
+        /* **A document is what puts the workspace on screen**, so the page is
+         * switched here rather than by each of the doors: opening a file from a
+         * dialog, from the welcome page, from a drag or from a recovery are four
+         * calls into this one road, and a fourth one that forgot would leave a
+         * plan open behind the welcome page. */
+        this.showWork();
         if (this.settingsReady) {
             Settings.Set("bintana-project.folder", File.Directory(this.path));
             this.rememberRecent(this.path);
@@ -431,6 +544,8 @@ class MainForm extends Form {
         case "finish":     return shortDate(task.Finish);
         case "percent":    return `${task.PercentComplete || 0}%`;
         case "critical":   return task.Critical ? "◆" : "";
+        case "slack":      return slackText(task, project);
+        case "variance":    return varianceText(task, project);
         case "milestone":  return task.Milestone ? "◆" : "";
         case "work":       return durationText({ Duration: task.Work,
                                                  DurationFormat: 5 }, project);
@@ -478,11 +593,14 @@ class MainForm extends Form {
     }
 
     /* One road for the three ways of choosing: the dialog, the heading's menu
-     * and the menu item are the same decision, so they are the same code. */
+     * and the menu item are the same decision, so they are the same code. The
+     * columns are applied to the table whatever is open and the rows are
+     * rebuilt only when there are any -- a welcome page has a list to dress
+     * and no plan to fill. */
     setColumns(chosen) {
         this.columns = chosen;
         this.applyColumns();
-        this.fill(this.selectedUID);
+        if (this.holder) this.fill(this.selectedUID);
     }
 
     /* Choosing is a view, and a view is remembered; reading one back is not
@@ -744,7 +862,8 @@ class MainForm extends Form {
     fillAssignments(task) {
         this.Assignments.Clear();
         this.assignRows = [];
-        this.BtnAssignDel.Enabled = false;
+        this.BtnAssignDel.Enabled   = false;
+        this.BtnAssignApply.Enabled = false;
         if (!task) return;
 
         const project = this.holder.project;
@@ -761,18 +880,50 @@ class MainForm extends Form {
                 durationText({ Duration: assignment.Work, DurationFormat: 5 },
                              project),
                 Locale.Number(assignmentCost(project, assignment), 2),
+                /* **The budget beside the cost**, because the two are the same
+                 * money read two ways and a row that showed only what the plan
+                 * derives would hide what it promised. */
+                assignment.BudgetCost
+                    ? Locale.Number(assignment.BudgetCost, 2) : "",
             ]);
         }
     }
 
+    /* The selected assignment in the fields, and whether there is one: the
+     * budget belongs to an assignment and not to the task, so this is the only
+     * place that can answer whether it can be written at all. */
+    selectedAssignment() {
+        return this.Assignments.Index >= 0
+             ? this.assignRows[this.Assignments.Index] || null : null;
+    }
+
     Assignments_Select() {
-        const assignment = this.Assignments.Index >= 0
-                         ? this.assignRows[this.Assignments.Index] : null;
+        const assignment = this.selectedAssignment();
         this.BtnAssignDel.Enabled = !!assignment;
+        this.BtnAssignApply.Enabled = !!assignment;
         if (!assignment) return;
         const at = this.resChoices.indexOf(assignment.ResourceUID);
         if (at >= 0) this.CmbAssignRes.Index = at;
         this.TxtAssignUnits.Text = String(assignment.Units);
+        this.TxtAssignBudget.Text = Locale.Number(assignment.BudgetCost || 0, 2);
+    }
+
+    /* **The budget, as its own button** rather than a field Apply, because an
+     * assignment has no Apply of its own -- it is written where it is made, and
+     * the two numbers a budget means (money and work) live in different places
+     * in the file. One press, one undo, and the button is grey without a
+     * selected assignment because there is nothing to budget money *for*. */
+    BtnAssignApply_Click() {
+        const assignment = this.selectedAssignment();
+        if (!assignment) return;
+
+        const budget = resourceNumber(this.TxtAssignBudget.Text);
+        if (isNaN(budget) || budget < 0) {
+            Message.Error(Locale.Text("The budget must be a number, or nothing."));
+            return;
+        }
+        this.edit.setAssignmentBudget(assignment.UID, budget);
+        this.fill(this.selectedUID);
     }
 
     BtnAssignAdd_Click() {
@@ -794,8 +945,7 @@ class MainForm extends Form {
     }
 
     BtnAssignDel_Click() {
-        const assignment = this.Assignments.Index >= 0
-                         ? this.assignRows[this.Assignments.Index] : null;
+        const assignment = this.selectedAssignment();
         if (!assignment) return;
         this.edit.removeAssignment(assignment.UID);
         this.fill(this.selectedUID);
@@ -855,7 +1005,7 @@ class MainForm extends Form {
             w.Enabled = has;
 
         for (const w of [this.CmbAssignRes, this.TxtAssignUnits,
-                         this.BtnAssignAdd])
+                         this.TxtAssignBudget, this.BtnAssignAdd])
             w.Enabled = has;
 
         this.fillLinks(has ? task : null);
@@ -1405,11 +1555,13 @@ class MainForm extends Form {
     Form_Resize() { this.syncGanttSize(); }
 
     /* The one dialog that edits the settings the app reads; what it writes is
-     * re-read here, so nothing needs a restart. */
+     * re-read here, so nothing needs a restart. The rows are rebuilt only when
+     * there is a plan to rebuild -- the settings are also the app's, and Tools
+     * is a menu that a window with nothing open still has. */
     ActSettings_Click() {
         SettingsForm.open(() => {
             this.applySettings();
-            this.fill(this.selectedUID);
+            if (this.holder) this.fill(this.selectedUID);
         });
     }
 
@@ -1921,14 +2073,19 @@ class MainForm extends Form {
              * fields have no default and start below every real value, so a
              * file's own 0 is kept; the project's default task type and a
              * resource's units are the schema's 1; and a missing Type reads
-             * as the project says (FS for a link). */
+             * as the project says (FS for a link). The slack starts at
+             * `NO_MINUTES` for the same reason and for one more: **zero is an
+             * answer**, so a sentinel that was also zero would write the file
+             * out without an element it came in with. */
             const fresh = new MspProject({ Name: "Fresh" });
             ok = eq("fresh defaults",
                     [fresh.ScheduleFromStart, fresh.DefaultTaskType,
                      fresh.WeekStartDay, new MspTask({}).Type,
                      new MspTask({}).EffortDriven, new MspTask({}).Estimated,
-                     new MspLink({}).Type, new MspResource({}).MaxUnits].join(","),
-                    "true,1,-1,-1,false,true,-1,1") && ok;
+                     new MspLink({}).Type, new MspResource({}).MaxUnits,
+                     new MspTask({}).TotalSlack, new MspTask({}).FreeSlack,
+                     new MspTask({}).LateStart].join(","),
+                    "true,1,-1,-1,false,true,-1,1,-1,-1,") && ok;
             ok = eq("a missing link type is FS", linkKind(new MspLink({})), 1) && ok;
             ok = eq("a missing task type inherits",
                     taskKind(new MspProject({ DefaultTaskType: 0 }),
@@ -2184,6 +2341,160 @@ class MainForm extends Form {
             ok = eq("slack C", q.Tasks[2].Critical, false) && ok;
             ok = eq("critical M", q.Tasks[3].Critical, true) && ok;
 
+            /* **The backward pass's answer is kept**, which is the whole of what
+             * these four fields are: the dates the task could still take without
+             * moving the plan, and the room it has. C is the interesting one --
+             * the chain is critical and C has Wednesday to slip, measured in
+             * **working** minutes, and the Tuesday in between is the holiday. */
+            const slackOf = (t) => [t.LateStart, t.LateFinish, t.TotalSlack,
+                                    t.FreeSlack].join(" ");
+            ok = eq("A late dates and slack", slackOf(q.Tasks[0]),
+                    "2026-09-07T08:00:00 2026-09-09T08:00:00 0 0") && ok;
+            ok = eq("B late dates and slack", slackOf(q.Tasks[1]),
+                    "2026-09-09T08:00:00 2026-09-09T17:00:00 0 0") && ok;
+            ok = eq("C has the Wednesday", slackOf(q.Tasks[2]),
+                    "2026-09-09T08:00:00 2026-09-09T17:00:00 480 480") && ok;
+            ok = eq("M late dates and slack", slackOf(q.Tasks[3]),
+                    "2026-09-09T17:00:00 2026-09-09T17:00:00 0 0") && ok;
+
+            /* **Total and free are two numbers and not one**, which is the claim
+             * this fixture exists for. The project's own finish is a Friday, so
+             * every task has room before the *plan* ends -- and A has none
+             * before its successor starts: it can slip a whole day before the
+             * finish moves, and not an hour before B is late. */
+            const sl = projectOf([
+                task(1, "PT8H0M0S"),                // A: Wednesday
+                task(2, "PT8H0M0S", [link(1, 1)]),  // B: Thursday, FS from A
+                task(3, "PT8H0M0S"),                // C: Wednesday, nothing after
+            ]);
+            sl.StartDate  = "2026-09-09T08:00:00";
+            sl.FinishDate = "2026-09-11T17:00:00";   // the project's own finish
+            recalculate(sl);
+            ok = eq("A total is a day of room",
+                    [sl.Tasks[0].TotalSlack, sl.Tasks[0].FreeSlack].join("/"),
+                    "480/0") && ok;
+            ok = eq("and A is not critical for it", sl.Tasks[0].Critical,
+                    false) && ok;
+            /* **And the column reads it**, in the unit the task's own durations
+             * are in -- which is the reading, and not the minutes underneath.
+             * `sl`'s tasks carry no `DurationFormat`, so the project's 7 (days)
+             * is what a row shows: a day of room as `1d`, none as `0d`. */
+            ok = eq("a day of room reads as a day", slackText(sl.Tasks[0], sl),
+                    "1d") && ok;
+            ok = eq("no room reads as zero", slackText(q.Tasks[0], q),
+                    "0d") && ok;
+            ok = eq("and no answer reads as nothing",
+                    slackText(c.Tasks[4], c), "") && ok;
+            ok = eq("A's room is before the plan's finish",
+                    `${sl.Tasks[0].LateStart}..${sl.Tasks[0].LateFinish}`,
+                    "2026-09-10T08:00:00..2026-09-11T08:00:00") && ok;
+            ok = eq("B can slip to Friday",
+                    [sl.Tasks[1].TotalSlack, sl.Tasks[1].FreeSlack].join("/"),
+                    "480/480") && ok;
+            ok = eq("C can slip to Friday too, and nothing waits on it",
+                    [sl.Tasks[2].TotalSlack, sl.Tasks[2].FreeSlack].join("/"),
+                    "960/960") && ok;
+
+            /* **A task the pass never placed keeps the sentinel**, which
+             * is not zero: nothing was worked out, and a plan that reads "no
+             * room" for every task is a plan whose slack is a lie. ALAP is the
+             * case -- the backward pass is the one that places it late and this
+             * pass does not, so there is no answer to write. */
+            ok = eq("a task the pass skipped has no slack",
+                    [c.Tasks[4].TotalSlack, c.Tasks[4].FreeSlack,
+                     c.Tasks[4].LateStart, c.Tasks[4].LateFinish].join("/"),
+                    "-1/-1//") && ok;
+            ok = eq("while a manual task is placed and has an answer",
+                    man.Tasks[0].TotalSlack >= 0, true) && ok;
+
+            /* **The variance**, which is the other half of a baseline: how far
+             * the dates are from the ones it caught, signed, in working minutes.
+             * A is held back to Wednesday by a constraint against a Monday
+             * baseline and is therefore **late by a day**, B is on its own
+             * baseline, and the Tuesday in between is the holiday -- which is
+             * why a day of slip is 480 minutes and not 1440. */
+            const vb = projectOf([
+                task(1, "PT8H0M0S", [], { ConstraintType: 4,
+                                          ConstraintDate: "2026-09-09T08:00:00" }),
+                task(2, "PT8H0M0S", [link(1, 1)]),  // B: Thursday
+            ]);
+            vb.Tasks[0].Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-07T08:00:00",
+                Finish: "2026-09-07T17:00:00" })];
+            vb.Tasks[1].Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-10T08:00:00",
+                Finish: "2026-09-10T17:00:00" })];
+            recalculate(vb);
+            ok = eq("late against the baseline", vb.Tasks[0].FinishVariance,
+                    480) && ok;
+            ok = eq("and so is its start", vb.Tasks[0].StartVariance, 480) && ok;
+            ok = eq("on the baseline is zero, not nothing",
+                    vb.Tasks[1].FinishVariance, 0) && ok;
+            ok = eq("the column reads the sign",
+                    varianceText(vb.Tasks[0], vb), "1d") && ok;
+            ok = eq("and a zero reads as a zero",
+                    varianceText(vb.Tasks[1], vb), "0d") && ok;
+
+            /* **A task with no baseline has no variance**, which is not the same
+             * as one that is exactly on it: a plan that never took a baseline
+             * cannot be on it. */
+            const nov = projectOf([task(1, "PT8H0M0S")]);
+            recalculate(nov);
+            ok = eq("no baseline, no variance",
+                    [nov.Tasks[0].StartVariance,
+                     nov.Tasks[0].FinishVariance].join("/"),
+                    "-1/-1") && ok;
+            ok = eq("and the column says nothing",
+                    varianceText(nov.Tasks[0], nov), "") && ok;
+            /* The other baseline: a file can carry several, and "the baseline"
+             * is the one `Set Baseline` writes. A task baselined only as number
+             * 1 is not baselined as far as this is concerned. */
+            const other = projectOf([task(1, "PT8H0M0S")]);
+            other.Tasks[0].Baselines = [new MspBaseline({
+                Number: 1, Start: "2026-09-01T08:00:00",
+                Finish: "2026-09-01T17:00:00" })];
+            recalculate(other);
+            ok = eq("another baseline is another question",
+                    other.Tasks[0].FinishVariance, NO_MINUTES) && ok;
+
+            /* **And it survives the file**, which is the whole claim: a number
+             * nobody can read back is a number in memory. The claim is
+             * **written equals what the pass held**, not a date -- the shape of
+             * the round trip, not the arithmetic, which is what the fixture
+             * above is for. Including the `0` of a task on its baseline,
+             * **which is the case a shape whose default were zero would have
+             * dropped on the way out**, and that no fixture in the corpus covers
+             * because none of them is baselined. */
+            const held = newMspdi({ Name: "Variance" });
+            const late1 = task(1, "PT8H0M0S");
+            late1.Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-01T08:00:00",
+                Finish: "2026-09-01T17:00:00" })];
+            const on1 = task(2, "PT8H0M0S", [link(1, 1)]);
+            on1.Baselines = [new MspBaseline({
+                Number: BASELINE, Start: "2026-09-01T08:00:00",
+                Finish: "2026-09-01T17:00:00" })];
+            const bare1 = task(3, "PT8H0M0S", [link(2, 1)]);
+            held.project.Tasks = [late1, on1, bare1];
+            recalculate(held.project);
+
+            const kept = File.Join(Environment.TempDirectory, "check-variance.xml");
+            writeMspdi(kept, held);
+            const again = readMspdi(kept);
+            const got = [];
+            for (const t of again.project.Tasks) got.push(`${t.UID}:${t.FinishVariance}`);
+            ok = eq("what the file carries is what the pass held", got.join(" "),
+                    held.project.Tasks
+                        .map((t) => `${t.UID}:${t.FinishVariance}`).join(" ")) && ok;
+            ok = eq("a late task keeps a number, not nothing",
+                    again.project.Tasks[0].FinishVariance > NO_MINUTES, true) && ok;
+            /* And the one with no baseline wrote nothing at all: `NO_MINUTES` is
+             * the omission, and an element there would be a claim nobody made. */
+            ok = eq("a task with no baseline wrote no variance",
+                    String(again.project.Tasks[2].FinishVariance),
+                    String(NO_MINUTES)) && ok;
+            if (File.Exists(kept)) File.Delete(kept);
+
             /* A summary is the span of its children. */
             const s = projectOf([
                 new MspTask({ UID: 0, ID: 0, Name: "All", IsNull: false,
@@ -2345,10 +2656,378 @@ class MainForm extends Form {
             ok = eq("and is not behind", empty.behind, 0) && ok;
             ok = eq("and nothing is late", empty.late.length, 0) && ok;
 
+            /* **The schedule variance at the plan's own size**, which is
+             * the span the baseline caught against the one the plan has now.
+             *
+             * This fixture's Build is the one task with a baseline and Project
+             * wrote only its finish, which is a real shape: **so the variance is
+             * an answer and the span is not.** A variance needs one date from
+             * each side; a span needs both from the baseline, and half a
+             * baseline is not a plan to compare a plan against.
+             */
+            ok = eq("no baseline, no variance", empty.variance, null) && ok;
+            ok = eq("and no baseline span", empty.baselineFinish, null) && ok;
+            ok = eq("half a baseline still varies", s.variance, 1) && ok;
+            ok = eq("from the one date it wrote",
+                    statsDateText(s.baselineFinish), "2026-09-09 08:00") && ok;
+            ok = eq("but it is no span", s.baselineStart, null) && ok;
+            ok = eq("so there are no baseline working days",
+                    s.baselineWorkingDays, null) && ok;
+
+            /* **And with a whole baseline** -- start and finish on two tasks --
+             * the span is there to be compared, and the reading is calendar
+             * days on purpose: this is the question a reader asks out loud
+             * ("how late are we?"), while the per-task `FinishVariance` in
+             * `check-cpm` is the one that belongs on the task's own calendar. */
+            const moved = projectStats(new MspProject({
+                StartDate: "2026-09-07T08:00:00", CalendarUID: 1,
+                Calendars: [calendar],
+                Tasks: [
+                    new MspTask({ UID: 1, ID: 1, Name: "A", IsNull: false,
+                                  Start: "2026-09-07T08:00:00",
+                                  Finish: "2026-09-07T17:00:00",
+                                  Baselines: [new MspBaseline({
+                                      Number: BASELINE,
+                                      Start: "2026-09-07T08:00:00",
+                                      Finish: "2026-09-07T17:00:00" })] }),
+                    new MspTask({ UID: 2, ID: 2, Name: "B", IsNull: false,
+                                  Start: "2026-09-09T08:00:00",
+                                  Finish: "2026-09-09T17:00:00",
+                                  Baselines: [new MspBaseline({
+                                      Number: BASELINE,
+                                      Start: "2026-09-07T08:00:00",
+                                      Finish: "2026-09-07T17:00:00" })] }),
+                ] }));
+            ok = eq("the baseline started", statsDateText(moved.baselineStart),
+                    "2026-09-07 08:00") && ok;
+            ok = eq("and ended", statsDateText(moved.baselineFinish),
+                    "2026-09-07 17:00") && ok;
+            ok = eq("covering one working day", moved.baselineWorkingDays,
+                    1) && ok;
+            ok = eq("and the plan is two calendar days late", moved.variance,
+                    2) && ok;
+
+            /* **A plan that finished early says so**, with a minus: the sign is
+             * the whole of it, and a zero that could mean either would be the
+             * same ambiguity the sentinel avoids per task. */
+            const ahead = projectStats(new MspProject({
+                StartDate: "2026-09-07T08:00:00", CalendarUID: 1,
+                Calendars: [calendar],
+                Tasks: [new MspTask({
+                    UID: 1, ID: 1, Name: "T", IsNull: false,
+                    Start: "2026-09-07T08:00:00", Finish: "2026-09-07T17:00:00",
+                    Baselines: [new MspBaseline({
+                        Number: BASELINE, Start: "2026-09-08T08:00:00",
+                        Finish: "2026-09-09T17:00:00" })] })] }));
+            ok = eq("early is negative", ahead.variance, -2) && ok;
+
+            /* **The budget**, which lives on the assignment and not on the
+             * plan -- the shape of the file decided where the number comes
+             * from, so a budget entered as a project total would have nowhere
+             * to be written. The plan's is the sum, and a plan that took none
+             * has no variance to speak of: **zero is not "exactly on
+             * budget"**, it is "no budget". */
+            const money = projectStats(new MspProject({
+                Calendars: [calendar],
+                Resources: [
+                    new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                      MaxUnits: 1, StandardRate: 50 }),
+                    new MspResource({ UID: 2, Name: "Bruno", Type: 1,
+                                      MaxUnits: 1, StandardRate: 40 }),
+                ],
+                Assignments: [
+                    new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: 1,
+                                        Units: 1, Work: "PT8H0M0S",
+                                        BudgetCost: 300 }),
+                    new MspAssignment({ UID: 2, TaskUID: 2, ResourceUID: 2,
+                                        Units: 1, Work: "PT8H0M0S",
+                                        BudgetCost: 500 }),
+                    new MspAssignment({ UID: 3, TaskUID: 3, ResourceUID: 1,
+                                        Units: 1, Work: "PT8H0M0S" }),
+                ] }));
+            /* Two budgets against three assignments, so the sum is a sum and not
+             * the only number there -- and the third was never budgeted, which
+             * is the shape that makes the reading interesting: 8h at 50 twice
+             * and 8h at 40 is 1120 of cost against 800 budgeted, so the plan is
+             * **over** by 320, and the overage is exactly the assignment that
+             * has no promise behind it. */
+            ok = eq("the plan's budget is the sum", money.budget, 800) && ok;
+            ok = eq("and the cost is what the engine derives", money.cost, 1120) && ok;
+            ok = eq("so the variance is over", money.budgetVariance, 320) && ok;
+            ok = eq("and the share of the budget is a percentage",
+                    `${Math.round(money.budgetPercent)}%`, "140%") && ok;
+            const unbudgeted = projectStats(new MspProject({
+                Calendars: [calendar],
+                Assignments: [new MspAssignment({
+                    UID: 1, TaskUID: 1, ResourceUID: 1, Units: 1,
+                    Work: "PT8H0M0S" })] }));
+            ok = eq("no budget says none", unbudgeted.budget, 0) && ok;
+            ok = eq("and has no variance to give",
+                    unbudgeted.budgetVariance, null) && ok;
+            ok = eq("nor a share", unbudgeted.budgetPercent, null) && ok;
+
+            /* **And it survives the file**, like the variance: the sum is only
+             * real if the numbers it adds are in the document. `BudgetWork` is
+             * the other half and it is a duration as text, so a real file's
+             * `PT0H0M0S` has to come back as it was written. */
+            const held = newMspdi({ Name: "Budget" });
+            held.project.Assignments = [new MspAssignment({
+                UID: 1, TaskUID: 1, ResourceUID: 1, Units: 1,
+                Work: "PT8H0M0S", BudgetCost: 742.5,
+                BudgetWork: "PT0H0M0S" })];
+            const file = File.Join(Environment.TempDirectory, "check-budget.xml");
+            writeMspdi(file, held);
+            const back = readMspdi(file);
+            ok = eq("a budget is in the file",
+                    back.project.Assignments[0].BudgetCost, 742.5) && ok;
+            ok = eq("and the work beside it survives",
+                    back.project.Assignments[0].BudgetWork, "PT0H0M0S") && ok;
+            ok = eq("and the plan reads it back", projectStats(back.project).budget,
+                    742.5) && ok;
+            if (File.Exists(file)) File.Delete(file);
+
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
             Application.Quit(ok ? 0 : 1);
         } catch (e) {
             print(`stats ERROR ${e.message}`);
+            print("CHECK-FAILED");
+            Application.Quit(1);
+        }
+    }
+
+    /* **A blank plan is a frame the chart has to survive**, and the ruler is the
+     * part of it that used to throw: it asks its own geometry for a span and a
+     * plan with no task has none. Drawing is not reachable from here -- a
+     * `Painter` is a runtime object, and a draw that throws is caught by the
+     * runtime rather than raised -- so what this holds is the decision the draw
+     * is made from, built from the same two calls `Header_Draw` builds it from,
+     * which is the whole of the fix. */
+    drawsEmpty() {
+        return rulerHasRange(ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                          this.ganttHeight(), this.step,
+                                          this.rulerGeom()));
+    }
+
+    /*
+     * The welcome page: the window with nothing open, and what it offers.
+     *
+     * **It is asserted rather than looked at** because almost everything about it
+     * is a decision rather than a drawing: which page a bare start lands on, what
+     * the list of recents says when it is empty, that a row of it opens the same
+     * file the menu's entry of that index opens, and that a blank plan survives
+     * its own round trip -- which is the whole of what "New Project" is.
+     */
+    checkWelcome() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`welcome ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        try {
+            /* A bare stack, not a notebook: there is nothing to click between a
+             * plan and no plan, and a strip of two tabs over an empty workspace
+             * would be a tab strip with nothing in it. */
+            ok = eq("the pages are a bare stack", this.Pages.Strip, "None") && ok;
+            ok = eq("with two of them", this.Pages.Count, 2) && ok;
+
+            /* **A start with nothing named leaves nothing open**, which is the
+             * one thing the page exists to say. `edit` is the document: null is
+             * what "no file" is here, and it is what every command on the
+             * workspace asks before it touches anything. */
+            this.settingsReady = true;
+            this.Pages.Current = PAGE_WELCOME;
+            this.documentCommands(false);
+            ok = eq("no document is loaded", this.edit, null) && ok;
+            ok = eq("and the page is the welcome one", this.Pages.Current,
+                    PAGE_WELCOME) && ok;
+
+            /* **The menu bar is on the window, not on the workspace page**, so
+             * the commands that need a plan have to be greyed here or they would
+             * be a crash rather than a grey line. */
+            ok = eq("Add Task is greyed", this.ActAdd.Enabled, false) && ok;
+            ok = eq("Recalculate", this.ActRecalc.Enabled, false) && ok;
+            ok = eq("the project's own data", this.ActProjData.Enabled,
+                    false) && ok;
+            ok = eq("Save", this.ActSave.Enabled, false) && ok;
+            ok = eq("Save As", this.ActSaveAs.Enabled, false) && ok;
+            ok = eq("Export", this.ActExport.Enabled, false) && ok;
+            ok = eq("and Report", this.ActReport.Enabled, false) && ok;
+            ok = eq("while New", this.ActNew.Enabled, true) && ok;
+            ok = eq("and Open", this.ActOpen.Enabled, true) && ok;
+
+            /* The list, empty and not: **one place decides whether there is
+             * anything to open**, so the menu and the page cannot disagree. */
+            this.showRecent([]);
+            ok = eq("an empty list says so", this.WelcomeRecent.Items[0],
+                    Locale.Text("(none yet)")) && ok;
+            ok = eq("the menu is out of reach", this.MnuRecent.Enabled, false) && ok;
+            ok = eq("and so is the page's", this.WelcomeRecent.Enabled, false) && ok;
+            ok = eq("with no heading over it", this.LblWelcomeRecent.Visible, false) && ok;
+
+            /* Two files, so the folder beside the name is what tells them apart
+             * -- two plans called `plan.xml` are two plans. */
+            const one = this.resolve(File.Join("tests", "corpus", "01-minimal.xml"));
+            const two = this.resolve(File.Join("examples", "desarrollo-bintana.xml"));
+            this.showRecent([one, two]);
+            ok = eq("both are listed", this.WelcomeRecent.Count, 2) && ok;
+            ok = eq("with the folder beside the name",
+                    this.WelcomeRecent.Items[0],
+                    `${File.Name(one)}  —  ${File.Directory(one)}`) && ok;
+            ok = eq("and the heading is there", this.LblWelcomeRecent.Visible, true) && ok;
+            ok = eq("and the list can be chosen from", this.WelcomeRecent.Enabled,
+                    true) && ok;
+            ok = eq("parallel to the menu's", this.recentPaths.join(","),
+                    `${one},${two}`) && ok;
+
+            /* A row opens what it names, and the selection is dropped so the same
+             * row can be opened twice. */
+            this.WelcomeRecent.Index = 1;
+            this.WelcomeRecent_Select();
+            ok = eq("a row opens the plan it names", this.path, two) && ok;
+            ok = eq("which brings the workspace up", this.Pages.Current,
+                    PAGE_WORK) && ok;
+            ok = eq("and takes the row back", this.WelcomeRecent.Index, -1) && ok;
+
+            /* And the workspace has nothing to hide now, so the panels were not
+             * standing in for an empty screen -- and the door is open again. */
+            ok = eq("the window is on the workspace", this.Tasks.Count > 0, true) && ok;
+            ok = eq("and the commands that need a plan are back",
+                    this.ActAdd.Enabled, true) && ok;
+
+            /* **A new plan is a plan that already schedules**: a Standard
+             * calendar of two shifts over a working week, no tasks, and no
+             * complaint from the shape about any of it. The four values are the
+             * dialog's, and the currency is none of them -- see `newMspdi`. */
+            const made = File.Join(Environment.TempDirectory, "check-welcome.xml");
+            const fresh = newMspdi({ Name: "Bienvenida",
+                                     Title: "Un plan en blanco",
+                                     Start: "2026-10-05",
+                                     Folder: Environment.TempDirectory,
+                                     File: "check-welcome.xml" });
+            const p = fresh.project;
+            ok = eq("a new plan is named after it", p.Name, "Bienvenida") && ok;
+            ok = eq("and carries its title", p.Title,
+                    "Un plan en blanco") && ok;
+            ok = eq("starts when it was told", p.StartDate,
+                    "2026-10-05T08:00:00") && ok;
+            ok = eq("with the status date reading the same", p.StatusDate,
+                    "2026-10-05T08:00:00") && ok;
+            ok = eq("and no currency it was never told", p.CurrencyCode, "") && ok;
+            ok = eq("and holds no tasks", p.Tasks.length, 0) && ok;
+            ok = eq("with one calendar", p.Calendars.length, 1) && ok;
+            ok = eq("named Standard", p.Calendars[0].Name, "Standard") && ok;
+            ok = eq("which is the plan's own", p.CalendarUID,
+                    p.Calendars[0].UID) && ok;
+            ok = eq("of a five-day week", p.Calendars[0].WeekDays.length, 7) && ok;
+            ok = eq("Monday works", p.Calendars[0].WeekDays[1].DayWorking, true) && ok;
+            ok = eq("in two shifts", p.Calendars[0].WeekDays[1].WorkingTimes.length,
+                    2) && ok;
+            ok = eq("Saturday does not", p.Calendars[0].WeekDays[5].DayWorking,
+                    false) && ok;
+            ok = eq("and the shape modelled all of it", fresh.problems.length, 0) && ok;
+
+            /* **It has to survive being written and read back**, or New Project
+             * opens a file this app cannot show: that is what the road a blank
+             * plan takes is, and it is the same one every corpus fixture walks. */
+            writeMspdi(made, fresh);
+            const back = readMspdi(made);
+            ok = eq("and comes back with its name", back.project.Name,
+                    "Bienvenida") && ok;
+            ok = eq("its title", back.project.Title,
+                    "Un plan en blanco") && ok;
+            ok = eq("its calendar", back.project.Calendars.length, 1) && ok;
+            ok = eq("and Monday's two shifts",
+                    back.project.Calendars[0].WeekDays[1].WorkingTimes.length,
+                    2) && ok;
+            ok = eq("with nothing not modelled", back.problems.length, 0) && ok;
+
+            /* **The dialog is what writes it**, so the dialog is what is
+             * asserted: its own gates -- no name, a file that is taken, a name
+             * that is a path, a folder that is not there, a start the shape will
+             * not take -- and then the four fields read back as the values the
+             * plan above was built from. The form parses and opens in this one
+             * call, which is the other reason it is here: a `.form` that does
+             * not load is a New Project that throws instead of opening. */
+            let asked = null;
+            const dlg = NewProjectForm.ask(Environment.TempDirectory,
+                                           (values) => { asked = values; });
+            ok = eq("Create is off with no name", dlg.BtnCreate.Enabled,
+                    false) && ok;
+
+            dlg.TxtName.Text  = "Bienvenida";
+            dlg.TxtTitle.Text = "Un plan en blanco";
+            dlg.TxtStart.Text = "2026-10-05";
+            dlg.TxtFile.Text  = "check-welcome.xml";
+
+            /* The file the round trip above just wrote is the one that says no:
+             * **a new project never replaces what is there**, and it says which
+             * before Create is pressed rather than after. */
+            dlg.updateHint();
+            ok = eq("a file that is there says so", dlg.LblHint.Text,
+                    Locale.Text("There is already a file there.")) && ok;
+            ok = eq("so Create is off", dlg.BtnCreate.Enabled, false) && ok;
+            if (File.Exists(made)) File.Delete(made);
+            dlg.updateHint();
+            ok = eq("and with the path free the hint is the path", dlg.LblHint.Text,
+                    made) && ok;
+
+            dlg.TxtFile.Text = "no/name.xml";
+            dlg.updateHint();
+            ok = eq("a name that is a path is not one", dlg.BtnCreate.Enabled,
+                    false) && ok;
+            dlg.TxtFile.Text = "en un lugar que no existe";
+            dlg.TxtFolder.Text = File.Join(Environment.TempDirectory, "nope");
+            dlg.updateHint();
+            ok = eq("and neither is a folder that is not there",
+                    dlg.BtnCreate.Enabled, false) && ok;
+
+            dlg.TxtFolder.Text = Environment.TempDirectory;
+            dlg.TxtFile.Text = "check-welcome.xml";
+            dlg.TxtStart.Text = "el martes que viene";
+            dlg.updateHint();
+            ok = eq("nor a start the shape will not take",
+                    dlg.BtnCreate.Enabled, false) && ok;
+
+            dlg.TxtStart.Text = "2026-10-05";
+            dlg.TxtFile.Text = "check-welcome-new.xml";
+            dlg.updateHint();
+            ok = eq("with all four filled Create is on", dlg.BtnCreate.Enabled,
+                    true) && ok;
+            dlg.BtnCreate_Click();
+            ok = eq("and the dialog hands back what it holds", asked.Name,
+                    "Bienvenida") && ok;
+            ok = eq("its title", asked.Title, "Un plan en blanco") && ok;
+            ok = eq("its start", asked.Start, "2026-10-05") && ok;
+            ok = eq("its folder", asked.Folder,
+                    Environment.TempDirectory) && ok;
+            ok = eq("and its file", asked.File,
+                    "check-welcome-new.xml") && ok;
+
+            /* **And it is what the window is opened with**, which is the part
+             * that is not a round trip: an empty table, a panel with no task in
+             * it, and a chart with no rows and no dates to scale. The last is
+             * the one that used to throw, so what it has no is asserted. */
+            this.settingsReady = false;   // a check writes nothing to Settings
+            this.newProject(asked);
+            ok = eq("the workspace comes up", this.Pages.Current, PAGE_WORK) && ok;
+            ok = eq("on the file the dialog named", this.path,
+                    File.Join(asked.Folder, asked.File)) && ok;
+            ok = eq("with an empty list", this.Tasks.Count, 0) && ok;
+            ok = eq("and no timescale", this.chartRange(), null) && ok;
+            ok = eq("so the ruler has no band to draw", this.drawsEmpty(),
+                    false) && ok;
+            if (File.Exists(made)) File.Delete(made);
+            if (File.Exists(File.Join(Environment.TempDirectory,
+                                      "check-welcome-new.xml")))
+                File.Delete(File.Join(Environment.TempDirectory,
+                                      "check-welcome-new.xml"));
+
+            print(ok ? "CHECK-OK" : "CHECK-FAILED");
+            Application.Quit(ok ? 0 : 1);
+        } catch (e) {
+            print(`welcome ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
@@ -3667,7 +4346,7 @@ class MainForm extends Form {
      * afternoon after a rewrite. The check names the pairs the window needs.
      */
     checkWiring() {
-        const wanted = ["ActOpen", "ActSave", "ActSaveAs", "ActExport",
+        const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
@@ -3675,7 +4354,8 @@ class MainForm extends Form {
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog",
                         "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
-                        "BtnAssignAdd", "BtnAssignDel", "ActProjData", "ActProjOptions", "ActCalendar"]
+                        "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
+                        "ActProjData", "ActProjOptions", "ActCalendar"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw",
                      "CmbScale_Select",
@@ -3950,6 +4630,8 @@ const COLUMNS = [
     { id: "finish",     Text: "Finish",           Width: 130 },
     { id: "percent",    Text: "Percent complete", Width: 70,  Alignment: "Right" },
     { id: "critical",   Text: "Critical",         Width: 60,  Alignment: "Center" },
+    { id: "slack",      Text: "Slack",            Width: 84,  Alignment: "Right" },
+    { id: "variance",  Text: "Variance",        Width: 84,  Alignment: "Right" },
     { id: "milestone",  Text: "Milestone",        Width: 60,  Alignment: "Center" },
     { id: "work",       Text: "Work",             Width: 84,  Alignment: "Right" },
     { id: "cost",       Text: "Cost",             Width: 80,  Alignment: "Right" },
@@ -3994,6 +4676,50 @@ function resourceNumber(text) {
 /* "2026-10-01T17:00:00" reads better as "2026-10-01 17:00" in a row. */
 function shortDate(when) {
     return String(when || "").slice(0, 16).replace("T", " ");
+}
+
+/* The same spelling for an instant in milliseconds, which is what the
+ * statistics hand back -- `null` included, because a plan with no date of that
+ * kind has one and says nothing rather than inventing the zero date. */
+function statsDateText(ms) {
+    return ms === null || ms === undefined ? "" : shortDate(isoLocal(ms));
+}
+
+/*
+ * A number of working minutes in the unit the task's own durations are read in
+ * -- which is what Project shows, and what `durationText` does for a duration,
+ * given a number instead of a `PT…S`. **The sign is part of the reading**, so it
+ * is written here rather than left to the reader to work out from the column.
+ */
+function minutesText(minutes, task, project) {
+    const format = durationFormat(task.DurationFormat || project.DurationFormat,
+                                  project);
+    return `${minutes < 0 ? "-" : ""}${Math.abs(minutes) / format.per}${format.unit}`;
+}
+
+/*
+ * The slack, in the task's own unit.
+ *
+ * **The sentinel is a blank and not a zero.** `NO_MINUTES` means the pass never
+ * answered for this task -- it is ALAP, or the file never dated it -- and a row
+ * that reads "0d" there would be claiming the task has no room when nobody
+ * looked, and that is the one number in the table that would be a lie rather
+ * than a reading. A zero that *is* an answer prints as a zero, like any other.
+ */
+function slackText(task, project) {
+    return task.TotalSlack === NO_MINUTES
+        ? "" : minutesText(task.TotalSlack, task, project);
+}
+
+/*
+ * The **finish** variance, and not the start one: it is the date a deadline is
+ * about and the one a reader asks about, and the start variance is in the file
+ * for Project to read. The same blank for the same reason -- a task with no
+ * baseline is not a task that is exactly on one.
+ */
+function varianceText(task, project) {
+    return task.FinishVariance === NO_MINUTES
+        ? "" : minutesText(task.FinishVariance, task, project);
 }
 
 /*

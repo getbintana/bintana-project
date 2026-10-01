@@ -11,8 +11,11 @@
  * every task with no predecessor starts at the project start and every other
  * one as soon as its links allow, with the hard constraints (`ConstraintType`
  * MSO/MFO/SNET/FNET) applied on top; backward, every link pulls its
- * predecessor's latest dates back and zero slack marks a task critical; and
- * then a summary is the span of the deeper tasks that follow it. A `Deadline`
+ * predecessor's latest dates back and the slack that leaves -- **which is kept,
+ * as `LateStart`, `LateFinish`, `TotalSlack` and `FreeSlack`, the four fields
+ * the file carries and the backward pass used to work out and throw away** --
+ * and zero slack marks a task critical; and then a summary is the span of the
+ * deeper tasks that follow it. A `Deadline`
  * is a target and not a constraint: it is modelled and never schedules
  * anything, and the same is true of the two "no later than" constraints --
  * those tasks are scheduled as early as their links allow and `notMet` counts
@@ -293,6 +296,67 @@ function workDuration(project, task, minutes, mine) {
         assignment.RegularWork = assignment.Work;
     }
     return minutes;
+}
+
+/*
+ * **Free slack**: how long this task can slip before it moves something that
+ * depends on it, where the total slack is how long it can slip before it moves
+ * the plan's finish. Each successor bounds it and the least of those is the
+ * answer, in the successor's own calendar.
+ *
+ * The bound depends on which end of the link is joined, and the two "start"
+ * kinds are worth spelling out because they are the ones a reader gets wrong:
+ *
+ *   - **FS** -- our finish may sit anywhere before the successor starts, less
+ *     the lag. That is the room between them.
+ *   - **FF** -- our finish may sit before the successor's *finish*, less the
+ *     lag, less our own duration: that is the same moment written as a finish.
+ *   - **SS and SF** -- the successor's start (or finish) hangs off *our* start,
+ *     so there is nothing this task can slide without taking it along: **zero,
+ *     which is what Project shows and what the arithmetic says.**
+ *
+ * A task nothing depends on has all of its total as free: with no successor
+ * there is no sooner moment to be late for. A task the file never dated, or a
+ * successor the file never dated, keeps `NO_MINUTES` -- an answer nobody worked
+ * out is not the same as an answer of zero.
+ */
+function freeSlack(task, links, work) {
+    const ef = whenMs(task.Finish);
+    if (ef === null) return NO_MINUTES;
+
+    let least = null;
+    for (const { link, succ } of links) {
+        const lag  = (link.LinkLag || 0) / 10 * MIN_MS;   /* tenths of a minute */
+        const kind = linkKind(link);
+        if (kind === 3 || kind === 4) {                  /* SS and SF */
+            least = 0;
+            continue;
+        }
+        const until = kind === 0 ? whenMs(succ.Finish)    /* FF bounds a finish */
+                                : whenMs(succ.Start);     /* FS bounds a start */
+        if (until === null) continue;
+        const minutes = mspdiMinutes(task.Duration) || 0;
+        const bound   = until - lag - (kind === 0 ? minutes * MIN_MS : 0);
+        const room    = work.between(ef, bound);
+        if (least === null || room < least) least = room;
+    }
+    return least === null ? task.TotalSlack : least;
+}
+
+/*
+ * How far apart two dates are in working minutes, signed: **positive is late**,
+ * the actual being the later of the two. `WorkCalendar.between` is one-signed
+ * (it answers 0 for a span that goes backwards), so the order is what carries
+ * the sign.
+ *
+ * `NO_MINUTES` when either side is missing, which is the honest answer for a
+ * task whose baseline never dated it or that the file never dated: a plan that
+ * was never baselined is not a plan that is exactly on its baseline.
+ */
+function varianceOf(work, promised, actual) {
+    const a = whenMs(promised), b = whenMs(actual);
+    if (a === null || b === null) return NO_MINUTES;
+    return b >= a ? work.between(a, b) : -work.between(b, a);
 }
 
 /*
@@ -577,7 +641,17 @@ function recalculate(project) {
             if (!L) continue;
             const ef = whenMs(task.Finish);
             if (ef === null) continue;
-            task.Critical = workOf(task.CalendarUID).between(ef, L.lf) <= 0;
+            const work = workOf(task.CalendarUID);
+            /* **The backward pass's answer is what the file keeps**, and until now
+             * it was computed and thrown away: `LateStart` and `LateFinish` are
+             * the dates Project shows in the Tracking tab, and the slack is the
+             * working time between the early finish and this one -- read once
+             * here because `Critical` is the same number at zero. */
+            task.LateStart    = isoLocal(L.ls);
+            task.LateFinish   = isoLocal(L.lf);
+            task.TotalSlack   = work.between(ef, L.lf);
+            task.Critical     = task.TotalSlack <= 0;
+            task.FreeSlack    = freeSlack(task, successors[task.UID] || [], work);
         }
     }
 
@@ -596,6 +670,25 @@ function recalculate(project) {
             tasks[i].Start  = isoLocal(from);
             tasks[i].Finish = isoLocal(to);
         }
+    }
+
+    /*
+     * **The variance, last**, because it compares two dates and this is the
+     * point where both are final: the ones the baseline caught, and the ones
+     * the plan has now. Signed working minutes on the task's own calendar, the
+     * same calendar its slack was measured in, because a task that slipped over
+     * a weekend did not slip eight hours.
+     *
+     * A task with no baseline, or with a date missing on either side, keeps the
+     * sentinel: there is no answer, and writing `0` would claim the task is
+     * exactly on a plan that never caught one.
+     */
+    for (const task of tasks) {
+        const base = baselineOf(task, BASELINE);
+        if (!base) continue;
+        const work = workOf(task.CalendarUID);
+        task.StartVariance  = varianceOf(work, base.Start,  task.Start);
+        task.FinishVariance = varianceOf(work, base.Finish, task.Finish);
     }
     return { placed, skipped, notMet };
 }

@@ -31,6 +31,78 @@ msgstr "_Ayuda"
 msgid "Open…"
 msgstr "Abrir…"
 
+msgid "New Project…"
+msgstr "Nuevo proyecto…"
+
+msgid "New Project"
+msgstr "Nuevo proyecto"
+
+msgid "New project"
+msgstr "Nuevo proyecto"
+
+msgid "File"
+msgstr "Archivo"
+
+msgid "Budget"
+msgstr "Presupuesto"
+
+msgid "Budget variance"
+msgstr "Desvío del presupuesto"
+
+msgid "Budget used"
+msgstr "Presupuesto usado"
+
+msgid "What this resource is budgeted to cost on this task; the plan's budget is the sum"
+msgstr "Lo que se presupuesta que cuesta este recurso en esta tarea; el presupuesto del plan es la suma"
+
+msgid "The budget must be a number, or nothing."
+msgstr "El presupuesto tiene que ser un número, o nada."
+
+msgid "on baseline"
+msgstr "en línea base"
+
+msgid "Create"
+msgstr "Crear"
+
+msgid "What the plan is called"
+msgstr "Cómo se llama el plan"
+
+msgid "Optional, the line Project shows over it"
+msgstr "Opcional, la línea que Project muestra encima"
+
+msgid "There is already a file there."
+msgstr "Ya hay un archivo ahí."
+
+msgid "There is already a file at {0}."
+msgstr "Ya hay un archivo en {0}."
+
+msgid "That folder does not exist."
+msgstr "Esa carpeta no existe."
+
+msgid "That folder does not exist:\n{0}"
+msgstr "Esa carpeta no existe:\n{0}"
+
+msgid "{0} is not a date this plan can use."
+msgstr "{0} no es una fecha que este plan pueda usar."
+
+msgid "Project XML"
+msgstr "XML de proyecto"
+
+msgid "Project.xml"
+msgstr "Proyecto.xml"
+
+msgid "Open the sample"
+msgstr "Abrir el ejemplo"
+
+msgid "(none yet)"
+msgstr "(ninguno todavía)"
+
+msgid "MSPDI (MS Project XML) in Bintana. Open a project, or start a new one."
+msgstr "MSPDI (XML de MS Project) en Bintana. Abrí un proyecto o empezá uno nuevo."
+
+msgid "Cannot create {0}: {1}"
+msgstr "No se puede crear {0}: {1}"
+
 msgid "Save As…"
 msgstr "Guardar como…"
 

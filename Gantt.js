@@ -236,6 +236,28 @@ function ganttIdleDays(range, calendar) {
 }
 
 /*
+ * The span a ruler is drawn over: the geometry's, or the rows' own -- a file's
+ * frame carries the one, a strip's the other, and both come from the same call.
+ * `ganttGeometry` has already resolved it in the on-screen case, so this is the
+ * one road both the drawing and the decision below read.
+ */
+function rulerRange(g) {
+    return g.range || ganttRange(g.rows || []);
+}
+
+/*
+ * Whether a ruler has anything to draw. **A plan with no dates has no
+ * timescale**, and a ruler that invented one would draw a fiction where the
+ * truth is that there is nothing to scale yet -- so what is left is the ground
+ * and the rule, and no band. **A new project opens exactly here**: its rows are
+ * none and its dates are unset, and the rows can be there with no dates too,
+ * which is why the span is asked and not the count.
+ */
+function rulerHasRange(g) {
+    return !!rulerRange(g);
+}
+
+/*
  * The timescale, in the band the table's column headings occupy.
  *
  * **On screen that band is a control**, the strip above the chart, which wears
@@ -252,9 +274,7 @@ function ganttIdleDays(range, calendar) {
 function drawGanttRuler(p, width, g, c) {
     const headH = g.headH;
     if (!(headH > 0)) return;
-    /* The range is the geometry's, or the rows' own -- a file's frame carries
-     * the one, a strip's the other, and both come from the same call. */
-    const range = g.range || ganttRange(g.rows);
+    const range = rulerRange(g);
     const dayMs = DAY_MS;
     const dayW = g.dayW;
 
@@ -275,6 +295,10 @@ function drawGanttRuler(p, width, g, c) {
         p.LineTo(width, headH - 0.5);
         p.Stroke();
     }
+
+    /* **A plan with no dates has no timescale**: the ground and the rule above
+     * are the whole of it, and a new project opens exactly here. */
+    if (!rulerHasRange(g)) return;
 
     /* **The type gives way before a band does**, down the ladder above, and a
      * label that does not fit its own cell is not drawn at all: a month squeezed

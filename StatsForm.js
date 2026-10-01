@@ -81,6 +81,18 @@ class StatsForm extends Form {
         this.TxtMaterialCost.Text = statsMoney(project, s.kindMaterial);
         this.TxtCostCost.Text     = statsMoney(project, s.kindCost);
         this.TxtOver.Text         = Locale.Number(s.overAllocated);
+        /* The schedule variance, the other half of the baseline: **the span the
+         * baseline caught against the span the plan has now.** Both are shown
+         * because either alone is a question -- "1 day late" says nothing
+         * about whether the plan takes a week or a year -- and neither is
+         * answered when there is no baseline, which is the same bargain the
+         * per-task variances make. */
+        this.TxtBaselineSpan.Text = s.baselineFinish === null
+            ? "" : `${statsDate(s.baselineStart)} – ${statsDate(s.baselineFinish)}`;
+        this.TxtScheduleVariance.Text = s.variance === null
+            ? "" : (s.variance === 0 ? Locale.Text("on baseline")
+                                     : `${s.variance > 0 ? "+" : ""}${Locale.Number(s.variance)} d`);
+
         /* The baseline is what the file kept and the total is what this app
          * calculates, so the variance is only as good as both -- and a plan
          * that never took a baseline has no number to vary from. */
@@ -88,6 +100,17 @@ class StatsForm extends Form {
             ? statsMoney(project, s.baselineCost) : "";
         this.TxtVariance.Text     = s.baselined
             ? statsMoney(project, s.cost - s.baselineCost) : "";
+
+        /* **The budget is the other reading of the same money**: what the plan
+         * said it would spend, out of the assignments. A plan that took no
+         * budget shows nothing at all, because "no budget" is not "a budget of
+         * zero" and a row of zeroes there would read like a plan that is
+         * exactly on budget. */
+        this.TxtBudget.Text = s.budget > 0 ? statsMoney(project, s.budget) : "";
+        this.TxtBudgetVariance.Text = s.budgetVariance === null
+            ? "" : statsMoney(project, s.budgetVariance);
+        this.TxtBudgetPercent.Text = s.budgetPercent === null
+            ? "" : `${Locale.Number(s.budgetPercent, 1)}%`;
 
         this.TxtLate.Text          = Locale.Number(s.late.length);
         this.TxtWorst.Text         = s.worstLate ? Locale.Number(s.worstLate) : "";

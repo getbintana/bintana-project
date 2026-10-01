@@ -97,10 +97,11 @@ else
     done
     run_one "edit-01-minimal" check-edit "$PWD/tests/corpus/01-minimal.xml" || fail=1
 
-    # The engine's arithmetic, the chart's pointer, the view's geometry and
-    # the statistics the Project menu shows, asserted inside the app -- no
-    # golden, because the values are the assertion.
-    for what in cpm drag view stats; do
+    # The engine's arithmetic, the chart's pointer, the view's geometry, the
+    # statistics the Project menu shows and the welcome page a bare start lands
+    # on, asserted inside the app -- no golden, because the values are the
+    # assertion.
+    for what in cpm drag view stats welcome; do
         if "$TRY" "$PWD" "check-$what" > "$OUT/$what.report" 2>&1; then
             echo "check $what: $(grep -c "^$what " "$OUT/$what.report") assertions ok"
         else
