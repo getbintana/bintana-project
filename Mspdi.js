@@ -9,9 +9,8 @@
  * bin. `SaveXml` writes back into the tree it was handed and touches only
  * what the shape models -- which is what an interchange round trip needs.
  *
- * What is deliberately **not** modelled yet: baselines, timephased data,
- * resources' rates beyond the two shown, and the monthly/yearly recurrences of
- * a calendar exception -- the dates a file writes are what the engine reads.
+ * What is deliberately **not** modelled yet: timephased data, work contours
+ * and overtime, among others.
  * Each of those is a field away, and `Problems` says exactly which file asked
  * for one.
  *
@@ -312,17 +311,32 @@ class MspTimePeriod extends Record {
 }
 
 /* A calendar exception: a holiday (`DayWorking` false) or a special working
- * day. The monthly and yearly recurrences are not modelled; the dates a file
- * writes are what the engine reads. */
+ * day. The recurrence is modelled but **not yet scheduled**: the engine reads
+ * the dates the file writes (ROADMAP, phase 2). */
+/* **Every field the schema gives an exception is modelled**, recurrence
+ * included, and that is what makes an unkeyed list safe: an exception has no
+ * UID, so `SaveXml` pairs records with elements by position, and deleting the
+ * first one wrote the second into the first's element -- which kept the
+ * first's `Month`/`MonthDay`, so a yearly Dec 25 came out as Jan 1. With
+ * nothing left unmodelled, a record carries all of itself wherever it lands.
+ *
+ * `Month`, `MonthItem` and `MonthPosition` count from 0 (January is 0), so
+ * their absent is -1, the bargain `MspLink.Type` makes; the other two take the
+ * same for symmetry, since neither has a zero that means anything. */
 class MspException extends Record {
     static Xml = { Root: "Exception" };
     static Fields = {
         EnteredByOccurrences: Field.Bool(),
         TimePeriod:           Field.Record(MspTimePeriod),
+        Occurrences:          Field.Int({ def: -1 }),
         Name:                 Field.Text(),
         Type:                 Field.Int(),
         Period:               Field.Int(),
         DaysOfWeek:           Field.Int(),
+        MonthItem:            Field.Int({ def: -1 }),
+        MonthPosition:        Field.Int({ def: -1 }),
+        Month:                Field.Int({ def: -1 }),
+        MonthDay:             Field.Int({ def: -1 }),
         DayWorking:           Field.Bool(),
         WorkingTimes:         Field.List(MspWorkingTime, { in: "WorkingTimes" }),
     };

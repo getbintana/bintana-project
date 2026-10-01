@@ -3349,6 +3349,36 @@ class MainForm extends Form {
                     2) && ok;
             File.Delete(scratch);
 
+            /* **Borrar una excepción no le pasa su recurrencia a la otra.** Sin
+             * clave se emparejan por posición, y la segunda se escribía en el
+             * elemento de la primera conservando su `Month`/`MonthDay`. */
+            const yearly = (name, month, day) =>
+                `<Exception><EnteredByOccurrences>true</EnteredByOccurrences>` +
+                `<TimePeriod><FromDate>2026-01-01T00:00:00</FromDate>` +
+                `<ToDate>2030-12-31T23:59:00</ToDate></TimePeriod>` +
+                `<Occurrences>5</Occurrences><Name>${name}</Name><Type>5</Type>` +
+                `<MonthDay>${day}</MonthDay><Month>${month}</Month>` +
+                `<DayWorking>false</DayWorking></Exception>`;
+            const calText = File.Load(this.resolve(File.Join("tests", "corpus",
+                                                             "04-calendars.xml")))
+                .replace(/<Exceptions>[\s\S]*?<\/Exceptions>/,
+                         `<Exceptions>${yearly("Año nuevo", 0, 1)}` +
+                         `${yearly("Navidad", 11, 25)}</Exceptions>`);
+            const calFile = File.Join(Environment.TempDirectory, "check-exceptions.xml");
+            File.Save(calFile, calText);
+            const cals = readMspdi(calFile);
+            const withTwo = cals.project.Calendars.find((c) => c.Exceptions.length === 2);
+            withTwo.Exceptions = withTwo.Exceptions.slice(1);
+            writeMspdi(calFile, cals);
+            const left = File.LoadXml(calFile).Root.Find("Calendars").FindAll("Calendar")
+                .map((c) => c.Find("Exceptions")).filter((x) => x)
+                .flatMap((x) => x.FindAll("Exception"));
+            ok = eq("queda la de Navidad, con su fecha",
+                    left.map((x) => [x.Find("Name").Text, x.Find("Month").Text,
+                                     x.Find("MonthDay").Text].join("/")).join(" "),
+                    "Navidad/11/25") && ok;
+            File.Delete(calFile);
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */

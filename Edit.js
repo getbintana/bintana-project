@@ -476,7 +476,9 @@ class Edit {
             Name:           name || `Calendar ${uid}`,
             IsBaseCalendar: true,
             WeekDays:       week,
-            Exceptions:     source ? source.Exceptions.slice() : [],
+            /* Copies, not the source's records: the two calendars would share
+             * them, and editing one would edit the other until the next undo. */
+            Exceptions:     source ? source.Exceptions.map((e) => e.Clone()) : [],
         });
         project.Calendars = project.Calendars.concat([calendar]);
         this.commit();
@@ -489,10 +491,17 @@ class Edit {
         const project = this.holder.project;
         if (uid === project.CalendarUID) return false;
 
-        const kept = project.Calendars.filter((c) => c.UID !== uid);
-        if (kept.length === project.Calendars.length) return false;
+        const gone = project.Calendars.find((c) => c.UID === uid);
+        if (!gone) return false;
 
-        project.Calendars = kept;
+        /* A calendar derived from this one inherits from what this one
+         * inherited from -- or from the project's, which cannot be removed,
+         * when this one was a base -- so the chain stays whole instead of
+         * pointing at a UID that is not there. */
+        const heir = gone.BaseCalendarUID > 0 ? gone.BaseCalendarUID : project.CalendarUID;
+        project.Calendars = project.Calendars.filter((c) => c !== gone);
+        for (const calendar of project.Calendars)
+            if (calendar.BaseCalendarUID === uid) calendar.BaseCalendarUID = heir;
         for (const task of project.Tasks)
             if (task.CalendarUID === uid) task.CalendarUID = -1;
         for (const resource of project.Resources)
