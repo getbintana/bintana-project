@@ -3261,6 +3261,29 @@ class MainForm extends Form {
                     File.Name(this.autosavePath("/a/plan.xml")).startsWith("autosave-plan-"),
                     true) && ok;
 
+            /* **Borrar una tarea se lleva sus asignaciones**: un trabajo que
+             * nadie hace igual costaría en `projectCost` y se escribiría para
+             * una tarea que no está. */
+            const doc = new Edit(this.holder);
+            const p = this.holder.project;
+            const top = p.Tasks.reduce((m, t) => Math.max(m, t.UID), 0);
+            const who = doc.addResource({ Name: "Quien", Type: 1 });
+            doc.addAssignment(top, who.UID, 1);
+            const onTop = () => p.Assignments.filter((x) => x.TaskUID === top).length;
+            ok = eq("la tarea tiene su asignacion", onTop(), 1) && ok;
+            doc.removeTask(top);
+            ok = eq("y borrarla se la lleva", this.holder.project.Assignments
+                    .filter((x) => x.TaskUID === top).length, 0) && ok;
+
+            /* **Un UID borrado no vuelve.** La tarea nueva que tomaba el número
+             * de la borrada heredaba su elemento del documento, con lo no
+             * modelado adentro; ni deshacer el borrado devuelve el número. */
+            const fresh = doc.addTask(null);
+            ok = eq("la nueva no reusa el UID borrado", fresh.UID > top, true) && ok;
+            doc.undo(); doc.undo();
+            const again = doc.addTask(null);
+            ok = eq("ni despues de deshacer", again.UID > fresh.UID, true) && ok;
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */

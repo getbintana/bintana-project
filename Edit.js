@@ -29,9 +29,30 @@ class Edit {
      * a date typed by hand is the user's until they ask. */
     auto = false;
 
+    /* **The highest UID each kind ever had while this document was open**,
+     * outside the snapshots on purpose. A UID is identity in the file:
+     * `SaveXml` matches a record to its element by it, so a new task that took
+     * a deleted one's number would inherit that element's unmodelled children
+     * (TimephasedData, GUID, …) and any assignment still pointing at it. An
+     * undo brings old records back, never old numbers to hand out again. */
+    #issued = {};
+
     constructor(holder) {
         this.holder = holder;
         this.states = [holder.project.Serialize(true)];
+        const p = holder.project;
+        for (const [kind, list] of [["task", p.Tasks], ["resource", p.Resources],
+                                    ["assignment", p.Assignments],
+                                    ["calendar", p.Calendars]])
+            this.#issued[kind] = list.reduce((m, r) => Math.max(m, r.UID), 0);
+    }
+
+    /* The next UID of a kind: after every one it has had, not just the ones
+     * it has now. */
+    nextUID(kind, list) {
+        const top = list.reduce((m, r) => Math.max(m, r.UID), this.#issued[kind] || 0);
+        this.#issued[kind] = top + 1;
+        return top + 1;
     }
 
     get dirty()   { return this.at !== this.saved; }
@@ -169,13 +190,11 @@ class Edit {
      * Project's, and a new one goes after the last. */
     addResource(values) {
         const project = this.holder.project;
-        let maxUID = 0;
-        for (const resource of project.Resources)
-            if (resource.UID > maxUID) maxUID = resource.UID;
+        const uid = this.nextUID("resource", project.Resources);
 
         const resource = new MspResource(values);
-        resource.UID = maxUID + 1;
-        resource.ID = maxUID + 1;
+        resource.UID = uid;
+        resource.ID = uid;
         project.Resources.push(resource);
         this.commit();
         return resource;
@@ -279,12 +298,8 @@ class Edit {
         const work = resource.Type === 0 ? "PT0H0M0S"
                    : mspdiDuration(Math.round(duration * units));
 
-        let maxUID = 0;
-        for (const assignment of project.Assignments)
-            if (assignment.UID > maxUID) maxUID = assignment.UID;
-
         const assignment = new MspAssignment({
-            UID: maxUID + 1, TaskUID: taskUID, ResourceUID: resourceUID,
+            UID: this.nextUID("assignment", project.Assignments), TaskUID: taskUID, ResourceUID: resourceUID,
             Units: units, Work: work, RegularWork: work,
             Start: task.Start, Finish: task.Finish,
         });
@@ -416,9 +431,7 @@ class Edit {
      * from a copy too; without a source, every day is off. */
     addCalendar(name, fromUID) {
         const project = this.holder.project;
-        let maxUID = 0;
-        for (const calendar of project.Calendars)
-            if (calendar.UID > maxUID) maxUID = calendar.UID;
+        const uid = this.nextUID("calendar", project.Calendars);
 
         const source = fromUID ? this.calendar(fromUID) : null;
         const week = [];
@@ -434,8 +447,8 @@ class Edit {
         }
 
         const calendar = new MspCalendar({
-            UID:            maxUID + 1,
-            Name:           name || `Calendar ${maxUID + 1}`,
+            UID:            uid,
+            Name:           name || `Calendar ${uid}`,
             IsBaseCalendar: true,
             WeekDays:       week,
             Exceptions:     source ? source.Exceptions.slice() : [],
@@ -470,8 +483,7 @@ class Edit {
     addTask(afterUID) {
         const project = this.holder.project;
         const tasks   = project.Tasks;
-        let maxUID = 0;
-        for (const task of tasks) if (task.UID > maxUID) maxUID = task.UID;
+        const uid = this.nextUID("task", tasks);
 
         let at = tasks.length, level = 1;
         if (afterUID !== null && afterUID !== undefined) {
@@ -484,7 +496,7 @@ class Edit {
         }
 
         const task = new MspTask({
-            UID: maxUID + 1, ID: maxUID + 1, Name: Locale.Text("New task"),
+            UID: uid, ID: uid, Name: Locale.Text("New task"),
             OutlineLevel: level, Priority: 500,
             Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
             CalendarUID: project.CalendarUID,
@@ -494,8 +506,11 @@ class Edit {
         return task;
     }
 
-    /* The task and the subtree it owns, and every link that pointed at any of
-     * them -- a successor of a deleted task does not keep a dangling UID. */
+    /* The task and the subtree it owns, every link that pointed at any of
+     * them -- a successor of a deleted task does not keep a dangling UID --
+     * and every assignment on them: work nobody does still costs money in
+     * `projectCost`, and it would be written to the file for a task that is
+     * not there. */
     removeTask(uid) {
         const tasks = this.holder.project.Tasks;
         const i = tasks.findIndex((t) => t.UID === uid);
@@ -509,6 +524,8 @@ class Edit {
         tasks.splice(i, end - i);
         for (const task of tasks)
             task.Links = task.Links.filter((link) => !gone[link.PredecessorUID]);
+        this.holder.project.Assignments =
+            this.holder.project.Assignments.filter((a) => !gone[a.TaskUID]);
 
         this.#recomputeSummary();
         this.commit();
