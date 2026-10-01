@@ -302,8 +302,8 @@
       <UID>1</UID>
       <TaskUID>2</TaskUID>
       <ResourceUID>1</ResourceUID>
-      <Finish>2026-09-03T17:00:00</Finish>
-      <RegularWork>PT8H0M0S</RegularWork>
+      <Finish>2026-09-03T12:00:00</Finish>
+      <RegularWork>PT4H0M0S</RegularWork>
       <Start>2026-09-03T08:00:00</Start>
       <Units>1</Units>
       <Work>PT4H0M0S</Work>
@@ -312,7 +312,7 @@
       <UID>2</UID>
       <TaskUID>2</TaskUID>
       <ResourceUID>2</ResourceUID>
-      <Finish>2026-09-03T17:00:00</Finish>
+      <Finish>2026-09-03T12:00:00</Finish>
       <RegularWork>PT4H0M0S</RegularWork>
       <Start>2026-09-03T08:00:00</Start>
       <Units>1</Units>

@@ -299,26 +299,20 @@ class Edit {
         const work = resource.Type === 0 ? "PT0H0M0S"
                    : mspdiDuration(Math.round(duration * units));
 
-        const assignment = new MspAssignment({
-            UID: this.nextUID("assignment", project.Assignments), TaskUID: taskUID, ResourceUID: resourceUID,
-            Units: units, Work: work, RegularWork: work,
-            Start: task.Start, Finish: task.Finish,
-        });
+        /* **The work moves with the regular work it was**: a file writes both,
+         * and they are equal unless there is overtime, which this does not
+         * edit -- so `RegularWork` follows only when it said the same. */
+        const setWork = (a, w) => {
+            if (a.RegularWork === a.Work) a.RegularWork = w;
+            a.Work = w;
+        };
 
-        const kept = [];
-        for (const other of project.Assignments) {
-            if (other.TaskUID === taskUID && other.ResourceUID === resourceUID)
-                continue;
-            /* What stays is the new duration at its own units, but only when
-             * the duration moved: an untouched one is the file's number. */
-            const r = this.resource(other.ResourceUID);
-            if (r && r.Type === 1 && duration !== minutes)
-                other.Work = mspdiDuration(
-                    Math.round(duration * (other.Units || 0)));
-            kept.push(other);
-        }
-        kept.push(assignment);
-
+        /* **Assigning the same resource again updates that assignment**, it
+         * does not replace it: the UID, the actuals, the contour, the budget and
+         * whatever the file carries that the shapes do not (TimephasedData)
+         * belong to the one already there. */
+        const same = project.Assignments.find(
+            (a) => a.TaskUID === taskUID && a.ResourceUID === resourceUID);
         /* A task whose duration moved follows it: the finish is the working
          * time from the start, which is the road `recalculate` walks. */
         if (duration !== minutes) {
@@ -332,7 +326,37 @@ class Edit {
             }
         }
 
-        project.Assignments = kept;
+        /* The task's other work assignments: the new duration at their own
+         * units, ending where the task now ends -- but only when the duration
+         * moved: an untouched one is the file's number. Only this task's; the
+         * loop used to rewrite the work of every assignment in the plan. */
+        if (duration !== minutes) {
+            for (const other of project.Assignments) {
+                if (other === same || other.TaskUID !== taskUID) continue;
+                const r = this.resource(other.ResourceUID);
+                if (!r || r.Type !== 1) continue;
+                setWork(other, mspdiDuration(Math.round(duration * (other.Units || 0))));
+                other.Start  = task.Start;
+                other.Finish = task.Finish;
+            }
+        }
+
+        /* The dates after the task's, so the assignment ends where it does. */
+        let assignment = same;
+        if (assignment) {
+            assignment.Units = units;
+            setWork(assignment, work);
+        } else {
+            assignment = new MspAssignment({
+                UID: this.nextUID("assignment", project.Assignments),
+                TaskUID: taskUID, ResourceUID: resourceUID,
+                Units: units, Work: work, RegularWork: work,
+            });
+            project.Assignments.push(assignment);
+        }
+        assignment.Start  = task.Start;
+        assignment.Finish = task.Finish;
+
         this.commit();
         return assignment;
     }

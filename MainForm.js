@@ -3331,6 +3331,22 @@ class MainForm extends Form {
             undoable.undo();
             writeMspdi(scratch, phased);
             ok = eq("y deshecha vuelve con lo no modelado", phasesOf(), 2) && ok;
+
+            /* **Reasignar el mismo recurso actualiza la asignación**, no la
+             * reemplaza: el UID y lo no modelado (las TimephasedData del 06)
+             * son de la que ya estaba. */
+            const asg = phased.project.Assignments[0];
+            const keptUID = asg.UID;
+            undoable.addAssignment(asg.TaskUID, asg.ResourceUID, 0.5);
+            const now = phased.project.Assignments.filter(
+                (x) => x.TaskUID === asg.TaskUID && x.ResourceUID === asg.ResourceUID);
+            ok = eq("reasignar no duplica", now.length, 1) && ok;
+            ok = eq("y conserva el UID", now[0].UID + ":" + now[0].Units, keptUID + ":0.5") && ok;
+            writeMspdi(scratch, phased);
+            const asgEl = File.LoadXml(scratch).Root.Find("Assignments").FindAll("Assignment")
+                .find((x) => x.Find("UID").Text === String(keptUID));
+            ok = eq("ni lo no modelado", asgEl ? asgEl.FindAll("TimephasedData").length : -1,
+                    2) && ok;
             File.Delete(scratch);
 
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
