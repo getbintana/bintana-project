@@ -2391,7 +2391,7 @@ class MainForm extends Form {
             ok = eq("B late dates and slack", slackOf(q.Tasks[1]),
                     "2026-09-09T08:00:00 2026-09-09T17:00:00 0 0") && ok;
             ok = eq("C has the Wednesday", slackOf(q.Tasks[2]),
-                    "2026-09-09T08:00:00 2026-09-09T17:00:00 480 480") && ok;
+                    "2026-09-09T08:00:00 2026-09-09T17:00:00 4800 4800") && ok;
             ok = eq("M late dates and slack", slackOf(q.Tasks[3]),
                     "2026-09-09T17:00:00 2026-09-09T17:00:00 0 0") && ok;
 
@@ -2408,9 +2408,11 @@ class MainForm extends Form {
             sl.StartDate  = "2026-09-09T08:00:00";
             sl.FinishDate = "2026-09-11T17:00:00";   // the project's own finish
             recalculate(sl);
-            ok = eq("A total is a day of room",
+            /* **Tenths of a minute, the file's unit**: a day of 480 minutes is
+             * `<TotalSlack>4800`, which is what Project writes for it. */
+            ok = eq("A total is a day of room, in tenths",
                     [sl.Tasks[0].TotalSlack, sl.Tasks[0].FreeSlack].join("/"),
-                    "480/0") && ok;
+                    "4800/0") && ok;
             ok = eq("and A is not critical for it", sl.Tasks[0].Critical,
                     false) && ok;
             /* **And the column reads it**, in the unit the task's own durations
@@ -2428,10 +2430,10 @@ class MainForm extends Form {
                     "2026-09-10T08:00:00..2026-09-11T08:00:00") && ok;
             ok = eq("B can slip to Friday",
                     [sl.Tasks[1].TotalSlack, sl.Tasks[1].FreeSlack].join("/"),
-                    "480/480") && ok;
+                    "4800/4800") && ok;
             ok = eq("C can slip to Friday too, and nothing waits on it",
                     [sl.Tasks[2].TotalSlack, sl.Tasks[2].FreeSlack].join("/"),
-                    "960/960") && ok;
+                    "9600/9600") && ok;
 
             /* **A task the pass never placed keeps the sentinel**, which
              * is not zero: nothing was worked out, and a plan that reads "no
@@ -2464,8 +2466,8 @@ class MainForm extends Form {
                 Finish: "2026-09-10T17:00:00" })];
             recalculate(vb);
             ok = eq("late against the baseline", vb.Tasks[0].FinishVariance,
-                    480) && ok;
-            ok = eq("and so is its start", vb.Tasks[0].StartVariance, 480) && ok;
+                    4800) && ok;
+            ok = eq("and so is its start", vb.Tasks[0].StartVariance, 4800) && ok;
             ok = eq("on the baseline is zero, not nothing",
                     vb.Tasks[1].FinishVariance, 0) && ok;
             ok = eq("the column reads the sign",
@@ -2525,7 +2527,7 @@ class MainForm extends Form {
             ok = eq("la asignacion se mide contra la tarea, no contra si misma",
                     asg.Assignments[0].StartVariance, 0) && ok;
             ok = eq("mientras la tarea sigue tarde",
-                    asg.Tasks[0].StartVariance, 480) && ok;
+                    asg.Tasks[0].StartVariance, 4800) && ok;
             ok = eq("y en su propio calendario: un dia, no 1440",
                     asg.Assignments[1].FinishVariance, 0) && ok;
             /* **No baseline, no answer**, at this level too -- and it is the
@@ -4066,14 +4068,15 @@ class MainForm extends Form {
             if (task.IsNull || task.Summary || task.Manual) continue;
             if (whenMs(task.Start) === null || whenMs(task.Finish) === null) continue;
             kept.push({ uid: task.UID, name: task.Name, start: task.Start,
-                        finish: task.Finish, critical: !!task.Critical });
+                        finish: task.Finish, critical: !!task.Critical,
+                        total: task.TotalSlack, free: task.FreeSlack });
         }
 
         const run = recalculate(project);
         const days = (a, b) => a === null || b === null
                              ? null : Math.round((b - a) / DAY_MS);
 
-        let same = 0, starts = 0, finishes = 0, criticals = 0;
+        let same = 0, starts = 0, finishes = 0, criticals = 0, slacks = 0;
         for (const was of kept) {
             const task = taskOf(project, was.uid);
             if (!task) continue;
@@ -4087,6 +4090,17 @@ class MainForm extends Form {
                 print(`oracle ${task.UID} ${was.name}: critical ` +
                       `${was.critical} -> ${!!task.Critical}`);
             }
+            /* **The slack, in the file's own unit.** Project writes tenths of a
+             * minute; a pass that wrote minutes would agree on every date and
+             * every critical flag and still be ten times off here. Only what
+             * the file answered is compared. */
+            const slackOff = (got, want) => want !== NO_MINUTES && got !== want;
+            if (slackOff(task.TotalSlack, was.total) ||
+                slackOff(task.FreeSlack, was.free)) {
+                slacks++;
+                print(`oracle ${task.UID} ${was.name}: slack ` +
+                      `${was.total}/${was.free} -> ${task.TotalSlack}/${task.FreeSlack}`);
+            }
             if (ds !== 0 || df !== 0)
                 print(`oracle ${task.UID} ${was.name}: ` +
                       `${shortDate(was.start)}..${shortDate(was.finish)} -> ` +
@@ -4096,7 +4110,7 @@ class MainForm extends Form {
         print(`oracle ${File.Name(path)}: ${kept.length} tasks, ` +
               `${run.placed} placed, ${run.skipped} kept, ${same} same, ` +
               `${starts} starts off, ${finishes} finishes off, ` +
-              `${criticals} critical off`);
+              `${criticals} critical off, ${slacks} slack off`);
         /* **And it fails when it disagrees.**
          *
          * This was a report: it printed the numbers and exited `0` whatever they
@@ -4990,7 +5004,7 @@ function minutesText(minutes, task, project) {
  */
 function slackText(task, project) {
     return task.TotalSlack === NO_MINUTES
-        ? "" : minutesText(task.TotalSlack, task, project);
+        ? "" : minutesText(task.TotalSlack / TENTHS, task, project);
 }
 
 /*
@@ -5001,7 +5015,7 @@ function slackText(task, project) {
  */
 function varianceText(task, project) {
     return task.FinishVariance === NO_MINUTES
-        ? "" : minutesText(task.FinishVariance, task, project);
+        ? "" : minutesText(task.FinishVariance / TENTHS, task, project);
 }
 
 /*

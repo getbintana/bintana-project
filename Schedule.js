@@ -340,14 +340,15 @@ function freeSlack(task, links, work) {
         const room    = work.between(ef, bound);
         if (least === null || room < least) least = room;
     }
-    return least === null ? task.TotalSlack : least;
+    /* Tenths, the file's unit; the total is in them already. */
+    return least === null ? task.TotalSlack : least * TENTHS;
 }
 
 /*
- * How far apart two dates are in working minutes, signed: **positive is late**,
+ * How far apart two dates are in working time, signed: **positive is late**,
  * the actual being the later of the two. `WorkCalendar.between` is one-signed
  * (it answers 0 for a span that goes backwards), so the order is what carries
- * the sign.
+ * the sign. In tenths of a minute, the unit the file keeps it in.
  *
  * `NO_MINUTES` when either side is missing, which is the honest answer for a
  * task whose baseline never dated it or that the file never dated: a plan that
@@ -356,7 +357,7 @@ function freeSlack(task, links, work) {
 function varianceOf(work, promised, actual) {
     const a = whenMs(promised), b = whenMs(actual);
     if (a === null || b === null) return NO_MINUTES;
-    return b >= a ? work.between(a, b) : -work.between(b, a);
+    return (b >= a ? work.between(a, b) : -work.between(b, a)) * TENTHS;
 }
 
 /*
@@ -649,8 +650,9 @@ function recalculate(project) {
              * here because `Critical` is the same number at zero. */
             task.LateStart    = isoLocal(L.ls);
             task.LateFinish   = isoLocal(L.lf);
-            task.TotalSlack   = work.between(ef, L.lf);
-            task.Critical     = task.TotalSlack <= 0;
+            const total       = work.between(ef, L.lf);
+            task.TotalSlack   = total * TENTHS;
+            task.Critical     = total <= 0;
             task.FreeSlack    = freeSlack(task, successors[task.UID] || [], work);
         }
     }

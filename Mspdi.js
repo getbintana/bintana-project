@@ -22,14 +22,22 @@
  */
 "use strict";
 
-/* **A number of working minutes that nobody worked out**, which is what a slack
- * and a variance both are when there is nothing to compare against. Not `0`:
- * zero is the answer for a critical task and for a task exactly on its
- * baseline, and the file writes it as such, so a sentinel that is also zero
- * would make "no room" and "no news" the same value and writing the file out
- * would delete the element it came in with. Neither is ever negative, so `-1`
- * is outside the space and reads as the omission. */
+/* **A slack or a variance that nobody worked out**, which is what both are
+ * when there is nothing to compare against. Not `0`: zero is the answer for a
+ * critical task and for a task exactly on its baseline, and the file writes it
+ * as such, so a sentinel that is also zero would make "no room" and "no news"
+ * the same value and writing the file out would delete the element it came in
+ * with.
+ *
+ * **The four fields are tenths of a minute in the file** -- `<TotalSlack>4800`
+ * is one 480-minute day in `urbano v5.05052026.xml`, and MPXJ writes all four
+ * with `printDurationInIntegerTenthsOfMinutes` -- so the shapes keep the file's
+ * unit, like `LinkLag`, and the engine and the columns convert at their edge
+ * (`TENTHS`). A variance is signed, but the engine works in whole minutes, so
+ * what it writes is a multiple of ten and `-1` -- a tenth of a minute early --
+ * is a value it never produces: it reads as the omission. */
 const NO_MINUTES = -1;
+const TENTHS     = 10;   // file units per minute, for the four fields above
 
 /* <PredecessorLink>, repeated bare under its task (no wrapper).
  *
@@ -133,12 +141,13 @@ class MspTask extends Record {
          * every task exactly on its baseline -- and a plain `Field.Number`
          * defaults to `0` too, so "the file said zero" and "the file said
          * nothing" would be one value and writing the file would delete an
-         * element the file had. `-1` is outside the value space (neither is
-         * ever negative) and it writes as the omission, which is the same
+         * element the file had. `-1` is a value the engine never writes (see
+         * `NO_MINUTES`) and it writes as the omission, which is the same
          * bargain `MspLink.Type` makes for the same reason.
          *
-         * The variances are signed working minutes: **positive is late**, the
-         * task's dates being later than the ones the baseline caught. */
+         * All four are **tenths of a working minute**, the file's unit. The
+         * variances are signed: **positive is late**, the task's dates being
+         * later than the ones the baseline caught. */
         LateStart:        Field.DateTime(),
         LateFinish:       Field.DateTime(),
         FreeSlack:        Field.Number({ def: NO_MINUTES }),

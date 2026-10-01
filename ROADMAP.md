@@ -110,6 +110,16 @@ aserciones con los defaults del shape.
   del `FinishDate` del proyecto. La ida y vuelta del archivo no pierde nada
   (`problems` 5396 → 5337 al modelarse `Manual`) y `tests/FIDELITY.md` §D lo
   detalla. Queda abrir la salida en Project para el visto bueno final.
+- **La holgura en la unidad del archivo** (2026-10-01): `TotalSlack`,
+  `FreeSlack`, `StartVariance` y `FinishVariance` son décimas de minuto en el
+  MSPDI (`<TotalSlack>4800` es un día en el archivo real; MPXJ las escribe con
+  `printDurationInIntegerTenthsOfMinutes`) y el motor escribía minutos: todo
+  plan recalculado salía con la holgura diez veces menor. Ahora el shape guarda
+  la unidad del archivo, como `LinkLag`, y `check-oracle` compara también la
+  holgura. **Mide 35 de 42 tareas distintas** -- muchas por +3 días exactos
+  (Project da `LateFinish` 01/06 a las AWS, el motor 04/06) --, así que el pase
+  atrás todavía no es el de Project: el oráculo lo informa pero no falla por
+  eso hasta que se arregle (el pase atrás ignora los vínculos de resúmenes).
 - **Constraints blandas** (2026-09-23): SNLT/FNLT no pinchan nada -- la tarea
   se planifica ASAP y `notMet` cuenta las fechas que pasó, leídas contra la
   fecha cruda (un feriado en el medio no corre la promesa); ALAP conserva las
