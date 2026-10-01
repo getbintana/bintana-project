@@ -3299,6 +3299,18 @@ class MainForm extends Form {
             doc.indent(t2.UID, -1);
             ok = eq("y desindentar la trae", lv(), "0,0,1") && ok;
 
+            /* **Una fecha tipeada sale con segundos**, que es lo que
+             * `xsd:dateTime` pide; una fecha sola toma la hora que el que
+             * llama sabe, y sin una queda como está para que el campo la
+             * rechace. */
+            ok = eq("con hora", parseMoment("2026-10-01 8:30"), "2026-10-01T08:30:00") && ok;
+            ok = eq("con segundos", parseMoment("2026-10-01T08:30:15"),
+                    "2026-10-01T08:30:15") && ok;
+            ok = eq("sola con la hora del que llama",
+                    parseMoment("2026-12-25", "23:59:00"), "2026-12-25T23:59:00") && ok;
+            ok = eq("sola sin hora no se inventa", parseMoment("2026-12-25"),
+                    "2026-12-25") && ok;
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */
@@ -4337,7 +4349,7 @@ class MainForm extends Form {
 
             const task = edit.task(1);
             ok = task.Name === "Analyse II" && task.Duration === "PT16H0M0S" &&
-                 task.Start === "2026-09-01T09:00" &&
+                 task.Start === "2026-09-01T09:00:00" &&
                  task.PercentComplete === 75 &&
                  task.ActualStart === "2026-09-01T08:00:00" && ok;   // the file's own
             print(`edit fields name="${task.Name}" duration=${task.Duration} ` +
@@ -4350,14 +4362,14 @@ class MainForm extends Form {
              * its children. */
             const recalc = edit.recalculate();
             ok = recalc.placed === 1 && recalc.skipped === 1 &&
-                 edit.task(1).Start === "2026-09-01T09:00" &&
-                 edit.task(1).Finish === "2026-09-02T17:00" &&
+                 edit.task(1).Start === "2026-09-01T09:00:00" &&
+                 edit.task(1).Finish === "2026-09-02T17:00:00" &&
                  edit.task(2).Start === "2026-09-03T08:00:00" && ok;
             print(`edit recalc placed=${recalc.placed} skipped=${recalc.skipped} ` +
                   `A=${edit.task(1).Start}..${edit.task(1).Finish} ` +
                   `B=${edit.task(2).Start}..${edit.task(2).Finish}`);
             edit.undo();
-            ok = edit.task(1).Start === "2026-09-01T09:00" && ok;
+            ok = edit.task(1).Start === "2026-09-01T09:00:00" && ok;
             edit.redo();
 
             /* Recalculating a plan already where the pass puts it moves
@@ -4415,7 +4427,7 @@ class MainForm extends Form {
             this.TxtConstraint.Text  = "2026-09-04 08:00";
             ok = this.applyFields() &&
                  edit.task(3).ConstraintType === 4 &&
-                 edit.task(3).ConstraintDate === "2026-09-04T08:00" && ok;
+                 edit.task(3).ConstraintDate === "2026-09-04T08:00:00" && ok;
             print(`edit constraint type=${edit.task(3).ConstraintType} ` +
                   `date=${edit.task(3).ConstraintDate}`);
 
@@ -5070,11 +5082,22 @@ function durationText(task, project) {
            (estimated ? "?" : "");
 }
 
-/* "2026-10-01 08:00" is how a plan is read; `Field.DateTime` wants the T.
- * Empty is an empty date, which the field lets through when not required. */
-function parseMoment(text) {
+/* "2026-10-01 08:00" is how a plan is read, and **`2026-10-01T08:00:00` is
+ * what the file gets**: `xsd:dateTime` has seconds, and `Field.DateTime` takes
+ * a moment without them and writes it as typed. Empty is an empty date, which
+ * the field lets through when not required.
+ *
+ * A bare date has no time of its own, so it takes `time` when the caller has
+ * one that means something -- the first minute of an exception or a rate
+ * period, the last one of its end -- and otherwise goes through as typed, for
+ * the field to refuse: a task's start at midnight would be an invented time. */
+function parseMoment(text, time) {
     const t = String(text || "").trim();
-    return t === "" ? "" : t.replace(" ", "T");
+    if (t === "") return "";
+    const m = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(t);
+    if (!m) return t.replace(" ", "T");
+    if (m[2] === undefined) return time ? `${m[1]}T${time}` : m[1];
+    return `${m[1]}T${m[2].padStart(2, "0")}:${m[3]}:${m[4] || "00"}`;
 }
 
 /*

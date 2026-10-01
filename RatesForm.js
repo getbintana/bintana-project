@@ -57,12 +57,12 @@ class RatesForm extends Form {
 
     /* Add, or update the one picked -- the fields are the editor for both. */
     BtnRateAdd_Click() {
-        const from = parseMoment(this.TxtRateFrom.Text);
+        const from = parseMoment(this.TxtRateFrom.Text, "00:00:00");
         if (from === "") {
             Message.Error(Locale.Text("A rate period needs a date."));
             return;
         }
-        const to = parseMoment(this.TxtRateTo.Text) || from;
+        const to = parseMoment(this.TxtRateTo.Text, "23:59:00") || from;
         const standard = resourceNumber(this.TxtRateStandard.Text);
         const overtime = resourceNumber(this.TxtRateOvertime.Text);
         const cost = resourceNumber(this.TxtRateCostUse.Text);

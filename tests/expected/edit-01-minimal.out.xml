@@ -160,8 +160,8 @@
       <OutlineNumber>1</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Start>2026-09-01T09:00</Start>
-      <Finish>2026-09-02T17:00</Finish>
+      <Start>2026-09-01T09:00:00</Start>
+      <Finish>2026-09-02T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
@@ -177,14 +177,14 @@
       <CalendarUID>1</CalendarUID>
       <Baseline>
         <Number>0</Number>
-        <Start>2026-09-01T09:00</Start>
-        <Finish>2026-09-02T17:00</Finish>
+        <Start>2026-09-01T09:00:00</Start>
+        <Finish>2026-09-02T17:00:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
       <Baseline>
         <Number>1</Number>
-        <Start>2026-09-01T09:00</Start>
-        <Finish>2026-09-02T17:00</Finish>
+        <Start>2026-09-01T09:00:00</Start>
+        <Finish>2026-09-02T17:00:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
     </Task>
@@ -200,7 +200,7 @@
       <Work>PT0H0M0S</Work>
       <ConstraintType>4</ConstraintType>
       <CalendarUID>1</CalendarUID>
-      <ConstraintDate>2026-09-04T08:00</ConstraintDate>
+      <ConstraintDate>2026-09-04T08:00:00</ConstraintDate>
       <Notes>Edited in the harness</Notes>
       <PredecessorLink>
         <PredecessorUID>2</PredecessorUID>
@@ -226,16 +226,16 @@
       <OutlineNumber>2</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Start>2026-09-03T08:00</Start>
-      <Finish>2026-09-03T12:00</Finish>
+      <Start>2026-09-03T08:00:00</Start>
+      <Finish>2026-09-03T12:00:00</Finish>
       <Duration>PT7H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
       <EffortDriven>true</EffortDriven>
       <Critical>true</Critical>
       <PercentComplete>100</PercentComplete>
-      <ActualStart>2026-09-03T08:00</ActualStart>
-      <ActualFinish>2026-09-03T12:00</ActualFinish>
+      <ActualStart>2026-09-03T08:00:00</ActualStart>
+      <ActualFinish>2026-09-03T12:00:00</ActualFinish>
       <LateStart>2026-09-03T08:00:00</LateStart>
       <LateFinish>2026-09-03T17:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>
@@ -252,14 +252,14 @@
       </ExtendedAttribute>
       <Baseline>
         <Number>0</Number>
-        <Start>2026-09-03T08:00</Start>
-        <Finish>2026-09-03T12:00</Finish>
+        <Start>2026-09-03T08:00:00</Start>
+        <Finish>2026-09-03T12:00:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
       <Baseline>
         <Number>1</Number>
-        <Start>2026-09-03T08:00</Start>
-        <Finish>2026-09-03T12:00</Finish>
+        <Start>2026-09-03T08:00:00</Start>
+        <Finish>2026-09-03T12:00:00</Finish>
         <Work>PT8H0M0S</Work>
       </Baseline>
     </Task>

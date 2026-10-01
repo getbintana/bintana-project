@@ -71,12 +71,13 @@ class CalendarForm extends Form {
 
     /* Add, or update the one picked -- the fields are the editor for both. */
     BtnExcAdd_Click() {
-        const from = parseMoment(this.TxtExcFrom.Text);
+        const from = parseMoment(this.TxtExcFrom.Text, "00:00:00");
         if (from === "") {
             Message.Error(Locale.Text("An exception needs a date."));
             return;
         }
-        const to = parseMoment(this.TxtExcTo.Text) || from;
+        const to = parseMoment(this.TxtExcTo.Text, "23:59:00") ||
+                   from.slice(0, 10) + "T23:59:00";
 
         const ex = new MspException({
             TimePeriod: new MspTimePeriod({ FromDate: from, ToDate: to }),
