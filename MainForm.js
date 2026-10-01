@@ -3311,6 +3311,28 @@ class MainForm extends Form {
             ok = eq("sola sin hora no se inventa", parseMoment("2026-12-25"),
                     "2026-12-25") && ok;
 
+            /* **Lo que un guardado borró vuelve con el undo.** El autoguardado
+             * escribía en el árbol vivo, y `SaveXml` le sacaba el elemento de la
+             * tarea borrada: deshacer devolvía el registro sin sus
+             * TimephasedData. Cada escritura parte ahora del archivo leído. */
+            const phased = readMspdi(this.resolve(File.Join("tests", "corpus",
+                                                            "06-timephased-custom.xml")));
+            const undoable = new Edit(phased);
+            const scratch = File.Join(Environment.TempDirectory, "check-undo-saved.xml");
+            const phasesOf = () => {
+                const tasks = File.LoadXml(scratch).Root.Find("Tasks");
+                const back = tasks && tasks.FindAll("Task")
+                    .find((t) => t.Find("UID").Text === "1");
+                return back ? back.FindAll("TimephasedData").length : -1;
+            };
+            undoable.removeTask(1);
+            writeMspdi(scratch, phased);           // el autoguardado
+            ok = eq("guardada sin la tarea", phasesOf(), -1) && ok;
+            undoable.undo();
+            writeMspdi(scratch, phased);
+            ok = eq("y deshecha vuelve con lo no modelado", phasesOf(), 2) && ok;
+            File.Delete(scratch);
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */

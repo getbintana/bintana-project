@@ -4,8 +4,9 @@
  * A step is a **snapshot**, not an inverse: the record tree is serialized after
  * every accepted command, so Set, Add, Remove and Indent undo uniformly and a
  * deletion another task linked to comes back whole. `holder.project` is what
- * gets replaced on undo/redo; `holder.doc` is not touched until `SaveXml`
- * writes into it, which is the same tree the round trip keeps.
+ * gets replaced on undo/redo; the document is never edited in place --
+ * `writeMspdi` writes each time into a fresh copy of the file as it was read,
+ * so a deletion that was saved still has its whole element to come back to.
  *
  * The plan is the array of `MspTask` records in file order, and the outline is
  * `OutlineLevel` over it: a task owns the deeper ones that follow until one at

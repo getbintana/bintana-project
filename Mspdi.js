@@ -733,17 +733,30 @@ function summarize(project) {
  * was -- which is the whole of what makes a round trip an interchange and
  * not a rewrite.
  */
+/*
+ * **The document as it was read is the template every write starts from**, and
+ * it is kept as text so each write parses a fresh copy of it. `SaveXml` edits
+ * the tree it is given -- it removes the element of a record the model no
+ * longer has -- so writing into the live tree meant a deletion that an
+ * autosave had written was gone from the document for good, and undoing it
+ * brought back only the modelled record: its TimephasedData, GUID and the rest
+ * of what the shapes do not know were not there to come back to. A fresh copy
+ * per write makes the output the original plus the model, every time, which
+ * is the golden rule stated as a function.
+ */
 function readMspdi(path) {
     const doc     = File.LoadXml(path);
     const project = MspProject.LoadXml(doc.Root);
-    return { doc, project, problems: project.Problems };
+    return { doc, project, problems: project.Problems, source: Xml.Stringify(doc) };
 }
 
 function writeMspdi(path, holder) {
-    holder.project.SaveXml(holder.doc.Root);
+    const doc = holder.source !== undefined ? Xml.Parse(holder.source) : holder.doc;
+    holder.project.SaveXml(doc.Root);
     /* The whole document, not just the root: a comment before it is a node in
      * the tree too, and `Xml.Stringify` takes a document. */
-    File.SaveXml(path, holder.doc);
+    File.SaveXml(path, doc);
+    holder.doc = doc;
 }
 
 /*
@@ -855,5 +868,5 @@ function newMspdi(values) {
 
     const doc     = Xml.Parse(text);
     const project = MspProject.LoadXml(doc.Root);
-    return { doc, project, problems: project.Problems };
+    return { doc, project, problems: project.Problems, source: text };
 }
