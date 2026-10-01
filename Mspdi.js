@@ -59,11 +59,23 @@ class MspLink extends Record {
 class MspBaseline extends Record {
     static Xml = { Root: "Baseline" };
     static Fields = {
-        Number: Field.Int({ key: true }),
-        Start:  Field.DateTime(),
-        Finish: Field.DateTime(),
-        Work:   Field.Text(),
-        Cost:   Field.Number(),
+        Number:            Field.Int({ key: true }),
+        Start:             Field.DateTime(),
+        Finish:            Field.DateTime(),
+        /* **The rest of what a task's baseline is**, so setting one again is a
+         * new baseline and not the new dates beside the old duration: the
+         * element is matched by `Number`, and anything left unmodelled in it
+         * survived into a baseline that contradicted itself. The earned-value
+         * pair and the fixed cost are numbers this app does not work out, so a
+         * new baseline writes them as absent rather than keep stale ones. */
+        Duration:          Field.Text(),
+        DurationFormat:    Field.Int(),
+        EstimatedDuration: Field.Bool(),
+        Work:              Field.Text(),
+        Cost:              Field.Number(),
+        BCWS:              Field.Number(),
+        BCWP:              Field.Number(),
+        FixedCost:         Field.Number(),
     };
 }
 

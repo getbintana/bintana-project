@@ -380,8 +380,12 @@ class Edit {
         for (const task of this.holder.project.Tasks) {
             if (task.IsNull) continue;
             const kept = task.Baselines.filter((b) => b.Number !== at);
-            kept.push(new MspBaseline({ Number: at, Start: task.Start,
-                                        Finish: task.Finish, Work: task.Work }));
+            kept.push(new MspBaseline({
+                Number: at, Start: task.Start, Finish: task.Finish,
+                Duration: task.Duration, DurationFormat: task.DurationFormat,
+                EstimatedDuration: !!task.Estimated, Work: task.Work,
+                Cost: taskCost(this.holder.project, task),
+            }));
             kept.sort((a, b) => a.Number - b.Number);
             task.Baselines = kept;
         }

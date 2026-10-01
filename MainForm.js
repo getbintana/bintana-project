@@ -3379,6 +3379,25 @@ class MainForm extends Form {
                     "Navidad/11/25") && ok;
             File.Delete(calFile);
 
+            /* **Volver a guardar la línea base no deja la vieja al lado.** El
+             * elemento se empareja por `Number`; lo que no se modelaba quedaba,
+             * y la línea base nueva tenía fechas nuevas con la duración vieja. */
+            const baseFile = File.Join(Environment.TempDirectory, "check-baseline.xml");
+            File.Save(baseFile, File.Load(this.resolve(File.Join("tests", "corpus",
+                                                             "06-timephased-custom.xml")))
+                .replace("<Work>PT16H0M0S</Work>\n      </Baseline>",
+                         "<Duration>PT8H0M0S</Duration><Work>PT16H0M0S</Work>" +
+                         "<BCWS>99</BCWS>\n      </Baseline>"));
+            const based = readMspdi(baseFile);
+            new Edit(based).setBaseline(0);
+            writeMspdi(baseFile, based);
+            const baseEl = File.LoadXml(baseFile).Root.Find("Tasks").FindAll("Task")
+                .find((t) => t.Find("UID").Text === "1").Find("Baseline");
+            const textOf = (name) => (baseEl.Find(name) || { Text: "-" }).Text;
+            ok = eq("la linea base nueva tiene su duracion y no la vieja",
+                    [textOf("Duration"), textOf("BCWS")].join(" "), "PT16H0M0S -") && ok;
+            File.Delete(baseFile);
+
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
              * se hace y que el plan no se reemplaza antes de la respuesta. */
