@@ -2107,6 +2107,45 @@ class MainForm extends Form {
             const link = (pred, type, lag) => new MspLink({
                 PredecessorUID: pred, Type: type, LinkLag: lag || 0, LagFormat: 7 });
 
+            /* **The calendar arithmetic does not care what day the clocks
+             * change.** Each window crosses one zone's change -- New York falls
+             * back on Nov 1, Madrid on Oct 25, Santiago springs forward on Sep 6
+             * at midnight -- and the answers are the same in every zone, which
+             * is why the harness runs this check under all three. A day stepped
+             * as 24 hours spun on the 25-hour one and finished in 1970. */
+            const wc = new WorkCalendar(projectOf([]), 1);
+            const crossing = (from, want) => {
+                const t0 = whenMs(from), t1 = wc.add(t0, 2400);
+                return eq(`40h from ${from} in ${Environment.Get("TZ") || "local"}`,
+                          [isoLocal(t1), wc.between(t0, t1), isoLocal(wc.subtract(t1, 2400))].join(" "),
+                          `${want} 2400 ${from}`);
+            };
+            ok = crossing("2026-10-29T08:00:00", "2026-11-04T17:00:00") && ok;
+            ok = crossing("2026-10-22T08:00:00", "2026-10-28T17:00:00") && ok;
+            ok = crossing("2026-09-03T08:00:00", "2026-09-10T17:00:00") && ok;   // the 8th is a holiday
+            ok = crossing("2026-04-02T08:00:00", "2026-04-08T17:00:00") && ok;
+
+            /* Two spans that touch are one stretch of work, and a `ToTime` of
+             * midnight is the end of the day -- the "24 Hours" calendar. */
+            const oneDay = (spans) => {
+                const days = [];
+                for (let day = 1; day <= 7; day++)
+                    days.push(new MspWeekDay({ DayType: day, DayWorking: true,
+                        WorkingTimes: spans.map(([f, t]) =>
+                            new MspWorkingTime({ FromTime: f, ToTime: t })) }));
+                return new WorkCalendar(new MspProject({ CalendarUID: 9,
+                    Calendars: [new MspCalendar({ UID: 9, IsBaseCalendar: true,
+                                                  WeekDays: days })] }), 9);
+            };
+            const touching = oneDay([["08:00:00", "12:00:00"], ["12:00:00", "17:00:00"]]);
+            ok = eq("spans that touch lose no minute",
+                    isoLocal(touching.add(whenMs("2026-09-07T08:00:00"), 540)),
+                    "2026-09-07T17:00:00") && ok;
+            const allDay = oneDay([["00:00:00", "00:00:00"]]);
+            ok = eq("a day to midnight is a whole day",
+                    isoLocal(allDay.add(whenMs("2026-09-07T00:00:00"), 1440 * 3)),
+                    "2026-09-10T00:00:00") && ok;
+
             /* Where the shapes start, taken from the XSD: the two `Type`
              * fields have no default and start below every real value, so a
              * file's own 0 is kept; the project's default task type and a

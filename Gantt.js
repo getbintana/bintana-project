@@ -56,11 +56,6 @@ function ganttRows(project) {
     return rows;
 }
 
-function whenMs(text) {
-    const ms = new Date(String(text || "")).getTime();
-    return isNaN(ms) ? null : ms;
-}
-
 /* The chart's time, padded a day each side so end bars never touch the edge.
  * Null when nothing has two dates to stand on. */
 function ganttRange(rows) {

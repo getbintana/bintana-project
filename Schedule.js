@@ -27,6 +27,7 @@
 
 const DAY_MS = 24 * 3600 * 1000;
 const MIN_MS = 60 * 1000;
+const HOUR_MS = 60 * MIN_MS;
 
 /* MSPDI's constraint types. The forward pass honors MSO, MFO, SNET and FNET;
  * ALAP and the two "no later than" constraints need Project's own backward
@@ -42,6 +43,17 @@ function clockMinutes(text) {
     return Number(m[1]) * 60 + Number(m[2]) + (m[3] ? Number(m[3]) / 60 : 0);
 }
 
+/* A `<WorkingTime>` as minutes from midnight, or null when it is not one. A
+ * `ToTime` of midnight is the end of the day -- the built-in "24 Hours"
+ * calendar writes 00:00 to 00:00 -- and not an empty span. */
+function clockSpan(wt) {
+    const from = clockMinutes(wt.FromTime);
+    let to = clockMinutes(wt.ToTime);
+    if (from === null || to === null) return null;
+    if (to === 0) to = 1440;
+    return to > from ? [from, to] : null;
+}
+
 /* A local instant as the `YYYY-MM-DDTHH:MM:SS` Project writes. */
 function isoLocal(ms) {
     const d = new Date(ms);
@@ -50,7 +62,39 @@ function isoLocal(ms) {
            `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
 }
 
+/*
+ * **A wall-clock moment, checked against the clock it names.** Turning local
+ * fields into an instant is where a runtime has to know which offset applies,
+ * and the QuickJS Bintana runs gets it wrong next to a change: it looks the
+ * offset up at the wrong instant, so in America/Santiago, where the clocks go
+ * back at midnight on 2026-04-05, `new Date(2026, 3, 5)` answers 23:00 of the
+ * 4th. Node and the spec say 00:00 of the 5th. A day that starts on the
+ * previous day never ends, and the calendar walk spun. So the answer is read
+ * back, and when its fields are not the ones asked for, the hour either side
+ * is tried; a moment the clock skips altogether keeps what the runtime said.
+ */
+function localMs(year, month, day, hours = 0, minutes = 0, seconds = 0) {
+    const want = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
+    const fits = (ms) => {
+        const d = new Date(ms);
+        return d.getFullYear() === want.getUTCFullYear() &&
+               d.getMonth()    === want.getUTCMonth()    &&
+               d.getDate()     === want.getUTCDate()     &&
+               d.getHours()    === want.getUTCHours()    &&
+               d.getMinutes()  === want.getUTCMinutes();
+    };
+    const t = new Date(year, month, day, hours, minutes, seconds).getTime();
+    if (fits(t)) return t;
+    for (const step of [HOUR_MS, -HOUR_MS])
+        if (fits(t + step)) return t + step;
+    return t;
+}
+
+/* A file's `YYYY-MM-DDTHH:MM:SS`, read as the local moment it names. */
 function whenMs(text) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(String(text || ""));
+    if (m) return localMs(Number(m[1]), Number(m[2]) - 1, Number(m[3]),
+                          Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0));
     const ms = new Date(String(text || "")).getTime();
     return isNaN(ms) ? null : ms;
 }
@@ -85,8 +129,8 @@ class WorkCalendar {
             for (const wd of step.WeekDays) {
                 const spans = [];
                 for (const wt of wd.WorkingTimes) {
-                    const from = clockMinutes(wt.FromTime), to = clockMinutes(wt.ToTime);
-                    if (from !== null && to !== null && to > from) spans.push([from, to]);
+                    const span = clockSpan(wt);
+                    if (span) spans.push(span);
                 }
                 this.days[wd.DayType] = wd.DayWorking ? spans : [];
             }
@@ -97,11 +141,11 @@ class WorkCalendar {
                 if (from === null || to === null) continue;
                 const spans = [];
                 for (const wt of ex.WorkingTimes) {
-                    const a = clockMinutes(wt.FromTime), b = clockMinutes(wt.ToTime);
-                    if (a !== null && b !== null && b > a) spans.push([a, b]);
+                    const span = clockSpan(wt);
+                    if (span) spans.push(span);
                 }
-                for (const day = new Date(from); day.getTime() <= to; day.setDate(day.getDate() + 1))
-                    this.exceptions[this.#dayKey(day.getTime())] = ex.DayWorking ? spans : null;
+                for (let day = this.#dayStart(from); day <= to; day = this.#nextDay(day))
+                    this.exceptions[this.#dayKey(day)] = ex.DayWorking ? spans : null;
             }
         }
         for (let d = 1; d <= 7; d++) if (!this.days[d]) this.days[d] = [];
@@ -132,7 +176,7 @@ class WorkCalendar {
             const avail = (end - t) / MIN_MS;
             if (left <= avail) return t + left * MIN_MS;
             left -= avail;
-            t = end + MIN_MS;
+            t = this.#nextWorking(end);
         }
         return t;
     }
@@ -149,7 +193,7 @@ class WorkCalendar {
             const avail = (t - from) / MIN_MS;
             if (left <= avail) return t - left * MIN_MS;
             left -= avail;
-            t = from - MIN_MS;
+            t = this.#previousWorking(from);
         }
         return t;
     }
@@ -159,7 +203,7 @@ class WorkCalendar {
     startAfter(ms) {
         const end = this.#spanEndAt(ms);
         if (end !== null && ms < end) return ms;
-        return this.#nextWorking(end === null ? ms : end + MIN_MS);
+        return this.#nextWorking(end === null ? ms : end);
     }
 
     /* Working minutes between two instants, which is what a duration read off
@@ -175,7 +219,8 @@ class WorkCalendar {
                 end = this.#spanEndAt(t);
             }
             total += (Math.min(end, b) - t) / MIN_MS;
-            t = Math.min(end, b) + MIN_MS;
+            if (end >= b) break;
+            t = this.#nextWorking(end);
         }
         return total;
     }
@@ -186,10 +231,33 @@ class WorkCalendar {
         return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
     }
 
+    /* **Days are stepped on the calendar and spans read off the clock**, never
+     * as multiples of 24 hours from midnight: on the day the clocks change a
+     * day is 23 or 25 hours long, and midnight plus 24h was 23:00 of the same
+     * day -- the walk stood still until its guard ran out and a task finished
+     * in 1970. Every one goes through `localMs`, which checks the runtime's
+     * answer (see there). */
     #dayStart(ms) {
         const d = new Date(ms);
-        d.setHours(0, 0, 0, 0);
-        return d.getTime();
+        return localMs(d.getFullYear(), d.getMonth(), d.getDate());
+    }
+
+    #nextDay(day) {
+        const d = new Date(day);
+        return localMs(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+    }
+
+    #previousDay(day) {
+        const d = new Date(day);
+        return localMs(d.getFullYear(), d.getMonth(), d.getDate() - 1);
+    }
+
+    /* `minutes` after midnight on `day`, as the wall clock reads them. */
+    #clock(day, minutes) {
+        const d = new Date(day);
+        const whole = Math.floor(minutes);
+        return localMs(d.getFullYear(), d.getMonth(), d.getDate(), 0, whole,
+                       Math.round((minutes - whole) * 60));
     }
 
     #spansOn(ms) {
@@ -198,51 +266,51 @@ class WorkCalendar {
         return this.days[new Date(ms).getDay() + 1] || [];
     }
 
+    /* The day's spans as instants. */
+    #instantsOn(day) {
+        return this.#spansOn(day).map(([from, to]) =>
+            [this.#clock(day, from), this.#clock(day, to)]);
+    }
+
     /* The end of the span `ms` sits in **or ends**, or null when it is
-     * outside every span. An end counts: 17:00 has no work left today. */
+     * outside every span. An end counts: 17:00 has no work left today. Where
+     * two spans touch, the instant between them belongs to the later one,
+     * which is the one with work left in it. */
     #spanEndAt(ms) {
-        const day = this.#dayStart(ms);
-        for (const [from, to] of this.#spansOn(day)) {
-            const a = day + from * MIN_MS, b = day + to * MIN_MS;
-            if (ms >= a && ms <= b) return b;
-        }
+        const spans = this.#instantsOn(this.#dayStart(ms));
+        for (const [a, b] of spans) if (ms >= a && ms < b) return b;
+        for (const [, b] of spans) if (ms === b) return b;
         return null;
     }
 
+    /* The mirror: where two spans touch, the instant belongs to the earlier
+     * one, which is the one with work before it. */
     #spanStartAt(ms) {
-        const day = this.#dayStart(ms);
-        for (const [from, to] of this.#spansOn(day)) {
-            const a = day + from * MIN_MS, b = day + to * MIN_MS;
-            if (ms >= a && ms <= b) return a;
-        }
+        const spans = this.#instantsOn(this.#dayStart(ms));
+        for (const [a, b] of spans) if (ms > a && ms <= b) return a;
+        for (const [a] of spans) if (ms === a) return a;
         return null;
     }
 
+    /* The first instant at or after `ms` with work after it. */
     #nextWorking(ms) {
-        let t = ms;
+        let day = this.#dayStart(ms);
         for (let guard = 0; guard < 3660; guard++) {
-            const day = this.#dayStart(t);
-            for (const [from, to] of this.#spansOn(day)) {
-                const b = day + to * MIN_MS;
-                if (b > t) return Math.max(t, day + from * MIN_MS);
-            }
-            t = day + DAY_MS;
+            for (const [a, b] of this.#instantsOn(day))
+                if (b > ms) return Math.max(ms, a);
+            day = this.#nextDay(day);
         }
         return ms;
     }
 
+    /* The last instant at or before `ms` with work before it. */
     #previousWorking(ms) {
-        let t = ms;
+        let day = this.#dayStart(ms);
         for (let guard = 0; guard < 3660; guard++) {
-            const end = this.#spanEndAt(t);
-            if (end !== null) return Math.min(t, end);
-            const day = this.#dayStart(t);
-            const spans = this.#spansOn(day);
-            for (let i = spans.length - 1; i >= 0; i--) {
-                const b = day + spans[i][1] * MIN_MS;
-                if (b <= t) return b;
-            }
-            t = day - MIN_MS;
+            const spans = this.#instantsOn(day);
+            for (let i = spans.length - 1; i >= 0; i--)
+                if (spans[i][0] < ms) return Math.min(ms, spans[i][1]);
+            day = this.#previousDay(day);
         }
         return ms;
     }

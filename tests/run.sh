@@ -111,6 +111,21 @@ else
         fi
     done
 
+    # **The engine again, in zones whose clocks change.** Argentina's do not,
+    # so the arithmetic was only ever run where a day is always 24 hours: one
+    # 25-hour day stood the calendar walk still and finished a task in 1970,
+    # and Bintana's QuickJS reads a midnight next to a change as the day before
+    # (Schedule.js, `localMs`). check-cpm crosses the three changes with answers
+    # that hold in every zone.
+    for tz in America/New_York Europe/Madrid America/Santiago; do
+        if TZ=$tz "$TRY" "$PWD" check-cpm > "$OUT/cpm-${tz//\//-}.report" 2>&1 ||
+           { echo "check cpm in $tz: FAILED"; grep 'FAILED' "$OUT/cpm-${tz//\//-}.report" 2>/dev/null; false; }; then
+            echo "check cpm in $tz: ok"
+        else
+            fail=1
+        fi
+    done
+
     # **The real plan, when there is one to point at.** `ORACLE=/ruta/plan.xml`
     # is opt-in because the file is not in the repository: the corpus is small
     # and synthetic, and the oracle is Project's own output on a real project.
