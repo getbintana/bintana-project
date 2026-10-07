@@ -1119,7 +1119,7 @@ class MainForm extends Form {
             /* A placeholder first, so nothing is chosen until the user says
              * so; summaries are out because the engine links to their dates
              * as the file wrote them (see Schedule.js). */
-            const items = ["Choose…"];
+            const items = [Locale.Text("Choose…")];
             for (const other of this.holder.project.Tasks) {
                 if (other.IsNull || other.Summary || other.UID === task.UID) continue;
                 this.predChoices.push(other.UID);
@@ -2003,9 +2003,10 @@ class MainForm extends Form {
                                     this.path ? File.Directory(this.path)
                                               : File.Join(Application.Directory,
                                                           "tests", "corpus"));
-        Dialog.OpenFile("Open Project XML",
+        Dialog.OpenFile(Locale.Text("Open Project XML"),
             { Folder: folder,
-              Filters: [["Project XML", "*.xml"], ["All files", "*"]] },
+              Filters: [[Locale.Text("Project XML"), "*.xml"],
+                        [Locale.Text("All files"), "*"]] },
             (path) => this.openFile(path));
     }
 
@@ -2014,9 +2015,9 @@ class MainForm extends Form {
     ActSave_Click() { this.save(); }
 
     ActSaveAs_Click() {
-        Dialog.SaveFile("Save Project XML",
+        Dialog.SaveFile(Locale.Text("Save Project XML"),
             { Folder: File.Directory(this.path), Name: File.Name(this.path),
-              Filters: [["Project XML", "*.xml"]] },
+              Filters: [[Locale.Text("Project XML"), "*.xml"]] },
             (path) => this.save(path));
     }
 

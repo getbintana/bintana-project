@@ -1068,3 +1068,86 @@ msgstr "Prometido"
 
 msgid "Days late"
 msgstr "Días tarde"
+
+# The file dialogs and the two column headings `COLUMNS` names through a
+# variable, which an extractor cannot read.
+msgid "Open Project XML"
+msgstr "Abrir XML de proyecto"
+
+msgid "Save Project XML"
+msgstr "Guardar XML de proyecto"
+
+msgid "All files"
+msgstr "Todos los archivos"
+
+msgid "Slack"
+msgstr "Holgura"
+
+msgid "Variance"
+msgstr "Desvío"
+
+msgid "The project summary cannot be deleted."
+msgstr "El resumen del proyecto no se puede borrar."
+
+msgid "New…"
+msgstr "Nuevo…"
+
+msgid "Baseline span"
+msgstr "Lapso de la línea base"
+
+msgid "The dates the baseline caught, and the working days they covered"
+msgstr "Las fechas que tomó la línea base y los días laborables que abarcan"
+
+msgid "Schedule variance"
+msgstr "Desvío del cronograma"
+
+msgid "Calendar days the plan's finish moved against its baseline; a minus means it finished early"
+msgstr "Días corridos que el fin del plan se movió respecto de su línea base; un menos significa que terminó antes"
+
+msgid "What the assignments say this plan will cost; empty when it took no budget"
+msgstr "Lo que las asignaciones dicen que costará el plan; vacío si no tiene presupuesto"
+
+msgid "How far over or under the budget the plan is; a minus means under"
+msgstr "Cuánto se pasa o le falta al plan respecto del presupuesto; un menos significa por debajo"
+
+msgid "How long the task can slip before the plan's finish moves"
+msgstr "Cuánto puede atrasarse la tarea antes de que se mueva el fin del plan"
+
+msgid "How late the task's finish is against its baseline; a minus means ahead"
+msgstr "Cuánto se atrasó el fin de la tarea respecto de su línea base; un menos significa adelantado"
+
+msgid "Baseline 1"
+msgstr "Línea base 1"
+
+msgid "Baseline 2"
+msgstr "Línea base 2"
+
+msgid "Baseline 3"
+msgstr "Línea base 3"
+
+msgid "Baseline 4"
+msgstr "Línea base 4"
+
+msgid "Baseline 5"
+msgstr "Línea base 5"
+
+msgid "Baseline 6"
+msgstr "Línea base 6"
+
+msgid "Baseline 7"
+msgstr "Línea base 7"
+
+msgid "Baseline 8"
+msgstr "Línea base 8"
+
+msgid "Baseline 9"
+msgstr "Línea base 9"
+
+msgid "Baseline 10"
+msgstr "Línea base 10"
+
+msgid "A period must end after it starts."
+msgstr "Un período tiene que terminar después de empezar."
+
+msgid "A working day's times read like 08:00-12:00 13:00-17:00."
+msgstr "Los horarios de un día laborable se escriben como 08:00-12:00 13:00-17:00."
