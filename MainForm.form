@@ -1371,8 +1371,8 @@
                                           "type": "SpinBox",
                                           "name": "SpinLag",
                                           "properties": {
-                                            "Min": -24000,
-                                            "Max": 24000,
+                                            "Min": -1000000,
+                                            "Max": 1000000,
                                             "Value": 0,
                                             "Step": 5,
                                             "HAlign": "Start"

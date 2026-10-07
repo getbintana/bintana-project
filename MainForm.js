@@ -1106,7 +1106,9 @@ class MainForm extends Form {
 
         if (task) {
             for (const link of task.Links) {
-                const pred = this.byUID[String(link.PredecessorUID)];
+                /* The whole plan's, not the filter's: a predecessor the
+                 * filter hides is still that task. */
+                const pred = this.edit.task(link.PredecessorUID);
                 this.linkRows.push(link);
                 this.Links.Add([
                     pred ? pred.Name : `UID ${link.PredecessorUID}`,
@@ -1130,17 +1132,6 @@ class MainForm extends Form {
 
     /* The row moved: mark the same task in the chart. The two views share
      * identity and never geometry. */
-    /* A double click on a row -- or Enter -- is "edit this one": the panel's
-     * name field takes the keyboard, which is where a rename starts. */
-    /* Ctrl+F: the filter field takes the keyboard. */
-    ActFilter_Click() {
-        this.TxtFilter.SetFocus();
-    }
-
-    Tasks_Activate() {
-        if (this.selectedTask()) this.TxtName.SetFocus();
-    }
-
     Tasks_Select() {
         const key = this.Tasks.Key;
         this.selectedUID = key === "" ? null : Number(key);
@@ -1153,6 +1144,8 @@ class MainForm extends Form {
         this.TxtFilter.SetFocus();
     }
 
+    /* A double click on a row -- or Enter -- is "edit this one": the panel's
+     * name field takes the keyboard, which is where a rename starts. */
     Tasks_Activate() {
         if (this.selectedTask()) this.TxtName.SetFocus();
     }
@@ -1366,12 +1359,9 @@ class MainForm extends Form {
 
         if (drag.mode === "link") {
             if (drag.to !== null && drag.to !== undefined) {
-                const succ  = this.edit.task(drag.to);
-                const links = succ.Links.filter((l) => l.PredecessorUID !== drag.uid);
-                links.push(new MspLink({ PredecessorUID: drag.uid,
-                                         Type: LINK_ORDER[this.CmbDrawType.Index] || 1,
-                                         LinkLag: 0, LagFormat: 3 }));
-                if (this.edit.setLinks(succ.UID, links)) this.fill(succ.UID);
+                const succ = this.edit.task(drag.to);
+                if (this.putLink(succ, drag.uid, this.CmbDrawType.Index, 0))
+                    this.fill(succ.UID);
                 else this.redrawChart();
             } else {
                 this.redrawChart();
@@ -1833,7 +1823,9 @@ class MainForm extends Form {
         this.BtnLinkDel.Enabled = !!link;
         if (!link) return;
         const at = this.predChoices.indexOf(link.PredecessorUID);
-        if (at >= 0) this.CmbPred.Index = at;
+        /* A predecessor the combo does not offer (a summary) leaves it on the
+         * placeholder, not on the last row's, so Link cannot rewrite that one. */
+        this.CmbPred.Index = Math.max(at, 0);
         this.CmbType.Index = LINK_INDEX[linkKind(link)];
         this.SpinLag.Value = (link.LinkLag || 0) / 10;
     }
@@ -1849,15 +1841,26 @@ class MainForm extends Form {
             Message.Warning("Pick a predecessor first.");
             return;
         }
-        const link = new MspLink({
-            PredecessorUID: predUID,
-            Type: LINK_ORDER[this.CmbType.Index] || 1,
-            LinkLag: Math.round(this.SpinLag.Value * 10),   // tenths of a minute
-            LagFormat: 3,
-        });
+        if (this.putLink(task, predUID, this.CmbType.Index,
+                         Math.round(this.SpinLag.Value * 10)))   // tenths of a minute
+            this.fill(task.UID);
+    }
+
+    /* **One link per predecessor, added or updated**, for the panel and the
+     * chart alike. The type is the combo's index, and index 2 is MSPDI's 0
+     * (FF) -- so no `|| 1`, which made every FF link an FS. An update keeps
+     * the unit the lag was shown in (`LagFormat`): the lag itself is always
+     * tenths of a minute, and a 2-day lag must not come back as "960m". */
+    putLink(task, predUID, index, lag) {
+        const old = task.Links.find((l) => l.PredecessorUID === predUID);
         const links = task.Links.filter((l) => l.PredecessorUID !== predUID);
-        links.push(link);
-        if (this.edit.setLinks(task.UID, links)) this.fill(task.UID);
+        links.push(new MspLink({
+            PredecessorUID: predUID,
+            Type: index >= 0 ? LINK_ORDER[index] : 1,
+            LinkLag: lag,
+            LagFormat: old && old.LagFormat ? old.LagFormat : 3,
+        }));
+        return this.edit.setLinks(task.UID, links);
     }
 
     BtnLinkDel_Click() {
@@ -3275,8 +3278,8 @@ class MainForm extends Form {
              * doing nothing quietly -- and it is the only thing that makes the
              * gate of `documentCommands` observable from here. */
             let ran = 0;
-            const realFilter = this.ActFilter_Click;
-            this.ActFilter_Click = () => { ran++; };
+            const realDelete = this.ActDelete_Click;
+            this.ActDelete_Click = () => { ran++; };
             this.ActDelete.Enabled = false;
             try {
                 this.ActDelete.Click();
@@ -3284,9 +3287,9 @@ class MainForm extends Form {
             } catch (e) {
                 ok = eq("y lo dice", e.message, "ActDelete is disabled") && ok;
             }
-            this.ActFilter_Click = realFilter;
+            this.ActDelete_Click = realDelete;
 
-/* The fixture the fidelity corpus uses: tasks in a chain, so a
+            /* The fixture the fidelity corpus uses: tasks in a chain, so a
              * command has something to move.
              *
              * **Picked by UID, not by row.** Every command rebuilds the table,
@@ -3550,6 +3553,47 @@ class MainForm extends Form {
             } finally {
                 ConfirmForm.ask = realAsk;
             }
+
+            /* **Un vínculo FF es FF.** El índice 2 del combo es el tipo 0 de
+             * MSPDI, y `|| 1` lo volvía FS; actualizarlo conserva la unidad en
+             * que el archivo mostraba el retraso. */
+            this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
+            const succ = taskOf(this.holder.project, 2);
+            this.putLink(succ, 1, 2, 0);
+            const ff = taskOf(this.holder.project, 2).Links.find((l) => l.PredecessorUID === 1);
+            ok = eq("fin a fin se guarda como FF", ff.Type, 0) && ok;
+            ff.LagFormat = 7;
+            this.putLink(taskOf(this.holder.project, 2), 1, 0, 4800);
+            const fs = taskOf(this.holder.project, 2).Links.find((l) => l.PredecessorUID === 1);
+            ok = eq("actualizar conserva el formato del retraso",
+                    [fs.Type, fs.LinkLag, fs.LagFormat].join(" "), "1 4800 7") && ok;
+
+            /* **El resumen del proyecto no es una tarea más**: no se borra, y
+             * agregar después de él es agregar al final, en el nivel 1. */
+            const summary = this.holder.project.Tasks.find((t) => t.OutlineLevel === 0);
+            if (summary) {
+                ok = eq("el resumen del proyecto no se borra",
+                        this.edit.removeTask(summary.UID), false) && ok;
+                ok = eq("agregar tras el resumen es nivel 1",
+                        this.edit.addTask(summary.UID).OutlineLevel, 1) && ok;
+                this.edit.undo();
+                this.fill();
+            }
+
+            /* Lo que el modelo escribe tiene que poder leerse: un minuto
+             * partido va a los segundos, la medianoche es 00:00 y un nombre
+             * con `$` es ese nombre. */
+            ok = eq("medio minuto va a los segundos",
+                    `${mspdiDuration(480.5)} ${mspdiMinutes(mspdiDuration(480.5))}`,
+                    "PT8H0M30S 480.5") && ok;
+            ok = eq("el fin del día es 00:00", clockText(1440), "00:00:00") && ok;
+            ok = eq("un nombre con $ es ese nombre",
+                    newMspdi({ Name: "A$'B $MADE $$" }).project.Name, "A$'B $MADE $$") && ok;
+            const spans = parseSpans("8:00-12:00 13:00-24:00");
+            ok = eq("los horarios se leen con o sin cero",
+                    spans.map((wt) => `${wt.FromTime}-${wt.ToTime}`).join(" "),
+                    "08:00:00-12:00:00 13:00:00-00:00:00") && ok;
+            ok = eq("y lo que no se lee se dice", parseSpans("08-12"), null) && ok;
 
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
             Application.Quit(ok ? 0 : 1);
@@ -5257,7 +5301,11 @@ function statsDateText(ms) {
 function minutesText(minutes, task, project) {
     const format = durationFormat(task.DurationFormat || project.DurationFormat,
                                   project);
-    return `${minutes < 0 ? "-" : ""}${Math.abs(minutes) / format.per}${format.unit}`;
+    /* Two places, because it is only read: 50 minutes at 480 a day is
+     * 0.1d and not 0.10416666666666667d. (A duration is not rounded -- its
+     * text goes back through the field on Apply, and would move the task.) */
+    const n = Math.round(Math.abs(minutes) / format.per * 100) / 100;
+    return `${minutes < 0 ? "-" : ""}${n}${format.unit}`;
 }
 
 /*
