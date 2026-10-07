@@ -6,12 +6,15 @@
 #
 # La salida queda en /tmp/bintana-project-aceptacion/ (o en $OUT).
 set -euo pipefail
-cd "$(dirname "$0")/.."
 
+# La ruta es la de quien llama, así que se resuelve antes del `cd`: desde
+# ~/Descargas, `plan.xml` es ~/Descargas/plan.xml y no uno del repositorio.
 if [[ $# -lt 1 || ! -f $1 ]]; then
     echo "uso: tests/aceptacion.sh <archivo.xml>" >&2
     exit 2
 fi
+PLAN=$(realpath "$1")
+cd "$(dirname "$0")/.."
 
 BINTANA_ROOT=${BINTANA_ROOT:-../bintana}
 TRY=$BINTANA_ROOT/tests/try.sh
@@ -24,7 +27,7 @@ mkdir -p "$OUT"
 # El idioma fijo, como el harness: la salida no depende de la máquina.
 export LC_ALL=C LANGUAGE=en
 
-"$TRY" "$PWD" check "$1" "$OUT" dump-touched | tee "$OUT/informe.txt"
+"$TRY" "$PWD" check "$PLAN" "$OUT" dump-touched | tee "$OUT/informe.txt"
 
 echo
 echo "Listo. Abrí en MS Project:"

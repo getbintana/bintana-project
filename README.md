@@ -65,13 +65,14 @@ plan area went flush with the window's edges and the panel with the right one.
 `Margin` is applied by the layout manager and survives, at the cost of a uniform
 12 rather than `10 12 4 12`.
 
-The window is a menu bar (File/Edit/View/Tools/Help), an icon toolbar with the
+The window is a menu bar (File/Edit/View/Project/Tools/Help), an icon toolbar with the
 commands that matter while editing, the WBS and the chart, the properties panel
 and a status bar. Every command is declared once as an `Action`, so the toolbar
 button, the menu item and its key are one command with one `Enabled` and one
 label -- which is why **New Project** and **Open** on the welcome page are the
 File menu's own `ActNew`/`ActOpen` and not buttons of their own. The panel is
-four tabs -- **Task**, **Links**, **Resources**, **Project** -- and the log
+three tabs -- **Task**, **Links**, **Resources** -- the plan's own data being
+the **Project** menu's dialogs -- and the log
 starts hidden: **View → Show log** brings it back. A Project XML dragged onto
 the window opens too.
 
@@ -103,8 +104,9 @@ a whole day against the plan and not an hour against its successor, and a task
 nothing waits on has all of its total as free.
 
 **The sentinel is `NO_MINUTES` when nobody worked it out, and that is not `0`.**
-It is outside the value space (neither slack nor variance is ever negative)
-precisely because zero is a real answer: it is what Project writes for every critical task, and a shape
+It is outside the value space of slack (which is never negative here) and, for
+a variance, a value no whole-minute schedule produces in practice -- precisely
+because zero is a real answer: it is what Project writes for every critical task, and a shape
 whose default were `0` would read "the file said zero" and "the file said
 nothing" as one value and **delete the element on the way out**. A task the pass
 never placed -- ALAP, or one the file never dated -- keeps the sentinel and the
@@ -231,9 +233,10 @@ command -- one undo. **Add** puts a new task after the selected one and its
 subtree, **Delete** takes that subtree and every link into it, and
 **Indent**/**Outdent** move a task a level, recomputing which tasks are
 summaries, and **Up**/**Down** swap it with its sibling, subtree and all.
-The **Project** tab edits the header the schedule hangs from -- start date,
-default calendar, minutes a day/week, days a month, default task type, week
-start and currency -- and lists the calendars, where **Edit…** opens one whole:
+The **Project** menu edits the header the schedule hangs from -- **Project
+data…** (start date, default calendar, currency) and **Project options…**
+(minutes a day/week, days a month, default task type, week start) -- and
+**Calendars…** lists them, where **Edit…** opens one whole:
 its week days (each with its working times as prose, `08:00-12:00
 13:00-17:00`, because a day may have more than one span) and its exceptions.
 The minutes a day is not decoration: it is what a typed `1d` means.
@@ -335,9 +338,9 @@ appending/merging and WBS is positional.
 
 ## The corpus
 
-`tests/corpus/` holds seven synthetic files covering relations, resources,
-calendars, durations, timephased data and custom fields, plus an eighth for the
-`/2007` namespace the official XSD declares. They are **not** a golden set:
+`tests/corpus/` holds ten synthetic files covering relations, resources,
+calendars, durations, timephased data, custom fields, the schema's defaults
+and dated rates, plus one for the `/2007` namespace the official XSD declares. They are **not** a golden set:
 acceptance is a real `Save As → XML` from MS Project, opened back by Project.
 `tests/corpus/README.md` says what each one covers.
 
@@ -345,15 +348,17 @@ acceptance is a real `Save As → XML` from MS Project, opened back by Project.
 also plays one scripted round of the editing commands over `01-minimal`, holding
 each saved output and its `touched` report against the goldens in
 `tests/expected/` (`--update` rewrites them after a deliberate change), and then
-runs the five in-app roads -- `check-cpm`, `check-drag`, `check-view`,
-`check-stats` and `check-welcome` -- where the values are the assertion and
-there is no golden. `tests/FIDELITY.md` classifies what they measure -- including
+runs the six in-app roads -- `check-cpm`, `check-drag`, `check-view`,
+`check-stats`, `check-welcome` and `check-commands` -- where the values are the
+assertion and there is no golden, and `check-cpm` again in three zones whose
+clocks change. `tests/FIDELITY.md` classifies what they measure -- including
 the first upstream bug the corpus found; `tests/run.sh <name>` runs one file.
 
 ## What is not here yet
 
-Slack, the critical path, constraints, deadlines, task types and resource
-calendars -- and anything `.mpp`: the binary format is deliberately out of
+ALAP and the "no later than" constraints as Project places them (the backward
+pass keeps their file dates), recurring calendar exceptions, percent lags,
+remaining duration on a task in progress -- and anything `.mpp`: the binary format is deliberately out of
 scope (partial knowledge reads it, only Microsoft writes it) -- exchange goes
 through XML. The corpus measures the road to it; see `ROADMAP.md`.
 

@@ -42,8 +42,8 @@ idénticos in/out y diff canónico vacío salvo lista blanca documentada.
 **Hecha** (2026-09-22). Lectura: abrir por argumento, drop y diálogo; tabla
 árbol con `Key = UID` (resúmenes plegables, duración en la unidad del
 `DurationFormat`); Gantt con resúmenes como corchetes, criticidad en rojo y la
-fila seleccionada marcada. Edición: `Edit.js` con `SetFields`, `AddTask`,
-`RemoveTask` e `Indent`, undo/redo por **snapshot por comando** (una baja con
+fila seleccionada marcada. Edición: `Edit.js` con `setFields`, `addTask`,
+`removeTask` e `indent`, undo/redo por **snapshot por comando** (una baja con
 links vuelve entera), dirty flag, guardar/guardar como/cerrar con pregunta; el
 panel lateral edita la tarea seleccionada y solo el nombre de un resumen
 (Project deriva lo demás). El harness corre además un round trip de edición
@@ -461,7 +461,7 @@ sin sucesoras tiene todo su total como libre, y los vínculos SS y SF dan cero
 libre porque el inicio (o el fin) del sucesor cuelga del nuestro. La holgura se
 mide en **minutos laborables** en el calendario de la tarea.
 
-Lo que la ausente obliga a decidir es el centinela: `NO_SLACK` es `-1` y no `0`,
+Lo que la ausente obliga a decidir es el centinela: `NO_MINUTES` es `-1` y no `0`,
 porque `0` es la respuesta de una tarea crítica y es lo que Project escribe en
 cada una de ellas —un `Field.Number` a secas leería "el archivo dijo cero" y
 "no dijo nada" como el mismo valor y la ida y vuelta borraría el elemento—, y

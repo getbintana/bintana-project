@@ -13,7 +13,8 @@ tests/aceptacion.sh "urbano v5.05052026.xml"
 ```
 
 Sin el archivo real, `examples/desarrollo-bintana.xml` sirve igual: es de la
-app y no lleva datos de nadie.
+app y no lleva datos de nadie. Los números del checklist cambian con el
+archivo, así que cada punto dice los de los dos.
 
 ```sh
 tests/aceptacion.sh examples/desarrollo-bintana.xml
@@ -29,7 +30,8 @@ Abrir ese XML en Project de escritorio (2016, 2019, 2021 o 365) y mirar:
 
 1. **Al abrir**: no debe aparecer ningún diálogo de reparación ni de
    advertencia. Anotar el texto exacto si aparece alguno.
-2. **Contar**: 49 tareas y 5 hitos; 44 vínculos en la vista Gantt.
+2. **Contar**: urbano, 49 tareas y 5 hitos, 44 vínculos en la vista Gantt;
+   el ejemplo, 40 tareas (33 sin los resúmenes) y 7 hitos, 35 vínculos.
 3. **F9** (Recalcular todo): nada debe moverse. Anotar cualquier tarea que
    cambie de fecha, con su nombre.
 4. **Condicionada por esfuerzo** (clic derecho en el encabezado de columnas →
@@ -38,11 +40,12 @@ Abrir ese XML en Project de escritorio (2016, 2019, 2021 o 365) y mirar:
    siempre lo escribe (ver §D).
 5. **Estimada**: todas en **No**.
 6. **Modo de programación** (columna *Programación manual* o *Modo de
-   programación*): las 9 tareas manuales del archivo siguen en **Manual** y el
-   resto en **Automática**.
-7. **Fechas testigo**: fin del proyecto **10/06/2026 19:00**; "Documentación"
-   del **05/06** al **09/06**; "Reunión inicial" el **10/02** (empieza antes
-   del inicio del proyecto, con fechas reales).
+   programación*): las tareas manuales del archivo (9 en urbano, 1 en el
+   ejemplo) siguen en **Manual** y el resto en **Automática**.
+7. **Fechas testigo**: en urbano, fin del proyecto **10/06/2026 19:00**;
+   "Documentación" del **05/06** al **09/06**; "Reunión inicial" el **10/02**
+   (empieza antes del inicio del proyecto, con fechas reales). En el ejemplo,
+   fin del proyecto **12/11/2026 17:00**.
 8. **Guardar** de nuevo desde Project (Archivo → Guardar como, otro nombre):
    que Project lo guarde sin quejarse.
 
