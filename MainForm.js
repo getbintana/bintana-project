@@ -1280,7 +1280,10 @@ class MainForm extends Form {
         const i = g.rowAt(y);
         if (i < 0 || x < g.plotX) return null;
 
+        /* A summary's dates are its children's span (the panel greys them
+         * for the same reason), so its bracket is not something to drag. */
         const task = g.rows[i];
+        if (task.Summary) return null;
         const s = whenMs(task.Start), f = whenMs(task.Finish);
         if (s === null || f === null) return null;
 

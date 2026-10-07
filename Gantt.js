@@ -202,6 +202,30 @@ function ganttTimescaleBands(dayW) {
 }
 
 /*
+ * **The instants a ruler or a grid falls on**, stepped on the wall clock as
+ * `WorkCalendar` steps its days (Schedule.js, `localMs`): every local midnight
+ * for a step of one, every Monday for a week, the first of every month for a
+ * month. Stepping by multiples of 24 hours from a UTC day put every tick at
+ * 21:00 of the day before in Buenos Aires and drifted an hour across a clock
+ * change, and thirty days is not a month -- February never got a label. `cap`
+ * is the frame's guard against a corrupt range.
+ */
+function ganttTicks(range, step, cap) {
+    const ticks = [];
+    if (!range) return ticks;
+    const d = new Date(range.from);
+    const y = d.getFullYear(), m = d.getMonth();
+    let day = d.getDate();
+    if (step === 7) day -= (d.getDay() + 6) % 7;   // back to the Monday
+    for (let n = 0; n <= cap; n++) {
+        const t = step >= 28 ? localMs(y, m + n, 1) : localMs(y, m, day + n * step);
+        if (t > range.to) break;
+        ticks.push(t);
+    }
+    return ticks;
+}
+
+/*
  * The days in the range the project's calendar does not work, as spans of
  * instants -- the shade behind the rows that makes a chart of a plan read as a
  * plan and not as a bar chart. It is the *project's* calendar, which is what
@@ -218,15 +242,19 @@ function ganttIdleDays(range, calendar) {
     const spans = [];
     if (!calendar || !range) return spans;
 
-    const dayMs = DAY_MS;
-    let t = Math.floor(range.from / dayMs) * dayMs;
-    let open = null;
-    for (let n = 0; n < 2000 && t <= range.to; n++, t += dayMs) {
-        const idle = calendar.between(t, t + dayMs) <= 0;
+    const days = ganttTicks(range, 1, 2000);
+    let open = null, t = null;
+    for (let n = 0; n < days.length; n++) {
+        t = days[n];
+        const next = n + 1 < days.length ? days[n + 1]
+            : localMs(new Date(t).getFullYear(), new Date(t).getMonth(),
+                      new Date(t).getDate() + 1);
+        const idle = calendar.between(t, next) <= 0;
         if (idle && open === null) open = t;
         if (!idle && open !== null) { spans.push([open, t]); open = null; }
+        t = next;
     }
-    if (open !== null) spans.push([range.to, t]);
+    if (open !== null) spans.push([open, t]);
     return spans;
 }
 
@@ -270,7 +298,6 @@ function drawGanttRuler(p, width, g, c) {
     const headH = g.headH;
     if (!(headH > 0)) return;
     const range = rulerRange(g);
-    const dayMs = DAY_MS;
     const dayW = g.dayW;
 
     if (!g.strip) {
@@ -312,7 +339,6 @@ function drawGanttRuler(p, width, g, c) {
         ? RULER_FONTS[font].replace(/^Sans/, family) : RULER_FONTS[font];
     while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
     const bandH = bands.length ? headH / bands.length : 0;
-    const t0 = Math.floor(range.from / dayMs) * dayMs;
     p.LineWidth = 1;
 
     for (let b = 0; b < bands.length; b++) {
@@ -323,17 +349,27 @@ function drawGanttRuler(p, width, g, c) {
         p.LineTo(width, y);
         p.Stroke();
         p.Color = c.dim;
-        for (let t = t0, n = 0; t <= range.to; t += band.step * dayMs, n++) {
-            if (n > 400) break;   // a corrupt range must not hang the frame
-            const at = g.x(t);
-            if (at > width) continue;
-            p.MoveTo(at, y);
-            p.LineTo(at, headH);
-            p.Stroke();
+        const ticks = ganttTicks(range, band.step, 400);
+        for (let i = 0; i < ticks.length; i++) {
+            const t = ticks[i];
+            let at = g.x(t);
+            if (at > width) break;
+            /* The week or month the range starts in begins before it: no
+             * line, and its label at the plot's edge when it fits before the
+             * next one -- a short plan is otherwise a ruler with no words. */
+            const room = (i + 1 < ticks.length ? g.x(ticks[i + 1]) : width) - Math.max(at, g.plotX);
+            if (at < g.plotX) {
+                at = g.plotX;
+            } else {
+                p.MoveTo(at, y);
+                p.LineTo(at, headH);
+                p.Stroke();
+            }
             const label = band.label(new Date(t));
-            if (p.TextWidth(label) + 6 <= band.step * dayW) {
+            if (p.TextWidth(label) + 6 <= Math.min(room, band.step * dayW)) {
                 p.Color = g.strip ? c.headInk : c.ink;
                 p.Text(label, at + 3, y - bandH + 2);
+                p.Color = c.dim;
             }
         }
     }
@@ -417,12 +453,10 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
 
     /* One line per step the rows are ruled by, which is a week while a week fits
      * and whatever else does. */
-    const dayMs = DAY_MS;
-    const t0 = Math.floor(range.from / dayMs) * dayMs;
     if (!step) step = g.dayW >= 16 ? 1 : g.dayW >= 6 ? 7 : 30;
     p.Color = c.dim;
-    for (let t = t0, n = 0; t <= range.to; t += step * dayMs, n++) {
-        if (n > 400) break;
+    for (const t of ganttTicks(range, step, 2000)) {
+        if (x(t) < plotX) continue;
         p.MoveTo(x(t), headH);
         p.LineTo(x(t), height);
         p.Stroke();
