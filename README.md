@@ -10,12 +10,13 @@ whoever works on it.
 
 ## Run it
 
+With the runtime installed (`bintana` on `PATH`):
+
 ```sh
-/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project           # window, the welcome page
-/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project plan.xml  # or a file of your own
-/home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project \
-    examples/desarrollo-bintana.xml                                                          # this project's own plan
-/home/matias/Proyectos/bintana-project/tests/run.sh                                           # the fidelity harness, headless
+bintana .                                 # window, the welcome page
+bintana . plan.xml                        # or a file of your own
+bintana . examples/desarrollo-bintana.xml # this project's own plan
+./tests/run.sh                            # the fidelity harness, headless
 ```
 
 `examples/desarrollo-bintana.xml` is the plan for building this application --
@@ -383,7 +384,7 @@ the code composes through `Locale.Text(...)`, and `Message.*`'s first argument.
 `po/es.po` is the catalogue that ships, and `LANGUAGE=es` picks it:
 
 ```sh
-LANGUAGE=es /home/matias/Proyectos/bintana/build/bintana /home/matias/Proyectos/bintana-project
+LANGUAGE=es bintana .
 ```
 
 The harness pins `LANGUAGE=en`: a golden written under one catalogue is not the

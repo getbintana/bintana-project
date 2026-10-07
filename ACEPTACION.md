@@ -9,7 +9,7 @@ igual al original. Es el paso que cierra `tests/FIDELITY.md` §B y §D.
 Con el archivo real a mano (por ejemplo `urbano v5.05052026.xml`):
 
 ```sh
-tests/aceptacion.sh "/home/matias/Escritorio/urbano v5.05052026.xml"
+tests/aceptacion.sh "urbano v5.05052026.xml"
 ```
 
 Sin el archivo real, `examples/desarrollo-bintana.xml` sirve igual: es de la
