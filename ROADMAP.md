@@ -569,3 +569,126 @@ real). Cada uno con su trigger para reabrir.
   (hoy queda vacía: una fecha inventada es una mentira).
 - Qué hacer con `OutlineNumber`/`WBS` si el archivo real muestra que Project no
   los recompone al abrir.
+
+## Pendientes de la auditoría (2026-10-07)
+
+Lo que la auditoría encontró y no se arregló, porque cada uno pide una
+decisión antes que un parche. Lo que sí se arregló está en los commits de
+esa fecha. Ordenado por lo que cuesta no tenerlo.
+
+### El motor
+
+- **El paso hacia atrás arranca del `FinishDate` del archivo**, que
+  `recalculate` nunca actualiza (`Schedule.js`, `let finish =
+  whenMs(project.FinishDate)`). Si una edición acorta el plan, ninguna tarea
+  queda con holgura cero y no hay camino crítico: A→B que ahora termina el
+  8/9 con un `FinishDate` del 30/9 da 16 días de holgura a las dos. Project
+  recalcula el fin de un plan programado desde el inicio. `check-cpm` fija el
+  comportamiento actual a propósito ("the project's own finish is a
+  Friday"), así que cambiarlo es cambiar esa prueba también. Se puede tomar
+  el máximo entre los fines de todas las tareas, manuales incluidas.
+- **Los vínculos desde y hacia resúmenes no programan.** El paso hacia
+  adelante salta los resúmenes, así que el vínculo de un predecesor a un
+  resumen no frena a sus hijos; y un sucesor de un resumen lee las fechas
+  que el resumen tenía antes de esta pasada, porque el roll-up corre al
+  final: alargar un hijo y recalcular deja al sucesor donde estaba hasta un
+  segundo F5. El paso hacia atrás descarta esos vínculos. Project los
+  respeta.
+- **Un FF puede poner una tarea antes del inicio del proyecto.** Con sólo
+  predecesores FF, el piso del inicio sale de `startBefore(finishFloor)` sin
+  cota inferior. El comentario lo defiende para SF, que es para lo que
+  sirve; para FF, Project deja la tarea en el inicio y la deja terminar
+  después.
+- **Una tarea empezada se reprograma entera.** Sólo `ActualFinish` congela
+  una tarea: con `ActualStart` y sin fin real, los vínculos la mueven y su
+  `Start` puede quedar después de cuando empezó de verdad. Falta la duración
+  restante.
+- **Fechas tardías a la mañana siguiente.** `LateFinish` y las restricciones
+  de fin salen el lunes 08:00 donde Project muestra el viernes 17:00 (el
+  mismo instante de trabajo). `check-cpm` espera la forma actual.
+- Los lags en porcentaje (`LagFormat` 19, 20…) se leen como minutos.
+
+### El formato
+
+- **Un elemento nuevo puede romper el orden del XSD** cuando la tarea o la
+  asignación tiene elementos que las formas no modelan. `Record` ubica uno
+  nuevo antes del primer hermano *modelado* declarado después, y al final si
+  no hay; los no modelados no cuentan. Casos reproducidos: un
+  `PredecessorLink` después de `IsPublished`/`CommitmentType` (archivos de
+  Project 2010+), un `Baseline` en el mismo lugar, un `BudgetCost` después
+  del `TimephasedData` de la asignación, y las variaciones que se vuelven a
+  agregar después de `FixedCostAccrual` o de `Milestone`/`Overallocated`.
+  El comentario de `MspTask` dice que el orden está fijo, y lo está sólo
+  respecto de lo modelado. Ningún golden lo ve: sólo el check opcional con
+  `XSD=`. Es del runtime (`Record.#xmlSlot`), o de declarar en las formas
+  los nombres que vienen después aunque no se modelen.
+- **`ID` no se renumera.** `addTask` le da `ID = UID` a la tarea nueva y
+  `moveTask` reordena sin tocar los `ID`: agregar e indentar escribe 0,1,3,2.
+  Quien ordene por `ID` (MPXJ, y por él ProjectLibre) deshace el movimiento
+  o cuelga la subtarea del padre equivocado. Va con la decisión abierta de
+  `OutlineNumber`/`WBS` (ver Abiertas).
+- **Reasignar no actualiza el `Cost`.** `assignmentCost` devuelve el `Cost`
+  del archivo cuando lo hay, y `addAssignment` cambia `Units` y `Work` sin
+  tocarlo: una asignación de 16h a 80 que pasa al 50% sigue costando 1280 en
+  el total, en el proyecto y en la próxima línea base.
+- **Las excepciones recurrentes se pierden al editarlas.** El diálogo de
+  calendario rearma la excepción con `Type: 1` y sin `Occurrences`,
+  `Period`, `DaysOfWeek` ni `Month*`: renombrar una recurrente la vuelve un
+  rango diario.
+- **Los `WeekDay` se aparean por posición** y su `TimePeriod` no está
+  modelado: el mismo problema que `MspException` ya resolvió. Sólo afecta a
+  archivos viejos, con excepciones escritas como `DayType 0`.
+- Una asignación a un recurso de costo (tipo 2) recibe trabajo, y
+  `assignmentCost` la cobra como horas por tasa.
+- `mspdiMinutes` lee `P1M` (un mes) como un minuto, `P1D` como 480 minutos,
+  y los negativos y los `P…Y` como nada, que se toma como 0.
+- `CurrencyDigits` es `Field.Int()` sin default distinguible: un plan con 0
+  decimales (yenes) se lee como "sin dato" y Estadísticas muestra los del
+  escritorio. Distinguirlo pide un default centinela como `NO_MINUTES`.
+
+### El gráfico
+
+- **La regla no sigue al gráfico con escala fija.** `Header` está fuera de
+  `GanttScroll` y calcula sus x con su propio ancho: con Día/Semana/Mes el
+  gráfico crece y se desplaza, y la regla comprime todo el rango en el ancho
+  visible y no se mueve con el scroll. `viewGrow` sólo mira `MinWidth`.
+- **Arrastrar mueve en múltiplos de 24 horas**, sin pasar por el calendario:
+  en Madrid un viernes 08:00 +3 días cae el lunes 09:00, cualquier arrastre
+  puede dejar el inicio en un fin de semana, y la duración no se actualiza.
+  Debería pasar por `WorkCalendar` como el motor.
+- Los vínculos se dibujan siempre de fin a inicio, sea cual sea su tipo.
+- Un hito, un resumen o una barra muy corta no muestran contorno mientras se
+  arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
+  estirar.
+- Tres aserciones de `check-view` comparan una cosa consigo misma
+  (`planGeom().range` contra `chartRange()`, `g.rows` contra `chartRows()`,
+  el sombreado contra `ganttIdleDays`) y no pueden fallar.
+
+### La interfaz
+
+- **`Message.*(Locale.Text(…))`** traduce dos veces y llena los `{n}` dos
+  veces: una carpeta con "{0}" en el nombre sale mal. Está en
+  `NewProjectForm`, `CalendarForm`, `RatesForm`, `CalendarsForm`,
+  `OptionsForm`, `ProjectForm` y tres lugares de `MainForm`.
+- Una fecha sin hora ("2026-10-01") en el inicio o la fecha de estado de
+  Datos del proyecto da un error en inglés; Nuevo proyecto la acepta.
+- Destildar todas las columnas guarda `[]`, que `applySettings` ignora: al
+  reiniciar vuelven las de siempre.
+- `openStartup` llena la tabla antes de que `applySettings` lea qué campo
+  personalizado mostrar: la columna de atributo sale con el primero hasta la
+  próxima edición.
+- Setear `Tasks.Key` o `TxtFilter.Text` ya dispara el evento, y la llamada
+  explícita que sigue redibuja una segunda vez.
+- Los plurales: "{0} tasks" dice "1 tareas"; no se usa `Locale.Plural` en
+  ningún lado.
+- `es.po` tiene entradas que ya nada usa ("Save As", "Predecessors", "Up",
+  "Down", "Export", "Calendar…", "There are no calendars." y otras de la
+  pestaña Project que se fue).
+
+### Empaquetado y pruebas
+
+- El metainfo no tiene `<screenshots>` (Flathub y Software los esperan) ni
+  descripción en el release, y declara un 0.1.0 del 2026-09-24 que todavía
+  no tiene tag (el plan de ejemplo tiene el hito "0.1 publicado" pendiente).
+- `tests/run.sh` con `XSD=` valida todo `bintana-project-*.xml` que haya en
+  `$OUT`, salidas viejas incluidas, y sin ninguno cuenta el glob literal.
