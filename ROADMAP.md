@@ -677,14 +677,16 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 ### El gráfico
 
-- **La regla no sigue al gráfico con escala fija.** `Header` está fuera de
-  `GanttScroll` y calcula sus x con su propio ancho: con Día/Semana/Mes el
-  gráfico crece y se desplaza, y la regla comprime todo el rango en el ancho
-  visible y no se mueve con el scroll. `viewGrow` sólo mira `MinWidth`.
-- **Arrastrar mueve en múltiplos de 24 horas**, sin pasar por el calendario:
-  en Madrid un viernes 08:00 +3 días cae el lunes 09:00, cualquier arrastre
-  puede dejar el inicio en un fin de semana, y la duración no se actualiza.
-  Debería pasar por `WorkCalendar` como el motor.
+- **La regla sigue al gráfico** (2026-10-07): la franja se arma sobre el ancho
+  del gráfico y se corre con el scroll horizontal (`rulerFrame`,
+  `GanttScroll_Scroll`), en vez de comprimir todo el rango en el ancho visible.
+  `check-view` afirma el ancho y el desplazamiento.
+- **Arrastrar pasa por el calendario** (2026-10-07): mover cae en el próximo
+  momento laborable del calendario de la tarea y conserva su tiempo de trabajo
+  -- un viernes más cuatro días es el lunes, no un sábado --; estirar termina en
+  el fin de jornada. El día se cuenta en el calendario del reloj, así que un
+  cambio de hora no corre la barra. Una tarea elapsed se mueve en tiempo de
+  reloj. `check-drag` fija el caso del fin de semana.
 - Los vínculos se dibujan siempre de fin a inicio, sea cual sea su tipo.
 - Un hito, un resumen o una barra muy corta no muestran contorno mientras se
   arrastran. En barras de menos de unos 10 px casi toda la barra es zona de

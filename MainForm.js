@@ -1346,12 +1346,39 @@ class MainForm extends Form {
                                 this.ganttHeight(), this.step, this.planGeom());
         if (!g.dayW) return;
         const days = Math.round((x - drag.x0) / g.dayW);
+        const task = this.edit.task(drag.uid);
+        if (!task) return;
+
+        /* **The gesture lands on the task's own calendar**, as the engine
+         * does: a plain `+ days * 24h` put a Friday start on a Saturday -- or,
+         * across a clock change, an hour off -- and left the duration for the
+         * next recalculation to contradict. The day count is the pointer's;
+         * where it lands is the calendar's. An elapsed task counts clock time,
+         * so for it the shift is the plain one. */
+        const shifted = (ms) => {
+            const d = new Date(ms);
+            d.setDate(d.getDate() + days);
+            return d.getTime();
+        };
+        const elapsed = isElapsed(task.DurationFormat);
+        const work = new WorkCalendar(this.holder.project, task.CalendarUID);
         if (drag.mode === "move") {
-            drag.start  = drag.originStart  + days * DAY_MS;
-            drag.finish = drag.originFinish + days * DAY_MS;
+            const minutes = work.between(drag.originStart, drag.originFinish);
+            const from = shifted(drag.originStart);
+            if (elapsed) {
+                drag.start  = from;
+                drag.finish = shifted(drag.originFinish);
+            } else if (minutes > 0) {
+                drag.start  = work.startAfter(from);
+                drag.finish = work.add(drag.start, minutes);
+            } else {
+                drag.start  = work.add(from, 0);
+                drag.finish = drag.start;
+            }
         } else {
+            const to = shifted(drag.originFinish);
             drag.finish = Math.max(drag.originStart,
-                                   drag.originFinish + days * DAY_MS);
+                                   elapsed ? to : work.finishAt(to));
         }
         this.redrawChart();
     }
@@ -1422,9 +1449,32 @@ class MainForm extends Form {
             this.Header.Height = headH;
             return;   /* the box has no height for these marks yet */
         }
-        const g = ganttGeometry(this.chartRows(), width, height, this.step,
+        /* **The ruler is as wide as the chart and travels with it.** With a
+         * fixed scale the chart is wider than its pane and the scroller shows
+         * the difference; the strip is outside that scroller, so drawn with its
+         * own width it squeezed the whole range into the pane and stood still
+         * while the bars moved. */
+        const { full, shift } = this.rulerFrame(width);
+        const g = ganttGeometry(this.chartRows(), full, height, this.step,
                                 this.rulerGeom());
-        drawGanttRuler(p, width, g, ganttPalette(p));
+        p.Push();
+        p.Translate(-shift, 0);
+        drawGanttRuler(p, full, g, ganttPalette(p));
+        p.Pop();
+    }
+
+    /* The width the marks are laid out over -- the chart's, when it is wider
+     * than the strip -- and how far across the chart is scrolled. */
+    rulerFrame(width) {
+        const full  = Math.max(width, this.Gantt ? this.ganttWidth() : 0);
+        const shift = this.GanttScroll ? this.GanttScroll.ScrollX : 0;
+        return { full, shift: Math.min(Math.max(shift, 0), Math.max(full - width, 0)) };
+    }
+
+    /* The chart scrolled sideways: the strip above it is a separate control, so
+     * it has to be told to follow. (Vertical moves are the list's, above.) */
+    GanttScroll_Scroll(x, y) {
+        if (this.Header) this.Header.Redraw();
     }
 
     Gantt_Draw(p, width, height) {
@@ -3759,6 +3809,19 @@ class MainForm extends Form {
             edit.undo();
             ok = eq("move undone", edit.task(1).Start, "2026-09-01T08:00:00") && ok;
 
+            /* **A bar dropped on a weekend lands on the calendar's next
+             * working moment**, keeping its working duration: four days from
+             * Tuesday is a Saturday, and the task starts that Monday and runs
+             * its two days from there. */
+            this.Gantt_MouseDown(mid, y, 1, false, false);
+            this.Gantt_MouseMove(mid + 4 * g.dayW, y);
+            this.Gantt_MouseUp();
+            ok = eq("move onto a weekend: start", edit.task(1).Start,
+                    "2026-09-07T08:00:00") && ok;
+            ok = eq("and the same working time", edit.task(1).Finish,
+                    "2026-09-08T17:00:00") && ok;
+            edit.undo();
+
             /* The end edge resizes: the duration follows the finish. The
              * fixture's calendar is Monday to Friday, so three calendar days
              * from Tuesday are three working ones. */
@@ -4460,6 +4523,15 @@ class MainForm extends Form {
             ok = yes("while the window is never asked for it",
                      this.Bounds().Width < chartW,
                      `window ${this.Bounds().Width}`) && ok;
+            /* The ruler is laid out over the chart's width and follows its
+             * scroll, not squeezed into the pane. */
+            const stripW = this.Header.Bounds().Width;
+            ok = eq("the ruler spans the chart, not the pane",
+                    this.rulerFrame(stripW).full, chartW) && ok;
+            this.GanttScroll.ScrollX = 40;
+            ok = eq("and travels with the chart's scroll",
+                    this.rulerFrame(stripW).shift, this.GanttScroll.ScrollX) && ok;
+            this.GanttScroll.ScrollX = 0;
             this.CmbScale.Index = 0;   // back to Auto
             this.CmbScale_Select();
             ok = eq("moving the divider moves the list with it", g.width(this.Tasks),
@@ -5103,7 +5175,7 @@ class MainForm extends Form {
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
                         "ActProjData", "ActProjOptions", "ActCalendar"]
             .map((name) => `${name}_Click`)
-            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw",
+            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
                      "CmbScale_Select",
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "CmbAttr_Select", "TxtFilter_Change",
