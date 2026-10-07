@@ -77,7 +77,7 @@ class CalendarsForm extends Form {
         if (this.CalendarList.Index < 0) return;
         const calendar = this.rows[this.CalendarList.Index];
         if (calendar.UID === this.project.CalendarUID) {
-            Message.Warning(Locale.Text("The project's own calendar cannot be deleted."));
+            Message.Warning("The project's own calendar cannot be deleted.");
             return;
         }
         ConfirmForm.ask(Locale.Text("Delete calendar"),

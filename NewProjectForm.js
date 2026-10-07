@@ -92,21 +92,21 @@ class NewProjectForm extends Form {
         if (!v) return;
 
         if (!File.IsDir(v.Folder)) {
-            Message.Error(Locale.Text("That folder does not exist:\n{0}",
-                                      v.Folder));
+            Message.Error("That folder does not exist:\n{0}",
+                          v.Folder);
             return;
         }
         const path = File.Join(v.Folder, v.File);
         if (File.Exists(path)) {
-            Message.Error(Locale.Text("There is already a file at {0}.", path));
+            Message.Error("There is already a file at {0}.", path);
             return;
         }
         /* The date the whole schedule hangs off, asked of the shape itself: a
          * start this engine cannot schedule is a plan whose every task is a lie,
          * and the shape is what will have to say so. */
         if (v.Start && !planStartable(v.Start)) {
-            Message.Error(Locale.Text("{0} is not a date this plan can use.",
-                                      v.Start));
+            Message.Error("{0} is not a date this plan can use.",
+                          v.Start);
             return;
         }
 

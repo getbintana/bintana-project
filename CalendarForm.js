@@ -76,13 +76,13 @@ class CalendarForm extends Form {
     BtnExcAdd_Click() {
         const from = parseMoment(this.TxtExcFrom.Text, "00:00:00");
         if (from === "") {
-            Message.Error(Locale.Text("An exception needs a date."));
+            Message.Error("An exception needs a date.");
             return;
         }
         const to = parseMoment(this.TxtExcTo.Text, "23:59:00") ||
                    from.slice(0, 10) + "T23:59:00";
         if (to < from) {
-            Message.Error(Locale.Text("A period must end after it starts."));
+            Message.Error("A period must end after it starts.");
             return;
         }
 
@@ -137,8 +137,8 @@ class CalendarForm extends Form {
             const working = this["ChkDay" + row.day].Active;
             const spans = working ? parseSpans(this["TxtDay" + row.day].Text) : [];
             if (!spans || (working && !spans.length)) {
-                Message.Error(Locale.Text(
-                    "A working day's times read like 08:00-12:00 13:00-17:00."));
+                Message.Error(
+                    "A working day's times read like 08:00-12:00 13:00-17:00.");
                 this["TxtDay" + row.day].SetFocus();
                 return;
             }

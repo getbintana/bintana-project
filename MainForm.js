@@ -975,7 +975,7 @@ class MainForm extends Form {
 
         const budget = resourceNumber(this.TxtAssignBudget.Text);
         if (isNaN(budget) || budget < 0) {
-            Message.Error(Locale.Text("The budget must be a number, or nothing."));
+            Message.Error("The budget must be a number, or nothing.");
             return;
         }
         this.edit.setAssignmentBudget(assignment.UID, budget);
@@ -988,12 +988,12 @@ class MainForm extends Form {
         const at = this.CmbAssignRes.Index;
         const resourceUID = at >= 0 ? this.resChoices[at] : null;
         if (resourceUID === null || resourceUID === undefined) {
-            Message.Warning(Locale.Text("Add a resource first."));
+            Message.Warning("Add a resource first.");
             return;
         }
         const units = resourceNumber(this.TxtAssignUnits.Text);
         if (isNaN(units) || units <= 0) {
-            Message.Error(Locale.Text("Units must be a positive number."));
+            Message.Error("Units must be a positive number.");
             return;
         }
         this.edit.addAssignment(task.UID, resourceUID, units);
@@ -4155,6 +4155,20 @@ class MainForm extends Form {
                      g.range.from === span.from && g.range.to === span.to,
                      span ? `${new Date(span.from).toISOString().slice(0, 10)} .. ` +
                             `${new Date(span.to).toISOString().slice(0, 10)}` : "no range") && ok;
+            /* And it is the plan's own span, worked out here from the tasks and
+             * not asked of the same function twice: a day either side of the
+             * earliest start and the latest finish. */
+            let lo = null, hi = null;
+            for (const task of this.holder.project.Tasks) {
+                const a = whenMs(task.Start), b = whenMs(task.Finish);
+                if (task.IsNull || a === null || b === null) continue;
+                if (lo === null || a < lo) lo = a;
+                if (hi === null || b > hi) hi = b;
+            }
+            ok = yes("and it is the plan's earliest start to its latest finish",
+                     lo !== null && g.range.from === lo - DAY_MS &&
+                     g.range.to === hi + DAY_MS,
+                     `${g.range.from} .. ${g.range.to} against ${lo} .. ${hi}`) && ok;
             ok = this.viewFoldRows(eq, yes, ok, key);
             if (selected !== null && t.Exists(String(selected))) {
                 t.Key = String(selected);
@@ -4355,6 +4369,15 @@ class MainForm extends Form {
                                          c.args[0] + c.args[2] >= x1 - 1);
         ok = this.styleYes("and it is shaded where the calendar puts it", covers,
                            `${drawn.length} bands, ${Math.round(x0)}..${Math.round(x1)}`) && ok;
+        /* The same, from the other side and in the calendar's own words rather
+         * than the function that made the spans: every band drawn starts on a
+         * weekend day, which is what the fixture's Monday-to-Friday week
+         * leaves idle. */
+        const weekend = (ms) => [0, 6].includes(new Date(Math.round(ms)).getDay());
+        ok = this.styleYes("and every band starts on a weekend day",
+                           drawn.length > 0 &&
+                           drawn.every((c) => weekend(g.msAt(c.args[0] + 1))),
+                           `${drawn.length} bands`) && ok;
 
         const bar = log.firstOf("Rectangle", pal.bar);
         const idle = log.firstOf("Rectangle", pal.idle);

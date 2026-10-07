@@ -691,16 +691,17 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 - Un hito, un resumen o una barra muy corta no muestran contorno mientras se
   arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
   estirar.
-- Tres aserciones de `check-view` comparan una cosa consigo misma
-  (`planGeom().range` contra `chartRange()`, `g.rows` contra `chartRows()`,
-  el sombreado contra `ganttIdleDays`) y no pueden fallar.
+- **Las aserciones de `check-view` que no podían fallar** (2026-10-07): el rango
+  contra la escala ahora se compara con el del plan calculado a mano (primera
+  fecha y última, un día a cada lado), y el sombreado con el día de la semana
+  de cada banda y no con la función que lo generó. La de las filas (`g.rows`
+  contra `chartRows()`) era la del plegado, que ya lee las filas de la lista.
 
 ### La interfaz
 
-- **`Message.*(Locale.Text(…))`** traduce dos veces y llena los `{n}` dos
-  veces: una carpeta con "{0}" en el nombre sale mal. Está en
-  `NewProjectForm`, `CalendarForm`, `RatesForm`, `CalendarsForm`,
-  `OptionsForm`, `ProjectForm` y tres lugares de `MainForm`.
+- **`Message.*` ya no pasa por `Locale.Text`** (2026-10-07): el diálogo traduce
+  y llena los `{n}` por su cuenta, así que el texto va directo; una carpeta
+  con "{0}" en el nombre ya no se rellena dos veces. Quince lugares.
 - Una fecha sin hora ("2026-10-01") en el inicio o la fecha de estado de
   Datos del proyecto da un error en inglés; Nuevo proyecto la acepta.
 - Destildar todas las columnas guarda `[]`, que `applySettings` ignora: al

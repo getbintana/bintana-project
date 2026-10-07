@@ -153,7 +153,7 @@ class ProjectForm extends Form {
         const project = this.project;
         const values  = projectFormValues(this, project, this.tables);
         if (!values) {
-            Message.Error(Locale.Text("The project's numbers must be numbers."));
+            Message.Error("The project's numbers must be numbers.");
             return;
         }
         try {

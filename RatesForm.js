@@ -59,7 +59,7 @@ class RatesForm extends Form {
     BtnRateAdd_Click() {
         const from = parseMoment(this.TxtRateFrom.Text, "00:00:00");
         if (from === "") {
-            Message.Error(Locale.Text("A rate period needs a date."));
+            Message.Error("A rate period needs a date.");
             return;
         }
         /* An empty To is open-ended, as Project writes the last period
@@ -67,7 +67,7 @@ class RatesForm extends Form {
          * of no length that no work ever fell in, so the rate never applied. */
         const to = parseMoment(this.TxtRateTo.Text, "23:59:00") || "2049-12-31T23:59:00";
         if (to <= from) {
-            Message.Error(Locale.Text("A period must end after it starts."));
+            Message.Error("A period must end after it starts.");
             return;
         }
         const standard = resourceNumber(this.TxtRateStandard.Text);
@@ -75,7 +75,7 @@ class RatesForm extends Form {
         const cost = resourceNumber(this.TxtRateCostUse.Text);
         if (isNaN(standard) || isNaN(overtime) || isNaN(cost) ||
             standard < 0 || overtime < 0 || cost < 0) {
-            Message.Error(Locale.Text("The rates must be numbers."));
+            Message.Error("The rates must be numbers.");
             return;
         }
 

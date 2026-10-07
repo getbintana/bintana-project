@@ -76,7 +76,7 @@ class OptionsForm extends Form {
     BtnOk_Click() {
         const values = projectFormValues(this, this.project, OptionsForm);
         if (!values) {
-            Message.Error(Locale.Text("The project's numbers must be numbers."));
+            Message.Error("The project's numbers must be numbers.");
             return;
         }
         try {
