@@ -2123,6 +2123,64 @@ class MainForm extends Form {
             ok = crossing("2026-10-29T08:00:00", "2026-11-04T17:00:00") && ok;
             ok = crossing("2026-10-22T08:00:00", "2026-10-28T17:00:00") && ok;
             ok = crossing("2026-09-03T08:00:00", "2026-09-10T17:00:00") && ok;   // the 8th is a holiday
+
+            /* **A lead is working time too**: 8h before Monday 10:00 is
+             * Friday 10:00, where it used to be Monday 02:00. */
+            ok = eq("a lead walks back over the weekend",
+                    isoLocal(wc.add(whenMs("2026-09-14T10:00:00"), -480)),
+                    "2026-09-11T10:00:00") && ok;
+
+            /* The links' own arithmetic: a lead of a day, and an elapsed lag
+             * of two days (`LagFormat` 8, "ed") that runs through the night
+             * and the holiday instead of six working days. */
+            const lead = projectOf([
+                task(1, "PT16H0M0S"),                          // Mon + Wed
+                task(2, "PT8H0M0S", [link(1, 1, -4800)]),      // a day early
+            ]);
+            recalculate(lead);
+            ok = eq("an FS lead of a day", lead.Tasks[1].Start,
+                    "2026-09-09T08:00:00") && ok;
+            const ed = projectOf([
+                task(1, "PT8H0M0S"),
+                task(2, "PT8H0M0S", [new MspLink({ PredecessorUID: 1, Type: 1,
+                                                   LinkLag: 28800, LagFormat: 8 })]),
+            ]);
+            recalculate(ed);
+            ok = eq("an elapsed lag is clock time", ed.Tasks[1].Start,
+                    "2026-09-10T08:00:00") && ok;
+
+            /* **Both ends of the late dates bound each other**: C hangs off
+             * A's start and is the longest thing in the plan, so A is
+             * critical through its start even though B, after its finish,
+             * has room. */
+            const both = projectOf([
+                task(1, "PT40H0M0S"),                          // A
+                task(2, "PT8H0M0S",  [link(1, 1)]),            // B, FS
+                task(3, "PT80H0M0S", [link(1, 3)]),            // C, SS
+            ]);
+            recalculate(both);
+            ok = eq("an SS successor makes A critical",
+                    [both.Tasks[0].Critical, both.Tasks[0].TotalSlack].join(" "),
+                    "true 0") && ok;
+
+            /* **Free slack by the end each link joins.** A is tied to B's
+             * finish (FF) and E to F's start (SS); B and F were pushed to
+             * Friday and Thursday by another task, which is the room A and E
+             * have -- three days and two, where the FF one used to lose A's
+             * own duration as clock time and the SS one was always zero. */
+            const free = projectOf([
+                task(1, "PT8H0M0S"),                                   // A
+                task(2, "PT24H0M0S"),                                  // D
+                task(3, "PT8H0M0S", [link(1, 0), link(2, 1)]),         // B
+                task(4, "PT8H0M0S"),                                   // E
+                task(5, "PT16H0M0S"),                                  // G
+                task(6, "PT8H0M0S", [link(4, 3), link(5, 1)]),         // F
+            ]);
+            recalculate(free);
+            ok = eq("FF free slack is to the successor's finish",
+                    free.Tasks[0].FreeSlack, 14400) && ok;
+            ok = eq("SS free slack is to the successor's start",
+                    free.Tasks[3].FreeSlack, 9600) && ok;
             ok = crossing("2026-04-02T08:00:00", "2026-04-08T17:00:00") && ok;
 
             /* Two spans that touch are one stretch of work, and a `ToTime` of
@@ -2145,6 +2203,12 @@ class MainForm extends Form {
             ok = eq("a day to midnight is a whole day",
                     isoLocal(allDay.add(whenMs("2026-09-07T00:00:00"), 1440 * 3)),
                     "2026-09-10T00:00:00") && ok;
+            /* **Midnight ends yesterday's span** as well: a day back from
+             * Tuesday noon stood still on Tuesday 00:00 until the guard ran
+             * out. */
+            ok = eq("a day back on 24 hours crosses midnight",
+                    isoLocal(allDay.subtract(whenMs("2026-09-15T12:00:00"), 1440)),
+                    "2026-09-14T12:00:00") && ok;
 
             /* Where the shapes start, taken from the XSD: the two `Type`
              * fields have no default and start below every real value, so a

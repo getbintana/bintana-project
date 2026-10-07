@@ -166,6 +166,9 @@ class WorkCalendar {
      * minutes lands on the same instant -- which is what a finish-to-finish
      * link needs. */
     add(start, minutes) {
+        /* A negative amount is a lead, and a lead is working time too: 8h
+         * before Monday 10:00 is Friday 10:00, not Monday 02:00. */
+        if (minutes < 0) return this.subtract(start, -minutes);
         let t = start, left = minutes;
         for (let guard = 0; guard < 100000; guard++) {
             let end = this.#spanEndAt(t);
@@ -183,6 +186,7 @@ class WorkCalendar {
 
     /* `minutes` of work before `finish`, the mirror of `add`. */
     subtract(finish, minutes) {
+        if (minutes < 0) return this.add(finish, -minutes);
         let t = finish, left = minutes;
         for (let guard = 0; guard < 100000; guard++) {
             let from = this.#spanStartAt(t);
@@ -286,8 +290,15 @@ class WorkCalendar {
     /* The mirror: where two spans touch, the instant belongs to the earlier
      * one, which is the one with work before it. */
     #spanStartAt(ms) {
-        const spans = this.#instantsOn(this.#dayStart(ms));
+        const day = this.#dayStart(ms);
+        const spans = this.#instantsOn(day);
         for (const [a, b] of spans) if (ms > a && ms <= b) return a;
+        /* **Midnight ends yesterday's span too**: a shift to 24:00 (the 24
+         * Hours calendar, a night shift) has its work before 00:00, and
+         * answering today's 00:00 left `subtract` standing still on it. */
+        if (ms === day)
+            for (const [a, b] of this.#instantsOn(this.#previousDay(day)))
+                if (ms > a && ms <= b) return a;
         for (const [a] of spans) if (ms === a) return a;
         return null;
     }
@@ -314,6 +325,22 @@ class WorkCalendar {
         }
         return ms;
     }
+}
+
+/*
+ * **A link's lag, applied.** `LinkLag` is tenths of a minute whatever the
+ * format; the format says whether those minutes are working time on the
+ * calendar or clock time (an elapsed format, "2ed"), which goes through
+ * nights and weekends alike.
+ */
+function lagAfter(work, t, link) {
+    const lag = (link.LinkLag || 0) / 10;
+    return isElapsed(link.LagFormat) ? t + lag * MIN_MS : work.add(t, lag);
+}
+
+function lagBefore(work, t, link) {
+    const lag = (link.LinkLag || 0) / 10;
+    return isElapsed(link.LagFormat) ? t - lag * MIN_MS : work.subtract(t, lag);
 }
 
 /*
@@ -372,16 +399,13 @@ function workDuration(project, task, minutes, mine) {
  * the plan's finish. Each successor bounds it and the least of those is the
  * answer, in the successor's own calendar.
  *
- * The bound depends on which end of the link is joined, and the two "start"
- * kinds are worth spelling out because they are the ones a reader gets wrong:
- *
- *   - **FS** -- our finish may sit anywhere before the successor starts, less
- *     the lag. That is the room between them.
- *   - **FF** -- our finish may sit before the successor's *finish*, less the
- *     lag, less our own duration: that is the same moment written as a finish.
- *   - **SS and SF** -- the successor's start (or finish) hangs off *our* start,
- *     so there is nothing this task can slide without taking it along: **zero,
- *     which is what Project shows and what the arithmetic says.**
+ * The bound depends on which end of each link is joined: the successor's
+ * start (FS, SS) or finish (FF, SF), less the lag, is the latest our finish
+ * (FS, FF) or our start (SS, SF) can reach without moving it. The room is
+ * the working time from where that end of ours sits now to the bound -- for
+ * SS it is zero only when the link is what placed the successor; another
+ * link that pushed it later leaves room. The kinds are MSPDI's: 0 FF, 1 FS,
+ * 2 SF, 3 SS.
  *
  * A task nothing depends on has all of its total as free: with no successor
  * there is no sooner moment to be late for. A task the file never dated, or a
@@ -389,23 +413,17 @@ function workDuration(project, task, minutes, mine) {
  * out is not the same as an answer of zero.
  */
 function freeSlack(task, links, work) {
-    const ef = whenMs(task.Finish);
+    const es = whenMs(task.Start), ef = whenMs(task.Finish);
     if (ef === null) return NO_MINUTES;
 
     let least = null;
     for (const { link, succ } of links) {
-        const lag  = (link.LinkLag || 0) / 10 * MIN_MS;   /* tenths of a minute */
-        const kind = linkKind(link);
-        if (kind === 3 || kind === 4) {                  /* SS and SF */
-            least = 0;
-            continue;
-        }
-        const until = kind === 0 ? whenMs(succ.Finish)    /* FF bounds a finish */
-                                : whenMs(succ.Start);     /* FS bounds a start */
-        if (until === null) continue;
-        const minutes = mspdiMinutes(task.Duration) || 0;
-        const bound   = until - lag - (kind === 0 ? minutes * MIN_MS : 0);
-        const room    = work.between(ef, bound);
+        const kind  = linkKind(link);
+        const until = kind === 0 || kind === 2 ? whenMs(succ.Finish)
+                                               : whenMs(succ.Start);
+        const ours  = kind === 2 || kind === 3 ? es : ef;
+        if (until === null || ours === null) continue;
+        const room = work.between(ours, lagBefore(work, until, link));
         if (least === null || room < least) least = room;
     }
     /* Tenths, the file's unit; the total is in them already. */
@@ -546,15 +564,14 @@ function recalculate(project) {
                 const ps = whenMs(pred.Start), pf = whenMs(pred.Finish);
                 if (ps === null || pf === null) continue;
 
-                /* `LinkLag` is tenths of a minute, and the lag is working
-                 * time on the successor's own calendar. */
-                const lag  = (link.LinkLag || 0) / 10;
+                /* The lag is working time on the successor's own calendar,
+                 * unless its format is an elapsed one. */
                 const kind = linkKind(link);
                 if (kind === 0 || kind === 2) {
-                    const target = work.add(kind === 0 ? pf : ps, lag);
+                    const target = lagAfter(work, kind === 0 ? pf : ps, link);
                     if (finishFloor === null || target > finishFloor) finishFloor = target;
                 } else {
-                    const base = work.add(kind === 1 ? pf : ps, lag);
+                    const base = lagAfter(work, kind === 1 ? pf : ps, link);
                     const candidate = duration > 0 ? work.startAfter(base) : base;
                     if (startFloor === null || candidate > startFloor) startFloor = candidate;
                 }
@@ -668,6 +685,13 @@ function recalculate(project) {
 
                 const work = workOf(task.CalendarUID);
                 const duration = mspdiMinutes(task.Duration) || 0;
+                /* The duration back and forth as the forward pass laid it:
+                 * an elapsed one is clock time. */
+                const elapsed = isElapsed(task.DurationFormat);
+                const after  = (t) => elapsed ? t + duration * MIN_MS
+                                              : work.add(t, duration);
+                const before = (t) => elapsed ? t - duration * MIN_MS
+                                              : work.subtract(t, duration);
                 let lf = null, ls = null;
 
                 if (!links.length) {
@@ -675,27 +699,35 @@ function recalculate(project) {
                 } else {
                     for (const { link, succ } of links) {
                         const L    = late[succ.UID];
-                        const lag  = (link.LinkLag || 0) / 10;
                         const kind = linkKind(link);
                         let v;
                         if (kind === 1) {               // FS bounds the finish
-                            v = work.subtract(L.ls, lag);
+                            v = lagBefore(work, L.ls, link);
                             if (lf === null || v < lf) lf = v;
                         } else if (kind === 3) {        // SS bounds the start
-                            v = work.subtract(L.ls, lag);
+                            v = lagBefore(work, L.ls, link);
                             if (ls === null || v < ls) ls = v;
                         } else if (kind === 0) {        // FF bounds the finish
-                            v = work.subtract(L.lf, lag);
+                            v = lagBefore(work, L.lf, link);
                             if (lf === null || v < lf) lf = v;
                         } else {                        // SF bounds the start
-                            v = work.subtract(L.lf, lag);
+                            v = lagBefore(work, L.lf, link);
                             if (ls === null || v < ls) ls = v;
                         }
                     }
                 }
                 if (lf === null && ls === null) lf = finish;
-                if (lf === null) lf = work.add(ls, duration);
-                if (ls === null) ls = work.subtract(lf, duration);
+                if (lf === null) lf = after(ls);
+                if (ls === null) ls = before(lf);
+
+                /* **Both ends bound the task at once**: an FS successor caps
+                 * the finish and an SS one the start, and each cap reaches the
+                 * other end through the duration. Only a cap that is working
+                 * time earlier moves the other end -- Friday 17:00 and Monday
+                 * 08:00 are the same moment of work. */
+                const lsOf = before(lf), lfOf = after(ls);
+                if (work.between(lsOf, ls) > 0) ls = lsOf;
+                if (work.between(lfOf, lf) > 0) lf = lfOf;
 
                 late[task.UID] = { lf, ls };
                 lateDone[task.UID] = true;
