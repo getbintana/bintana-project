@@ -154,29 +154,31 @@ fi
 # not in the repository (tests/corpus/README.md says where it comes from). The
 # XSD is a `sequence`, so it is the check that catches a field inserted out of
 # order, which no golden can: a golden only says the output did not change.
-# The namespace is remapped as the corpus README does (Project writes the bare
-# one, the XSD declares /2007), and an output only fails when its input was
-# valid -- a fixture that comes in broken is not the writer's fault.
+# The validator is the runtime's (`Xml.Schema`, behind `check-xsd`), which
+# remaps the namespace itself (Project writes the bare one, the XSD declares
+# /2007); an output only fails when its input was valid -- a fixture that
+# comes in broken is not the writer's fault.
 if [[ -n ${XSD-} ]]; then
-    xsd_valid() {
-        sed 's|xmlns="http://schemas.microsoft.com/project"|xmlns="http://schemas.microsoft.com/project/2007"|' \
-            "$1" > "$OUT/xsd.tmp.xml"
-        xmllint --noout --schema "$XSD" "$OUT/xsd.tmp.xml" > "$OUT/xsd.log" 2>&1
-    }
-    xsd_n=0; xsd_bad=0
-    for out in "$OUT"/bintana-project-*.xml; do
+    outs=(); ins=()
+    for out in "$OUT"/bintana-project-check-*.xml "$OUT"/bintana-project-edit-*.xml; do
+        [[ -f $out ]] || continue
         name=$(basename "$out" .xml); name=${name#bintana-project-check-}
         name=${name#bintana-project-edit-}
-        xsd_n=$((xsd_n + 1))
-        if ! xsd_valid "$out"; then
-            if xsd_valid "tests/corpus/$name.xml"; then
-                echo "check xsd $(basename "$out"): INVALID"
-                xsd_valid "$out"; grep -v 'fails to validate' "$OUT/xsd.log" | head -5
+        outs+=("$out"); ins+=("tests/corpus/$name.xml")
+    done
+    if [[ ${#outs[@]} -gt 0 ]]; then
+        "$TRY" "$PWD" check-xsd "$XSD" "${outs[@]}" "${ins[@]}" > "$OUT/xsd.report" 2>&1
+        xsd_bad=0
+        for k in "${!outs[@]}"; do
+            if grep -qE "^xsd ${outs[$k]}: [0-9]+ problems" "$OUT/xsd.report" &&
+               grep -qE "^xsd ${ins[$k]}: valid" "$OUT/xsd.report"; then
+                echo "check xsd $(basename "${outs[$k]}"): INVALID"
+                grep -A5 -F "xsd ${outs[$k]}:" "$OUT/xsd.report" | grep '^xsd   ' | head -5
                 xsd_bad=$((xsd_bad + 1)); fail=1
             fi
-        fi
-    done
-    [[ $xsd_bad -eq 0 ]] && echo "check xsd: $xsd_n outputs ok"
+        done
+        [[ $xsd_bad -eq 0 ]] && echo "check xsd: ${#outs[@]} outputs ok"
+    fi
 fi
 
 if [[ $fail -eq 0 ]]; then

@@ -123,6 +123,10 @@ class MainForm extends Form {
                 this.checkEdit();
                 return;
             }
+            if (Application.Arguments.indexOf("check-xsd") >= 0) {
+                this.checkXsd();
+                return;
+            }
             if (Application.Arguments.indexOf("check-oracle") >= 0) {
                 this.checkOracle();
                 return;
@@ -1811,6 +1815,8 @@ class MainForm extends Form {
                  (over ? `, ${over} over-allocated` : "") +
                  (result.notMet
                     ? `, ${result.notMet} constraints not met` : "") +
+                 (result.percentLags
+                    ? `, ${result.percentLags} lags in percent not applied` : "") +
                  (result.skipped
                     ? `, ${result.skipped} kept (ALAP)`
                     : "") + ".");
@@ -2194,6 +2200,105 @@ class MainForm extends Form {
                     [both.Tasks[0].Critical, both.Tasks[0].TotalSlack].join(" "),
                     "true 0") && ok;
 
+            /* **Links to and from a summary.** A holds S back, so the leaves of
+             * S start after A; B follows S, so it starts after the last leaf
+             * -- in the same pass, not the one after: the summary is rolled up
+             * when its leaves are placed, not at the end. A leaf's link to its
+             * own summary is a loop and is ignored. */
+            const level = (t, n, summary) => {
+                t.OutlineLevel = n; t.Summary = !!summary; return t;
+            };
+            const nest = projectOf([
+                level(task(1, "PT8H0M0S"), 1),                         // A, Mon
+                level(task(2, "PT0S", [link(1, 1)]), 1, true),         // S after A
+                level(task(3, "PT16H0M0S"), 2),                        // S1
+                level(task(4, "PT8H0M0S", [link(2, 1)]), 2),           // S2, loop
+                level(task(5, "PT8H0M0S", [link(2, 1)]), 1),           // B after S
+            ]);
+            recalculate(nest);
+            ok = eq("a link into a summary holds its leaves back",
+                    [nest.Tasks[2].Start, nest.Tasks[3].Start].join(" "),
+                    "2026-09-09T08:00:00 2026-09-09T08:00:00") && ok;
+            ok = eq("a link from a summary reads its span, the same pass",
+                    nest.Tasks[4].Start, "2026-09-11T08:00:00") && ok;
+            nest.Tasks[2].Duration = "PT24H0M0S";
+            recalculate(nest);
+            ok = eq("a longer leaf moves the successor of its summary at once",
+                    nest.Tasks[4].Start, "2026-09-14T08:00:00") && ok;
+            ok = eq("the summary's own finish and the critical path",
+                    [nest.Tasks[1].Finish, nest.Tasks[2].Critical,
+                     nest.Tasks[3].Critical, nest.Tasks[4].Critical].join(" "),
+                    "2026-09-11T17:00:00 true false true") && ok;
+
+            /* **Nobody moves a manual or a finished task**, so a link into one
+             * pulls no predecessor's total slack back -- A has the room to the
+             * plan's Friday -- while its free slack still stops at the manual
+             * task's dates. A finished task is history: late dates are the
+             * ones it had, no slack, never critical. */
+            const fixed = projectOf([
+                task(1, "PT8H0M0S"),                                   // A, Mon
+                task(2, "PT8H0M0S", [link(1, 1)],                      // M, Thu
+                     { Manual: true, Start: "2026-09-10T08:00:00",
+                       Finish: "2026-09-10T17:00:00" }),
+                task(3, "PT8H0M0S", [], { ConstraintType: CONSTRAINT_SNET,
+                     ConstraintDate: "2026-09-11T08:00:00" }),         // D, Fri
+                task(4, "PT8H0M0S", [], { Start: "2026-09-07T08:00:00",
+                     Finish: "2026-09-07T17:00:00",
+                     ActualFinish: "2026-09-07T17:00:00" }),
+            ]);
+            recalculate(fixed);
+            ok = eq("a manual successor does not bound the total slack",
+                    [fixed.Tasks[0].TotalSlack, fixed.Tasks[0].FreeSlack].join("/"),
+                    "14400/4800") && ok;
+            ok = eq("a finished task: no slack, not critical",
+                    [fixed.Tasks[3].TotalSlack, fixed.Tasks[3].FreeSlack,
+                     fixed.Tasks[3].Critical, fixed.Tasks[3].LateFinish].join(" "),
+                    "0 0 false 2026-09-07T17:00:00") && ok;
+
+            /* **A lag in percent is not read as minutes.** Its unit is not
+             * documented and nothing here measures it, so it is not applied --
+             * and counted, which is what the log says. */
+            const pct = projectOf([
+                task(1, "PT8H0M0S"),
+                task(2, "PT8H0M0S", [new MspLink({ PredecessorUID: 1, Type: 1,
+                                                   LinkLag: 500, LagFormat: 19 })]),
+            ]);
+            const pctRun = recalculate(pct);
+            ok = eq("a percent lag is not applied as minutes",
+                    `${pct.Tasks[1].Start} ${pctRun.percentLags}`,
+                    "2026-09-09T08:00:00 1") && ok;
+
+            /* **An FF does not start a task before the plan.** A is a day
+             * long on the project's first day; B (3 days) finishes with A, so
+             * the link alone would start it two days before the plan. It
+             * starts with the plan and ends later. An SF may start early. */
+            const early = projectOf([
+                task(1, "PT8H0M0S"),                                   // A, Mon
+                task(2, "PT24H0M0S", [link(1, 0)]),                    // B, FF from A
+                task(3, "PT24H0M0S", [link(1, 2)]),                    // C, SF from A
+            ]);
+            recalculate(early);
+            ok = eq("an FF successor starts no earlier than the plan",
+                    early.Tasks[1].Start, "2026-09-07T08:00:00") && ok;
+            ok = eq("an SF successor still may", early.Tasks[2].Start <
+                    early.StartDate, true) && ok;
+
+            /* **A task that has started started when it did**: a predecessor
+             * that slipped moves what is left of B, not the day B began. */
+            const begun = projectOf([
+                task(1, "PT16H0M0S"),                                  // A, Mon + Wed
+                task(2, "PT8H0M0S", [link(1, 1)],                      // B, FS from A
+                     { ActualStart: "2026-09-07T08:00:00",
+                       Start: "2026-09-07T08:00:00" }),
+                task(3, "PT8H0M0S", [link(1, 1)]),                     // C, same link, not begun
+            ]);
+            recalculate(begun);
+            ok = eq("a begun task keeps its actual start",
+                    `${begun.Tasks[1].Start}..${begun.Tasks[1].Finish}`,
+                    "2026-09-07T08:00:00..2026-09-07T17:00:00") && ok;
+            ok = eq("and one that has not begun still waits for its link",
+                    begun.Tasks[2].Start, "2026-09-10T08:00:00") && ok;
+
             /* **Free slack by the end each link joins.** A is tied to B's
              * finish (FF) and E to F's start (SS); B and F were pushed to
              * Friday and Thursday by another task, which is the room A and E
@@ -2521,7 +2626,7 @@ class MainForm extends Form {
             const slackOf = (t) => [t.LateStart, t.LateFinish, t.TotalSlack,
                                     t.FreeSlack].join(" ");
             ok = eq("A late dates and slack", slackOf(q.Tasks[0]),
-                    "2026-09-07T08:00:00 2026-09-09T08:00:00 0 0") && ok;
+                    "2026-09-07T08:00:00 2026-09-07T17:00:00 0 0") && ok;   // the 8th is a holiday: Wednesday 08:00 is Monday's end
             ok = eq("B late dates and slack", slackOf(q.Tasks[1]),
                     "2026-09-09T08:00:00 2026-09-09T17:00:00 0 0") && ok;
             ok = eq("C has the Wednesday", slackOf(q.Tasks[2]),
@@ -2530,7 +2635,7 @@ class MainForm extends Form {
                     "2026-09-09T17:00:00 2026-09-09T17:00:00 0 0") && ok;
 
             /* **Total and free are two numbers and not one**, which is the claim
-             * this fixture exists for. The project's own finish is a Friday, so
+             * this fixture exists for. The plan finishes on a Friday, so
              * every task has room before the *plan* ends -- and A has none
              * before its successor starts: it can slip a whole day before the
              * finish moves, and not an hour before B is late. */
@@ -2538,10 +2643,18 @@ class MainForm extends Form {
                 task(1, "PT8H0M0S"),                // A: Wednesday
                 task(2, "PT8H0M0S", [link(1, 1)]),  // B: Thursday, FS from A
                 task(3, "PT8H0M0S"),                // C: Wednesday, nothing after
+                task(4, "PT8H0M0S", [], { ConstraintType: CONSTRAINT_SNET,
+                    ConstraintDate: "2026-09-11T08:00:00" }),   // D: Friday
             ]);
             sl.StartDate  = "2026-09-09T08:00:00";
-            sl.FinishDate = "2026-09-11T17:00:00";   // the project's own finish
+            /* **The file's `FinishDate` is not read**: a stale one says the plan
+             * ends at month's end -- an edit shortened it -- and the pass
+             * answers with the Friday D sets, and writes it back as Project
+             * recalculates it. */
+            sl.FinishDate = "2026-09-30T17:00:00";
             recalculate(sl);
+            ok = eq("the plan's finish is the latest finish, not the file's",
+                    sl.FinishDate, "2026-09-11T17:00:00") && ok;
             /* **Tenths of a minute, the file's unit**: a day of 480 minutes is
              * `<TotalSlack>4800`, which is what Project writes for it. */
             ok = eq("A total is a day of room, in tenths",
@@ -2561,7 +2674,7 @@ class MainForm extends Form {
                     slackText(c.Tasks[4], c), "") && ok;
             ok = eq("A's room is before the plan's finish",
                     `${sl.Tasks[0].LateStart}..${sl.Tasks[0].LateFinish}`,
-                    "2026-09-10T08:00:00..2026-09-11T08:00:00") && ok;
+                    "2026-09-10T08:00:00..2026-09-10T17:00:00") && ok;
             ok = eq("B can slip to Friday",
                     [sl.Tasks[1].TotalSlack, sl.Tasks[1].FreeSlack].join("/"),
                     "4800/4800") && ok;
@@ -4381,14 +4494,15 @@ class MainForm extends Form {
             if (whenMs(task.Start) === null || whenMs(task.Finish) === null) continue;
             kept.push({ uid: task.UID, name: task.Name, start: task.Start,
                         finish: task.Finish, critical: !!task.Critical,
-                        total: task.TotalSlack, free: task.FreeSlack });
+                        total: task.TotalSlack, free: task.FreeSlack,
+                        lateFinish: task.LateFinish });
         }
 
         const run = recalculate(project);
         const days = (a, b) => a === null || b === null
                              ? null : Math.round((b - a) / DAY_MS);
 
-        let same = 0, starts = 0, finishes = 0, criticals = 0, slacks = 0;
+        let same = 0, starts = 0, finishes = 0, criticals = 0, slacks = 0, lates = 0;
         for (const was of kept) {
             const task = taskOf(project, was.uid);
             if (!task) continue;
@@ -4413,6 +4527,14 @@ class MainForm extends Form {
                 print(`oracle ${task.UID} ${was.name}: slack ` +
                       `${was.total}/${was.free} -> ${task.TotalSlack}/${task.FreeSlack}`);
             }
+            /* The latest finish as the file wrote it, to the minute. Reported
+             * and not asserted: the in-progress ones follow a rule not yet
+             * modelled (the remaining duration). */
+            if (was.lateFinish && task.LateFinish !== was.lateFinish) {
+                lates++;
+                print(`oracle ${task.UID} ${was.name}: late finish ` +
+                      `${was.lateFinish} -> ${task.LateFinish}`);
+            }
             if (ds !== 0 || df !== 0)
                 print(`oracle ${task.UID} ${was.name}: ` +
                       `${shortDate(was.start)}..${shortDate(was.finish)} -> ` +
@@ -4422,7 +4544,8 @@ class MainForm extends Form {
         print(`oracle ${File.Name(path)}: ${kept.length} tasks, ` +
               `${run.placed} placed, ${run.skipped} kept, ${same} same, ` +
               `${starts} starts off, ${finishes} finishes off, ` +
-              `${criticals} critical off, ${slacks} slack off`);
+              `${criticals} critical off, ${slacks} slack off, ` +
+              `${lates} late finish off`);
         /* **And it fails when it disagrees.**
          *
          * This was a report: it printed the numbers and exited `0` whatever they
@@ -4437,6 +4560,30 @@ class MainForm extends Form {
          * comparing them would be asking the engine to do something it is
          * supposed to leave alone. */
         Application.Quit(starts + finishes + criticals === 0 ? 0 : 1);
+    }
+
+    /*
+     * The schema, with the runtime's own validator: `check-xsd <xsd> <file>...`
+     * prints `xsd <name>: valid` or `xsd <name>: N problems` and the first of
+     * them, for every file. It judges nothing -- whether an output may be
+     * invalid depends on its input, which is the harness's call. The official
+     * schema declares `/2007` and Project writes the bare namespace, so the
+     * schema text is remapped (the caller's two lines, as the runtime says).
+     */
+    checkXsd() {
+        const args = Application.Arguments;
+        const i    = args.indexOf("check-xsd");
+        const URI  = "http://schemas.microsoft.com/project";
+        const schema = Xml.Schema(File.Load(this.resolve(args[i + 1] || ""))
+                                      .split(URI + "/2007").join(URI));
+        for (const file of args.slice(i + 2)) {
+            const problems = schema.Validate(File.LoadXml(this.resolve(file)));
+            print(`xsd ${file}: ` + (problems.length === 0 ? "valid"
+                  : `${problems.length} problems`));
+            for (const p of problems.slice(0, 5))
+                print(`xsd   line ${p.Line}: ${p.Message}`);
+        }
+        Application.Quit(0);
     }
 
     checkCorpus() {

@@ -578,35 +578,62 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 ### El motor
 
-- **El paso hacia atrás arranca del `FinishDate` del archivo**, que
-  `recalculate` nunca actualiza (`Schedule.js`, `let finish =
-  whenMs(project.FinishDate)`). Si una edición acorta el plan, ninguna tarea
-  queda con holgura cero y no hay camino crítico: A→B que ahora termina el
-  8/9 con un `FinishDate` del 30/9 da 16 días de holgura a las dos. Project
-  recalcula el fin de un plan programado desde el inicio. `check-cpm` fija el
-  comportamiento actual a propósito ("the project's own finish is a
-  Friday"), así que cambiarlo es cambiar esa prueba también. Se puede tomar
-  el máximo entre los fines de todas las tareas, manuales incluidas.
-- **Los vínculos desde y hacia resúmenes no programan.** El paso hacia
-  adelante salta los resúmenes, así que el vínculo de un predecesor a un
-  resumen no frena a sus hijos; y un sucesor de un resumen lee las fechas
-  que el resumen tenía antes de esta pasada, porque el roll-up corre al
-  final: alargar un hijo y recalcular deja al sucesor donde estaba hasta un
-  segundo F5. El paso hacia atrás descarta esos vínculos. Project los
-  respeta.
-- **Un FF puede poner una tarea antes del inicio del proyecto.** Con sólo
-  predecesores FF, el piso del inicio sale de `startBefore(finishFloor)` sin
-  cota inferior. El comentario lo defiende para SF, que es para lo que
-  sirve; para FF, Project deja la tarea en el inicio y la deja terminar
-  después.
-- **Una tarea empezada se reprograma entera.** Sólo `ActualFinish` congela
-  una tarea: con `ActualStart` y sin fin real, los vínculos la mueven y su
-  `Start` puede quedar después de cuando empezó de verdad. Falta la duración
-  restante.
-- **Fechas tardías a la mañana siguiente.** `LateFinish` y las restricciones
-  de fin salen el lunes 08:00 donde Project muestra el viernes 17:00 (el
-  mismo instante de trabajo). `check-cpm` espera la forma actual.
-- Los lags en porcentaje (`LagFormat` 19, 20…) se leen como minutos.
+- **Los vínculos con resúmenes, resueltos** (2026-10-07): un vínculo FS/SS
+  *hacia* un resumen frena a todas sus hojas, y uno *desde* un resumen espera a
+  que sus hojas estén colocadas y lee su rango en la misma pasada (el resumen se
+  cierra y se acumula entonces, no al final). El pase atrás los expande a las
+  hojas -- todas para un vínculo de fin, las que abren la rama para uno de
+  inicio -- y un resumen manual no frena a sus hijas, como Project. FF/SF hacia
+  un resumen siguen sin programar. `check-cpm` suma cuatro aserciones y el
+  oráculo baja de 35 a 24 tareas con holgura distinta, con fechas y críticas
+  42 de 42.
+- **El fin del plan se calcula** (2026-10-07): el paso atrás arranca del último
+  fin de *todas* las tareas -- manuales y resúmenes incluidos, porque el resumen
+  manual del archivo real termina a las 19:00 que Project llama fin del plan --
+  y lo escribe en `FinishDate`; ya no lee el del archivo. Acortar un plan deja
+  camino crítico. La holgura libre de una hoja ignora los vínculos de un
+  resumen que no la determinan (medido contra el archivo).
+- **Tareas manuales y terminadas en la holgura** (2026-10-07): nadie las mueve,
+  así que un vínculo hacia una **no acota la holgura total** de su predecesora
+  (la que precede a un hito manual tiene todo el margen hasta el fin del plan),
+  pero sí la **libre** si es manual -- que tiene fechas que cumplir -- y no si
+  es terminada. Una terminada es historia: fechas tardías iguales a las que
+  tuvo, holgura cero y nunca crítica. Todo medido contra el archivo real.
+  `check-cpm` fija las dos reglas. El oráculo queda en **14 de 42** tareas con
+  holgura distinta, fechas y críticas 42 de 42. Lo que resta, medido en el
+  archivo: las tareas **en curso** (8, 24, 31, 9) traen fechas tardías con
+  minutos que ningún calendario de días enteros da -- `LateFinish 10:36`,
+  `09:38:24` --, que es la **duración restante** (duración por el avance que
+  falta) y no la duración entera. Es el mismo pendiente que "una tarea
+  empezada se reprograma entera", así que se cierra con él: sin la duración
+  restante el pase atrás no puede coincidir en esas. Las 33 y 34 cuelgan de la
+  31, y 9, 10, 101 y 103 (384 décimas) del mismo redondeo. Quedan aparte las
+  16-18 (SNET sin avance, 3 días de más en el total), que no se explican por
+  esto.
+- **Un FF ya no empieza una tarea antes del plan** (2026-10-07): con solo
+  predecesores de fin (FF), la tarea arranca donde arrancaría una sin vínculos
+  y termina después, como Project; un SF sigue pudiendo empezar antes, que es
+  para lo que sirve. `check-cpm` fija los dos casos.
+- **Una tarea empezada conserva su inicio** (2026-10-07): con `ActualStart` y
+  sin fin real, los vínculos ya no la mueven -- el inicio es el real, el fin
+  sale de él y un vínculo de fin puede estirarlo. Falta la **duración
+  restante** (duración por lo que falta de avance): Project la usa en las
+  fechas tardías de una tarea en curso y por eso el oráculo no cierra en
+  ellas (ver arriba). Qué hace con el fin de una tarea al 23% no se deduce del
+  archivo con lo medido.
+- **`LateFinish` es el fin de la jornada** (2026-10-07): sale el viernes 17:00
+  y no el lunes 08:00 que es el mismo instante de trabajo, con
+  `WorkCalendar.finishAt` -- el espejo de `startAfter`. El oráculo ahora
+  compara `LateFinish` al minuto: de 28 a **13 distintas**, todas tareas en
+  curso (duración restante) salvo la 114, que Project cierra a las 17:00 y el
+  motor a las 19:00 (sin explicar). Las restricciones de fin ya salían bien.
+- **Los lags en porcentaje no se aplican** (2026-10-07): `LagFormat` 19, 20, 51
+  y 52 son un porcentaje de la duración de la predecesora, y qué guarda
+  `LinkLag` en ellos no está documentado (el XSD dice décimas de minuto para
+  todos, lo que no puede ser cierto para un porcentaje) ni hay un archivo con
+  uno para medirlo. Se leían como minutos, que es un cronograma equivocado que
+  parece bien; ahora valen cero y el log cuenta cuántos quedaron sin aplicar.
+  Se cierra con un `Save As` de Project con un lag del 50%.
 
 ### El formato
 

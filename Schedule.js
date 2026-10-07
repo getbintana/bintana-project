@@ -202,6 +202,16 @@ class WorkCalendar {
         return t;
     }
 
+    /* The mirror of `startAfter`: the last working moment at or before `ms`
+     * -- the **end** of a span. Monday 08:00 is the start of work and has none
+     * of it before it, so it answers Friday 17:00: the same moment of work,
+     * said the way a finish date is. */
+    finishAt(ms) {
+        const from = this.#spanStartAt(ms);
+        if (from !== null && from < ms) return ms;
+        return this.#previousWorking(from === null ? ms : from);
+    }
+
     /* The first working moment at or after `ms`: a task never starts in the
      * middle of the night or at the end of a shift. */
     startAfter(ms) {
@@ -333,13 +343,22 @@ class WorkCalendar {
  * calendar or clock time (an elapsed format, "2ed"), which goes through
  * nights and weekends alike.
  */
+/* A lag in percent (19, 20, 51, 52) is a share of the predecessor's
+ * duration, and what `LinkLag` holds for one is not documented -- the schema
+ * says tenths of a minute for every format, which cannot be right for a
+ * percentage -- and there is no file here with one to measure. It is **not
+ * applied** (a lag of zero) instead of read as minutes, which would be a wrong
+ * schedule that looks right; `recalculate` counts them so the log says so. */
+const PERCENT_LAGS = [19, 20, 51, 52];
+const isPercentLag = (link) => PERCENT_LAGS.includes(link.LagFormat) && !!link.LinkLag;
+
 function lagAfter(work, t, link) {
-    const lag = (link.LinkLag || 0) / 10;
+    const lag = isPercentLag(link) ? 0 : (link.LinkLag || 0) / 10;
     return isElapsed(link.LagFormat) ? t + lag * MIN_MS : work.add(t, lag);
 }
 
 function lagBefore(work, t, link) {
-    const lag = (link.LinkLag || 0) / 10;
+    const lag = isPercentLag(link) ? 0 : (link.LinkLag || 0) / 10;
     return isElapsed(link.LagFormat) ? t - lag * MIN_MS : work.subtract(t, lag);
 }
 
@@ -503,12 +522,94 @@ function recalculate(project) {
         if (floor !== null) floorOf[task.UID] = floor;
     }
 
+    /*
+     * **Links to and from a summary.** A summary has no dates of its own to
+     * schedule -- it is the span of its branch -- so a link that touches one is
+     * a link that touches the leaves under it:
+     *
+     *  - a link **into** a summary (FS or SS) bounds every leaf of the branch,
+     *    which is what holding the summary back means. FF and SF into a summary
+     *    bound only the branch's last finish and are left alone;
+     *  - a link **from** a summary reads the summary's span, so the summary is
+     *    rolled up -- and the successor waits for it -- as soon as every task
+     *    under it is placed, not at the end of the pass.
+     *
+     * `incoming` is that, per leaf. A link between a summary and its own
+     * branch is a loop and Project does not allow it: it is dropped.
+     */
+    const index = {};
+    tasks.forEach((t, i) => { index[t.UID] = i; });
+    const endOf = tasks.map((t, i) => {
+        let k = i + 1;
+        if (t.Summary) while (k < tasks.length && tasks[k].OutlineLevel > t.OutlineLevel) k++;
+        return k;
+    });
+    const within  = (i, j) => j > i && j < endOf[i];
+    const leavesOf = (i) => {
+        const out = [];
+        for (let k = i + 1; k < endOf[i]; k++) if (!tasks[k].Summary) out.push(tasks[k]);
+        return out;
+    };
+    const incoming = {};
+    tasks.forEach((task, i) => {
+        for (const link of task.Links) {
+            const pred = byUID[link.PredecessorUID];
+            if (!pred) continue;
+            const pi = index[pred.UID], kind = linkKind(link);
+            let into;
+            if (!task.Summary) into = [task];
+            else if (task.Manual || (kind !== 1 && kind !== 3)) continue;
+            else into = leavesOf(i);
+            if (pred.Summary && within(pi, i)) continue;
+            if (task.Summary && within(i, pi)) continue;
+            for (const leaf of into) {
+                if (leaf === pred) continue;
+                if (!incoming[leaf.UID]) incoming[leaf.UID] = [];
+                incoming[leaf.UID].push({ link, pred });
+            }
+        }
+    });
+
+    /* A summary is the span of the tasks under it -- unless it is manually
+     * scheduled, where the dates are the user's too. */
+    const rollup = (i) => {
+        if (!tasks[i].Summary || tasks[i].Manual) return;
+        let from = null, to = null;
+        for (let k = i + 1; k < endOf[i]; k++) {
+            const s = whenMs(tasks[k].Start), f = whenMs(tasks[k].Finish);
+            if (s === null || f === null) continue;
+            if (from === null || s < from) from = s;
+            if (to === null || f > to) to = f;
+        }
+        if (from !== null) {
+            tasks[i].Start  = isoLocal(from);
+            tasks[i].Finish = isoLocal(to);
+        }
+    };
+
+    const finished = (task) => whenMs(task.ActualFinish) !== null;
+
     const done = {};
     let placed = 0, skipped = 0, notMet = 0, guard = 0;
-    while (placed + skipped < roots && guard++ <= tasks.length + 1) {
+    while (guard++ <= tasks.length + 1) {
         let moved = false;
         for (const task of tasks) {
-            if (task.Summary || done[task.UID]) continue;
+            if (done[task.UID]) continue;
+
+            /* A summary is closed when everything under it is: then its span
+             * is final and what links from it can read it. */
+            if (task.Summary) {
+                const i = index[task.UID];
+                let open = false;
+                if (!task.Manual)
+                    for (let k = i + 1; k < endOf[i]; k++)
+                        if (!done[tasks[k].UID]) { open = true; break; }
+                if (open) continue;
+                rollup(i);
+                done[task.UID] = true;
+                moved = true;
+                continue;
+            }
 
             /* A manually scheduled task keeps the dates it was given --
              * Project does not move it either, and warns instead -- and its
@@ -556,17 +657,16 @@ function recalculate(project) {
              * with no link starts at the project start -- one with links is
              * placed by them, and an SF link can put a task before the
              * project start, which is what SF is for. */
-            let startFloor = null, finishFloor = null;
-            for (const link of task.Links) {
-                const pred = byUID[link.PredecessorUID];
-                if (!pred) continue;
-                if (!pred.Summary && !done[pred.UID]) { ready = false; break; }
+            let startFloor = null, finishFloor = null, startsEarly = false;
+            for (const { link, pred } of incoming[task.UID] || []) {
+                if (!done[pred.UID]) { ready = false; break; }
                 const ps = whenMs(pred.Start), pf = whenMs(pred.Finish);
                 if (ps === null || pf === null) continue;
 
                 /* The lag is working time on the successor's own calendar,
                  * unless its format is an elapsed one. */
                 const kind = linkKind(link);
+                if (kind === 2) startsEarly = true;
                 if (kind === 0 || kind === 2) {
                     const target = lagAfter(work, kind === 0 ? pf : ps, link);
                     if (finishFloor === null || target > finishFloor) finishFloor = target;
@@ -605,7 +705,18 @@ function recalculate(project) {
             }
 
             if (finishFloor !== null) {
-                const implied = startBefore(finishFloor);
+                let implied = startBefore(finishFloor);
+                /* **A finish-bound link does not push the start before the
+                 * plan's.** An FF to a predecessor that ends early lets the
+                 * task finish when the link says, but it starts where an
+                 * unlinked one would and ends later -- Project leaves it at
+                 * the project start. An SF link is the exception: starting
+                 * early is what it is for. */
+                if (!startsEarly) {
+                    const floor = floorOf[task.UID];
+                    const base  = floor !== undefined && floor > start ? floor : start;
+                    if (implied < base) implied = base;
+                }
                 if (startFloor === null || implied > startFloor) startFloor = implied;
             }
             if (startFloor === null) startFloor = start;
@@ -613,11 +724,25 @@ function recalculate(project) {
             /* A task starts at a working moment; a milestone is zero duration
              * and may sit on the instant its predecessor ends -- Project shows
              * it on the finish date, not the morning after. */
-            const from = duration > 0 ? work.startAfter(startFloor)
+            let   from = duration > 0 ? work.startAfter(startFloor)
                                       : work.add(startFloor, 0);
             let   to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
                                       : from;
             if (finishFloor !== null && to < finishFloor) to = finishFloor;
+
+            /* **A task that has started started when it did.** Its links
+             * move what is left of it and not the history: the start is the
+             * actual one, the finish follows from it, and a finish-bound link
+             * can still stretch the end. Without this, a predecessor that
+             * slipped dragged a started task's `Start` to after the day it
+             * really began. */
+            const began = whenMs(task.ActualStart);
+            if (began !== null) {
+                from = duration > 0 ? work.startAfter(began) : work.add(began, 0);
+                to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
+                                    : from;
+                if (finishFloor !== null && to < finishFloor) to = finishFloor;
+            }
 
             /* A constraint the schedule did not meet. The two "no later than"
              * ones are the soft half -- they never pin anything, and this is
@@ -649,24 +774,58 @@ function recalculate(project) {
      * Summaries keep the flag the file gave them: Project derives it.
      */
     const scheduled = tasks.filter((t) => !t.Summary && done[t.UID]);
-    /* Where the backward pass starts: the project's own finish -- which is
-     * what Project uses, and it includes the manual tasks that are not
-     * scheduled -- and the latest earliest finish as the fallback for a file
-     * that does not say. */
-    let finish = whenMs(project.FinishDate);
-    for (const task of scheduled) {
+    /* Where the backward pass starts: the latest finish in the plan,
+     * manual and soft-placed tasks and the summaries included -- they are on
+     * the calendar even when the pass did not move them, and a manual
+     * summary can end later than anything under it. **Not the file's `FinishDate`**: it is
+     * what the plan said before this pass, and an edit that shortens the plan
+     * left every task with room and no critical path. Project recalculates it
+     * and so does this, below. */
+    let finish = null;
+    for (const task of tasks) {
         const f = whenMs(task.Finish);
         if (f !== null && (finish === null || f > finish)) finish = f;
     }
+    if (finish !== null) project.FinishDate = isoLocal(finish);
     if (finish !== null && scheduled.length) {
         /* Each task's links, read from the successor's side. */
         const successors = {};
         for (const succ of scheduled)
-            for (const link of succ.Links) {
-                const pred = byUID[link.PredecessorUID];
-                if (!pred || pred.Summary || !done[pred.UID]) continue;
-                if (!successors[pred.UID]) successors[pred.UID] = [];
-                successors[pred.UID].push({ link, succ });
+            for (const { link, pred } of incoming[succ.UID] || []) {
+                if (!done[pred.UID]) continue;
+                /* **A task nobody moves bounds nobody's total slack**: a
+                 * manual one keeps its dates and a finished one is history,
+                 * so a link into either pulls no predecessor's late dates
+                 * back -- measured against Project's own file, a predecessor
+                 * of a manual task has all the room to the plan's finish.
+                 * The *free* slack does count them: it is the room before
+                 * the successor's dates, and those are fixed. */
+                const fixed = succ.Manual || finished(succ);
+                /* A summary as predecessor stands for its leaves: all of them
+                 * cap their late dates for a finish-bound link, the ones that
+                 * open the branch for a start-bound one. Only the leaf that
+                 * sets the summary's edge keeps it as a successor for the
+                 * *free* slack -- the others have room Project does not take
+                 * away (measured against its own file). */
+                let from = [{ leaf: pred, weak: false }];
+                if (pred.Summary) {
+                    const kind = linkKind(link);
+                    const byFinish = kind === 1 || kind === 0;
+                    const edge = whenMs(byFinish ? pred.Finish : pred.Start);
+                    /* A manual summary is the user's span, not its leaves':
+                     * its link bounds nothing underneath, as in Project. */
+                    from = [];
+                    if (!pred.Manual)
+                        for (const leaf of leavesOf(index[pred.UID])) {
+                            if (!done[leaf.UID]) continue;
+                            const sets = whenMs(byFinish ? leaf.Finish : leaf.Start) === edge;
+                            if (byFinish || sets) from.push({ leaf, weak: !sets });
+                        }
+                }
+                for (const { leaf, weak } of from) {
+                    if (!successors[leaf.UID]) successors[leaf.UID] = [];
+                    successors[leaf.UID].push({ link, succ, weak, fixed });
+                }
             }
 
         const late = {}, lateDone = {};
@@ -677,7 +836,20 @@ function recalculate(project) {
                 const task = scheduled[i];
                 if (lateDone[task.UID]) continue;
 
-                const links = successors[task.UID] || [];
+                /* A finished task has no late dates of its own: they are the
+                 * ones it had, and its slack is nothing. */
+                if (finished(task)) {
+                    const es = whenMs(task.Start), ef = whenMs(task.Finish);
+                    if (es !== null && ef !== null) {
+                        late[task.UID] = { lf: ef, ls: es };
+                        lateDone[task.UID] = true;
+                        count++;
+                        moved = true;
+                        continue;
+                    }
+                }
+
+                const links = (successors[task.UID] || []).filter((e) => !e.fixed);
                 let ready = true;
                 for (const { succ } of links)
                     if (!lateDone[succ.UID]) { ready = false; break; }
@@ -749,30 +921,27 @@ function recalculate(project) {
              * working time between the early finish and this one -- read once
              * here because `Critical` is the same number at zero. */
             task.LateStart    = isoLocal(L.ls);
-            task.LateFinish   = isoLocal(L.lf);
+            /* The latest finish is the **end** of the last working span, the
+             * Friday 17:00 Project shows, and not the Monday 08:00 that is the
+             * same moment of work: `finishAt` steps back off a span's start
+             * onto the previous end. */
+            task.LateFinish   = isoLocal(finished(task) ? L.lf : work.finishAt(L.lf));
             const total       = work.between(ef, L.lf);
             task.TotalSlack   = total * TENTHS;
-            task.Critical     = total <= 0;
-            task.FreeSlack    = freeSlack(task, successors[task.UID] || [], work);
+            task.Critical     = total <= 0 && !finished(task);
+            /* Free slack counts the successors that still have dates to meet:
+             * a manual one does, a finished one -- history -- does not, and
+             * a finished task has none of its own. */
+            task.FreeSlack    = finished(task) ? 0
+                : freeSlack(task, (successors[task.UID] || []).filter(
+                      (e) => !e.weak && !finished(e.succ)), work);
         }
     }
 
-    /* A summary is the span of the deeper tasks that follow it -- unless it
-     * is manually scheduled, where the dates are the user's too. */
-    for (let i = 0; i < tasks.length; i++) {
-        if (!tasks[i].Summary || tasks[i].Manual) continue;
-        let from = null, to = null;
-        for (let k = i + 1; k < tasks.length && tasks[k].OutlineLevel > tasks[i].OutlineLevel; k++) {
-            const s = whenMs(tasks[k].Start), f = whenMs(tasks[k].Finish);
-            if (s === null || f === null) continue;
-            if (from === null || s < from) from = s;
-            if (to === null || f > to) to = f;
-        }
-        if (from !== null) {
-            tasks[i].Start  = isoLocal(from);
-            tasks[i].Finish = isoLocal(to);
-        }
-    }
+    /* The summaries once more: the backward pass and the leaves do not move
+     * them, but a summary the forward pass never closed (a cycle) still gets
+     * the span of what was placed. */
+    for (let i = 0; i < tasks.length; i++) rollup(i);
 
     /*
      * **The variance, last**, because it compares two dates and this is the
@@ -814,5 +983,8 @@ function recalculate(project) {
         assignment.StartVariance  = varianceOf(work, base.Start,  assignment.Start);
         assignment.FinishVariance = varianceOf(work, base.Finish, assignment.Finish);
     }
-    return { placed, skipped, notMet };
+    let percentLags = 0;
+    for (const task of tasks)
+        for (const link of task.Links) if (isPercentLag(link)) percentLags++;
+    return { placed, skipped, notMet, percentLags };
 }

@@ -172,9 +172,8 @@
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
       <Summary>true</Summary>
-      <Critical>true</Critical>
-      <LateStart>2026-09-01T08:00:00</LateStart>
-      <LateFinish>2026-09-03T08:00:00</LateFinish>
+      <LateStart>2026-09-01T09:00:00</LateStart>
+      <LateFinish>2026-09-02T17:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>
       <TotalSlack>0</TotalSlack>
       <PercentComplete>75</PercentComplete>
