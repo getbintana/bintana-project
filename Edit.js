@@ -304,6 +304,11 @@ class Edit {
          * edit -- so `RegularWork` follows only when it said the same. */
         const setWork = (a, w) => {
             if (a.RegularWork === a.Work) a.RegularWork = w;
+            /* **The file's `Cost` is the cost of the work it had.** Work that
+             * changed makes it stale -- an assignment of 16h at 80 that drops
+             * to half still read 1280 -- so it is cleared and the cost is
+             * computed again, which is what a missing one means. */
+            if (a.Work !== w) a.Cost = 0;
             a.Work = w;
         };
 
@@ -344,6 +349,8 @@ class Edit {
         /* The dates after the task's, so the assignment ends where it does. */
         let assignment = same;
         if (assignment) {
+            /* A material resource's cost is its units, with no work at all. */
+            if (assignment.Units !== units) assignment.Cost = 0;
             assignment.Units = units;
             setWork(assignment, work);
         } else {

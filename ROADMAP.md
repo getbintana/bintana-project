@@ -654,10 +654,12 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   Quien ordene por `ID` (MPXJ, y por él ProjectLibre) deshace el movimiento
   o cuelga la subtarea del padre equivocado. Va con la decisión abierta de
   `OutlineNumber`/`WBS` (ver Abiertas).
-- **Reasignar no actualiza el `Cost`.** `assignmentCost` devuelve el `Cost`
-  del archivo cuando lo hay, y `addAssignment` cambia `Units` y `Work` sin
-  tocarlo: una asignación de 16h a 80 que pasa al 50% sigue costando 1280 en
-  el total, en el proyecto y en la próxima línea base.
+- **Reasignar vuelve a costear** (2026-10-07): el `Cost` del archivo es el de
+  su trabajo, así que cuando `addAssignment` cambia las unidades o el trabajo
+  de una asignación -- la propia o las que el nuevo reparto mueve -- lo borra y
+  el costo se calcula de nuevo. Queda sin cubrir el trabajo que cambia por
+  otras vías (editar la duración de una tarea no toca el `Cost` de sus
+  asignaciones).
 - **Las excepciones recurrentes se pierden al editarlas.** El diálogo de
   calendario rearma la excepción con `Type: 1` y sin `Occurrences`,
   `Period`, `DaysOfWeek` ni `Month*`: renombrar una recurrente la vuelve un

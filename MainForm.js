@@ -3584,11 +3584,13 @@ class MainForm extends Form {
              * son de la que ya estaba. */
             const asg = phased.project.Assignments[0];
             const keptUID = asg.UID;
+            asg.Cost = 1280;                       // lo que el archivo costeó
             undoable.addAssignment(asg.TaskUID, asg.ResourceUID, 0.5);
             const now = phased.project.Assignments.filter(
                 (x) => x.TaskUID === asg.TaskUID && x.ResourceUID === asg.ResourceUID);
             ok = eq("reasignar no duplica", now.length, 1) && ok;
             ok = eq("y conserva el UID", now[0].UID + ":" + now[0].Units, keptUID + ":0.5") && ok;
+            ok = eq("y su costo viejo deja de mandar", now[0].Cost, 0) && ok;
             writeMspdi(scratch, phased);
             const asgEl = File.LoadXml(scratch).Root.Find("Assignments").FindAll("Assignment")
                 .find((x) => x.Find("UID").Text === String(keptUID));
