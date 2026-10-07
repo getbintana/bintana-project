@@ -1739,6 +1739,12 @@ class MainForm extends Form {
     ActDelete_Click() {
         const task = this.selectedTask();
         if (!task) return;
+        /* The project summary is the whole plan; `removeTask` refuses it,
+         * and asking first would promise something it will not do. */
+        if (task.OutlineLevel === 0) {
+            Message.Warning("The project summary cannot be deleted.");
+            return;
+        }
         ConfirmForm.ask(Locale.Text("Delete task"), Locale.Text('Delete "{0}"?', task.Name),
             Locale.Text("Delete"), () => {
                 this.edit.removeTask(task.UID);

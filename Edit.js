@@ -527,7 +527,9 @@ class Edit {
         if (afterUID !== null && afterUID !== undefined) {
             const i = tasks.findIndex((t) => t.UID === afterUID);
             if (i >= 0) {
-                level = tasks[i].OutlineLevel;
+                /* After the project summary is after everything, at level 1:
+                 * there is one level 0 and it is not a sibling of anything. */
+                level = Math.max(tasks[i].OutlineLevel, 1);
                 at = i + 1;
                 while (at < tasks.length && tasks[at].OutlineLevel > level) at++;
             }
@@ -552,7 +554,9 @@ class Edit {
     removeTask(uid) {
         const tasks = this.holder.project.Tasks;
         const i = tasks.findIndex((t) => t.UID === uid);
-        if (i < 0) return false;
+        /* The project summary is the plan, not a task in it: its "subtree"
+         * is every task, and Project refuses to delete it too. */
+        if (i < 0 || tasks[i].OutlineLevel === 0) return false;
 
         let end = i + 1;
         while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;

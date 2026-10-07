@@ -533,20 +533,26 @@ function formatOfUnit(unit) {
 }
 
 /* Minutes back into the `PT…S` spelling, hours and minutes the way Project
- * writes them: PT16H0M0S, PT30M0S. */
+ * writes them: PT16H0M0S, PT30M0S. A fraction of a minute goes to the
+ * seconds -- `PT8H0.5M0S` is not an `xsd:duration`, and read back it was
+ * nothing at all -- and a negative one carries the schema's leading sign. */
 function mspdiDuration(minutes) {
-    const h = Math.floor(minutes / 60), m = minutes % 60;
-    if (minutes === 0) return "PT0H0M0S";
-    if (h === 0) return `PT${m}M0S`;
-    if (m === 0) return `PT${h}H0M0S`;
-    return `PT${h}H${m}M0S`;
+    const sign = minutes < 0 ? "-" : "";
+    const secs = Math.round(Math.abs(minutes) * 60);
+    if (secs === 0) return "PT0H0M0S";
+    const h = Math.floor(secs / 3600), m = Math.floor(secs / 60) % 60, s = secs % 60;
+    if (h === 0) return `${sign}PT${m}M${s}S`;
+    return `${sign}PT${h}H${m}M${s}S`;
 }
 
 /* Minutes from midnight as "HH:MM:SS", which is how a working time reads in
  * the file and in the calendar dialog. */
 function clockText(minutes) {
-    const h = String(Math.floor(minutes / 60)).padStart(2, "0");
-    const m = String(Math.round(minutes % 60)).padStart(2, "0");
+    /* The end of the day is written as Project writes it, 00:00 -- the
+     * "24 Hours" calendar's -- because `24:00:00` is not a time. */
+    const whole = Math.round(minutes) % 1440;
+    const h = String(Math.floor(whole / 60)).padStart(2, "0");
+    const m = String(whole % 60).padStart(2, "0");
     return `${h}:${m}:00`;
 }
 
@@ -881,16 +887,22 @@ function newMspdi(values) {
     const start = planStart(v.Start);
     const title = String(v.Title || "").trim();
 
-    const text = BLANK_PLAN
-        /* `Text.Escape` covers the three characters XML text content cannot
-         * carry, which is exactly what a name or a title typed by hand is. */
-        .replace("$NAME", Text.Escape(String(v.Name || "").trim() || "Project"))
-        .replace("$TITLE", title ? `<Title>${Text.Escape(title)}</Title>\n` : "")
-        .replace("$MADE", Day.Today + "T" + Time.Now)
-        .replace("$MORNING", DAY_START)
-        .replace("$EVENING", DAY_FINISH)
-        .replace(/\$START/g, start)
-        .replace("$WEEKDAYS", planWeekdays());
+    /* `Text.Escape` covers the three characters XML text content cannot
+     * carry, which is exactly what a name or a title typed by hand is. **One
+     * pass, and a function for the value**: a string replacement reads `$&`
+     * and `$'` in it, and a name that said `$MADE` was replaced again by the
+     * next placeholder. */
+    const fill = {
+        NAME:     Text.Escape(String(v.Name || "").trim() || "Project"),
+        TITLE:    title ? `<Title>${Text.Escape(title)}</Title>\n` : "",
+        MADE:     Day.Today + "T" + Time.Now,
+        MORNING:  DAY_START,
+        EVENING:  DAY_FINISH,
+        START:    start,
+        WEEKDAYS: planWeekdays(),
+    };
+    const text = BLANK_PLAN.replace(/\$(NAME|TITLE|MADE|MORNING|EVENING|START|WEEKDAYS)/g,
+                                    (_, key) => fill[key]);
 
     const doc     = Xml.Parse(text);
     const project = MspProject.LoadXml(doc.Root);
