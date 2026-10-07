@@ -91,6 +91,7 @@ class MainForm extends Form {
     resRows       = [];
     resChoices    = [];
     selectedResUID = null;
+    selectedRes = null;     // the record itself, which a new plan or an undo replaces
     assignRows    = [];
 
     /* The custom fields the Task page offers, by FieldID, and what the table
@@ -722,6 +723,16 @@ class MainForm extends Form {
         }
         this.CmbTaskCalendar.Items = workNames;
         this.CmbResCalendar.Items  = workNames;
+
+        /* **The editor is about one resource, and only while it is there.** A
+         * plan opened in its place, an undo that took it back or a delete
+         * leaves the fields empty: they used to keep the old one, and Apply
+         * wrote its name and rates over whatever had that UID now. Clearing
+         * the table raises no `Select`, so this is the only place to say it. */
+        if (this.selectedRes && !this.resRows.includes(this.selectedRes)) {
+            this.Resources.DeselectAll();
+            this.Resources_Select();
+        }
     }
 
     /* The project's data -- the document's metadata, the scheduling settings
@@ -757,14 +768,14 @@ class MainForm extends Form {
 
     /* The calendar's own dialog: it hands the whole shape back, and the edit
      * is one undo like any other. */
-    openCalendar(uid, done) {
+    openCalendar(uid, done, cancelled) {
         const calendar = uid === null ? null : this.edit.calendar(uid);
         if (!calendar) return;
         CalendarForm.open(this.holder.project, calendar, (values) => {
             this.edit.setCalendar(calendar.UID, values);
             this.fill(this.selectedUID);
             if (done) done();
-        });
+        }, cancelled);
     }
 
     /* From the menu: the calendars themselves -- new, edit, delete -- and not
@@ -786,7 +797,13 @@ class MainForm extends Form {
                 this.fill(this.selectedUID);
                 return done;
             },
-            edit: (uid, done) => this.openCalendar(uid, done),
+            edit: (uid, done, cancelled) => this.openCalendar(uid, done, cancelled),
+            /* New... cancelled: the copy it made is taken back with its own
+             * undo step, so the plan is as it was before the button. */
+            drop: () => {
+                this.edit.undo();
+                this.fill(this.selectedUID);
+            },
         });
     }
 
@@ -805,6 +822,7 @@ class MainForm extends Form {
     Resources_Select() {
         const resource = this.Resources.Index >= 0
                        ? this.resRows[this.Resources.Index] : null;
+        this.selectedRes       = resource;
         this.selectedResUID    = resource ? resource.UID : null;
         this.TxtResName.Text   = resource ? resource.Name : "";
         this.CmbResType.Index  = resource ? (resource.Type || 0) : 1;

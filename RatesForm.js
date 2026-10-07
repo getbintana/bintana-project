@@ -62,11 +62,19 @@ class RatesForm extends Form {
             Message.Error(Locale.Text("A rate period needs a date."));
             return;
         }
-        const to = parseMoment(this.TxtRateTo.Text, "23:59:00") || from;
+        /* An empty To is open-ended, as Project writes the last period
+         * (its last date, 2049-12-31). It used to be `from` itself -- a period
+         * of no length that no work ever fell in, so the rate never applied. */
+        const to = parseMoment(this.TxtRateTo.Text, "23:59:00") || "2049-12-31T23:59:00";
+        if (to <= from) {
+            Message.Error(Locale.Text("A period must end after it starts."));
+            return;
+        }
         const standard = resourceNumber(this.TxtRateStandard.Text);
         const overtime = resourceNumber(this.TxtRateOvertime.Text);
         const cost = resourceNumber(this.TxtRateCostUse.Text);
-        if (isNaN(standard) || isNaN(overtime) || isNaN(cost)) {
+        if (isNaN(standard) || isNaN(overtime) || isNaN(cost) ||
+            standard < 0 || overtime < 0 || cost < 0) {
             Message.Error(Locale.Text("The rates must be numbers."));
             return;
         }

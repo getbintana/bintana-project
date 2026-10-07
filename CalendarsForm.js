@@ -61,7 +61,10 @@ class CalendarsForm extends Form {
             this.CalendarList.Select(at);
             this.CalendarList_Select();
         }
-        this.actions.edit(uid, () => this.fill());
+        this.actions.edit(uid, () => this.fill(), () => {
+            this.actions.drop();
+            this.fill();
+        });
     }
 
     BtnCalEdit_Click() {

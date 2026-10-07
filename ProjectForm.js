@@ -26,13 +26,20 @@ function fillProjectForm(dlg, project, tables) {
         dlg[tables.TIME[prop]].Text = project[prop];
     for (const prop in tables.CHECK)
         dlg[tables.CHECK[prop]].Active = project[prop];
-    /* A combo whose items do not cover the value the file wrote shows nothing
-     * and changes nothing, which is what an empty calendar list is: a plan with
-     * no calendars of its own has no default to choose. */
+    /* **The items are the form's own, translated**, unless the table brings
+     * labels of its own (the calendars, which are the plan's): writing the
+     * codes over them showed "0/1/2" for the task type. A combo whose items do
+     * not cover the value the file wrote changes nothing, which is what an
+     * empty calendar list is -- but a combo cannot show nothing (`Index = -1`
+     * moves nothing, and new items select the first), so the row it shows
+     * instead is remembered, and only a different choice is a choice. */
+    dlg.comboUnmatched = {};
     for (const prop in tables.COMBO) {
         const [control, choices, labels] = tables.COMBO[prop];
-        dlg[control].Items = labels || choices.map((value) => String(value));
-        dlg[control].Index = choices.indexOf(project[prop]);
+        if (labels) dlg[control].Items = labels;
+        const at = choices.indexOf(project[prop]);
+        dlg[control].Index = at;
+        if (at < 0) dlg.comboUnmatched[prop] = dlg[control].Index;
     }
 }
 
@@ -53,7 +60,8 @@ function projectFormValues(dlg, project, tables) {
     for (const prop in tables.COMBO) {
         const [control, choices] = tables.COMBO[prop];
         const at = dlg[control].Index;
-        values[prop] = at >= 0 ? choices[at] : project[prop];
+        const left = (dlg.comboUnmatched || {})[prop];
+        values[prop] = at >= 0 && at !== left ? choices[at] : project[prop];
     }
     for (const prop in tables.NUMBER)
         if (isNaN(values[prop]) || values[prop] < 0) return null;

@@ -6,17 +6,20 @@
  * A day's times are one field of prose, "08:00-12:00 13:00-17:00", because a
  * day may have more than one span and the alternative is a grid of rows per
  * span. An exception that is working keeps whatever times it had: the editor
- * changes its dates, its name and whether it works at all.
+ * changes its dates, its name and whether it works at all -- and a new one
+ * works the week's first working day, since a working exception with no
+ * times is a day off.
  */
 "use strict";
 
 class CalendarForm extends Form {
 
-    static open(project, calendar, onSaved) {
+    static open(project, calendar, onSaved, onCancelled) {
         const dlg = new CalendarForm();
 
         dlg.uid     = calendar.UID;
         dlg.onSaved = onSaved;
+        dlg.onCancelled = onCancelled;
         dlg.Modal   = true;
         dlg.TxtName.Text = calendar.Name;
 
@@ -78,21 +81,46 @@ class CalendarForm extends Form {
         }
         const to = parseMoment(this.TxtExcTo.Text, "23:59:00") ||
                    from.slice(0, 10) + "T23:59:00";
+        if (to < from) {
+            Message.Error(Locale.Text("A period must end after it starts."));
+            return;
+        }
 
-        const ex = new MspException({
-            TimePeriod: new MspTimePeriod({ FromDate: from, ToDate: to }),
-            Name:       this.TxtExcName.Text,
-            Type:       1,
-            DayWorking: this.ChkExcWorking.Active,
-        });
+        /* A date that is not one is the record's to refuse, said as an error
+         * rather than thrown at the user. */
+        let ex;
+        try {
+            ex = new MspException({
+                TimePeriod: new MspTimePeriod({ FromDate: from, ToDate: to }),
+                Name:       this.TxtExcName.Text,
+                Type:       1,
+                DayWorking: this.ChkExcWorking.Active,
+            });
+        } catch (e) {
+            Message.Error("Cannot apply: {0}", e.message);
+            return;
+        }
         /* The times of a working exception are what the file wrote, and this
-         * dialog does not edit them. */
+         * dialog does not edit them; a new one takes the week's first working
+         * day. A holiday has no times. */
         const was = this.Exc.Index >= 0 ? this.excRows[this.Exc.Index] : null;
-        if (was && was.WorkingTimes.length) ex.WorkingTimes = was.WorkingTimes;
+        if (ex.DayWorking) {
+            if (was && was.WorkingTimes.length) ex.WorkingTimes = was.WorkingTimes;
+            else ex.WorkingTimes = this.firstWorkingTimes();
+        }
 
         if (this.Exc.Index >= 0) this.excRows[this.Exc.Index] = ex;
         else this.excRows.push(ex);
         this.fillExc();
+    }
+
+    firstWorkingTimes() {
+        for (let day = 1; day <= 7; day++) {
+            if (!this["ChkDay" + day].Active) continue;
+            const spans = parseSpans(this["TxtDay" + day].Text);
+            if (spans && spans.length) return spans;
+        }
+        return SHIFT.map(([from, to]) => new MspWorkingTime({ FromTime: from, ToTime: to }));
     }
 
     BtnExcDel_Click() {
@@ -102,15 +130,25 @@ class CalendarForm extends Form {
     }
 
     BtnOk_Click() {
+        /* A working day whose times do not read is said, not dropped: it
+         * used to save as a working day of no hours, which is a day off. */
         const week = [];
         for (const row of this.week) {
             const working = this["ChkDay" + row.day].Active;
+            const spans = working ? parseSpans(this["TxtDay" + row.day].Text) : [];
+            if (!spans || (working && !spans.length)) {
+                Message.Error(Locale.Text(
+                    "A working day's times read like 08:00-12:00 13:00-17:00."));
+                this["TxtDay" + row.day].SetFocus();
+                return;
+            }
             week.push(new MspWeekDay({
                 DayType:      row.day,
                 DayWorking:   working,
-                WorkingTimes: working ? parseSpans(this["TxtDay" + row.day].Text) : [],
+                WorkingTimes: spans,
             }));
         }
+        this.saved = true;
         this.Close();
         if (this.onSaved)
             this.onSaved({ Name: this.TxtName.Text, WeekDays: week,
@@ -118,15 +156,31 @@ class CalendarForm extends Form {
     }
 
     BtnCancel_Click() { this.Close(); }
+
+    /* Cancel, Escape or the window's own close: whoever opened the dialog for
+     * a calendar it had just made takes it back. */
+    Form_Close() {
+        if (!this.saved && this.onCancelled) {
+            const cancelled = this.onCancelled;
+            this.onCancelled = null;
+            cancelled();
+        }
+    }
 }
 
-/* "08:00-12:00 13:00-17:00" as `WorkingTime` records; what does not parse is
- * not a span and is left out. */
+/* "08:00-12:00 13:00-17:00" as `WorkingTime` records, or null when a piece
+ * is not a span: "8:00" is read as 08:00 and written the way the file spells
+ * it, and an end of 24:00 or 00:00 is midnight (`clockSpan`). */
 function parseSpans(text) {
     const out = [];
     for (const piece of String(text || "").split(/[\s,]+/)) {
+        if (!piece) continue;
         const m = /^(\d{1,2}:\d{2}(?::\d{2})?)-(\d{1,2}:\d{2}(?::\d{2})?)$/.exec(piece);
-        if (m) out.push(new MspWorkingTime({ FromTime: m[1], ToTime: m[2] }));
+        if (!m) return null;
+        const from = clockMinutes(m[1]), to = clockMinutes(m[2]);
+        const end = to === 0 ? 1440 : to;
+        if (from >= 1440 || end > 1440 || end <= from) return null;
+        out.push(new MspWorkingTime({ FromTime: clockText(from), ToTime: clockText(end) }));
     }
     return out;
 }
