@@ -86,6 +86,12 @@ encabezado que apretaste; **Mover a la izquierda** y **Mover a la derecha**
 cambian el orden. El orden se recuerda con las columnas, y el diálogo de
 **Columnas…** lo respeta: lo que tildás de nuevo va al final.
 
+Al parar el puntero sobre una barra, un resumen, un hito o una línea de
+dependencia aparece un cuadro con lo que importa: la tarea y su EDT, las fechas,
+la duración, el avance, los recursos, el trabajo, el costo, si es crítica o su
+holgura y la fecha límite --una línea solo aparece si tiene algo que decir--; en
+una dependencia, qué une, de qué tipo y con qué retardo.
+
 **Ver → Formato del gráfico…** cambia cómo se ve el Gantt, sin tocar el archivo:
 los **colores** (Clásico, Bosque, Ámbar, Violeta y Grafito; en todos la tarea
 crítica se distingue de la común), el **tamaño de la barra**, y qué se dibuja:

@@ -99,6 +99,7 @@ class MainForm extends Form {
     valueItems  = [];
     filter = "";
     format = ganttFormat(null);
+    tipText = "";
     columns = ["duration", "start", "finish", "cost"];
 
     Form_Open() {
@@ -1445,6 +1446,71 @@ class MainForm extends Form {
     }
 
     /* Which task, and which part of its bar, is under the pointer. */
+    Gantt_MouseLeave() { this.showTip(""); }
+
+    showTip(text) {
+        if (text === this.tipText) return;
+        this.tipText = text;
+        this.Gantt.Tooltip = text;
+    }
+
+    /* The words for a point of the chart, or "" where there is nothing. Unlike
+     * `ganttHit` -- which is what can be *dragged* -- a summary answers here:
+     * it is an item all the same. */
+    tipAt(x, y) {
+        const project = this.holder ? this.holder.project : null;
+        if (!project) return "";
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                this.ganttHeight(), this.step, this.planGeom());
+        const i = g.rowAt(y);
+        if (i < 0 || x < g.plotX) return "";
+
+        const task = g.rows[i];
+        const s = whenMs(task.Start), f = whenMs(task.Finish);
+        if (s !== null && f !== null) {
+            const x0 = g.x(Math.min(s, f)), x1 = g.x(Math.max(s, f));
+            const edge = task.Milestone ? 9 : 4;
+            if (x >= x0 - edge && x <= x1 + edge) return this.taskTip(task);
+        }
+        const link = ganttLinkAt(g, x, y);
+        return link ? this.linkTip(link.edge, link.task) : "";
+    }
+
+    /* What a reader hovering a bar asks: which task, when, how long, how far
+     * along, who does it, what it costs and whether it can slip. A line is only
+     * there when it has something to say -- a task with no resources has no
+     * "Resources" line. */
+    taskTip(task) {
+        const project = this.holder.project;
+        const lines = [task.WBS ? `${task.WBS}  ${task.Name}` : task.Name];
+        const add = (label, value) => { if (value) lines.push(`${Locale.Text(label)}: ${value}`); };
+
+        if (task.Milestone) {
+            lines.push(shortDate(task.Start));
+        } else {
+            lines.push(`${shortDate(task.Start)} → ${shortDate(task.Finish)}`);
+            add("Duration", durationText(task, project));
+        }
+        add("Percent complete", `${task.PercentComplete || 0}%`);
+        add("Resources", this.labelOf()(task, "resources"));
+        add("Work", this.columnValue("work", task));
+        add("Cost", this.columnValue("cost", task));
+        if (task.Critical) lines.push(Locale.Text("Critical"));
+        else add("Slack", slackText(task, project));
+        add("Deadline", task.Deadline ? shortDate(task.Deadline) : "");
+        return lines.join("\n");
+    }
+
+    /* A dependency: who it joins, the kind, and the lag when there is one. */
+    linkTip(edge, succ) {
+        const project = this.holder.project;
+        const pred = this.byUID[String(edge.PredecessorUID)];
+        const kind = LINK_NAMES[linkKind(edge)];
+        const lag = edge.LinkLag ? ` ${edge.LinkLag > 0 ? "+" : "-"}` +
+            `${minutesText(Math.abs(edge.LinkLag) / TENTHS, succ, project)}` : "";
+        return `${pred ? pred.Name : `UID ${edge.PredecessorUID}`} → ${succ.Name}\n${kind}${lag}`;
+    }
+
     ganttHit(x, y) {
         const project = this.holder ? this.holder.project : null;
         if (!project) return null;
@@ -1589,9 +1655,20 @@ class MainForm extends Form {
         this.TxtName.SetFocus();
     }
 
+    /* **What the chart says about what is under the pointer**: the task of a
+     * bar, a summary or a milestone, or the line of a dependency. It is a
+     * property of the chart set while the pointer moves -- the runtime shows it
+     * after the pause -- and only when the words change, so a pointer crossing
+     * a bar does not ask the toolkit to rebuild the balloon at every pixel.
+     * Nothing is said while something is being dragged: the outline is the
+     * feedback then. */
     Gantt_MouseMove(x, y) {
         const drag = this.drag;
-        if (!drag) return;
+        if (!drag) {
+            this.showTip(this.tipAt(x, y));
+            return;
+        }
+        this.showTip("");
         drag.px = x;
         drag.py = y;
 
@@ -4185,6 +4262,18 @@ class MainForm extends Form {
             const mid  = g.x((whenMs(task.Start) + whenMs(task.Finish)) / 2);
             const end  = g.x(whenMs(task.Finish));
 
+            /* The tooltip: a bar says its task, an empty spot says nothing, and
+             * what is told is set on the chart and not repeated while the words
+             * do not change. */
+            const tip = this.tipAt(mid, y);
+            ok = tip.indexOf(task.Name) >= 0 && tip.indexOf("→") > 0 &&
+                 this.tipAt(g.plotX - 4, y) === "" && ok;
+            this.Gantt_MouseMove(mid, y);
+            ok = this.tipText === tip && ok;
+            this.Gantt_MouseLeave();
+            ok = this.tipText === "" && ok;
+            print(`edit tooltip=${tip.split("\n").length} lines`);
+
             /* Move it two days: both dates travel, the duration does not. */
             this.Gantt_MouseDown(mid, y, 1, false, false);
             this.Gantt_MouseMove(mid + 2 * g.dayW, y);
@@ -5928,7 +6017,7 @@ class MainForm extends Form {
                      "CmbAttr_Select", "CmbAttrValue_Select", "TxtLinkAddress_Change",
                      "TxtFilter_Change",
                      "TxtFilter_IconClick",
-                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp", "Gantt_KeyPress",
+                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseLeave", "Gantt_MouseUp", "Gantt_KeyPress",
                      "Tasks_Activate", "Gantt_DblClick"]);
 
         let ok = true;
