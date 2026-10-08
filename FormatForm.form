@@ -1,0 +1,171 @@
+{
+  "format": "bintana-form/1",
+  "class": "FormatForm",
+  "properties": {
+    "Text": "Chart format",
+    "Arrangement": "Vertical",
+    "Spacing": 12,
+    "Padding": "16",
+    "Width": 420,
+    "Height": 380,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "name": "Fields",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 8,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblTheme",
+          "properties": {
+            "Text": "Colors",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbTheme",
+          "properties": {
+            "Items": [
+              "Classic",
+              "Forest",
+              "Amber",
+              "Violet",
+              "Graphite"
+            ],
+            "Index": 0,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblLabel",
+          "properties": {
+            "Text": "Next to the bar",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbLabel",
+          "properties": {
+            "Items": [
+              "Nothing",
+              "Name",
+              "Resources",
+              "Percent complete",
+              "Dates",
+              "Duration",
+              "Work",
+              "Cost",
+              "WBS"
+            ],
+            "Index": 0,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblSize",
+          "properties": {
+            "Text": "Bar size",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbSize",
+          "properties": {
+            "Items": [
+              "Small",
+              "Normal",
+              "Large"
+            ],
+            "Index": 1,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkCritical",
+          "properties": {
+            "Text": "Critical tasks in their own color",
+            "Active": true,
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkProgress",
+          "properties": {
+            "Text": "Show progress inside the bar",
+            "Active": true,
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkLinks",
+          "properties": {
+            "Text": "Show dependencies",
+            "Active": true,
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkToday",
+          "properties": {
+            "Text": "Show today's line",
+            "Active": true,
+            "ColumnSpan": 2,
+            "HAlign": "Start"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Text": "Cancel",
+            "Cancel": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSave",
+          "properties": {
+            "Text": "OK",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -158,6 +158,11 @@
       "name": "ActColumns",
       "text": "Columns…",
       "icon": "view-list-symbolic"
+    },
+    {
+      "name": "ActFormat",
+      "text": "Chart format…",
+      "icon": "applications-graphics-symbolic"
     }
   ],
   "menus": [
@@ -270,6 +275,9 @@
         },
         {
           "action": "ActColumns"
+        },
+        {
+          "action": "ActFormat"
         }
       ]
     },

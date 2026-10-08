@@ -231,6 +231,45 @@ function fade(color, alpha) {
 }
 
 /*
+ * The chart's colour themes: the three inks of a bar -- a task, a critical
+ * one and the progress inside it -- as `[light, dark]`. Everything else in the
+ * palette is a shade of the theme's own and does not change with these. The
+ * first is what Project reads; the critical colour is kept apart from the bar's
+ * in every one, because that difference is the point of drawing it.
+ */
+const GANTT_THEMES = {
+    classic:  [{ bar: "#1c71d8", late: "#c01c28", done: "#0b4ea2" },
+               { bar: "#3584e4", late: "#e01b24", done: "#1a5fb4" }],
+    forest:   [{ bar: "#26a269", late: "#c64600", done: "#0d6b40" },
+               { bar: "#33d17a", late: "#ff7800", done: "#1b8a50" }],
+    amber:    [{ bar: "#e5a50a", late: "#c01c28", done: "#8f5902" },
+               { bar: "#f5c211", late: "#e01b24", done: "#a0720a" }],
+    violet:   [{ bar: "#813d9c", late: "#c64600", done: "#4f2468" },
+               { bar: "#9141ac", late: "#ff7800", done: "#613583" }],
+    graphite: [{ bar: "#5e5c64", late: "#c01c28", done: "#241f31" },
+               { bar: "#9a9996", late: "#e01b24", done: "#3d3846" }],
+};
+/* In the order the format dialog offers them. */
+const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite"];
+
+/* What the view may ask of the chart, with what it is when it asks nothing --
+ * which is how the chart looked before there was a choice. A bar's *size* is
+ * the share of the row it takes and the most it grows to. */
+const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
+                       critical: true, progress: true, links: true, today: true };
+const GANTT_BAR_SIZE = [{ share: 0.26, max: 9 }, { share: 0.38, max: 14 },
+                        { share: 0.52, max: 20 }];
+
+function ganttFormat(fmt) {
+    const out = {};
+    for (const key in GANTT_FORMAT)
+        out[key] = fmt && fmt[key] !== undefined ? fmt[key] : GANTT_FORMAT[key];
+    if (!GANTT_THEMES[out.theme]) out.theme = "classic";
+    if (!GANTT_BAR_SIZE[out.size]) out.size = 1;
+    return out;
+}
+
+/*
  * The palette, in one place and named by role. **The ink is the theme's** --
  * `Painter.Foreground` is the resolved text colour of the widget, which is the
  * theme's unless a form set one -- and everything that is a *shade* rather than
@@ -239,8 +278,9 @@ function fade(color, alpha) {
  * a background to sit on. What is left is the chart's own palette: two
  * coherent sets, one per ground, and every colour a frame can draw is here.
  */
-function ganttPalette(p) {
+function ganttPalette(p, theme) {
     const dark = p.Dark;
+    const look = (GANTT_THEMES[theme] || GANTT_THEMES.classic)[dark ? 1 : 0];
     const ink = p.Foreground || (dark ? "#eeeeec" : "#2e3436");
     return {
         ink,
@@ -252,9 +292,9 @@ function ganttPalette(p) {
         head:     dark ? "rgba(255,255,255,0.045)" : "rgba(0,0,0,0.035)",
         idle:     dark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)",
         select:   dark ? "rgba(53,132,228,0.20)" : "rgba(28,113,216,0.13)",
-        bar:      dark ? "#3584e4" : "#1c71d8",
-        late:     dark ? "#e01b24" : "#c01c28",   // critical, as Project reads
-        done:     dark ? "#1a5fb4" : "#0b4ea2",
+        bar:      look.bar,
+        late:     look.late,       // critical, as Project reads
+        done:     look.done,
         link:     dark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.34)",
         baseline: dark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.40)",
         today:    dark ? "#ff6b6b" : "#e01b24",
@@ -481,7 +521,8 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         return;
     }
     const range = g.range;
-    const c = ganttPalette(p);
+    const fmt = ganttFormat(geom.format);
+    const c = ganttPalette(p, fmt.theme);
 
     const plotX = g.plotX, plotW = g.plotW;
     const x = g.x;
@@ -491,7 +532,8 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     /* A bar is a fraction of the row rather than a constant: the row is the
      * theme's and a fixed 12 is a third of one theme's row and half of
      * another's. */
-    const barH = Math.max(6, Math.min(14, Math.round(rowH * 0.38)));
+    const size = GANTT_BAR_SIZE[fmt.size];
+    const barH = Math.max(6, Math.min(size.max, Math.round(rowH * size.share)));
 
     /* By UID, for the dependency elbows and the selection below. */
     const rowOf = {};
@@ -574,7 +616,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     p.LineWidth = 1;
     let chosen = null;
     const pick = geom.selLink;
-    for (let i = 0; i < rows.length; i++) {
+    for (let i = 0; fmt.links && i < rows.length; i++) {
         for (const edge of rows[i].Links) {
             const shape = linkShape(x, cy, rows, rowOf, i, edge);
             if (!shape) continue;
@@ -604,7 +646,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * plan. */
     for (let i = 0; i < rows.length; i++) {
         const task = rows[i];
-        const colour = task.Critical ? c.late : c.bar;
+        const colour = task.Critical && fmt.critical ? c.late : c.bar;
         const s = whenMs(task.Start), f = whenMs(task.Finish);
         const first = top(i);
         const y = first + (rowH - barH) / 2;
@@ -681,13 +723,41 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Fill();
         /* The progress is a thinner band inside the bar, not a repaint of it: at
          * 100% a critical task is still visibly critical. */
-        if (task.PercentComplete > 0) {
+        if (fmt.progress && task.PercentComplete > 0) {
             const band = Math.max(2, Math.round(barH * 0.34));
             p.Color = c.done;
             p.Rectangle(x0, y + (barH - band) / 2,
                         (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
             p.Fill();
         }
+    }
+
+    /* **The extra information, beside the bar**: whatever the view chose to
+     * read there -- the application knows what a field means, so it hands the
+     * text over -- to the right of where the bar ends. A pass of its own, after
+     * the bars, because the loop above `continue`s past every kind of bar and
+     * because it sets a font the rest of the frame must not inherit. It is cut
+     * at the plot's edge: a label that runs off the pane is clipped, not
+     * wrapped under the next row. */
+    if (fmt.label && geom.labelOf) {
+        p.Push();
+        p.ClipRectangle(plotX, 0, width - plotX, height);
+        p.Font = "Sans 9";
+        const textH = p.TextHeight ? p.TextHeight() : 12;
+        p.Color = c.ink;
+        for (let i = 0; i < rows.length; i++) {
+            const task = rows[i];
+            const first = top(i);
+            if (first + rowH <= headH || first >= height) continue;
+            const s = whenMs(task.Start), f = whenMs(task.Finish);
+            if (s === null || f === null) continue;
+            const text = geom.labelOf(task, fmt.label);
+            if (!text) continue;
+            const end = x(Math.max(s, f)) +
+                        (task.Milestone ? Math.max(5, Math.round(barH * 0.62)) : 0);
+            p.Text(text, end + 6, first + (rowH - textH) / 2);
+        }
+        p.Pop();
     }
 
     /* What the pointer is doing: an outline where the task would land. The model
@@ -749,7 +819,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     /* Today, when it is on the chart. Dashed, so it reads as a ruler rather than
      * as a task. */
     const now = new Date().getTime();
-    if (now >= range.from && now <= range.to) {
+    if (fmt.today && now >= range.from && now <= range.to) {
         p.Color = c.today;
         p.LineWidth = 1;
         p.LineDash = [4, 3];

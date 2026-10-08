@@ -1241,3 +1241,57 @@ msgstr "Insertar columna"
 
 msgid "Column"
 msgstr "Columna"
+
+msgid "Chart format…"
+msgstr "Formato del gráfico…"
+
+msgid "Chart format"
+msgstr "Formato del gráfico"
+
+msgid "Colors"
+msgstr "Colores"
+
+msgid "Next to the bar"
+msgstr "Junto a la barra"
+
+msgid "Bar size"
+msgstr "Tamaño de la barra"
+
+msgid "Classic"
+msgstr "Clásico"
+
+msgid "Forest"
+msgstr "Bosque"
+
+msgid "Amber"
+msgstr "Ámbar"
+
+msgid "Violet"
+msgstr "Violeta"
+
+msgid "Graphite"
+msgstr "Grafito"
+
+msgid "Nothing"
+msgstr "Nada"
+
+msgid "Small"
+msgstr "Chica"
+
+msgid "Normal"
+msgstr "Normal"
+
+msgid "Large"
+msgstr "Grande"
+
+msgid "Critical tasks in their own color"
+msgstr "Tareas críticas con su propio color"
+
+msgid "Show progress inside the bar"
+msgstr "Mostrar el avance dentro de la barra"
+
+msgid "Show dependencies"
+msgstr "Mostrar dependencias"
+
+msgid "Show today's line"
+msgstr "Mostrar la línea de hoy"

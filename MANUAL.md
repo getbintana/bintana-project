@@ -86,6 +86,14 @@ encabezado que apretaste; **Mover a la izquierda** y **Mover a la derecha**
 cambian el orden. El orden se recuerda con las columnas, y el diálogo de
 **Columnas…** lo respeta: lo que tildás de nuevo va al final.
 
+**Ver → Formato del gráfico…** cambia cómo se ve el Gantt, sin tocar el archivo:
+los **colores** (Clásico, Bosque, Ámbar, Violeta y Grafito; en todos la tarea
+crítica se distingue de la común), el **tamaño de la barra**, y qué se dibuja:
+el color de las críticas, el avance dentro de la barra, las dependencias y la
+línea de hoy. **Junto a la barra** escribe a su derecha un dato de la tarea:
+nombre, recursos, avance, fechas, duración, trabajo, costo o EDT. Es una
+preferencia de la vista —se recuerda— y el gráfico exportado la lleva puesta.
+
 La lista es la mitad izquierda de la vista: a su derecha está el Gantt, las dos
 en el mismo `Split`, y **la lista es la que baja** — su barra de desplazamiento,
 la rueda sobre cualquiera de las dos y el teclado mueven las dos. Plegar una

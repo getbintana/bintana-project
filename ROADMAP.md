@@ -214,6 +214,17 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
   **Mover a la izquierda/derecha** y el diálogo de Columnas conserva el orden
   en vez de volver al del catálogo. Queda sin hacer arrastrar el encabezado.
 
+- **Formato del gráfico** (2026-10-08): **Ver → Formato del gráfico…**
+  (`FormatForm`). Cinco temas de color (`GANTT_THEMES`, un par claro/oscuro
+  cada uno, con la tarea crítica siempre aparte de la común), tres tamaños de
+  barra, un dato escrito a la derecha de la barra (`geom.labelOf`, que la
+  aplicación resuelve con los mismos valores que las columnas más los
+  recursos) y los interruptores de críticas, avance, dependencias y hoy. Es una
+  preferencia de la vista como las columnas: claves sueltas en `Settings`, sin
+  tocar el archivo, y el gráfico exportado la usa. **No es** formato por tarea
+  (negrita o color de una barra en particular): MSPDI no lo guarda, así que
+  sería algo que el archivo pierde.
+
 ### 4 — Gantt interactivo
 
 **La vista clásica** (2026-09-29): era la meta grande de la fase -- el plan a

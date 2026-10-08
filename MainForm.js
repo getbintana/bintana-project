@@ -98,6 +98,7 @@ class MainForm extends Form {
     attrShown   = "";
     valueItems  = [];
     filter = "";
+    format = ganttFormat(null);
     columns = ["duration", "start", "finish", "cost"];
 
     Form_Open() {
@@ -207,7 +208,7 @@ class MainForm extends Form {
                            this.ActAdd, this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
                            this.ActRecalc, this.ActBaseline, this.ActProjData,
-                           this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields,
+                           this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields, this.ActFormat,
                            this.ActStats])
             act.Enabled = on;
     }
@@ -223,6 +224,7 @@ class MainForm extends Form {
         const stored = Settings.Get("bintana-project.columns", null);
         if (Array.isArray(stored))
             this.setColumns(stored.filter((id) => isColumnId(id)));
+        this.format  = loadFormat();
         this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.edit)
             this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
@@ -1383,7 +1385,54 @@ class MainForm extends Form {
         return { plotX: PAD, rowH: this.rowHeight(), headH: 0,
                  scrollY: this.ganttY || 0, calendar: this.chartCal || null,
                  selLink: this.selLink || null,
+                 format: this.format, labelOf: this.labelOf(),
                  range: this.chartRange() };
+    }
+
+    /* What the chart writes beside a bar, as a function of the task and the
+     * field the format chose: the same values the columns show, and the
+     * resources a column does not. The assignments are indexed the first time
+     * a frame asks, so a plan is walked once for all its rows and not once per
+     * row. */
+    labelOf() {
+        let names = null;
+        return (task, what) => {
+            if (!this.holder) return "";
+            const project = this.holder.project;
+            switch (what) {
+            case "name":      return task.Name;
+            case "resources": {
+                if (!names) {
+                    names = {};
+                    for (const a of project.Assignments) {
+                        const r = resourceOf(project, a.ResourceUID);
+                        if (!r || !r.Name) continue;
+                        (names[a.TaskUID] = names[a.TaskUID] || []).push(r.Name);
+                    }
+                }
+                return (names[task.UID] || []).join(", ");
+            }
+            case "percent":   return task.Summary || task.PercentComplete
+                                   ? this.columnValue("percent", task) : "";
+            case "dates":     return `${shortDate(task.Start)} – ${shortDate(task.Finish)}`;
+            case "duration":
+            case "work":
+            case "cost":
+            case "wbs":       return this.columnValue(what, task);
+            }
+            return "";
+        };
+    }
+
+    /* The chart's own look, in its dialog: a view setting that is remembered,
+     * and one the exported chart wears too. */
+    ActFormat_Click() {
+        FormatForm.open(this.format, (fmt) => this.setFormat(fmt));
+    }
+
+    setFormat(fmt) {
+        this.format = ganttFormat(fmt);
+        this.redrawChart();
     }
 
     /* The strip's frame: the heading's height is the list's, so the marks in it
@@ -1785,6 +1834,7 @@ class MainForm extends Form {
         return { plotX: GUTTER, rowH: this.rowHeight(), headH: this.headHeight(),
                  scrollY: 0, rows: this.chartRows().length,
                  calendar: this.chartCal || null, paper: true,
+                 format: this.format, labelOf: this.labelOf(),
                  range: this.chartRange() };
     }
 
@@ -4904,6 +4954,41 @@ class MainForm extends Form {
         ok = this.styleYes("a timescale too narrow to label says less of it",
                            log2.texts().length < roomy,
                            `${roomy} labels, ${log2.texts().length} in 90px`) && ok;
+        /* The chart's format: a colour theme changes the bar's ink and only
+         * that, a label writes beside the bar the field the view chose, and
+         * switching a part off draws without it. */
+        const forest = ganttPalette(log, "forest");
+        const themed = new CallLog();
+        drawGantt(themed, 600, 320, rows, null, 0, null, 0,
+                  { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+                    calendar: this.chartCal, format: { theme: "forest" } });
+        ok = this.styleYes("a theme paints the bars in its own ink",
+                           themed.hasColor(forest.bar) || themed.hasColor(forest.late),
+                           `forest bar ${forest.bar}`) && ok;
+        ok = this.styleYes("and the classic palette is not forest",
+                           ganttPalette(log, "classic").bar !== forest.bar &&
+                           ganttPalette(log).bar === ganttPalette(log, "classic").bar,
+                           "classic differs") && ok;
+        ok = this.styleYes("an unknown theme falls back to classic",
+                           ganttFormat({ theme: "nope", size: 9 }).theme === "classic" &&
+                           ganttFormat({ size: 9 }).size === 1, "fallback") && ok;
+        const plain = new CallLog();
+        const labelled = new CallLog();
+        const frame = (format) => ({ plotX: PAD, rowH: this.rowHeight(),
+                                     headH: this.headHeight(),
+                                     calendar: this.chartCal, format,
+                                     labelOf: (t, what) => `L:${what}:${t.UID}` });
+        drawGantt(plain, 600, 320, rows, null, 0, null, 0, frame({}));
+        drawGantt(labelled, 600, 320, rows, null, 0, null, 0, frame({ label: "wbs" }));
+        const written = labelled.texts().filter((t) => String(t).indexOf("L:wbs:") === 0);
+        ok = this.styleYes("a label is written beside the bars, and none by default",
+                           plain.texts().filter((t) => String(t).indexOf("L:") === 0).length === 0 &&
+                           written.length > 0, `${written.length} labels`) && ok;
+        const lean = new CallLog();
+        drawGantt(lean, 600, 320, rows, null, 0, null, 0,
+                  frame({ links: false, today: false, progress: false }));
+        ok = this.styleYes("links, today and progress can be left out",
+                           lean.calls.length <= plain.calls.length, "fewer calls") && ok;
         this.viewStyleOk = ok;
     }
 
@@ -5829,7 +5914,7 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
-                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
+                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
