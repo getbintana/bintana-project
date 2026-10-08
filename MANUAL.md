@@ -81,6 +81,10 @@ El clic derecho en el **encabezado** de una columna es el atajo de Project, y
 también lleva a lo mismo: **Ocultar esta columna** saca la que se apretó (sobre
 el nombre no se puede: es el árbol), **Mostrar todas las columnas** vuelve a
 ponerlas todas y **Columnas…** abre el diálogo completo para elegir cuáles.
+**Insertar columna…** ofrece las que faltan y la pone a la izquierda del
+encabezado que apretaste; **Mover a la izquierda** y **Mover a la derecha**
+cambian el orden. El orden se recuerda con las columnas, y el diálogo de
+**Columnas…** lo respeta: lo que tildás de nuevo va al final.
 
 La lista es la mitad izquierda de la vista: a su derecha está el Gantt, las dos
 en el mismo `Split`, y **la lista es la que baja** — su barra de desplazamiento,

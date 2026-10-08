@@ -715,14 +715,67 @@ class MainForm extends Form {
     Tasks_HeaderClick(column, button, ctrl, shift) {
         if (button !== 3) return;
 
+        const visible = this.visibleColumns();
         return [
+            { name: "MnuColInsert", text: Locale.Text("Insert column…"),
+              enabled: this.missingColumns().length > 0 },
             { name: "MnuColHide", text: Locale.Text("Hide this column"),
               enabled: column > 0 },
-            { name: "MnuColShowAll", text: Locale.Text("Show every column"),
-              enabled: this.visibleColumns().length < this.allColumnIds().length },
             { separator: true },
+            { name: "MnuColLeft", text: Locale.Text("Move left"),
+              enabled: column > 1 },
+            { name: "MnuColRight", text: Locale.Text("Move right"),
+              enabled: column > 0 && column < visible.length },
+            { separator: true },
+            { name: "MnuColShowAll", text: Locale.Text("Show every column"),
+              enabled: visible.length < this.allColumnIds().length },
             { name: "MnuColDialog", text: Locale.Text("Columns…") },
         ];
+    }
+
+    /* What the table could show and does not: the catalog's columns and the
+     * plan's custom fields, labelled as their headings are. */
+    missingColumns() {
+        const shown = this.visibleColumns();
+        return this.allColumnIds()
+            .filter((id) => shown.indexOf(id) < 0)
+            .map((id) => {
+                const column = COLUMNS.find((c) => c.id === id);
+                return { id, text: column ? Locale.Text(column.Text)
+                                          : fieldLabel(this.columnField(id)) };
+            });
+    }
+
+    /* The shown columns in a new order. The ones the plan cannot show (a
+     * field it no longer defines) are not in the table but are in the choice,
+     * and they stay where they are -- after the rest -- rather than vanish. */
+    arrangeColumns(visible) {
+        const kept = this.columns.filter((id) => visible.indexOf(id) < 0);
+        this.showColumns(visible.concat(kept));
+    }
+
+    /* Left of the heading that was clicked, like Project: heading 0 is the
+     * name, so a column put there goes first of the data ones. */
+    MnuColInsert_Click(column) {
+        const choices = this.missingColumns();
+        if (!choices.length) return null;
+        return InsertColumnForm.open(choices, (id) => {
+            const visible = this.visibleColumns();
+            visible.splice(Math.max(column - 1, 0), 0, id);
+            this.arrangeColumns(visible);
+        });
+    }
+
+    MnuColLeft_Click(column) { this.moveColumn(column, -1); }
+    MnuColRight_Click(column) { this.moveColumn(column, 1); }
+
+    moveColumn(column, by) {
+        const visible = this.visibleColumns();
+        const at = column - 1;
+        const to = at + by;
+        if (at < 0 || at >= visible.length || to < 0 || to >= visible.length) return;
+        [visible[at], visible[to]] = [visible[to], visible[at]];
+        this.arrangeColumns(visible);
     }
 
     /* The heading's own index: zero is the name, so the first real column is
@@ -5653,7 +5706,7 @@ class MainForm extends Form {
             const named = this.Tasks_HeaderClick(0, 3, false, false);
             const item  = (list, name) => list.find((i) => i.name === name);
             ok = this.Tasks_HeaderClick(2, 1, false, false) === undefined &&
-                 menu && menu.length === 4 &&
+                 menu && menu.length === 8 &&
                  item(menu, "MnuColHide").enabled &&
                  !item(named, "MnuColHide").enabled &&
                  item(menu, "MnuColShowAll").enabled &&
@@ -5666,6 +5719,22 @@ class MainForm extends Form {
                  this.Tasks.Row("2").length === 5 && ok;
             print(`edit headermenu=${menu.length} ` +
                   `hidden=${this.columns.length}`);
+            /* Moving and inserting, through the heading's menu: Finish goes
+             * ahead of Duration, the first column cannot go further left, and
+             * the hidden Start comes back where it was asked for -- left of the
+             * third heading -- through its dialog. */
+            this.MnuColLeft_Click(2);
+            ok = this.columns.slice(0, 2).join() === "finish,duration" &&
+                 !item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColLeft").enabled &&
+                 !item(this.Tasks_HeaderClick(4, 3, false, false), "MnuColRight").enabled &&
+                 item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColRight").enabled && ok;
+            const insdlg = this.MnuColInsert_Click(3);
+            const startAt = insdlg.choices.findIndex((c) => c.id === "start");
+            insdlg.CmbColumn.Index = startAt;
+            insdlg.BtnOk_Click();
+            ok = startAt >= 0 && this.columns.slice(0, 3).join() === "finish,duration,start" &&
+                 this.columns.length === 5 && ok;
+            print(`edit column order=${this.columns.slice(0, 3).join()}`);
             this.MnuColShowAll_Click();
             ok = this.columns.length === COLUMNS.length + 1 &&
                  this.Tasks.Columns.length === COLUMNS.length + 2 &&
@@ -5746,7 +5815,8 @@ class MainForm extends Form {
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
                         "BtnApply", "BtnApplyAdv", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
-                        "MnuColHide", "MnuColShowAll", "MnuColDialog",
+                        "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
+                        "MnuColLeft", "MnuColRight",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
                         "ActProjData", "ActProjOptions", "ActCalendar", "ActResources", "ActFields"]
             .map((name) => `${name}_Click`)

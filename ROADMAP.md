@@ -209,9 +209,10 @@ viejo: el runtime lo tuvo (`HeaderMenu`/`HeaderClick`, con su prueba
 `TableHeaderMenu`), así que no hay issue que reportar -- y si lo hubiera, el
 directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
 
-- El menú del encabezado ofrece todo o nada: no hay **Insertar columna…** con la
-  lista de las que faltan, ni reordenar columnas, como en Project. El diálogo
-  cubre la elección; el orden es el del catálogo.
+- **El encabezado inserta y reordena** (2026-10-08): el menú tiene **Insertar
+  columna…** --las que faltan, a la izquierda del encabezado apretado--,
+  **Mover a la izquierda/derecha** y el diálogo de Columnas conserva el orden
+  en vez de volver al del catálogo. Queda sin hacer arrastrar el encabezado.
 
 ### 4 — Gantt interactivo
 

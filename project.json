@@ -19,6 +19,7 @@
     "ProjectForm.js",
     "CalendarsForm.js",
     "ColumnsForm.js",
+    "InsertColumnForm.js",
     "OptionsForm.js",
     "StatsForm.js",
     "MainForm.js"

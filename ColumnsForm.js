@@ -1,8 +1,8 @@
 /*
  * The columns the plan table shows, and nothing else: the name is the tree
- * and never goes, so the checklist covers the rest. The order is the one the
- * table declares -- adding and removing is what this is for -- and the
- * choice is a view setting, like the timescale: it survives the window and
+ * and never goes, so the checklist covers the rest. Adding and removing is
+ * what this is for; the order is kept, and moving a column is the heading's
+ * menu. The choice is a view setting, like the timescale: it survives the window and
  * does not touch the file.
  */
 "use strict";
@@ -49,9 +49,15 @@ class ColumnsForm extends Form {
     }
 
     BtnOk_Click() {
-        const chosen = [];
+        /* **The order they have is kept**: the columns still ticked stay
+         * where they were -- the heading's menu moves them -- and the ones
+         * just ticked come after, in the catalog's order. */
+        const ticked = new Set(this.available
+            .filter((c) => this[COLUMN_CHECKS[c.id]].Active).map((c) => c.id));
+        const chosen = this.current.filter((id) => ticked.has(id));
         for (const column of this.available)
-            if (this[COLUMN_CHECKS[column.id]].Active) chosen.push(column.id);
+            if (ticked.has(column.id) && chosen.indexOf(column.id) < 0)
+                chosen.push(column.id);
 
         /* The custom-field columns are not this dialog's to choose -- they are
          * ticked where the fields are administered -- so they stay where they

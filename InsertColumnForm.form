@@ -1,0 +1,61 @@
+{
+  "format": "bintana-form/1",
+  "class": "InsertColumnForm",
+  "properties": {
+    "Text": "Insert column",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 340,
+    "Height": 150,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Label",
+      "name": "LblColumn",
+      "properties": {
+        "Text": "Column",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "ComboBox",
+      "name": "CmbColumn",
+      "properties": {
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Text": "Cancel",
+            "Cancel": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnOk",
+          "properties": {
+            "Text": "OK",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}
