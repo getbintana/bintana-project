@@ -857,6 +857,7 @@
                                       "type": "DrawingArea",
                                       "name": "Gantt",
                                       "properties": {
+                                        "Focusable": true,
                                         "Style": "view",
                                         "HAlign": "Fill",
                                         "VAlign": "Fill",

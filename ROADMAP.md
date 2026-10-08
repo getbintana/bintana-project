@@ -700,8 +700,11 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   tarea (`Edit.relink`, un solo undo, mismo tipo y retardo, con las mismas
   validaciones que dibujarlo). Los puntos solo se agarran con el vínculo
   elegido: uno FS termina sobre el borde de la barra sucesora y ahí una pulsación
-  es de la barra. **Sin cubrir:** no hay prueba del teclado real (Supr llega al
-  gráfico solo si tiene el foco, que el clic le da) ni cursor sobre las líneas.
+  es de la barra. **El foco** (lo vio quien lo probó a mano): el nombre de la
+  tarea lo retenía y Supr habría borrado texto ahí, porque un `DrawingArea` no
+  toma el teclado salvo que sea `Focusable`; ahora lo es y el clic sobre un
+  vínculo se lo lleva, lo que `check-drag` afirma partiendo del foco en el
+  nombre. **Sin cubrir:** el cursor sobre las líneas.
 - Un hito, un resumen o una barra muy corta no muestran contorno mientras se
   arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
   estirar.

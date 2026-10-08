@@ -1352,7 +1352,10 @@ class MainForm extends Form {
             if (lk) {
                 const pred = lk.edge.PredecessorUID, succ = lk.task.UID;
                 this.selLink = { succ, pred };
-                if (this.Gantt.SetFocus) this.Gantt.SetFocus();
+                /* The keyboard goes to the chart, away from wherever it was --
+                 * the panel's name field, usually -- or Delete would be typed
+                 * there. The chart has to be `Focusable` for this to land. */
+                this.Gantt.SetFocus();
                 this.redrawChart();
                 return;
             }
@@ -4037,10 +4040,14 @@ class MainForm extends Form {
                                             this.ganttHeight(), this.step, this.planGeom());
             const shapeOf = () => ganttLinkOf(geo(), 1, 2);
             let sh = shapeOf();
+            this.TxtName.SetFocus();      // where the keyboard usually is
             this.Gantt_MouseDown(sh.pts[2], sh.pts[3] + 4, 1, false, false);
             this.Gantt_MouseUp();
             ok = eq("a click on a link chooses it", JSON.stringify(this.selLink),
                     '{"succ":2,"pred":1}') && ok;
+            ok = eq("and the chart can hold the keyboard", this.Gantt.Focusable, true) && ok;
+            ok = eq("and takes it from the name field",
+                    `${this.Gantt.Focused}/${this.TxtName.Focused}`, "true/false") && ok;
             ok = eq("Delete takes it out", this.Gantt_KeyPress("Delete") + ":" +
                     edit.task(2).Links.length, "true:0") && ok;
             edit.undo();
