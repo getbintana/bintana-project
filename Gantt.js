@@ -743,7 +743,6 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Push();
         p.ClipRectangle(plotX, 0, width - plotX, height);
         p.Font = "Sans 9";
-        const textH = p.TextHeight ? p.TextHeight() : 12;
         p.Color = c.ink;
         for (let i = 0; i < rows.length; i++) {
             const task = rows[i];
@@ -755,7 +754,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
             if (!text) continue;
             const end = x(Math.max(s, f)) +
                         (task.Milestone ? Math.max(5, Math.round(barH * 0.62)) : 0);
-            p.Text(text, end + 6, first + (rowH - textH) / 2);
+            p.Text(text, end + 6, first + (rowH - p.TextHeight(text)) / 2);
         }
         p.Pop();
     }

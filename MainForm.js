@@ -6162,7 +6162,11 @@ class CallLog {
     ClipRectangle(...a) { this.note("ClipRectangle", a); }
 
     TextWidth(text)  { return String(text).length * 6; }
-    TextHeight()     { return 12; }
+    /* As strict as the real painter, which refuses a call without the text. */
+    TextHeight(text) {
+        if (text === undefined) throw new TypeError("TextHeight(text, [options]) needs text");
+        return 12;
+    }
 
     /* Where the first call of a kind was drawn in a given colour, `-1` for
      * never: the order of two things is two numbers compared. */
