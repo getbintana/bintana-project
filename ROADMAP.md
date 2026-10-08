@@ -256,7 +256,8 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   campo personalizado, hipervínculo), **Vínculos** y **Recursos**, esta última
   solo con las asignaciones. Los recursos pasan a **Proyecto → Recursos…**
   (`ResourcesForm`), junto a Calendarios y Campos personalizados, y llaman a
-  `Edit` como ellos. **Aplicar** está en las dos primeras pestañas.
+  `Edit` como ellos. **Aplicar** está debajo de las pestañas, fuera del scroll, y solo se ve en
+  las dos primeras (`PropsTabs_Switch`).
 - **La pestaña Proyecto sale del panel** (2026-09-30): el panel lateral tiene
   tres pestañas y las tres son de la tarea —Tarea, Vínculos, Recursos— porque
   es lo que cambia con la selección. Lo del plan entero estaba en una cuarta,

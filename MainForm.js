@@ -1124,7 +1124,7 @@ class MainForm extends Form {
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
                            this.ActUp, this.ActDown])
             act.Enabled = has;
-        for (const w of [this.BtnApply, this.BtnApplyAdv, this.TxtNotes,
+        for (const w of [this.BtnApply, this.TxtNotes,
                          this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
                          this.CmbPred, this.CmbType, this.SpinLag,
                          this.BtnLinkAdd])
@@ -2052,7 +2052,14 @@ class MainForm extends Form {
     }
 
     BtnApply_Click() { this.applyFields(); }
-    BtnApplyAdv_Click() { this.applyFields(); }
+
+    /* **Apply is the panel's and not a page's**: it sits under the tabs, out
+     * of what scrolls, and means something only for the two pages that edit
+     * the task's fields -- links and assignments are written where they are
+     * made -- so it goes away on the others. */
+    PropsTabs_Switch(index) {
+        this.ApplyBar.Visible = index === 0 || index === 1;
+    }
 
     ActAdd_Click() {
         const added = this.edit.addTask(this.selectedUID);
@@ -5583,6 +5590,13 @@ class MainForm extends Form {
                  edit.task(2).HyperlinkAddress === "" &&
                  !this.BtnLinkUri.Enabled && ok;
 
+            /* Apply sits under the tabs and only the two that edit fields show it. */
+            this.PropsTabs_Switch(2);
+            ok = !this.ApplyBar.Visible && ok;
+            this.PropsTabs_Switch(1);
+            ok = this.ApplyBar.Visible && ok;
+            this.PropsTabs_Switch(0);
+
             /* The resources' own dialog, beside the calendars: the list, a new
              * one through the fields, and the same one renamed through them. */
             const resCount = edit.holder.project.Resources.length;
@@ -5813,7 +5827,7 @@ class MainForm extends Form {
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
-                        "BtnApply", "BtnApplyAdv", "BtnLinkAdd", "BtnResManage",
+                        "BtnApply", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
                         "MnuColLeft", "MnuColRight",
@@ -5822,7 +5836,7 @@ class MainForm extends Form {
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
                      "CmbScale_Select",
-                     "Links_Select", "Assignments_Select",
+                     "Links_Select", "Assignments_Select", "PropsTabs_Switch",
                      "CmbAttr_Select", "CmbAttrValue_Select", "TxtLinkAddress_Change",
                      "TxtFilter_Change",
                      "TxtFilter_IconClick",

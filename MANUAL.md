@@ -135,7 +135,8 @@ lado para ir a la dirección (el ticket de GLPI de esa tarea, por ejemplo); en
 la columna **Hipervínculo** de la lista la celda es un enlace de verdad: se ve
 subrayada y se abre con un clic, o con Enter cuando tiene el foco.
 **Los campos personalizados no tienen tipo vínculo**: para una dirección, este
-es el lugar. **Aplicar** (está en las dos pestañas) escribe todo junto: es un solo Deshacer.
+es el lugar. **Aplicar** está debajo de las pestañas, fuera de lo que se desplaza, y se ve en
+**Tarea** y **Avanzado**: escribe todo junto en un solo Deshacer.
 
 - **Agregar** crea una tarea después de la seleccionada (y de su subárbol);
   **Eliminar** se lleva la tarea y todo lo que cuelga de ella.
