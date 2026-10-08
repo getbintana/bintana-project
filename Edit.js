@@ -211,6 +211,25 @@ class Edit {
         return "";
     }
 
+    /* **Moving one end of a link to another task**, as one undo: the link keeps
+     * its type and its lag and loses its place in the old successor's list for
+     * a place in the new one's. `old` and `next` are `{ pred, succ }`. A link
+     * between the same two tasks as before is no step, and one the new
+     * successor already has from that predecessor is replaced by it. */
+    relink(old, next) {
+        const from = this.task(old.succ), to = this.task(next.succ);
+        if (!from || !to || !this.task(next.pred)) return false;
+        if (old.pred === next.pred && old.succ === next.succ) return false;
+        const link = from.Links.find((l) => l.PredecessorUID === old.pred);
+        if (!link) return false;
+
+        from.Links = from.Links.filter((l) => l !== link);
+        link.PredecessorUID = next.pred;
+        to.Links = to.Links.filter((l) => l.PredecessorUID !== next.pred).concat([link]);
+        this.commit();
+        return true;
+    }
+
     /* The whole link list in one step: the panel adds, updates and removes
      * through here, so each of those is one undo. Equal lists are no step. */
     setLinks(uid, links) {

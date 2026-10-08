@@ -58,6 +58,7 @@ class MainForm extends Form {
     dayW = null;
     step = 0;
     drag = null;
+    selLink = null;   // the chosen link: { pred, succ } UIDs
 
     /* The selected task's links, parallel to the `Links` table by index, and
      * the predecessors the combo offers in the same order. */
@@ -1268,6 +1269,7 @@ class MainForm extends Form {
     planGeom() {
         return { plotX: PAD, rowH: this.rowHeight(), headH: 0,
                  scrollY: this.ganttY || 0, calendar: this.chartCal || null,
+                 selLink: this.selLink || null,
                  range: this.chartRange() };
     }
 
@@ -1315,7 +1317,49 @@ class MainForm extends Form {
             }
             return;
         }
+        /* **A link is picked by clicking its line**, where no bar is: it is
+         * chosen -- drawn heavier, with a dot at each end -- and **Delete**
+         * removes it. Pressing within a few pixels of either end picks the end
+         * up instead, and letting go over another task moves it there. */
+        /* **The dots of a chosen link are handles, and a handle wins over the bar
+         * under it**: a finish-to-start link ends on the very edge of the
+         * successor's bar, where a press would otherwise start a resize. */
+        if (button === 1 && this.selLink && !ctrl) {
+            const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                    this.ganttHeight(), this.step, this.planGeom());
+            const shape = ganttLinkOf(g, this.selLink.pred, this.selLink.succ);
+            if (shape) {
+                const n = shape.pts.length;
+                const toPred = Math.hypot(x - shape.pts[0], y - shape.pts[1]);
+                const toSucc = Math.hypot(x - shape.pts[n - 2], y - shape.pts[n - 1]);
+                if (Math.min(toPred, toSucc) <= 6) {
+                    const moving = toSucc <= toPred ? "succ" : "pred";
+                    const { pred, succ } = this.selLink;
+                    this.drag = { mode: "link", uid: moving === "succ" ? pred : succ,
+                                  px: x, py: y, to: null, forced: shape.type,
+                                  srcEnd: moving === "succ" ? shape.ends.from
+                                                            : shape.ends.to,
+                                  relink: { pred, succ, moving } };
+                    this.redrawChart();
+                    return;
+                }
+            }
+        }
+        if (!hit && button === 1) {
+            const g  = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                     this.ganttHeight(), this.step, this.planGeom());
+            const lk = ganttLinkAt(g, x, y);
+            if (lk) {
+                const pred = lk.edge.PredecessorUID, succ = lk.task.UID;
+                this.selLink = { succ, pred };
+                if (this.Gantt.SetFocus) this.Gantt.SetFocus();
+                this.redrawChart();
+                return;
+            }
+            if (this.selLink) { this.selLink = null; this.redrawChart(); }
+        }
         if (!hit || button !== 1) return;
+        this.selLink = null;
 
         if (ctrl) {
             /* **Ctrl draws a link, and the bar's halves say which ends**: where
@@ -1348,6 +1392,28 @@ class MainForm extends Form {
         this.redrawChart();
     }
 
+    /* **Delete takes the chosen link out**, and Escape lets it go. The key
+     * comes to the chart only when the chart has the focus -- which clicking a
+     * link gives it -- so a Delete typed in the panel's fields is theirs. */
+    Gantt_KeyPress(key, ctrl, shift, alt) {
+        if (!this.selLink) return false;
+        if (key === "Escape") {
+            this.selLink = null;
+            this.redrawChart();
+            return true;
+        }
+        if (key !== "Delete" && key !== "BackSpace") return false;
+
+        const task = this.edit ? this.edit.task(this.selLink.succ) : null;
+        const pred = this.selLink.pred;
+        this.selLink = null;
+        if (!task) { this.redrawChart(); return true; }
+        if (this.edit.setLinks(task.UID, task.Links.filter((l) => l.PredecessorUID !== pred)))
+            this.fill(task.UID);
+        else this.redrawChart();
+        return true;
+    }
+
     Gantt_DblClick(x, y, button, ctrl, shift) {
         if (button !== 1 || !this.selectedTask()) return;
         this.TxtName.SetFocus();
@@ -1366,7 +1432,18 @@ class MainForm extends Form {
             const hit = this.ganttHit(x, y);
             drag.to = hit && hit.task.UID !== drag.uid ? hit.task.UID : null;
             drag.type = null; drag.dstEnd = null; drag.problem = ""; drag.label = "";
-            if (drag.to !== null) {
+            if (drag.to !== null && drag.relink) {
+                /* An end being moved keeps the link's own type: only the task it
+                 * hangs from changes. */
+                const r = drag.relink, ends = linkEndsOf(drag.forced);
+                drag.type   = drag.forced;
+                drag.dstEnd = r.moving === "succ" ? ends.to : ends.from;
+                drag.problem = r.moving === "succ"
+                    ? this.edit.linkProblem(r.pred, drag.to, drag.type)
+                    : this.edit.linkProblem(drag.to, r.succ, drag.type);
+                drag.label = drag.problem ? Locale.Text(drag.problem)
+                                          : LINK_NAMES[drag.type];
+            } else if (drag.to !== null) {
                 /* The ends it joins: the halves, or the combo's type when it was
                  * forced -- and whether that may be drawn at all. */
                 drag.dstEnd = drag.forced !== null ? linkEndsOf(drag.forced).to
@@ -1431,6 +1508,16 @@ class MainForm extends Form {
                 if (drag.problem) {
                     this.log(Locale.Text(drag.problem));
                     this.redrawChart();
+                    return;
+                }
+                if (drag.relink) {
+                    const r = drag.relink;
+                    const next = r.moving === "succ" ? { pred: r.pred, succ: drag.to }
+                                                     : { pred: drag.to, succ: r.succ };
+                    if (this.edit.relink({ pred: r.pred, succ: r.succ }, next)) {
+                        this.selLink = next;
+                        this.fill(next.succ);
+                    } else this.redrawChart();
                     return;
                 }
                 const succ = this.edit.task(drag.to);
@@ -3942,6 +4029,68 @@ class MainForm extends Form {
                     "That link would close a loop.") && ok;
             ok = eq("and nothing is written", edit.task(1).Links.length, before) && ok;
 
+            /* **A link is a thing on the chart**: a click on its line chooses it,
+             * Delete takes it out as one undo, and a handle moves an end. The
+             * point is on the vertical stretch of the elbow, level with the
+             * predecessor and past its bar, where no bar is. */
+            const geo = () => ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                            this.ganttHeight(), this.step, this.planGeom());
+            const shapeOf = () => ganttLinkOf(geo(), 1, 2);
+            let sh = shapeOf();
+            this.Gantt_MouseDown(sh.pts[2], sh.pts[3] + 4, 1, false, false);
+            this.Gantt_MouseUp();
+            ok = eq("a click on a link chooses it", JSON.stringify(this.selLink),
+                    '{"succ":2,"pred":1}') && ok;
+            ok = eq("Delete takes it out", this.Gantt_KeyPress("Delete") + ":" +
+                    edit.task(2).Links.length, "true:0") && ok;
+            edit.undo();
+            ok = eq("in one undo", edit.task(2).Links.length, 1) && ok;
+            ok = eq("a click elsewhere chooses nothing", (() => {
+                this.Gantt_MouseDown(2, 2, 1, false, false); this.Gantt_MouseUp();
+                return this.selLink; })(), null) && ok;
+
+            /* Moving an end: a third task, dated, to move the link to. */
+            const three = edit.addTask(2);
+            edit.setFields(three.UID, { Start: "2026-09-04T08:00:00",
+                                        Finish: "2026-09-04T17:00:00" });
+            sh = shapeOf();
+            this.Gantt_MouseDown(sh.pts[2], sh.pts[3] + 4, 1, false, false);
+            this.Gantt_MouseUp();
+            const g4 = geo();
+            sh = ganttLinkOf(g4, 1, 2);
+            const yThree = at(g4.rows, edit.task(three.UID));
+            const xThree = g4.x(whenMs(edit.task(three.UID).Start)) + 6;
+            const n = sh.pts.length;
+            this.Gantt_MouseDown(sh.pts[n - 2], sh.pts[n - 1], 1, false, false);
+            ok = eq("the end of a chosen link is a handle", this.drag && !!this.drag.relink, true) && ok;
+            this.Gantt_MouseMove(xThree, yThree);
+            const kept = this.drag ? this.drag.label : "";
+            this.Gantt_MouseUp();
+            ok = eq("it keeps the link's own type while it moves", kept, "FS") && ok;
+            ok = eq("and the link is now the third task's",
+                    `${edit.task(2).Links.length}/${edit.task(three.UID).Links.length}/` +
+                    `${edit.task(three.UID).Links[0].PredecessorUID}/${edit.task(three.UID).Links[0].Type}`,
+                    "0/1/1/1") && ok;
+            edit.undo();
+            ok = eq("in one undo, back where it was",
+                    `${edit.task(2).Links.length}/${edit.task(three.UID).Links.length}`, "1/0") && ok;
+            edit.undo();
+            edit.undo();
+            this.selLink = null;
+
+            /* **A link is drawn as the type it is**: a start-to-start one leaves
+             * its predecessor's start and turns on the left of both bars, where
+             * a finish-to-start one turns on the right. */
+            const fsShape = shapeOf();
+            edit.setLinks(2, [new MspLink({ PredecessorUID: 1, Type: 3 })]);
+            const ssShape = shapeOf();
+            ok = eq("a finish-to-start link turns on the right",
+                    fsShape.pts[2] > Math.max(fsShape.x0, fsShape.x1), true) && ok;
+            ok = eq("a start-to-start one on the left, from the start",
+                    ssShape.pts[2] < Math.min(ssShape.x0, ssShape.x1) &&
+                    ssShape.ends.from === "start", true) && ok;
+            edit.undo();
+
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
             Application.Quit(ok ? 0 : 1);
         } catch (e) {
@@ -5299,7 +5448,7 @@ class MainForm extends Form {
                      "Links_Select", "Resources_Select", "Assignments_Select",
                      "CmbAttr_Select", "TxtFilter_Change",
                      "TxtFilter_IconClick",
-                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp",
+                     "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp", "Gantt_KeyPress",
                      "Tasks_Activate", "Gantt_DblClick"]);
 
         let ok = true;

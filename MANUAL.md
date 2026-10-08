@@ -146,7 +146,12 @@ mitad derecha de la que sale es su fin y la izquierda su inicio, y lo mismo
 donde se suelta. De derecha a izquierda es Fin a inicio; de izquierda a
 izquierda, Inicio a inicio; de derecha a derecha, Fin a fin; de izquierda a
 derecha, Inicio a fin. Mientras se arrastra se marcan los dos extremos y el
-tipo aparece junto al puntero. **Ctrl + Mayús + arrastrar** ignora las mitades
+tipo aparece junto al puntero. Los vínculos se dibujan según su tipo (un
+Inicio a inicio sale por la izquierda). **Un clic sobre la línea** de un
+vínculo lo elige -- se marca más gruesa, con un punto en cada extremo --;
+**Supr** lo quita y **Esc** lo suelta; y un **punto** de un vínculo elegido se
+agarra y se suelta sobre otra tarea para cambiarle esa punta, con el mismo tipo
+y retardo y en un solo Deshacer. **Ctrl + Mayús + arrastrar** ignora las mitades
 y dibuja el tipo de **Vínculo nuevo**, que es lo que sirve con un hito. Lo que
 no se puede dibujar -- una tarea con ella misma, un resumen con sus propias
 tareas, un ciclo, un vínculo de fin hacia un resumen -- muestra el motivo en

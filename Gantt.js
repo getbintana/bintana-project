@@ -148,6 +148,71 @@ function linkEndsOf(type) {
              to:   type === 1 || type === 3 ? "start" : "finish" };
 }
 
+/*
+ * **A link as a line**, by its type: out of the end of the predecessor the type
+ * names and into the end of the successor it names, with the elbow on the side
+ * the line leaves by (right of both when it leaves a finish, left of both when
+ * it leaves a start). The drawing and the pointer share this, so a line is
+ * exactly where a click thinks it is. `x(ms)` and `cy(row)` are the chart's.
+ */
+function linkShape(x, cy, rows, rowOf, i, edge) {
+    const from = rowOf[edge.PredecessorUID];
+    if (from === undefined) return null;
+    const pred = rows[from], task = rows[i];
+    const type = linkKind(edge), ends = linkEndsOf(type);
+    const a = whenMs(ends.from === "start" ? pred.Start : pred.Finish);
+    const b = whenMs(ends.to === "start" ? task.Start : task.Finish);
+    if (a === null || b === null) return null;
+    const x0 = x(a), x1 = x(b);
+    const elbow = ends.from === "finish" ? Math.max(x0, x1) + 8
+                                         : Math.min(x0, x1) - 8;
+    return { type, ends, from, to: i, x0, x1,
+             pts: [x0, cy(from), elbow, cy(from), elbow, cy(i), x1, cy(i)] };
+}
+
+/* The link under a point, if any: the nearest line within `tol` pixels, and
+ * which part of it -- `pred` and `succ` are the last `grab` pixels at either
+ * end, where it can be picked up and moved to another task, `mid` the rest. */
+function ganttLinkAt(g, px, py, tol = 4, grab = 9) {
+    const rows = g.rows || [];
+    const rowOf = {};
+    for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
+    const cy = (i) => g.headH + i * g.rowH - g.scrollY + g.rowH / 2;
+    let best = null;
+    for (let i = 0; i < rows.length; i++)
+        for (const edge of rows[i].Links) {
+            const shape = linkShape(g.x, cy, rows, rowOf, i, edge);
+            if (!shape) continue;
+            const pts = shape.pts;
+            let d = Infinity;
+            for (let k = 0; k + 3 < pts.length; k += 2) {
+                const ax = pts[k], ay = pts[k + 1], bx = pts[k + 2], by = pts[k + 3];
+                const dx = bx - ax, dy = by - ay;
+                const len2 = dx * dx + dy * dy;
+                const t = len2 ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2)) : 0;
+                d = Math.min(d, Math.hypot(px - (ax + t * dx), py - (ay + t * dy)));
+            }
+            if (d > tol || (best && d >= best.d)) continue;
+            const dp = Math.hypot(px - pts[0], py - pts[1]);
+            const ds = Math.hypot(px - pts[pts.length - 2], py - pts[pts.length - 1]);
+            best = { d, task: rows[i], edge, shape,
+                     end: ds <= grab && ds <= dp ? "succ" : dp <= grab ? "pred" : "mid" };
+        }
+    return best;
+}
+
+/* The shape of one particular link, for the handles of a chosen one. */
+function ganttLinkOf(g, predUID, succUID) {
+    const rows = g.rows || [];
+    const rowOf = {};
+    for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
+    const cy = (i) => g.headH + i * g.rowH - g.scrollY + g.rowH / 2;
+    const i = rowOf[succUID];
+    if (i === undefined) return null;
+    const edge = rows[i].Links.find((l) => l.PredecessorUID === predUID);
+    return edge ? linkShape(g.x, cy, rows, rowOf, i, edge) : null;
+}
+
 /* A colour at an opacity: `#rrggbb`, or `rgb()`/`rgba()` the way the painter
  * reports its ink. Anything else comes back as it came. */
 function fade(color, alpha) {
@@ -507,20 +572,30 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * Project draws its arrows the same way round. */
     p.Color = c.link;
     p.LineWidth = 1;
+    let chosen = null;
+    const pick = geom.selLink;
     for (let i = 0; i < rows.length; i++) {
-        const task = rows[i];
-        const s = whenMs(task.Start);
-        if (s === null) continue;
-        for (const edge of task.Links) {
-            const from = rowOf[edge.PredecessorUID];
-            if (from === undefined) continue;
-            const pred = rows[from];
-            const f = whenMs(pred.Finish);
-            if (f === null) continue;
-            const x0 = x(f), x1 = x(s), elbow = Math.max(x0, x1) + 8;
-            p.Polyline([x0, cy(from), elbow, cy(from), elbow, cy(i), x1, cy(i)]);
+        for (const edge of rows[i].Links) {
+            const shape = linkShape(x, cy, rows, rowOf, i, edge);
+            if (!shape) continue;
+            if (pick && pick.succ === rows[i].UID && pick.pred === edge.PredecessorUID)
+                chosen = shape;
+            p.Polyline(shape.pts);
             p.Stroke();
         }
+    }
+    /* **The chosen link, on top of the others and heavier**, with a dot at
+     * each end -- where it can be picked up and moved. */
+    if (chosen) {
+        p.Color = c.ink;
+        p.LineWidth = 2;
+        p.Polyline(chosen.pts);
+        p.Stroke();
+        p.LineWidth = 1;
+        const n = chosen.pts.length;
+        p.Rectangle(chosen.pts[0] - 3, chosen.pts[1] - 3, 6, 6);
+        p.Rectangle(chosen.pts[n - 2] - 3, chosen.pts[n - 1] - 3, 6, 6);
+        p.Fill();
     }
 
     /* The bars: a summary is a bracket over its dates, a milestone a diamond, a

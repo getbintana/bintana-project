@@ -693,8 +693,15 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   junto al puntero; Ctrl+Mayús usa el combo, para los hitos. `Edit.linkProblem`
   rechaza con su motivo lo que no se puede: sí mismo, un resumen con su rama,
   un ciclo --que el motor aceptaba sin avisar--, y FF/SF hacia un resumen.
-  **Queda** (la propuesta): clic en un vínculo + Supr, reconectar arrastrando su
-  punta, y los vínculos dibujados por tipo (siguen yendo de fin a inicio).
+  **Un vínculo es una cosa del gráfico** (2026-10-07): se dibuja según su tipo
+  (`linkShape`, que comparten el dibujo y el puntero), un clic sobre la línea lo
+  elige (`ganttLinkAt`) con un punto en cada extremo, **Supr** lo quita, **Esc**
+  lo suelta y un punto de un vínculo elegido se agarra y se suelta sobre otra
+  tarea (`Edit.relink`, un solo undo, mismo tipo y retardo, con las mismas
+  validaciones que dibujarlo). Los puntos solo se agarran con el vínculo
+  elegido: uno FS termina sobre el borde de la barra sucesora y ahí una pulsación
+  es de la barra. **Sin cubrir:** no hay prueba del teclado real (Supr llega al
+  gráfico solo si tiene el foco, que el clic le da) ni cursor sobre las líneas.
 - Un hito, un resumen o una barra muy corta no muestran contorno mientras se
   arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
   estirar.

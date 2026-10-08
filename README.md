@@ -219,7 +219,9 @@ drag its **end** to resize (the duration follows, measured in working time on
 the task's own calendar), and **Ctrl-drag** from one bar to another to draw a
 dependency -- the halves of the bars choose the type (right half to left half is
 FS, left to left SS, right to right FF, left to right SF), **Ctrl+Shift** uses
-the combo's, and a link that cannot be made says why instead of being made. Nothing is written until the button is let go, so one gesture is
+the combo's, and a link that cannot be made says why instead of being made. A link is drawn as
+the type it is; click its line to choose it (**Delete** removes it) and drag one
+of its end dots onto another task to move that end. Nothing is written until the button is let go, so one gesture is
 one undo; a task with no dates is only reachable from the table.
 
 ## Editing
