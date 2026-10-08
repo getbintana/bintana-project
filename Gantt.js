@@ -120,6 +120,34 @@ function ganttGeometry(rows, width, height, step, geom) {
     };
 }
 
+/*
+ * **The type of a link is two choices, and the gesture makes both.** A link
+ * leaves one end of the predecessor and arrives at one end of the successor:
+ * finish to start is FS, start to start SS, finish to finish FF and start to
+ * finish SF (MSPDI's 1, 3, 0 and 2). A bar is read in halves -- the pointer
+ * on its left half means its start, on its right half its finish -- and a
+ * milestone, which has no halves, answers the default end of its role (the
+ * finish as a predecessor, the start as a successor), so a plain drag from one
+ * to another is the FS everybody means.
+ */
+function linkEndAt(task, g, px, role) {
+    const s = whenMs(task.Start), f = whenMs(task.Finish);
+    const mid = s === null || f === null ? px : (g.x(s) + g.x(f)) / 2;
+    if (role === "from") return px >= mid ? "finish" : "start";
+    return px <= mid ? "start" : "finish";
+}
+
+function linkTypeOf(from, to) {
+    if (from === "finish") return to === "start" ? 1 : 0;   // FS, FF
+    return to === "start" ? 3 : 2;                          // SS, SF
+}
+
+/* The ends a type joins, the other way round: what a forced type draws. */
+function linkEndsOf(type) {
+    return { from: type === 1 || type === 0 ? "finish" : "start",
+             to:   type === 1 || type === 3 ? "start" : "finish" };
+}
+
 /* A colour at an opacity: `#rrggbb`, or `rgb()`/`rgba()` the way the painter
  * reports its ink. Anything else comes back as it came. */
 function fade(color, alpha) {
@@ -600,25 +628,41 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         }
     }
 
-    /* A dependency being drawn: an elbow from the dragged bar to the pointer,
-     * and the row it would land on outlined. */
+    /* A dependency being drawn: an elbow from the end of the dragged bar the
+     * gesture leaves by to the pointer, the row it would land on outlined, a
+     * dot on the end it would join and the type it would make -- or the reason
+     * it cannot be made -- beside the pointer. */
     if (drag && drag.mode === "link") {
         const from = rowOf[drag.uid];
+        const bad  = !!drag.problem;
         if (from !== undefined) {
-            const f = whenMs(rows[from].Finish);
-            if (f !== null) {
-                p.Color = c.link;
+            const at = whenMs(rows[from][drag.srcEnd === "start" ? "Start" : "Finish"]);
+            if (at !== null) {
+                p.Color = bad ? c.late : c.link;
                 p.LineWidth = 2;
-                p.Polyline([x(f), cy(from), drag.px, cy(from), drag.px, drag.py]);
+                p.Polyline([x(at), cy(from), drag.px, cy(from), drag.px, drag.py]);
                 p.Stroke();
                 p.LineWidth = 1;
+                p.Color = c.ink;
+                p.Rectangle(x(at) - 3, cy(from) - 3, 6, 6);
+                p.Fill();
             }
         }
         if (drag.to !== null && drag.to !== undefined &&
             rowOf[drag.to] !== undefined) {
-            p.Color = c.ink;
+            p.Color = bad ? c.late : c.ink;
             p.Rectangle(plotX, top(rowOf[drag.to]), width - plotX, rowH);
             p.Stroke();
+            const at = whenMs(rows[rowOf[drag.to]][drag.dstEnd === "finish" ? "Finish" : "Start"]);
+            if (at !== null) {
+                p.Rectangle(x(at) - 3, cy(rowOf[drag.to]) - 3, 6, 6);
+                p.Fill();
+            }
+        }
+        if (drag.label) {
+            p.Color = bad ? c.late : c.ink;
+            p.Font = "Sans Bold 9";
+            p.Text(drag.label, Math.min(drag.px + 12, width - 120), drag.py - 20);
         }
     }
 

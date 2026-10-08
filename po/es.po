@@ -1151,3 +1151,18 @@ msgstr "Un período tiene que terminar después de empezar."
 
 msgid "A working day's times read like 08:00-12:00 13:00-17:00."
 msgstr "Los horarios de un día laborable se escriben como 08:00-12:00 13:00-17:00."
+
+msgid "There is no such task."
+msgstr "No existe esa tarea."
+
+msgid "A task cannot depend on itself."
+msgstr "Una tarea no puede depender de sí misma."
+
+msgid "A summary and its own tasks cannot be linked."
+msgstr "Un resumen y sus propias tareas no se pueden vincular."
+
+msgid "A finish-bound link does not schedule a summary."
+msgstr "Un vínculo de fin no programa un resumen."
+
+msgid "That link would close a loop."
+msgstr "Ese vínculo cerraría un ciclo."

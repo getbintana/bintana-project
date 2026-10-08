@@ -1305,7 +1305,18 @@ class MainForm extends Form {
         if (!hit || button !== 1) return;
 
         if (ctrl) {
-            this.drag = { mode: "link", uid: hit.task.UID, px: x, py: y, to: null };
+            /* **Ctrl draws a link, and the bar's halves say which ends**: where
+             * the button went down is the end it leaves by (left half the start,
+             * right half the finish) and where it comes up is the end it joins.
+             * Ctrl+Shift ignores the halves and draws the type the combo says --
+             * the way to get one for a milestone, which has none. */
+            const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                    this.ganttHeight(), this.step, this.planGeom());
+            const forced = shift ? LINK_ORDER[this.CmbDrawType.Index] : null;
+            this.drag = { mode: "link", uid: hit.task.UID, px: x, py: y, to: null,
+                          forced,
+                          srcEnd: forced !== null ? linkEndsOf(forced).from
+                                                  : linkEndAt(hit.task, g, x, "from") };
             return;
         }
         const start = whenMs(hit.task.Start), finish = whenMs(hit.task.Finish);
@@ -1335,15 +1346,28 @@ class MainForm extends Form {
         drag.px = x;
         drag.py = y;
 
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                this.ganttHeight(), this.step, this.planGeom());
+
         if (drag.mode === "link") {
             const hit = this.ganttHit(x, y);
             drag.to = hit && hit.task.UID !== drag.uid ? hit.task.UID : null;
+            drag.type = null; drag.dstEnd = null; drag.problem = ""; drag.label = "";
+            if (drag.to !== null) {
+                /* The ends it joins: the halves, or the combo's type when it was
+                 * forced -- and whether that may be drawn at all. */
+                drag.dstEnd = drag.forced !== null ? linkEndsOf(drag.forced).to
+                                                   : linkEndAt(hit.task, g, x, "to");
+                drag.type = drag.forced !== null ? drag.forced
+                                                 : linkTypeOf(drag.srcEnd, drag.dstEnd);
+                drag.problem = this.edit.linkProblem(drag.uid, drag.to, drag.type);
+                drag.label = drag.problem ? Locale.Text(drag.problem)
+                                          : LINK_NAMES[drag.type];
+            }
             this.redrawChart();
             return;
         }
 
-        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
-                                this.ganttHeight(), this.step, this.planGeom());
         if (!g.dayW) return;
         const days = Math.round((x - drag.x0) / g.dayW);
         const task = this.edit.task(drag.uid);
@@ -1390,8 +1414,14 @@ class MainForm extends Form {
 
         if (drag.mode === "link") {
             if (drag.to !== null && drag.to !== undefined) {
+                /* A link that may not be made says why and is not made. */
+                if (drag.problem) {
+                    this.log(Locale.Text(drag.problem));
+                    this.redrawChart();
+                    return;
+                }
                 const succ = this.edit.task(drag.to);
-                if (this.putLink(succ, drag.uid, this.CmbDrawType.Index, 0))
+                if (this.putLink(succ, drag.uid, LINK_ORDER.indexOf(drag.type), 0))
                     this.fill(succ.UID);
                 else this.redrawChart();
             } else {
@@ -3832,26 +3862,72 @@ class MainForm extends Form {
             ok = eq("resize duration", edit.task(1).Duration, "PT24H0M0S") && ok;
             edit.undo();
 
-            /* Ctrl from one bar to another draws a link of the kind the
-             * chart's own combo says -- Start to start, here, which is its
-             * second item and MSPDI's 3. The undo replaced the records, so
-             * the geometry is taken again from the plan as it is now. */
-            this.CmbDrawType.Index = 1;
+            /* **Ctrl from one bar to another draws a link**, and the halves of
+             * the bars say which kind. The fixture has 2 after 1 already, so the
+             * gestures here go from 1 to 2 and each one *replaces* that link --
+             * which is what a second link between the same two tasks means. The
+             * undo replaced the records, so the geometry is taken again. */
             const g2   = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                        this.ganttHeight(), this.step, this.planGeom());
             const one  = edit.task(1), two = edit.task(2);
-            const oy   = at(g2.rows, two);
-            const omid = g2.x((whenMs(two.Start) + whenMs(two.Finish)) / 2);
-            const y1   = at(g2.rows, one);
-            const mid1 = g2.x((whenMs(one.Start) + whenMs(one.Finish)) / 2);
-            this.Gantt_MouseDown(omid, oy, 1, true, false);
-            this.Gantt_MouseMove(mid1, y1);
-            this.Gantt_MouseUp();
-            ok = eq("link count", edit.task(1).Links.length, 1) && ok;
-            ok = eq("link predecessor", edit.task(1).Links[0].PredecessorUID, 2) && ok;
-            ok = eq("link type", edit.task(1).Links[0].Type, 3) && ok;
+            const y1   = at(g2.rows, one), y2 = at(g2.rows, two);
+            const bar  = (task) => ({ a: g2.x(whenMs(task.Start)),
+                                      b: g2.x(whenMs(task.Finish)) });
+            const b1 = bar(one), b2 = bar(two);
+            const quarter = (b) => (b.b - b.a) / 4;
+            const typeOf = () => edit.task(2).Links[0].Type;
+            const draw = (fromX, toX, shift) => {
+                this.Gantt_MouseDown(fromX, y1, 1, true, !!shift);
+                this.Gantt_MouseMove(toX, y2);
+                const made = this.drag ? this.drag.type : null;
+                this.Gantt_MouseUp();
+                return made;
+            };
+
+            /* Ctrl+Shift ignores the halves and draws the combo's type: Start
+             * to start, here, its second item and MSPDI's 3. */
+            this.CmbDrawType.Index = 1;
+            draw((b1.a + b1.b) / 2, (b2.a + b2.b) / 2, true);
+            ok = eq("link count", edit.task(2).Links.length, 1) && ok;
+            ok = eq("link predecessor", edit.task(2).Links[0].PredecessorUID, 1) && ok;
+            ok = eq("link type", typeOf(), 3) && ok;
             this.CmbDrawType.Index = 0;
             edit.undo();
+
+            ok = eq("right half to left half is FS",
+                    draw(b1.b - quarter(b1), b2.a + quarter(b2)), 1) && ok;
+            edit.undo();
+            ok = eq("left half to left half is SS",
+                    draw(b1.a + quarter(b1), b2.a + quarter(b2)), 3) && ok;
+            ok = eq("and it is written", typeOf(), 3) && ok;
+            edit.undo();
+            ok = eq("right half to right half is FF",
+                    draw(b1.b - quarter(b1), b2.b - quarter(b2)), 0) && ok;
+            ok = eq("and it is written too", typeOf(), 0) && ok;
+            edit.undo();
+            ok = eq("left half to right half is SF",
+                    draw(b1.a + quarter(b1), b2.b - quarter(b2)), 2) && ok;
+            edit.undo();
+
+            /* **What may not be drawn is refused with its reason**: 2 is already
+             * after 1, so 1 after 2 would close a loop, and a task is not its
+             * own predecessor. The gesture that tries says so beside the pointer
+             * and writes nothing -- the engine used to take the loop silently. */
+            ok = eq("a loop is refused", edit.linkProblem(2, 1, 1),
+                    "That link would close a loop.") && ok;
+            ok = eq("itself too", edit.linkProblem(1, 1, 1),
+                    "A task cannot depend on itself.") && ok;
+            ok = eq("an honest link is not", edit.linkProblem(1, 2, 1), "") && ok;
+            ok = eq("a summary and its own tasks", edit.linkProblem(0, 1, 1),
+                    "A summary and its own tasks cannot be linked.") && ok;
+            const before = edit.task(1).Links.length;
+            this.Gantt_MouseDown(b2.b - quarter(b2), y2, 1, true, false);
+            this.Gantt_MouseMove(b1.a + quarter(b1), y1);
+            const shown = this.drag ? this.drag.label : "";
+            this.Gantt_MouseUp();
+            ok = eq("the refusal is the label", shown,
+                    "That link would close a loop.") && ok;
+            ok = eq("and nothing is written", edit.task(1).Links.length, before) && ok;
 
             print(ok ? "CHECK-OK" : "CHECK-FAILED");
             Application.Quit(ok ? 0 : 1);

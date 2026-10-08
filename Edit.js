@@ -162,6 +162,55 @@ class Edit {
         return true;
     }
 
+    /*
+     * **Whether a link may be drawn, and if not, why** -- an empty answer is
+     * "yes". The reasons are sentences for the reader, and the chart shows them
+     * beside the pointer while the button is down. Four things refuse:
+     * a task linked to itself; a summary and a task of its own branch (a loop
+     * Project does not allow); a link that would close a cycle through the
+     * links already there; and a finish-bound type into a summary, which the
+     * schedule does not apply (FS and SS bound every task of the branch, FF and
+     * SF would bound only its last finish).
+     */
+    linkProblem(predUID, succUID, type) {
+        const tasks = this.holder.project.Tasks.filter((t) => !t.IsNull);
+        const pred = tasks.find((t) => t.UID === predUID);
+        const succ = tasks.find((t) => t.UID === succUID);
+        if (!pred || !succ) return "There is no such task.";
+        if (pred === succ) return "A task cannot depend on itself.";
+
+        const within = (outer, inner) => {
+            if (!outer.Summary) return false;
+            const i = tasks.indexOf(outer);
+            for (let k = i + 1; k < tasks.length &&
+                                tasks[k].OutlineLevel > outer.OutlineLevel; k++)
+                if (tasks[k] === inner) return true;
+            return false;
+        };
+        if (within(pred, succ) || within(succ, pred))
+            return "A summary and its own tasks cannot be linked.";
+
+        if (succ.Summary && (type === 0 || type === 2))
+            return "A finish-bound link does not schedule a summary.";
+
+        /* The pred would be reached from the succ by the links already there. */
+        const after = {};
+        for (const t of tasks)
+            for (const l of t.Links) {
+                if (!after[l.PredecessorUID]) after[l.PredecessorUID] = [];
+                after[l.PredecessorUID].push(t.UID);
+            }
+        const seen = new Set([succUID]);
+        const todo = [succUID];
+        while (todo.length) {
+            const uid = todo.pop();
+            if (uid === predUID) return "That link would close a loop.";
+            for (const next of after[uid] || [])
+                if (!seen.has(next)) { seen.add(next); todo.push(next); }
+        }
+        return "";
+    }
+
     /* The whole link list in one step: the panel adds, updates and removes
      * through here, so each of those is one undo. Equal lists are no step. */
     setLinks(uid, links) {

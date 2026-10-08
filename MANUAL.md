@@ -141,7 +141,16 @@ retardo en minutos; **Enlazar** agrega o actualiza, **Desenlazar** borra la
 fila elegida.
 
 En el Gantt también se dibujan: **Ctrl + arrastrar** desde una barra hasta
-otra crea un Fin a inicio.
+otra crea un vínculo, y **el tipo lo dicen las mitades de las barras**: la
+mitad derecha de la que sale es su fin y la izquierda su inicio, y lo mismo
+donde se suelta. De derecha a izquierda es Fin a inicio; de izquierda a
+izquierda, Inicio a inicio; de derecha a derecha, Fin a fin; de izquierda a
+derecha, Inicio a fin. Mientras se arrastra se marcan los dos extremos y el
+tipo aparece junto al puntero. **Ctrl + Mayús + arrastrar** ignora las mitades
+y dibuja el tipo de **Vínculo nuevo**, que es lo que sirve con un hito. Lo que
+no se puede dibujar -- una tarea con ella misma, un resumen con sus propias
+tareas, un ciclo, un vínculo de fin hacia un resumen -- muestra el motivo en
+rojo y no escribe nada.
 
 ## Calcular
 
@@ -314,8 +323,8 @@ fondo.
 
 - **Clic** selecciona; **arrastrar** una barra mueve la tarea; arrastrar su
   **extremo** la estira (la duración sale del tiempo laborable del calendario
-  de la tarea); **Ctrl + arrastrar** dibuja un vínculo del tipo elegido en
-  **Vínculo nuevo** (fin a inicio por defecto).
+  de la tarea); **Ctrl + arrastrar** dibuja un vínculo (el tipo lo dicen las
+  mitades de las barras; con **Mayús** se usa el de **Vínculo nuevo**).
 - Nada se escribe hasta soltar el botón: un gesto es un Deshacer.
 - **Escala**: Ajustar a la ventana, Días, Semanas, Meses; el gráfico se
   desplaza con sus barras.

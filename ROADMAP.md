@@ -687,7 +687,14 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   el fin de jornada. El día se cuenta en el calendario del reloj, así que un
   cambio de hora no corre la barra. Una tarea elapsed se mueve en tiempo de
   reloj. `check-drag` fija el caso del fin de semana.
-- Los vínculos se dibujan siempre de fin a inicio, sea cual sea su tipo.
+- **El tipo del vínculo lo dice el gesto** (2026-10-07): Ctrl + arrastrar lee las
+  mitades de las dos barras (derecha-izquierda FS, izquierda-izquierda SS,
+  derecha-derecha FF, izquierda-derecha SF), marca los extremos y escribe el tipo
+  junto al puntero; Ctrl+Mayús usa el combo, para los hitos. `Edit.linkProblem`
+  rechaza con su motivo lo que no se puede: sí mismo, un resumen con su rama,
+  un ciclo --que el motor aceptaba sin avisar--, y FF/SF hacia un resumen.
+  **Queda** (la propuesta): clic en un vínculo + Supr, reconectar arrastrando su
+  punta, y los vínculos dibujados por tipo (siguen yendo de fin a inicio).
 - Un hito, un resumen o una barra muy corta no muestran contorno mientras se
   arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
   estirar.
