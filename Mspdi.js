@@ -395,7 +395,10 @@ class MspProject extends Record {
         FinishDate:        Field.DateTime(),
         FYStartDate:       Field.Int(),
         CriticalSlackLimit: Field.Int(),
-        CurrencyDigits:    Field.Int(),
+        /* **No default that a file can mean**: a plan in yen has 0 decimals, and a
+         * `0` that reads the same as "the file said nothing" made Statistics
+         * show the desktop's. Absent is -1, and a 0 present is written. */
+        CurrencyDigits:    Field.Int({ def: -1 }),
         CurrencySymbol:    Field.Text(),
         CurrencyCode:      Field.Text(),
         CurrencySymbolPosition: Field.Int(),
@@ -463,12 +466,20 @@ class MspProject extends Record {
  * PT-normalised form and so does this.
  */
 function mspdiMinutes(text) {
-    const m = /^P(?:(\d+)D)?T?(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?$/.exec(String(text || ""));
+    /* **An `M` before the `T` is a month and after it a minute**: `P1M` used to
+     * read as one minute because the pattern did not tell the two sides of the
+     * `T` apart. A day is the schema's working day (480) and a month 20 of
+     * them, as `DurationFormat`'s own table has them; years and negative
+     * durations are not something a plan holds and answer `null`. */
+    const m = /^P(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/
+        .exec(String(text || ""));
     if (!m || m[0] === "P" || m[0] === "PT") return null;
-    return (m[1] ? Number(m[1]) * 480 : 0) +
-           (m[2] ? Number(m[2]) * 60 : 0) +
-           (m[3] ? Number(m[3]) : 0) +
-           (m[4] ? Number(m[4]) / 60 : 0);
+    return (m[1] ? Number(m[1]) * 9600 : 0) +
+           (m[2] ? Number(m[2]) * 2400 : 0) +
+           (m[3] ? Number(m[3]) * 480 : 0) +
+           (m[4] ? Number(m[4]) * 60 : 0) +
+           (m[5] ? Number(m[5]) : 0) +
+           (m[6] ? Number(m[6]) / 60 : 0);
 }
 
 /*
@@ -630,6 +641,11 @@ function assignmentCost(project, assignment) {
 
     if (resource.Type === 0)
         return (assignment.Units || 0) * base + (resource.CostPerUse || 0);
+
+    /* **A cost resource (type 2) is a number typed on the assignment**, which
+     * is the `Cost` handled above: it has no work, no rate and no cost per use,
+     * and used to be charged as hours at a rate it does not have. */
+    if (resource.Type === 2) return 0;
 
     let rows = rateRows(resource, assignment.CostRateTable || 0);
     if (!rows.length)

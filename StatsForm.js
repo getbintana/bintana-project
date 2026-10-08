@@ -20,7 +20,7 @@
 function statsMoney(project, value) {
     const options = {};
     if (project.CurrencySymbol) options.Symbol = project.CurrencySymbol;
-    if (project.CurrencyDigits) options.Decimals = project.CurrencyDigits;
+    if (project.CurrencyDigits >= 0) options.Decimals = project.CurrencyDigits;
     return Locale.Currency(value, options);
 }
 

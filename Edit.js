@@ -364,7 +364,7 @@ class Edit {
 
         const minutes  = mspdiMinutes(task.Duration) || 0;
         const duration = assignmentDuration(project, task, before, after);
-        const work = resource.Type === 0 ? "PT0H0M0S"
+        const work = resource.Type !== 1 ? "PT0H0M0S"
                    : mspdiDuration(Math.round(duration * units));
 
         /* **The work moves with the regular work it was**: a file writes both,

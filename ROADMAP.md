@@ -668,13 +668,14 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 - **Los `WeekDay` se aparean por posición** y su `TimePeriod` no está
   modelado: el mismo problema que `MspException` ya resolvió. Sólo afecta a
   archivos viejos, con excepciones escritas como `DayType 0`.
-- Una asignación a un recurso de costo (tipo 2) recibe trabajo, y
-  `assignmentCost` la cobra como horas por tasa.
-- `mspdiMinutes` lee `P1M` (un mes) como un minuto, `P1D` como 480 minutos,
-  y los negativos y los `P…Y` como nada, que se toma como 0.
-- `CurrencyDigits` es `Field.Int()` sin default distinguible: un plan con 0
-  decimales (yenes) se lee como "sin dato" y Estadísticas muestra los del
-  escritorio. Distinguirlo pide un default centinela como `NO_MINUTES`.
+- **Recursos de costo, duraciones y decimales de la moneda** (2026-10-07): un
+  recurso de costo (tipo 2) ya no recibe trabajo ni se cobra como horas por una
+  tasa que no tiene -- su costo es el número tipeado en la asignación;
+  `mspdiMinutes` distingue el lado de la `T` en que está una `M` (`P1M` es un mes,
+  9600 minutos, no un minuto), lee semanas, y años y negativos siguen siendo
+  nada; y `CurrencyDigits` ausente es -1, así que un plan en yenes con 0
+  decimales se conserva y Estadísticas lo respeta (el diálogo muestra vacío un
+  valor no dicho).
 
 ### El gráfico
 

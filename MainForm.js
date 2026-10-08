@@ -2546,6 +2546,9 @@ class MainForm extends Form {
                      new MspTask({}).TotalSlack, new MspTask({}).FreeSlack,
                      new MspTask({}).LateStart].join(","),
                     "true,1,-1,-1,false,true,-1,1,-1,-1,") && ok;
+            ok = eq("a plan in yen keeps its zero decimals, one that says nothing has none",
+                    [new MspProject({ CurrencyDigits: 0 }).CurrencyDigits,
+                     fresh.CurrencyDigits].join("/"), "0/-1") && ok;
             ok = eq("a missing link type is FS", linkKind(new MspLink({})), 1) && ok;
             ok = eq("a missing task type inherits",
                     taskKind(new MspProject({ DefaultTaskType: 0 }),
@@ -2672,6 +2675,16 @@ class MainForm extends Form {
             ok = eq("elapsed", `${e.Tasks[0].Start}..${e.Tasks[0].Finish}`,
                     "2026-09-07T08:00:00..2026-09-09T08:00:00") && ok;
 
+            /* **A duration is read by the side of the T an M is on.** */
+            ok = eq("P1M is a month, not a minute", mspdiMinutes("P1M"), 9600) && ok;
+            ok = eq("PT30M0S is half an hour", mspdiMinutes("PT30M0S"), 30) && ok;
+            ok = eq("P1W and P2D", [mspdiMinutes("P1W"), mspdiMinutes("P2D")].join("/"),
+                    "2400/960") && ok;
+            ok = eq("a day and its hours", mspdiMinutes("P1DT4H"), 720) && ok;
+            ok = eq("years and negatives are nothing",
+                    [mspdiMinutes("P1Y"), mspdiMinutes("-PT8H0M0S"), mspdiMinutes("PT")].join("/"),
+                    "//") && ok;
+
             /* The cost of an assignment: a work resource by the hours, a
              * material by the units plus its cost per use, and the file's own
              * number when it wrote one. */
@@ -2690,6 +2703,15 @@ class MainForm extends Form {
                 new MspAssignment({ UID: 3, TaskUID: 1, ResourceUID: 1,
                                     Units: 1, Work: "PT8H0M0S", Cost: 123 }),
             ];
+            /* A cost resource carries no work, so no hours: only what is typed. */
+            r.Resources.push(new MspResource({ UID: 3, Name: "Travel", Type: 2,
+                                               StandardRate: 99, CostPerUse: 7 }));
+            const travel = new MspAssignment({ UID: 4, TaskUID: 1, ResourceUID: 3,
+                                               Units: 1, Work: "PT8H0M0S" });
+            ok = eq("a cost resource is not hours by a rate",
+                    assignmentCost(r, travel), 0) && ok;
+            travel.Cost = 55;
+            ok = eq("only what is typed on it", assignmentCost(r, travel), 55) && ok;
             ok = eq("work cost", assignmentCost(r, r.Assignments[0]), 400) && ok;
             ok = eq("material cost", assignmentCost(r, r.Assignments[1]), 250) && ok;
             ok = eq("file cost", assignmentCost(r, r.Assignments[2]), 123) && ok;

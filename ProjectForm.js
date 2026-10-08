@@ -19,7 +19,7 @@ function fillProjectForm(dlg, project, tables) {
     for (const prop in tables.TEXT)
         dlg[tables.TEXT[prop]].Text = project[prop];
     for (const prop in tables.NUMBER)
-        dlg[tables.NUMBER[prop]].Text = String(project[prop]);
+        dlg[tables.NUMBER[prop]].Text = project[prop] < 0 ? "" : String(project[prop]);
     for (const prop in tables.DATE)
         dlg[tables.DATE[prop]].Text = shortDate(project[prop]);
     for (const prop in tables.TIME)
@@ -49,8 +49,12 @@ function projectFormValues(dlg, project, tables) {
     const values = {};
     for (const prop in tables.TEXT)
         values[prop] = dlg[tables.TEXT[prop]].Text;
-    for (const prop in tables.NUMBER)
-        values[prop] = resourceNumber(dlg[tables.NUMBER[prop]].Text);
+    for (const prop in tables.NUMBER) {
+        const typed = dlg[tables.NUMBER[prop]].Text;
+        /* A cleared currency-digits field is "not said", which is not zero. */
+        values[prop] = prop === "CurrencyDigits" && String(typed).trim() === ""
+                     ? -1 : resourceNumber(typed);
+    }
     /* **A day alone is a date**, as it is in New Project: it takes the time the
      * plan's day starts at. Without one the shape refused "2026-10-01" with an
      * error in English about a format nobody had been told. */
