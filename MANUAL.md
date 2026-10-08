@@ -86,6 +86,14 @@ encabezado que apretaste; **Mover a la izquierda** y **Mover a la derecha**
 cambian el orden. El orden se recuerda con las columnas, y el diálogo de
 **Columnas…** lo respeta: lo que tildás de nuevo va al final.
 
+El puntero dice qué se puede hacer donde está: una **mano abierta** sobre una
+barra (se mueve arrastrándola), la **flecha de redimensionar** en su borde
+derecho, una **cruz** si mantenés Ctrl (arrastrando se dibuja una dependencia),
+una **mano** sobre la línea de una dependencia y la mano que **agarra** en los
+puntos de la dependencia elegida. Mientras se arrastra, la mano cerrada o la
+flecha; y al dibujar una dependencia que no se puede hacer, el círculo
+tachado.
+
 Al parar el puntero sobre una barra, un resumen, un hito o una línea de
 dependencia aparece un cuadro con lo que importa: la tarea y su EDT, las fechas,
 la duración, el avance, los recursos, el trabajo, el costo, si es crítica o su

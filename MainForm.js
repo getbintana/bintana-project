@@ -100,6 +100,7 @@ class MainForm extends Form {
     filter = "";
     format = ganttFormat(null);
     tipText = "";
+    cursorName = "Auto";
     columns = ["duration", "start", "finish", "cost"];
 
     Form_Open() {
@@ -1446,7 +1447,39 @@ class MainForm extends Form {
     }
 
     /* Which task, and which part of its bar, is under the pointer. */
-    Gantt_MouseLeave() { this.showTip(""); }
+    Gantt_MouseLeave() { this.showTip(""); this.setCursor("Auto"); }
+
+    setCursor(name) {
+        if (name === this.cursorName) return;
+        this.cursorName = name;
+        this.Gantt.Cursor = name;
+    }
+
+    /* **What the pointer says it can do here**, before anything is pressed: a
+     * bar moves (the hand that holds it), its right edge resizes, a bar with
+     * Ctrl held starts a dependency, the line of a dependency can be picked up
+     * and the dots of the chosen one can be grabbed. Where there is nothing, the
+     * plain arrow. It is the same hit-testing the press uses, so the pointer
+     * never promises what the click will not do. */
+    hoverCursor(x, y, ctrl) {
+        const hit = this.ganttHit(x, y);
+        if (hit) {
+            if (ctrl) return "Crosshair";
+            return hit.zone === "end" ? "ResizeHorizontal" : "Grab";
+        }
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                this.ganttHeight(), this.step, this.planGeom());
+        if (this.selLink && !ctrl) {
+            const shape = ganttLinkOf(g, this.selLink.pred, this.selLink.succ);
+            if (shape) {
+                const n = shape.pts.length;
+                if (Math.min(Math.hypot(x - shape.pts[0], y - shape.pts[1]),
+                             Math.hypot(x - shape.pts[n - 2], y - shape.pts[n - 1])) <= 6)
+                    return "Grab";
+            }
+        }
+        return ganttLinkAt(g, x, y) ? "Hand" : "Auto";
+    }
 
     showTip(text) {
         if (text === this.tipText) return;
@@ -1662,13 +1695,16 @@ class MainForm extends Form {
      * a bar does not ask the toolkit to rebuild the balloon at every pixel.
      * Nothing is said while something is being dragged: the outline is the
      * feedback then. */
-    Gantt_MouseMove(x, y) {
+    Gantt_MouseMove(x, y, button, ctrl, shift) {
         const drag = this.drag;
         if (!drag) {
             this.showTip(this.tipAt(x, y));
+            this.setCursor(this.hoverCursor(x, y, ctrl));
             return;
         }
         this.showTip("");
+        if (drag.mode !== "link")
+            this.setCursor(drag.mode === "resize" ? "ResizeHorizontal" : "Grabbing");
         drag.px = x;
         drag.py = y;
 
@@ -1701,6 +1737,7 @@ class MainForm extends Form {
                 drag.label = drag.problem ? Locale.Text(drag.problem)
                                           : LINK_NAMES[drag.type];
             }
+            this.setCursor(drag.problem ? "NotAllowed" : "Crosshair");
             this.redrawChart();
             return;
         }
@@ -1744,7 +1781,16 @@ class MainForm extends Form {
         this.redrawChart();
     }
 
+    /* The pointer is where it was, and it says what it is over now -- after the
+     * gesture was applied, so a bar that moved under it is the bar it is over --
+     * and not what the gesture that just ended said. */
     Gantt_MouseUp() {
+        const drag = this.drag;
+        this.endDrag();
+        if (drag) this.setCursor(this.hoverCursor(drag.px, drag.py, false));
+    }
+
+    endDrag() {
         const drag = this.drag;
         this.drag = null;
         if (!drag) return;
@@ -4273,6 +4319,27 @@ class MainForm extends Form {
             this.Gantt_MouseLeave();
             ok = this.tipText === "" && ok;
             print(`edit tooltip=${tip.split("\n").length} lines`);
+
+            /* The pointer says what it can do: a bar is held, its right edge
+             * resizes, Ctrl on a bar starts a dependency, nothing is the arrow,
+             * and a drag in progress says what it is doing. */
+            ok = this.hoverCursor(mid, y, false) === "Grab" &&
+                 this.hoverCursor(end - 1, y, false) === "ResizeHorizontal" &&
+                 this.hoverCursor(mid, y, true) === "Crosshair" &&
+                 this.hoverCursor(g.plotX - 4, y, false) === "Auto" && ok;
+            this.Gantt_MouseMove(mid, y, 0, false, false);
+            ok = this.cursorName === "Grab" && ok;
+            this.Gantt_MouseDown(mid, y, 1, false, false);
+            this.Gantt_MouseMove(mid + 2 * g.dayW, y, 1, false, false);
+            ok = this.cursorName === "Grabbing" && ok;
+            this.Gantt_MouseUp();
+            /* Whatever it is over now, and not the hand of the gesture. */
+            ok = this.cursorName !== "Grabbing" &&
+                 this.cursorName === this.hoverCursor(mid + 2 * g.dayW, y, false) && ok;
+            edit.undo();
+            this.Gantt_MouseLeave();
+            ok = this.cursorName === "Auto" && ok;
+            print(`edit cursor=${this.cursorName}`);
 
             /* Move it two days: both dates travel, the duration does not. */
             this.Gantt_MouseDown(mid, y, 1, false, false);
