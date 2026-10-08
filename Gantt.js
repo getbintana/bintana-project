@@ -250,13 +250,21 @@ const GANTT_THEMES = {
                { bar: "#9a9996", late: "#e01b24" }],
 };
 /* In the order the format dialog offers them. */
-const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite"];
+const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite", "custom"];
 
 /* What the view may ask of the chart, with what it is when it asks nothing --
  * which is how the chart looked before there was a choice. A bar's *size* is
  * the share of the row it takes and the most it grows to. */
 const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
-                       critical: true, progress: true, links: true, today: true };
+                       critical: true, progress: true, links: true, today: true,
+                       rows: true, grid: true, idle: true,
+                       barColor: "#1c71d8", lateColor: "#c01c28",
+                       todayColor: "#e01b24",
+                       progressColor: "", linkColor: "", idleColor: "",
+                       baselineColor: "", selectColor: "" };
+/* The custom theme's colours; an empty one is the palette's own shade. */
+const GANTT_CUSTOM_COLORS = ["barColor", "lateColor", "todayColor", "progressColor",
+                             "linkColor", "idleColor", "baselineColor", "selectColor"];
 const GANTT_BAR_SIZE = [{ share: 0.26, max: 9 }, { share: 0.38, max: 14 },
                         { share: 0.52, max: 20 }];
 
@@ -264,7 +272,12 @@ function ganttFormat(fmt) {
     const out = {};
     for (const key in GANTT_FORMAT)
         out[key] = fmt && fmt[key] !== undefined ? fmt[key] : GANTT_FORMAT[key];
-    if (!GANTT_THEMES[out.theme]) out.theme = "classic";
+    if (!GANTT_THEMES[out.theme] && out.theme !== "custom") out.theme = "classic";
+    /* A custom colour that is not one falls back to the default's own. */
+    for (const key of GANTT_CUSTOM_COLORS) {
+        if (typeof out[key] !== "string") out[key] = GANTT_FORMAT[key];
+        if (!out[key] && GANTT_FORMAT[key]) out[key] = GANTT_FORMAT[key];
+    }
     if (!GANTT_BAR_SIZE[out.size]) out.size = 1;
     return out;
 }
@@ -278,11 +291,14 @@ function ganttFormat(fmt) {
  * a background to sit on. What is left is the chart's own palette: two
  * coherent sets, one per ground, and every colour a frame can draw is here.
  */
-function ganttPalette(p, theme) {
+function ganttPalette(p, theme, custom) {
     const dark = p.Dark;
-    const look = (GANTT_THEMES[theme] || GANTT_THEMES.classic)[dark ? 1 : 0];
+    custom = custom || GANTT_FORMAT;
+    const look = theme === "custom"
+               ? { bar: custom.barColor, late: custom.lateColor }
+               : (GANTT_THEMES[theme] || GANTT_THEMES.classic)[dark ? 1 : 0];
     const ink = p.Foreground || (dark ? "#eeeeec" : "#2e3436");
-    return {
+    const pal = {
         ink,
         /* A column heading's type: the theme's ink at 40%, the way Adwaita
          * writes it (`color-mix(currentColor 40%, transparent)`). */
@@ -299,7 +315,8 @@ function ganttPalette(p, theme) {
         progress: dark ? "rgba(0,0,0,0.38)" : "rgba(0,0,0,0.26)",
         link:     dark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.34)",
         baseline: dark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.40)",
-        today:    dark ? "#ff6b6b" : "#e01b24",
+        today:    theme === "custom" ? custom.todayColor
+                                     : dark ? "#ff6b6b" : "#e01b24",
         /* Only a *file* gets a ground of its own, and only because a file has
          * none to inherit: the pane is the toolkit's and a picture is not. It is
          * a derivation, and it is the same one the runtime states for `Dark` --
@@ -307,6 +324,14 @@ function ganttPalette(p, theme) {
          * theme's, which no painter can ask for. */
         paper:    dark ? "#1e1e1e" : "#ffffff",
     };
+    /* Only the custom theme takes the view's own shades, and only the ones it
+     * set: an empty one stays what the palette says. */
+    if (theme === "custom") {
+        const own = { progress: "progressColor", link: "linkColor", idle: "idleColor",
+                      baseline: "baselineColor", select: "selectColor" };
+        for (const role in own) if (custom[own[role]]) pal[role] = custom[own[role]];
+    }
+    return pal;
 }
 
 /* The type of a ruler is not the type of a list: an axis wants a small one, and
@@ -560,7 +585,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     }
     const range = g.range;
     const fmt = ganttFormat(geom.format);
-    const c = ganttPalette(p, fmt.theme);
+    const c = ganttPalette(p, fmt.theme, fmt);
 
     const plotX = g.plotX, plotW = g.plotW;
     const x = g.x;
@@ -617,7 +642,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     /* The days that are not worked, behind the rows and behind the heading: the
      * same shade in both, so a shaded column reads as one column. */
     p.Color = c.idle;
-    for (const [from, to] of ganttIdleDays(range, geom.calendar)) {
+    for (const [from, to] of fmt.idle ? ganttIdleDays(range, geom.calendar) : []) {
         const x0 = x(from), x1 = x(to);
         if (x1 <= plotX || x0 >= width) continue;
         p.Rectangle(x0, 0, Math.max(x1 - x0, 1), height);
@@ -628,7 +653,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
      * and whatever else does. */
     if (!step) step = g.dayW >= 16 ? 1 : g.dayW >= 6 ? 7 : 30;
     p.Color = c.dim;
-    for (const t of ganttTicks(range, step, 2000)) {
+    for (const t of fmt.grid ? ganttTicks(range, step, 2000) : []) {
         if (x(t) < plotX) continue;
         p.MoveTo(x(t), headH);
         p.LineTo(x(t), height);
@@ -638,7 +663,7 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
     /* A hairline under each row, where the list rules its own: the two read as
      * one table and a bar is read against the row it belongs to. */
     p.Color = c.faint;
-    for (let i = 0; i < rows.length; i++) {
+    for (let i = 0; fmt.rows && i < rows.length; i++) {
         const yy = top(i) + rowH - 0.5;
         if (yy < headH || yy - rowH > height) continue;
         p.MoveTo(0, yy);

@@ -685,17 +685,7 @@ class Edit {
         const tasks   = project.Tasks;
         const uid = this.nextUID("task", tasks);
 
-        let at = tasks.length, level = 1;
-        if (afterUID !== null && afterUID !== undefined) {
-            const i = tasks.findIndex((t) => t.UID === afterUID);
-            if (i >= 0) {
-                /* After the project summary is after everything, at level 1:
-                 * there is one level 0 and it is not a sibling of anything. */
-                level = Math.max(tasks[i].OutlineLevel, 1);
-                at = i + 1;
-                while (at < tasks.length && tasks[at].OutlineLevel > level) at++;
-            }
-        }
+        const { at, level } = this.#slot(afterUID);
 
         const task = new MspTask({
             UID: uid, ID: uid, Name: Locale.Text("New task"),
@@ -706,6 +696,109 @@ class Edit {
         tasks.splice(at, 0, task);
         this.commit();
         return task;
+    }
+
+    /* Where a task added "after" another goes: past the other's subtree, at the
+     * other's level. After the project summary is after everything, at level 1:
+     * there is one level 0 and it is not a sibling of anything. */
+    #slot(afterUID) {
+        const tasks = this.holder.project.Tasks;
+        let at = tasks.length, level = 1;
+        if (afterUID !== null && afterUID !== undefined) {
+            const i = tasks.findIndex((t) => t.UID === afterUID);
+            if (i >= 0) {
+                level = Math.max(tasks[i].OutlineLevel, 1);
+                at = i + 1;
+                while (at < tasks.length && tasks[at].OutlineLevel > level) at++;
+            }
+        }
+        return { at, level };
+    }
+
+    /* The task and the subtree it owns as plain data -- what Copy keeps -- with
+     * the assignments on any of them. Null for the project summary, which is
+     * the plan and not a task in it. */
+    copyTasks(uid) {
+        const tasks = this.holder.project.Tasks;
+        const i = tasks.findIndex((t) => t.UID === uid);
+        if (i < 0 || tasks[i].OutlineLevel === 0) return null;
+
+        let end = i + 1;
+        while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
+        const own = {};
+        for (let k = i; k < end; k++) own[tasks[k].UID] = true;
+        return {
+            tasks: tasks.slice(i, end).map((t) => JSON.parse(JSON.stringify(t))),
+            assignments: this.holder.project.Assignments
+                .filter((a) => own[a.TaskUID])
+                .map((a) => JSON.parse(JSON.stringify(a))),
+        };
+    }
+
+    /* A copy put back after `afterUID`, as one step: every task and assignment
+     * under a UID of its own -- never a deleted one's, see `#issued` -- the
+     * links between the copied tasks following them to their copies, and a link
+     * to a task outside kept only while that task is still in the plan. The
+     * copy's top is put at the level of the task it follows. Answers the first
+     * new task, or null when there was nothing to put. */
+    pasteTasks(clip, afterUID) {
+        if (!clip || !clip.tasks.length) return null;
+        const project = this.holder.project;
+        const { at, level } = this.#slot(afterUID);
+        const shift = level - clip.tasks[0].OutlineLevel;
+
+        const made = {};
+        const copies = clip.tasks.map((data) => {
+            const task = new MspTask(JSON.parse(JSON.stringify(data)));
+            const uid = this.nextUID("task", project.Tasks);
+            made[data.UID] = task;
+            task.UID = uid;
+            task.ID  = uid;
+            task.OutlineLevel = Math.max(data.OutlineLevel + shift, 1);
+            return task;
+        });
+        for (const task of copies)
+            task.Links = task.Links.flatMap((link) => {
+                const inside = made[link.PredecessorUID];
+                const kept = inside ? inside.UID : link.PredecessorUID;
+                if (!inside && !project.Tasks.some((t) => t.UID === kept)) return [];
+                const next = new MspLink(JSON.parse(JSON.stringify(link)));
+                next.PredecessorUID = kept;
+                return [next];
+            });
+        project.Tasks.splice(at, 0, ...copies);
+
+        for (const data of clip.assignments) {
+            const a = new MspAssignment(JSON.parse(JSON.stringify(data)));
+            a.UID = this.nextUID("assignment", project.Assignments);
+            a.TaskUID = made[data.TaskUID].UID;
+            project.Assignments.push(a);
+        }
+        this.#recomputeSummary();
+        this.commit();
+        return copies[0];
+    }
+
+    /* Lines of text -- from a spreadsheet, say -- as tasks of one level after
+     * `afterUID`, one step. Each item is `{ Name, Duration?, DurationFormat? }`. */
+    pasteLines(items, afterUID) {
+        if (!items.length) return null;
+        const project = this.holder.project;
+        const { at, level } = this.#slot(afterUID);
+        const made = items.map((item) => {
+            const uid = this.nextUID("task", project.Tasks);
+            return new MspTask({
+                UID: uid, ID: uid, Name: item.Name,
+                OutlineLevel: level, Priority: 500,
+                Duration: item.Duration || "PT0H0M0S",
+                DurationFormat: item.DurationFormat === undefined ? 7 : item.DurationFormat,
+                Work: "PT0H0M0S", CalendarUID: project.CalendarUID,
+            });
+        });
+        project.Tasks.splice(at, 0, ...made);
+        this.#recomputeSummary();
+        this.commit();
+        return made[0];
     }
 
     /* The task and the subtree it owns, every link that pointed at any of

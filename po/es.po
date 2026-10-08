@@ -1295,3 +1295,81 @@ msgstr "Mostrar dependencias"
 
 msgid "Show today's line"
 msgstr "Mostrar la línea de hoy"
+
+msgid "Custom"
+msgstr "Personalizado"
+
+msgid "Task color"
+msgstr "Color de la tarea"
+
+msgid "Critical task color"
+msgstr "Color de la tarea crítica"
+
+msgid "Today's line color"
+msgstr "Color de la línea de hoy"
+
+msgid "Show row lines"
+msgstr "Mostrar líneas de fila"
+
+msgid "Show vertical grid lines"
+msgstr "Mostrar líneas verticales"
+
+msgid "Shade non-working days"
+msgstr "Sombrear días no laborables"
+
+msgid "Progress color"
+msgstr "Color del avance"
+
+msgid "Dependency color"
+msgstr "Color de las dependencias"
+
+msgid "Non-working days color"
+msgstr "Color de los días no laborables"
+
+msgid "Baseline color"
+msgstr "Color de la línea base"
+
+msgid "Selected row color"
+msgstr "Color de la fila seleccionada"
+
+msgid "Copy Task"
+msgstr "Copiar tarea"
+
+msgid "Paste"
+msgstr "Pegar"
+
+msgid "Zoom in"
+msgstr "Acercar"
+
+msgid "Zoom out"
+msgstr "Alejar"
+
+msgid "Expand all"
+msgstr "Expandir todo"
+
+msgid "Collapse all"
+msgstr "Contraer todo"
+
+msgid "Show level 1"
+msgstr "Mostrar nivel 1"
+
+msgid "Show level 2"
+msgstr "Mostrar nivel 2"
+
+msgid "Show level 3"
+msgstr "Mostrar nivel 3"
+
+msgid "All tasks"
+msgstr "Todas las tareas"
+
+msgid "Completed"
+msgstr "Completadas"
+
+msgid "Overdue"
+msgstr "Atrasadas"
+
+msgid "The project summary cannot be copied."
+msgstr "El resumen del proyecto no se puede copiar."
+
+msgid "Copied {0} tasks."
+msgstr "Se copiaron {0} tareas."

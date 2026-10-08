@@ -98,6 +98,9 @@ class MainForm extends Form {
     attrShown   = "";
     valueItems  = [];
     filter = "";
+    zoomSync = false;
+    status = 0;      // the status filter's choice, an index into STATUS_FILTERS
+    clip   = null;   // what Copy kept: { tasks, assignments, text }
     format = ganttFormat(null);
     tipText = "";
     cursorName = "Auto";
@@ -209,16 +212,21 @@ class MainForm extends Form {
                            this.ActReport, this.ActUndo, this.ActRedo,
                            this.ActAdd, this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
+                           this.ActPaste, this.ActZoomIn, this.ActZoomOut,
+                           this.ActZoomFit, this.ActExpandAll, this.ActCollapseAll,
+                           this.ActLevel1, this.ActLevel2, this.ActLevel3,
                            this.ActRecalc, this.ActBaseline, this.ActProjData,
                            this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields, this.ActFormat,
                            this.ActStats])
             act.Enabled = on;
+        this.SldZoom.Enabled = on;
     }
 
     /* What the last run left. The folder is read where the dialog opens and
      * written when a file does; these three are read here. */
     applySettings() {
-        const scale  = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
+        const scale  = Math.min(Number(Settings.Get("bintana-project.timescale", 0)) || 0,
+                                SCALES.length - 1);
         /* **An empty list is a choice**: with every column but the name ticked
          * off, `[]` is what was saved, and it used to be read as "nothing was
          * saved" -- so the usual ones came back at the next start. Only a list
@@ -563,7 +571,7 @@ class MainForm extends Form {
     visibleTasks(project) {
         const tasks = [];
         for (const task of project.Tasks) if (!task.IsNull) tasks.push(task);
-        if (!this.filter) return tasks;
+        if (!this.filter && !this.status) return tasks;
 
         const shown = {};
         const ancestors = [];
@@ -572,10 +580,18 @@ class MainForm extends Form {
                    ancestors[ancestors.length - 1].OutlineLevel >= task.OutlineLevel)
                 ancestors.pop();
             ancestors.push(task);
-            if (Locale.Matches(task.Name, this.filter))
+            if ((!this.filter || Locale.Matches(task.Name, this.filter)) &&
+                taskHasStatus(task, this.status))
                 for (const a of ancestors) shown[a.UID] = true;
         }
         return tasks.filter((task) => shown[task.UID]);
+    }
+
+    /* The status filter: one choice, and it composes with the name's. */
+    CmbStatus_Select() {
+        if (!this.CmbStatus) return;     // the event fires while the form is built
+        this.status = this.CmbStatus.Index;
+        this.fill(this.selectedUID);
     }
 
     /* One keystroke, one rebuilt table; the magnifier in the field clears. */
@@ -1126,7 +1142,7 @@ class MainForm extends Form {
         /* The commands the toolbar, the menu and the panel share are one
          * `Enabled`: assigning the button's would be refused, and rightly. */
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
-                           this.ActUp, this.ActDown])
+                           this.ActUp, this.ActDown, this.ActCopy])
             act.Enabled = has;
         for (const w of [this.BtnApply, this.TxtNotes,
                          this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
@@ -1634,11 +1650,12 @@ class MainForm extends Form {
             /* **Ctrl draws a link, and the bar's halves say which ends**: where
              * the button went down is the end it leaves by (left half the start,
              * right half the finish) and where it comes up is the end it joins.
-             * Ctrl+Shift ignores the halves and draws the type the combo says --
-             * the way to get one for a milestone, which has none. */
+             * Ctrl+Shift ignores the halves and draws finish to start -- the
+             * way to get one for a milestone, which has none. The other types
+             * are the Links list's to choose. */
             const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
                                     this.ganttHeight(), this.step, this.planGeom());
-            const forced = shift ? LINK_ORDER[this.CmbDrawType.Index] : null;
+            const forced = shift ? LINK_ORDER[0] : null;
             this.drag = { mode: "link", uid: hit.task.UID, px: x, py: y, to: null,
                           forced,
                           srcEnd: forced !== null ? linkEndsOf(forced).from
@@ -1665,6 +1682,7 @@ class MainForm extends Form {
      * comes to the chart only when the chart has the focus -- which clicking a
      * link gives it -- so a Delete typed in the panel's fields is theirs. */
     Gantt_KeyPress(key, ctrl, shift, alt) {
+        if (this.rowKey(key, ctrl)) return true;
         if (!this.selLink) return false;
         if (key === "Escape") {
             this.selLink = null;
@@ -2028,6 +2046,7 @@ class MainForm extends Form {
         const view = this.GanttScroll ? this.GanttScroll.Bounds().Height : 0;
         if (view > 0) this.Gantt.MinHeight = Math.max(this.rowHeight(), view);
 
+        this.syncZoom();
         this.redrawChart();
     }
 
@@ -2131,6 +2150,8 @@ class MainForm extends Form {
     CmbScale_Select() {
         const combo = this.CmbScale;
         if (!combo) return;        // the event fires while the form is built
+        /* "Custom" is what the zoom slider leaves: the width it set stays. */
+        if (combo.Index >= SCALES.length) return;
         /* By index, not by text: the combo's items are translated. */
         const scale = SCALES[combo.Index] || null;
         this.dayW = scale ? scale.dayW : null;
@@ -2138,6 +2159,155 @@ class MainForm extends Form {
         this.syncGanttSize();
         if (this.settingsReady)
             Settings.Set("bintana-project.timescale", combo.Index);
+    }
+
+    /* --- copy and paste -------------------------------------------------- */
+
+    /* Ctrl+C and Ctrl+V on the list or the chart, which is where the key comes
+     * from: a key typed in a field of the panel is the field's own. */
+    rowKey(key, ctrl) {
+        if (!ctrl || !this.holder) return false;
+        const k = String(key).toLowerCase();
+        if (k === "c") { this.ActCopy_Click(); return true; }
+        if (k === "v") { this.ActPaste_Click(); return true; }
+        return false;
+    }
+
+    Tasks_KeyPress(key, ctrl, shift, alt) {
+        return this.rowKey(key, ctrl);
+    }
+
+    /* The selected task and what hangs from it, twice: as data kept here, for a
+     * paste that is exact -- links, assignments, outline -- and as tab-separated
+     * text on the clipboard, which is what a spreadsheet takes. */
+    ActCopy_Click() {
+        const task = this.selectedTask();
+        if (!task || !this.edit) return;
+        const clip = this.edit.copyTasks(task.UID);
+        if (!clip) {
+            Message.Warning("The project summary cannot be copied.");
+            return;
+        }
+        const lines = [];
+        for (const data of clip.tasks) {
+            const live = this.byUID[String(data.UID)];
+            if (live) lines.push(this.cells(live).join("\t"));
+        }
+        clip.text = lines.join("\n");
+        this.clip = clip;
+        Clipboard.Copy(clip.text);
+        this.log(Locale.Text("Copied {0} tasks.", clip.tasks.length));
+    }
+
+    /* What is on the clipboard goes in after the selected task: this window's
+     * own copy when the text is the one it put there, otherwise one task a line
+     * -- the name first and, when the list shows a duration column, a duration
+     * from the same place. */
+    ActPaste_Click() {
+        if (!this.edit) return;
+        Clipboard.Paste((text) => {
+            if (!this.edit || !text) return;
+            const after = this.selectedUID;
+            const first = this.clip && text === this.clip.text
+                ? this.edit.pasteTasks(this.clip, after)
+                : this.edit.pasteLines(this.linesOf(text), after);
+            if (first) this.fill(first.UID);
+        });
+    }
+
+    linesOf(text) {
+        const at = this.visibleColumns().indexOf("duration");
+        const items = [];
+        for (const line of String(text).split(/\r?\n/)) {
+            const cells = line.split("\t");
+            const name = cells[0].trim();
+            if (!name) continue;
+            const item = { Name: name };
+            const typed = at >= 0 ? (cells[at + 1] || "").trim() : "";
+            const duration = typed
+                ? parseDuration(typed, 7, this.unit, this.holder.project) : null;
+            if (duration) {
+                item.Duration = mspdiDuration(duration.minutes);
+                item.DurationFormat = duration.format;
+            }
+            items.push(item);
+        }
+        return items;
+    }
+
+    /* --- the outline and the timescale ---------------------------------- */
+
+    ActExpandAll_Click()   { this.Tasks.ExpandAll();   this.redrawChart(); }
+    ActCollapseAll_Click() { this.showLevel(1); }
+    ActLevel1_Click()      { this.showLevel(1); }
+    ActLevel2_Click()      { this.showLevel(2); }
+    ActLevel3_Click()      { this.showLevel(3); }
+
+    /* The outline shown down to a level: the project summary open, every
+     * summary at that level or deeper closed, the ones above it open. The
+     * chart follows by the same road a fold by hand does. */
+    showLevel(level) {
+        if (!this.holder) return;
+        this.Tasks.ExpandAll();
+        for (const task of this.holder.project.Tasks) {
+            const key = String(task.UID);
+            if (task.IsNull || !task.Summary || !this.Tasks.Exists(key)) continue;
+            if (task.OutlineLevel >= level) this.Tasks.CollapseNode(key);
+        }
+        this.redrawChart();
+    }
+
+    /* The width a day has when the chart fits the window. */
+    fitDayW() {
+        const range = this.chartRange();
+        if (!range) return null;
+        const view = this.GanttScroll ? this.GanttScroll.Bounds().Width : 0;
+        const days = (range.to - range.from) / DAY_MS;
+        return days > 0 && view > PAD + 8 ? (view - PAD - 8) / days : 10;
+    }
+
+    /* The slider is the zoom on a log scale, so the same stretch of it is the
+     * same factor anywhere. It follows whatever sets the width -- a preset, a
+     * step, the window -- and `zoomSync` keeps that from being heard as the
+     * user moving it. */
+    syncZoom() {
+        if (!this.SldZoom) return;
+        const dayW = this.dayW || this.fitDayW();
+        if (!dayW) return;
+        const at = 100 * Math.log(dayW / ZOOM_MIN) / Math.log(ZOOM_MAX / ZOOM_MIN);
+        this.zoomSync = true;
+        try { this.SldZoom.Value = Math.round(Math.min(Math.max(at, 0), 100)); }
+        finally { this.zoomSync = false; }
+    }
+
+    SldZoom_Change() {
+        if (this.zoomSync || !this.holder) return;
+        this.setZoom(ZOOM_MIN * Math.pow(ZOOM_MAX / ZOOM_MIN, this.SldZoom.Value / 100));
+    }
+
+    /* A width of the user's own: the combo says so rather than keep a preset
+     * that is no longer true. */
+    setZoom(dayW) {
+        this.dayW = Math.min(Math.max(dayW, ZOOM_MIN), ZOOM_MAX);
+        this.step = 0;
+        this.CmbScale.Index = SCALES.length;
+        this.syncGanttSize();
+    }
+
+    /* A step of zoom is a factor, so the same number of presses goes the same
+     * distance at any scale. From Fit to window it starts from the width a day
+     * has there. */
+    zoom(factor) {
+        const from = this.dayW || this.fitDayW();
+        if (from) this.setZoom(from * factor);
+    }
+
+    ActZoomIn_Click()  { this.zoom(1.5); }
+    ActZoomOut_Click() { this.zoom(1 / 1.5); }
+
+    ActZoomFit_Click() {
+        this.CmbScale.Index = 0;
+        this.CmbScale_Select();
     }
 
     /* --- editing ------------------------------------------------------- */
@@ -3988,6 +4158,47 @@ class MainForm extends Form {
             this.ActFilter.Click();
             ok = eq("el filtro toma el foco", this.TxtFilter.Focused, true) && ok;
 
+            /* Copy and paste, at the layer that does the work (the clipboard
+             * answers later, and a check cannot wait for it). */
+            pick(1);
+            const tasksBefore = tasks();
+            this.ActCopy.Click();
+            ok = eq("copiar guarda la tarea", !!this.clip && this.clip.tasks.length >= 1,
+                    true) && ok;
+            const pasted = this.edit.pasteTasks(this.clip, 1);
+            this.fill(pasted.UID);
+            ok = eq("pegar agrega las tareas copiadas", tasks(),
+                    tasksBefore + this.clip.tasks.length) && ok;
+            ok = eq("con un UID propio", pasted.UID !== 1 &&
+                    this.holder.project.Tasks.filter((t) => t.UID === pasted.UID).length,
+                    1) && ok;
+            ok = eq("y el mismo nombre", pasted.Name, taskOf(this.holder.project, 1).Name) && ok;
+            this.ActUndo.Click();
+            ok = eq("deshacer el pegado lo quita", tasks(), tasksBefore) && ok;
+            const lines = this.linesOf("Uno\t2d\nDos\n\n");
+            ok = eq("el texto pegado es una tarea por linea", lines.length, 2) && ok;
+            this.edit.pasteLines(lines, 1);
+            ok = eq("y pegar lineas las agrega", tasks(), tasksBefore + 2) && ok;
+            this.ActUndo.Click();
+
+            /* The status filter composes with the name's. */
+            const all = this.visibleTasks(this.holder.project).length;
+            this.CmbStatus.Index = 6;
+            this.CmbStatus_Select();
+            ok = eq("el filtro de estado acota", this.visibleTasks(this.holder.project).length <= all,
+                    true) && ok;
+            this.CmbStatus.Index = 0;
+            this.CmbStatus_Select();
+            ok = eq("y Todas lo devuelve", this.visibleTasks(this.holder.project).length, all) && ok;
+
+            /* The outline and the zoom. */
+            this.ActLevel1.Click();
+            this.ActExpandAll.Click();
+            this.ActZoomIn.Click();
+            ok = eq("acercar fija un ancho de dia", this.dayW !== null && this.dayW > 0, true) && ok;
+            this.ActZoomFit.Click();
+            ok = eq("ajustar vuelve a la ventana", this.dayW, null) && ok;
+
             /* **Lo guardado es un estado, no un número de paso.** Guardar,
              * deshacer dos y hacer dos ediciones vuelve al mismo índice con
              * otro plan; y una pila llena que se llevó el estado guardado no
@@ -4396,14 +4607,11 @@ class MainForm extends Form {
                 return made;
             };
 
-            /* Ctrl+Shift ignores the halves and draws the combo's type: Start
-             * to start, here, its second item and MSPDI's 3. */
-            this.CmbDrawType.Index = 1;
+            /* Ctrl+Shift ignores the halves and draws finish to start, MSPDI's 1. */
             draw((b1.a + b1.b) / 2, (b2.a + b2.b) / 2, true);
             ok = eq("link count", edit.task(2).Links.length, 1) && ok;
             ok = eq("link predecessor", edit.task(2).Links[0].PredecessorUID, 1) && ok;
-            ok = eq("link type", typeOf(), 3) && ok;
-            this.CmbDrawType.Index = 0;
+            ok = eq("link type", typeOf(), 1) && ok;
             edit.undo();
 
             ok = eq("right half to left half is FS",
@@ -5128,6 +5336,28 @@ class MainForm extends Form {
         ok = this.styleYes("an unknown theme falls back to classic",
                            ganttFormat({ theme: "nope", size: 9 }).theme === "classic" &&
                            ganttFormat({ size: 9 }).size === 1, "fallback") && ok;
+        /* A custom theme paints with the colours the view chose, and each
+         * switch removes only its own part. */
+        const mine = { theme: "custom", barColor: "#112233",
+                       lateColor: "#445566", todayColor: "#778899" };
+        const customLog = new CallLog();
+        drawGantt(customLog, 600, 320, rows, null, 0, null, 0,
+                  { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+                    calendar: this.chartCal, format: mine });
+        ok = this.styleYes("a custom theme paints the bars in the chosen colours",
+                           customLog.hasColor("#112233") || customLog.hasColor("#445566"),
+                           "custom bar #112233") && ok;
+        ok = this.styleYes("the custom colours name today's line too",
+                           ganttPalette(log, "custom", ganttFormat(mine)).today === "#778899",
+                           "custom today") && ok;
+        const noRows = new CallLog();
+        drawGantt(noRows, 600, 320, rows, null, 0, null, 0,
+                  { plotX: PAD, rowH: this.rowHeight(), headH: this.headHeight(),
+                    calendar: this.chartCal,
+                    format: { rows: false, grid: false, idle: false } });
+        ok = this.styleYes("rows, grid and idle days switch off",
+                           noRows.calls.length < themed.calls.length,
+                           `${noRows.calls.length} < ${themed.calls.length}`) && ok;
         const plain = new CallLog();
         const labelled = new CallLog();
         const frame = (format) => ({ plotX: PAD, rowH: this.rowHeight(),
@@ -6070,6 +6300,9 @@ class MainForm extends Form {
         const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
+                        "ActCopy", "ActPaste", "ActZoomIn", "ActZoomOut", "ActZoomFit",
+                        "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",
+                        "ActLevel3",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
@@ -6082,7 +6315,7 @@ class MainForm extends Form {
                      "CmbScale_Select",
                      "Links_Select", "Assignments_Select", "PropsTabs_Switch",
                      "CmbAttr_Select", "CmbAttrValue_Select", "TxtLinkAddress_Change",
-                     "TxtFilter_Change",
+                     "TxtFilter_Change", "CmbStatus_Select", "SldZoom_Change", "Tasks_KeyPress",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseLeave", "Gantt_MouseUp", "Gantt_KeyPress",
                      "Tasks_Activate", "Gantt_DblClick"]);
@@ -6398,6 +6631,29 @@ const LINK_INDEX = { 0: 2, 1: 0, 2: 3, 3: 1 };
 /* What the timescale control means, by the combo's index (its items are
  * translated, so the text is not a key): pixels a day, and the header step in
  * days -- null/0 is the chart's own choice, which is what Auto is. */
+/* What the status filter lets through, by the combo's index (the words are
+ * translated, so the text is not a key). Index 0 is every task. */
+const STATUS_FILTERS = ["all", "critical", "notStarted", "inProgress", "done",
+                        "overdue", "milestone"];
+
+function taskHasStatus(task, index) {
+    const percent = task.PercentComplete || 0;
+    switch (STATUS_FILTERS[index]) {
+    case "critical":   return !!task.Critical;
+    case "notStarted": return percent === 0;
+    case "inProgress": return percent > 0 && percent < 100;
+    case "done":       return percent >= 100;
+    case "overdue": {
+        const finish = task.Finish ? whenMs(task.Finish) : null;
+        return percent < 100 && finish !== null && finish < new Date().getTime();
+    }
+    case "milestone":  return !!task.Milestone;
+    }
+    return true;
+}
+
+const ZOOM_MIN = 0.5, ZOOM_MAX = 120;   // pixels a day, the slider's two ends
+
 const SCALES = [
     null,                        // Auto
     { dayW: 30, step: 1 },       // Day

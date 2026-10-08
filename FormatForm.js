@@ -9,6 +9,12 @@
  */
 "use strict";
 
+/* The colour button that holds each of the custom theme's colours. */
+const COLOR_FIELD = { barColor: "ClrBar", lateColor: "ClrLate", todayColor: "ClrToday",
+                      progressColor: "ClrProgress", linkColor: "ClrLink",
+                      idleColor: "ClrIdle", baselineColor: "ClrBaseline",
+                      selectColor: "ClrSelect" };
+
 /* The label's choices, in the combo's order; empty is nothing. */
 const LABEL_KEYS = ["", "name", "resources", "percent", "dates", "duration",
                     "work", "cost", "wbs"];
@@ -26,6 +32,11 @@ function loadFormat() {
     fmt.progress = Settings.Get(FORMAT_KEY + "progress", GANTT_FORMAT.progress);
     fmt.links    = Settings.Get(FORMAT_KEY + "links", GANTT_FORMAT.links);
     fmt.today    = Settings.Get(FORMAT_KEY + "today", GANTT_FORMAT.today);
+    fmt.rows     = Settings.Get(FORMAT_KEY + "rows", GANTT_FORMAT.rows);
+    fmt.grid     = Settings.Get(FORMAT_KEY + "grid", GANTT_FORMAT.grid);
+    fmt.idle     = Settings.Get(FORMAT_KEY + "idle", GANTT_FORMAT.idle);
+    for (const key of GANTT_CUSTOM_COLORS)
+        fmt[key] = Settings.Get(FORMAT_KEY + key, GANTT_FORMAT[key]);
     return ganttFormat(fmt);
 }
 
@@ -46,6 +57,11 @@ class FormatForm extends Form {
         dlg.ChkProgress.Active = fmt.progress;
         dlg.ChkLinks.Active    = fmt.links;
         dlg.ChkToday.Active    = fmt.today;
+        dlg.ChkRows.Active     = fmt.rows;
+        dlg.ChkGrid.Active     = fmt.grid;
+        dlg.ChkIdle.Active     = fmt.idle;
+        for (const key of GANTT_CUSTOM_COLORS) dlg[COLOR_FIELD[key]].Value = fmt[key];
+        dlg.CmbTheme_Select();
 
         dlg.Show();
         return dlg;
@@ -53,6 +69,8 @@ class FormatForm extends Form {
 
     /* What the fields say, whole. */
     values() {
+        const colors = {};
+        for (const key of GANTT_CUSTOM_COLORS) colors[key] = this[COLOR_FIELD[key]].Value;
         return ganttFormat({
             theme:    GANTT_THEME_IDS[this.CmbTheme.Index],
             label:    LABEL_KEYS[this.CmbLabel.Index] || "",
@@ -61,7 +79,20 @@ class FormatForm extends Form {
             progress: this.ChkProgress.Active,
             links:    this.ChkLinks.Active,
             today:    this.ChkToday.Active,
+            rows:     this.ChkRows.Active,
+            grid:     this.ChkGrid.Active,
+            idle:     this.ChkIdle.Active,
+            ...colors,
         });
+    }
+
+    /* The colours are only the chart's when the theme is the custom one, so
+     * they are only shown then. */
+    CmbTheme_Select() {
+        /* The combo selects while the form is still being built, before the
+         * controls after it exist. */
+        if (!this.CmbTheme || !this.CustomColors) return;
+        this.CustomColors.Visible = GANTT_THEME_IDS[this.CmbTheme.Index] === "custom";
     }
 
     BtnSave_Click() {

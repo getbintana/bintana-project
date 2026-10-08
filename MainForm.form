@@ -163,6 +163,66 @@
       "name": "ActFormat",
       "text": "Chart format…",
       "icon": "applications-graphics-symbolic"
+    },
+    {
+      "name": "ActCopy",
+      "text": "Copy Task",
+      "icon": "edit-copy-symbolic",
+      "enabled": false
+    },
+    {
+      "name": "ActPaste",
+      "text": "Paste",
+      "icon": "edit-paste-symbolic",
+      "enabled": false
+    },
+    {
+      "name": "ActZoomIn",
+      "text": "Zoom in",
+      "icon": "zoom-in-symbolic",
+      "shortcut": "<Control>plus",
+      "enabled": false
+    },
+    {
+      "name": "ActZoomOut",
+      "text": "Zoom out",
+      "icon": "zoom-out-symbolic",
+      "shortcut": "<Control>minus",
+      "enabled": false
+    },
+    {
+      "name": "ActZoomFit",
+      "text": "Fit to window",
+      "icon": "zoom-fit-best-symbolic",
+      "shortcut": "<Control>0",
+      "enabled": false
+    },
+    {
+      "name": "ActExpandAll",
+      "text": "Expand all",
+      "icon": "pan-down-symbolic",
+      "enabled": false
+    },
+    {
+      "name": "ActCollapseAll",
+      "text": "Collapse all",
+      "icon": "pan-up-symbolic",
+      "enabled": false
+    },
+    {
+      "name": "ActLevel1",
+      "text": "Show level 1",
+      "enabled": false
+    },
+    {
+      "name": "ActLevel2",
+      "text": "Show level 2",
+      "enabled": false
+    },
+    {
+      "name": "ActLevel3",
+      "text": "Show level 3",
+      "enabled": false
     }
   ],
   "menus": [
@@ -216,6 +276,15 @@
         },
         {
           "action": "ActRedo"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActCopy"
+        },
+        {
+          "action": "ActPaste"
         },
         {
           "separator": true
@@ -278,6 +347,36 @@
         },
         {
           "action": "ActFormat"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActZoomIn"
+        },
+        {
+          "action": "ActZoomOut"
+        },
+        {
+          "action": "ActZoomFit"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActExpandAll"
+        },
+        {
+          "action": "ActCollapseAll"
+        },
+        {
+          "action": "ActLevel1"
+        },
+        {
+          "action": "ActLevel2"
+        },
+        {
+          "action": "ActLevel3"
         }
       ]
     },
@@ -669,6 +768,23 @@
                   }
                 },
                 {
+                  "type": "ComboBox",
+                  "name": "CmbStatus",
+                  "properties": {
+                    "Items": [
+                      "All tasks",
+                      "Critical",
+                      "Not started",
+                      "In progress",
+                      "Completed",
+                      "Overdue",
+                      "Milestones"
+                    ],
+                    "Index": 0,
+                    "Width": 150
+                  }
+                },
+                {
                   "type": "Label",
                   "name": "LblFile",
                   "properties": {
@@ -709,61 +825,6 @@
                         "HAlign": "Fill"
                       },
                       "children": [
-                        {
-                          "type": "Panel",
-                          "name": "GanttBar",
-                          "properties": {
-                            "Arrangement": "Horizontal",
-                            "Spacing": "8",
-                            "HAlign": "Fill"
-                          },
-                          "children": [
-                            {
-                              "type": "Label",
-                              "name": "LblScale",
-                              "properties": {
-                                "Text": "Timescale"
-                              }
-                            },
-                            {
-                              "type": "ComboBox",
-                              "name": "CmbScale",
-                              "properties": {
-                                "Items": [
-                                  "Fit to window",
-                                  "Days",
-                                  "Weeks",
-                                  "Months"
-                                ],
-                                "Index": 0,
-                                "Width": 170
-                              }
-                            },
-                            {
-                              "type": "Label",
-                              "name": "LblDrawType",
-                              "properties": {
-                                "Text": "New link",
-                                "HExpand": true,
-                                "HAlign": "End"
-                              }
-                            },
-                            {
-                              "type": "ComboBox",
-                              "name": "CmbDrawType",
-                              "properties": {
-                                "Items": [
-                                  "Finish to start",
-                                  "Start to start",
-                                  "Finish to finish",
-                                  "Start to finish"
-                                ],
-                                "Index": 0,
-                                "Width": 170
-                              }
-                            }
-                          ]
-                        },
                         {
                           "type": "Split",
                           "name": "PlanSplit",
@@ -1767,6 +1828,40 @@
                     "HExpand": true,
                     "HAlign": "Fill",
                     "Style": "dim-label"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblScale",
+                  "properties": {
+                    "Text": "Timescale"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbScale",
+                  "properties": {
+                    "Items": [
+                      "Fit to window",
+                      "Days",
+                      "Weeks",
+                      "Months",
+                      "Custom"
+                    ],
+                    "Index": 0,
+                    "Width": 140
+                  }
+                },
+                {
+                  "type": "Slider",
+                  "name": "SldZoom",
+                  "properties": {
+                    "Min": 0,
+                    "Max": 100,
+                    "Value": 50,
+                    "Step": 1,
+                    "Width": 140,
+                    "Tooltip": "Zoom"
                   }
                 }
               ]

@@ -225,6 +225,17 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
   (negrita o color de una barra en particular): MSPDI no lo guarda, así que
   sería algo que el archivo pierde.
 
+- **Copiar y pegar, filtros de estado, esquema y zoom** (2026-10-08): **Copiar
+  tarea** guarda la tarea con su rama --enlaces internos y asignaciones-- y
+  pone el texto separado por tabuladores en el portapapeles; **Pegar** repone
+  la copia con UID nuevos, o crea una tarea por línea si el texto viene de
+  afuera (nombre y, si hay columna de duración, la duración). Ctrl+C/V
+  funcionan sobre la lista y el gráfico, no en los campos. Un combo de
+  **estado** junto al filtro (críticas, sin empezar, en curso, completadas,
+  atrasadas, hitos) que compone con el nombre. **Ver →** Expandir/Contraer
+  todo y Mostrar nivel 1–3, y Acercar/Alejar/Ajustar (Ctrl +, Ctrl -, Ctrl 0).
+  Todo es de la vista o edición estándar: el MSPDI no cambia.
+
 ### 4 — Gantt interactivo
 
 **La vista clásica** (2026-09-29): era la meta grande de la fase -- el plan a
