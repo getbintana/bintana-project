@@ -637,18 +637,17 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 ### El formato
 
-- **Un elemento nuevo puede romper el orden del XSD** cuando la tarea o la
-  asignación tiene elementos que las formas no modelan. `Record` ubica uno
-  nuevo antes del primer hermano *modelado* declarado después, y al final si
-  no hay; los no modelados no cuentan. Casos reproducidos: un
-  `PredecessorLink` después de `IsPublished`/`CommitmentType` (archivos de
-  Project 2010+), un `Baseline` en el mismo lugar, un `BudgetCost` después
-  del `TimephasedData` de la asignación, y las variaciones que se vuelven a
-  agregar después de `FixedCostAccrual` o de `Milestone`/`Overallocated`.
-  El comentario de `MspTask` dice que el orden está fijo, y lo está sólo
-  respecto de lo modelado. Ningún golden lo ve: sólo el check opcional con
-  `XSD=`. Es del runtime (`Record.#xmlSlot`), o de declarar en las formas
-  los nombres que vienen después aunque no se modelen.
+- **Un elemento nuevo cae donde el esquema lo pone** (2026-10-07): el runtime ya
+  tiene `static Xml.Order` (el issue se llenó y se borró), y las formas de
+  tarea, vínculo, recurso, tasa, asignación, calendario, día de semana,
+  excepción y proyecto declaran la secuencia del XSD completa, con lo que no
+  modelan como ancla -- generada del propio esquema, más `Manual` (de Project
+  2010+, ubicado como Project lo escribe en el archivo real). Un
+  `PredecessorLink` agregado a una tarea con `IsPublished` y `CommitmentType`
+  queda antes de ellos: `11-unmodeled-order` lo fija y `check-commands` lo
+  afirma sin el XSD externo (falla sin `Order`). **Si una forma gana un campo
+  que el XSD no tiene, el runtime se niega a escribir y lo nombra**: hay que
+  agregarlo a su `Order`.
 - **`ID` no se renumera.** `addTask` le da `ID = UID` a la tarea nueva y
   `moveTask` reordena sin tocar los `ID`: agregar e indentar escribe 0,1,3,2.
   Quien ordene por `ID` (MPXJ, y por él ProjectLibre) deshace el movimiento

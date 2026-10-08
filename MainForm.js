@@ -3833,6 +3833,27 @@ class MainForm extends Form {
                     "2026-11-09T23:59:00") && ok;
             rdlg.Close();
 
+            /* **Un elemento nuevo cae donde el esquema lo pone**, aunque lo que
+             * viene después no sea nuestro. La tarea 1 de este plan trae
+             * `IsPublished` y `CommitmentType` -- que las formas no modelan -- y
+             * ningún vínculo; el que se le agrega tiene que quedar antes de
+             * ellos, que es lo que la `xsd:sequence` pide, y no al final. */
+            const sequenced = readMspdi(this.resolve(File.Join("tests", "corpus",
+                                        "11-unmodeled-order.xml")));
+            const seqEdit = new Edit(sequenced);
+            seqEdit.setLinks(1, [new MspLink({ PredecessorUID: 5, Type: 1 })]);
+            const seqFile = File.Join(Environment.TempDirectory, "bintana-project-order.xml");
+            writeMspdi(seqFile, sequenced);
+            const seqTask = File.LoadXml(seqFile).Root.Find("Tasks").FindAll("Task")
+                .find((t) => t.Find("UID").Text === "1");
+            const seqNames = seqTask.Children.map((c) => c.Name);
+            File.Delete(seqFile);
+            ok = eq("el vínculo nuevo va antes de lo que no modelamos",
+                    seqNames.indexOf("PredecessorLink") >= 0 &&
+                    seqNames.indexOf("PredecessorLink") < seqNames.indexOf("IsPublished") &&
+                    seqNames.indexOf("IsPublished") < seqNames.indexOf("CommitmentType"),
+                    true) && ok;
+
             /* **Borrar una excepción no le pasa su recurrencia a la otra.** Sin
              * clave se emparejan por posición, y la segunda se escribía en el
              * elemento de la primera conservando su `Month`/`MonthDay`. */

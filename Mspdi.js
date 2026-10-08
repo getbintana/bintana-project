@@ -45,7 +45,13 @@ const TENTHS     = 10;   // file units per minute, for the four fields above
  * file did not say") and a present 0 -- one of the four real values --
  * survives the round trip. */
 class MspLink extends Record {
-    static Xml = { Root: "PredecessorLink" };
+    static Xml = {
+        Root: "PredecessorLink",
+        Order: [
+            "PredecessorUID", "Type", "CrossProject", "CrossProjectName",
+            "LinkLag", "LagFormat"
+        ],
+    };
     static Fields = {
         PredecessorUID: Field.Int({ key: true }),
         Type:           Field.Int({ def: -1 }),
@@ -103,7 +109,38 @@ class MspFieldDef extends Record {
 }
 
 class MspTask extends Record {
-    static Xml = { Root: "Task" };
+    static Xml = {
+        Root: "Task",
+        Order: [
+            "UID", "ID", "Name", "Manual", "Type", "IsNull", "CreateDate",
+            "Contact", "WBS", "WBSLevel", "OutlineNumber", "OutlineLevel",
+            "Priority", "Start", "Finish", "Duration", "DurationFormat",
+            "Work", "Stop", "Resume", "ResumeValid", "EffortDriven",
+            "Recurring", "OverAllocated", "Estimated", "Milestone",
+            "Summary", "Critical", "IsSubproject", "IsSubprojectReadOnly",
+            "SubprojectName", "ExternalTask", "ExternalTaskProject",
+            "EarlyStart", "EarlyFinish", "LateStart", "LateFinish",
+            "StartVariance", "FinishVariance", "WorkVariance", "FreeSlack",
+            "TotalSlack", "FixedCost", "FixedCostAccrual",
+            "PercentComplete", "PercentWorkComplete", "Cost",
+            "OvertimeCost", "OvertimeWork", "ActualStart", "ActualFinish",
+            "ActualDuration", "ActualCost", "ActualOvertimeCost",
+            "ActualWork", "ActualOvertimeWork", "RegularWork",
+            "RemainingDuration", "RemainingCost", "RemainingWork",
+            "RemainingOvertimeCost", "RemainingOvertimeWork", "ACWP", "CV",
+            "ConstraintType", "CalendarUID", "ConstraintDate", "Deadline",
+            "LevelAssignments", "LevelingCanSplit", "LevelingDelay",
+            "LevelingDelayFormat", "PreLeveledStart", "PreLeveledFinish",
+            "Hyperlink", "HyperlinkAddress", "HyperlinkSubAddress",
+            "IgnoreResourceCalendar", "Notes", "HideBar", "Rollup", "BCWS",
+            "BCWP", "PhysicalPercentComplete", "EarnedValueMethod",
+            "PredecessorLink", "ActualWorkProtected",
+            "ActualOvertimeWorkProtected", "ExtendedAttribute", "Baseline",
+            "OutlineCode", "IsPublished", "StatusManager",
+            "CommitmentStart", "CommitmentFinish", "CommitmentType",
+            "TimephasedData"
+        ],
+    };
     static Fields = {
         UID:              Field.Int({ key: true }),
         ID:               Field.Int(),
@@ -190,7 +227,14 @@ class MspTask extends Record {
  * belongs to. The schema makes the two dates required, so every row has a
  * period and there is no open end to guess at. */
 class MspRate extends Record {
-    static Xml = { Root: "Rate" };
+    static Xml = {
+        Root: "Rate",
+        Order: [
+            "RatesFrom", "RatesTo", "RateTable", "StandardRate",
+            "StandardRateFormat", "OvertimeRate", "OvertimeRateFormat",
+            "CostPerUse"
+        ],
+    };
     static Fields = {
         RatesFrom:          Field.DateTime(),
         RatesTo:            Field.DateTime(),
@@ -204,7 +248,29 @@ class MspRate extends Record {
 }
 
 class MspResource extends Record {
-    static Xml = { Root: "Resource" };
+    static Xml = {
+        Root: "Resource",
+        Order: [
+            "UID", "ID", "Name", "Type", "IsNull", "Initials", "Phonetics",
+            "NTAccount", "MaterialLabel", "Code", "Group", "WorkGroup",
+            "EmailAddress", "Hyperlink", "HyperlinkAddress",
+            "HyperlinkSubAddress", "MaxUnits", "PeakUnits", "OverAllocated",
+            "AvailableFrom", "AvailableTo", "Start", "Finish", "CanLevel",
+            "AccrueAt", "Work", "RegularWork", "OvertimeWork", "ActualWork",
+            "RemainingWork", "ActualOvertimeWork", "RemainingOvertimeWork",
+            "PercentWorkComplete", "StandardRate", "StandardRateFormat",
+            "Cost", "OvertimeRate", "OvertimeRateFormat", "OvertimeCost",
+            "CostPerUse", "ActualCost", "ActualOvertimeCost",
+            "RemainingCost", "RemainingOvertimeCost", "WorkVariance",
+            "CostVariance", "SV", "CV", "ACWP", "CalendarUID", "Notes",
+            "BCWS", "BCWP", "IsGeneric", "IsInactive", "IsEnterprise",
+            "BookingType", "ActualWorkProtected",
+            "ActualOvertimeWorkProtected", "ActiveDirectoryGUID",
+            "CreationDate", "ExtendedAttribute", "Baseline", "OutlineCode",
+            "IsCostResource", "AssnOwner", "AssnOwnerGuid", "IsBudget",
+            "AvailabilityPeriods", "Rates", "TimephasedData"
+        ],
+    };
     static Fields = {
         UID:                Field.Int({ key: true }),
         ID:                 Field.Int(),
@@ -236,7 +302,68 @@ class MspResource extends Record {
 }
 
 class MspAssignment extends Record {
-    static Xml = { Root: "Assignment" };
+    static Xml = {
+        Root: "Assignment",
+        Order: [
+            "UID", "TaskUID", "ResourceUID", "PercentWorkComplete",
+            "ActualCost", "ActualFinish", "ActualOvertimeCost",
+            "ActualOvertimeWork", "ActualStart", "ActualWork", "ACWP",
+            "Confirmed", "Cost", "CostRateTable", "CostVariance", "CV",
+            "Delay", "Finish", "FinishVariance", "Hyperlink",
+            "HyperlinkAddress", "HyperlinkSubAddress", "WorkVariance",
+            "HasFixedRateUnits", "FixedMaterial", "LevelingDelay",
+            "LevelingDelayFormat", "LinkedFields", "Milestone", "Notes",
+            "Overallocated", "OvertimeCost", "OvertimeWork", "PeakUnits",
+            "RegularWork", "RemainingCost", "RemainingOvertimeCost",
+            "RemainingOvertimeWork", "RemainingWork", "ResponsePending",
+            "Start", "Stop", "Resume", "StartVariance", "Summary", "SV",
+            "Units", "UpdateNeeded", "VAC", "Work", "WorkContour", "BCWS",
+            "BCWP", "BookingType", "ActualWorkProtected",
+            "ActualOvertimeWorkProtected", "CreationDate", "AssnOwner",
+            "AssnOwnerGuid", "BudgetCost", "BudgetWork",
+            "ExtendedAttribute", "Baseline", "f404000", "f404001",
+            "f404002", "f404003", "f404004", "f404005", "f404006",
+            "f404007", "f404008", "f404009", "f40400a", "f40400b",
+            "f40400c", "f40400d", "f40400e", "f40400f", "f404010",
+            "f404011", "f404012", "f404013", "f404014", "f404015",
+            "f404016", "f404017", "f404018", "f404019", "f40401a",
+            "f40401b", "f40401c", "f40401d", "f40401e", "f40401f",
+            "f404020", "f404021", "f404022", "f404023", "f404024",
+            "f404025", "f404026", "f404027", "f404028", "f404029",
+            "f40402a", "f40402b", "f40402c", "f40402d", "f40402e",
+            "f40402f", "f404030", "f404031", "f404032", "f404033",
+            "f404034", "f404035", "f404036", "f404037", "f404038",
+            "f404039", "f40403a", "f40403b", "f40403c", "f40403d",
+            "f40403e", "f40403f", "f404040", "f404041", "f404042",
+            "f404043", "f404044", "f404045", "f404046", "f404047",
+            "f404048", "f404049", "f40404a", "f40404b", "f40404c",
+            "f40404d", "f40404e", "f40404f", "f404050", "f404051",
+            "f404052", "f404053", "f404054", "f404055", "f404056",
+            "f404057", "f404058", "f404059", "f40405a", "f40405b",
+            "f40405c", "f40405d", "f40405e", "f40405f", "f404060",
+            "f404061", "f404062", "f404063", "f404064", "f404065",
+            "f404066", "f404067", "f404068", "f404069", "f40406a",
+            "f40406b", "f40406c", "f40406d", "f40406e", "f40406f",
+            "f404070", "f404071", "f404072", "f404073", "f404074",
+            "f404075", "f404076", "f404077", "f404078", "f404079",
+            "f40407a", "f40407b", "f40407c", "f40407d", "f40407e",
+            "f40407f", "f404080", "f404081", "f404082", "f404083",
+            "f404084", "f404085", "f404086", "f404087", "f404088",
+            "f404089", "f40408a", "f40408b", "f40408c", "f40408d",
+            "f40408e", "f40408f", "f404090", "f404091", "f404092",
+            "f404093", "f404094", "f404095", "f404096", "f404097",
+            "f404098", "f404099", "f40409a", "f40409b", "f40409c",
+            "f40409d", "f40409e", "f40409f", "f4040a0", "f4040a1",
+            "f4040a2", "f4040a3", "f4040a4", "f4040a5", "f4040a6",
+            "f4040a7", "f4040a8", "f4040a9", "f4040aa", "f4040ab",
+            "f4040ac", "f4040ad", "f4040ae", "f4040af", "f4040b0",
+            "f4040b1", "f4040b2", "f4040b3", "f4040b4", "f4040b5",
+            "f4040b6", "f4040b7", "f4040b8", "f4040b9", "f4040ba",
+            "f4040bb", "f4040bc", "f4040bd", "f4040be", "f4040bf",
+            "f4040c0", "f4040c1", "f4040c2", "f4040c3", "f4040c4",
+            "f4040c5", "f4040c6", "f4040c7", "f4040c8", "TimephasedData"
+        ],
+    };
     static Fields = {
         UID:                 Field.Int({ key: true }),
         TaskUID:             Field.Int(),
@@ -305,7 +432,12 @@ class MspWorkingTime extends Record {
 
 /* One day of the week. MSPDI's `DayType` is 1 Sunday through 7 Saturday. */
 class MspWeekDay extends Record {
-    static Xml = { Root: "WeekDay" };
+    static Xml = {
+        Root: "WeekDay",
+        Order: [
+            "DayType", "DayWorking", "TimePeriod", "WorkingTimes"
+        ],
+    };
     static Fields = {
         DayType:      Field.Int(),
         DayWorking:   Field.Bool(),
@@ -336,7 +468,14 @@ class MspTimePeriod extends Record {
  * their absent is -1, the bargain `MspLink.Type` makes; the other two take the
  * same for symmetry, since neither has a zero that means anything. */
 class MspException extends Record {
-    static Xml = { Root: "Exception" };
+    static Xml = {
+        Root: "Exception",
+        Order: [
+            "EnteredByOccurrences", "TimePeriod", "Occurrences", "Name",
+            "Type", "Period", "DaysOfWeek", "MonthItem", "MonthPosition",
+            "Month", "MonthDay", "DayWorking", "WorkingTimes"
+        ],
+    };
     static Fields = {
         EnteredByOccurrences: Field.Bool(),
         TimePeriod:           Field.Record(MspTimePeriod),
@@ -355,7 +494,13 @@ class MspException extends Record {
 }
 
 class MspCalendar extends Record {
-    static Xml = { Root: "Calendar" };
+    static Xml = {
+        Root: "Calendar",
+        Order: [
+            "UID", "Name", "IsBaseCalendar", "BaseCalendarUID", "WeekDays",
+            "Exceptions", "WorkWeeks"
+        ],
+    };
     static Fields = {
         UID:             Field.Int({ key: true }),
         Name:            Field.Text(),
@@ -371,7 +516,34 @@ class MspProject extends Record {
      * schema and first in it -- is declared first. */
     static Xml = { Root: "Project",
                    Namespace: ["http://schemas.microsoft.com/project",
-                               "http://schemas.microsoft.com/project/2007"] };
+                               "http://schemas.microsoft.com/project/2007"],
+                   Order: [
+                       "SaveVersion", "UID", "Name", "Title", "Subject", "Category",
+                       "Company", "Manager", "Author", "CreationDate", "Revision",
+                       "LastSaved", "ScheduleFromStart", "StartDate", "FinishDate",
+                       "FYStartDate", "CriticalSlackLimit", "CurrencyDigits",
+                       "CurrencySymbol", "CurrencyCode", "CurrencySymbolPosition",
+                       "CalendarUID", "DefaultStartTime", "DefaultFinishTime",
+                       "MinutesPerDay", "MinutesPerWeek", "DaysPerMonth",
+                       "DefaultTaskType", "DefaultFixedCostAccrual",
+                       "DefaultStandardRate", "DefaultOvertimeRate",
+                       "DurationFormat", "WorkFormat", "EditableActualCosts",
+                       "HonorConstraints", "EarnedValueMethod",
+                       "InsertedProjectsLikeSummary", "MultipleCriticalPaths",
+                       "NewTasksEffortDriven", "NewTasksEstimated",
+                       "SplitsInProgressTasks", "SpreadActualCost",
+                       "SpreadPercentComplete", "TaskUpdatesResource",
+                       "FiscalYearStart", "WeekStartDay", "MoveCompletedEndsBack",
+                       "MoveRemainingStartsBack", "MoveRemainingStartsForward",
+                       "MoveCompletedEndsForward", "BaselineForEarnedValue",
+                       "AutoAddNewResourcesAndTasks", "StatusDate", "CurrentDate",
+                       "MicrosoftProjectServerURL", "Autolink", "NewTaskStartDate",
+                       "DefaultTaskEVMethod", "ProjectExternallyEdited",
+                       "ExtendedCreationDate", "ActualsInSync",
+                       "RemoveFileProperties", "AdminProject", "OutlineCodes",
+                       "WBSMasks", "ExtendedAttributes", "Calendars", "Tasks",
+                       "Resources", "Assignments"
+                   ] };
     static Fields = {
         SaveVersion:       Field.Int(),
         Name:              Field.Text(),
