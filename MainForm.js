@@ -1302,7 +1302,12 @@ class MainForm extends Form {
         const x0 = g.x(Math.min(s, f)), x1 = g.x(Math.max(s, f));
         const edge = task.Milestone ? 9 : 5;
         if (x < x0 - edge || x > x1 + edge) return null;
-        return { task, zone: !task.Milestone && x >= x1 - edge ? "end" : "bar" };
+        /* **The grip is a part of the bar, not the bar**: five pixels of a bar
+         * ten pixels wide is half of it, and a bar of three was nothing but
+         * grip -- a short task could not be picked up to be moved. So the grip
+         * is at most a third of the bar. */
+        const grip = Math.min(5, (x1 - x0) / 3);
+        return { task, zone: !task.Milestone && x >= x1 - grip ? "end" : "bar" };
     }
 
     /* The button goes down: a drag starts. Ctrl draws a dependency; otherwise
@@ -4086,6 +4091,8 @@ class MainForm extends Form {
             const geo = () => ganttGeometry(this.chartRows(), this.ganttWidth(),
                                             this.ganttHeight(), this.step, this.planGeom());
             const shapeOf = () => ganttLinkOf(geo(), 1, 2);
+            const bar2 = (task, gg) => ({ a: gg.x(whenMs(task.Start)),
+                                          b: gg.x(whenMs(task.Finish)) });
             let sh = shapeOf();
             this.TxtName.SetFocus();      // where the keyboard usually is
             this.Gantt_MouseDown(sh.pts[2], sh.pts[3] + 4, 1, false, false);
@@ -4131,6 +4138,22 @@ class MainForm extends Form {
             edit.undo();
             edit.undo();
             this.selLink = null;
+
+            /* **A short bar can still be picked up**: two hours is a few pixels
+             * wide, and its grip used to be all of it. The middle moves it and
+             * only the far end stretches it. */
+            const brief = edit.addTask(2);
+            edit.setFields(brief.UID, { Start: "2026-09-02T08:00:00",
+                                        Finish: "2026-09-02T10:00:00" });
+            const gb = geo();
+            const bb = bar2(edit.task(brief.UID), gb);
+            const by = at(gb.rows, edit.task(brief.UID));
+            ok = eq("a bar of a few pixels moves from its middle",
+                    (this.ganttHit((bb.a + bb.b) / 2, by) || {}).zone, "bar") && ok;
+            ok = eq("and stretches from its far end",
+                    (this.ganttHit(bb.b, by) || {}).zone, "end") && ok;
+            edit.undo();
+            edit.undo();
 
             /* **A link is drawn as the type it is**: a start-to-start one leaves
              * its predecessor's start and turns on the left of both bars, where

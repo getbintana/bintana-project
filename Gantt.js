@@ -688,19 +688,24 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
                         (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
             p.Fill();
         }
+    }
 
-        /* What the pointer is doing: an outline where the bar would land. The
-         * model is not touched until the button is let go, so this is the whole
-         * of the feedback and the whole of the undo. */
-        if (drag && drag.uid === task.UID && drag.mode !== "link") {
-            const px0 = x(Math.min(drag.start, drag.finish));
-            const px1 = x(Math.max(drag.start, drag.finish));
-            p.Color = c.ink;
-            p.LineWidth = 2;
-            p.Rectangle(px0, y - 2, Math.max(px1 - px0, 2), barH + 4);
-            p.Stroke();
-            p.LineWidth = 1;
-        }
+    /* What the pointer is doing: an outline where the task would land. The model
+     * is not touched until the button is let go, so this is the whole of the
+     * feedback and the whole of the undo. **It is a pass of its own**, after the
+     * bars, because the loop above `continue`s past a milestone, a summary and a
+     * tick -- which then had no outline at all while they were dragged. A task
+     * with no width is boxed as wide as a bar is tall, so it can be seen. */
+    if (drag && drag.mode !== "link" && rowOf[drag.uid] !== undefined) {
+        const px0 = x(Math.min(drag.start, drag.finish));
+        const px1 = x(Math.max(drag.start, drag.finish));
+        const wide = Math.max(px1 - px0, barH);
+        const y = top(rowOf[drag.uid]) + (rowH - barH) / 2;
+        p.Color = c.ink;
+        p.LineWidth = 2;
+        p.Rectangle(px0 - (wide - (px1 - px0)) / 2, y - 2, wide, barH + 4);
+        p.Stroke();
+        p.LineWidth = 1;
     }
 
     /* A dependency being drawn: an elbow from the end of the dragged bar the

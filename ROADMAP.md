@@ -707,9 +707,12 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   toma el teclado salvo que sea `Focusable`; ahora lo es y el clic sobre un
   vínculo se lo lleva, lo que `check-drag` afirma partiendo del foco en el
   nombre. **Sin cubrir:** el cursor sobre las líneas.
-- Un hito, un resumen o una barra muy corta no muestran contorno mientras se
-  arrastran. En barras de menos de unos 10 px casi toda la barra es zona de
-  estirar.
+- **Contorno y agarre al arrastrar** (2026-10-07): el contorno es un pase
+  propio después de las barras -- el bucle saltaba hitos, resúmenes y marcas, que
+  no se veían mientras se movían -- y una tarea sin ancho se encuadra del alto de
+  una barra; el agarre de estirar es a lo sumo un tercio de la barra, así que una
+  de unos píxeles se levanta por el medio y solo estira por su extremo lejano
+  (`check-drag`, que con el agarre fijo de 5 px falla).
 - **Las aserciones de `check-view` que no podían fallar** (2026-10-07): el rango
   contra la escala ahora se compara con el del plan calculado a mano (primera
   fecha y última, un día a cada lado), y el sombreado con el día de la semana
