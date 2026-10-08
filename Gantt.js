@@ -511,6 +511,24 @@ function drawGanttRuler(p, width, g, c) {
     p.Font = bodyFont;
 }
 
+/* A bar's outline, corners rounded, as a path the caller fills or clips to.
+ * The radius gives way before the bar does: a bar of four pixels has no room
+ * for a corner of three. */
+function roundedBar(p, x, y, w, h, r) {
+    r = Math.max(0, Math.min(r, h / 2, w / 2));
+    if (r < 1) { p.Rectangle(x, y, w, h); return; }
+    p.MoveTo(x + r, y);
+    p.LineTo(x + w - r, y);
+    p.Arc(x + w - r, y + r, r, -90, 0);
+    p.LineTo(x + w, y + h - r);
+    p.Arc(x + w - r, y + h - r, r, 0, 90);
+    p.LineTo(x + r, y + h);
+    p.Arc(x + r, y + h - r, r, 90, 180);
+    p.LineTo(x, y + r);
+    p.Arc(x + r, y + r, r, 180, 270);
+    p.ClosePath();
+}
+
 function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
     const g = ganttGeometry(rows, width, height, step, geom);
     rows = g.rows;
@@ -738,15 +756,21 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
             continue;
         }
         p.Color = colour;
-        p.Rectangle(x0, y, x1 - x0, barH);
+        const corner = Math.min(3, Math.round(barH / 4));
+        roundedBar(p, x0, y, x1 - x0, barH, corner);
         p.Fill();
         /* The progress is the bar's own left part, shaded: the colour of the task
          * stays the colour of the task, and the shade says how far along it is.
-         * A repaint in another hue made a finished critical task look blue. */
+         * A repaint in another hue made a finished critical task look blue. It
+         * is clipped to the bar, so the shade takes the corners the bar has. */
         if (fmt.progress && task.PercentComplete > 0) {
+            p.Push();
+            roundedBar(p, x0, y, x1 - x0, barH, corner);
+            p.Clip();
             p.Color = c.progress;
             p.Rectangle(x0, y, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, barH);
             p.Fill();
+            p.Pop();
         }
     }
 

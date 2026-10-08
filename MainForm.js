@@ -4895,7 +4895,7 @@ class MainForm extends Form {
                            drawn.every((c) => weekend(g.msAt(c.args[0] + 1))),
                            `${drawn.length} bands`) && ok;
 
-        const bar = log.firstOf("Rectangle", pal.bar);
+        const bar = log.firstOf("Fill", pal.bar);
         const idle = log.firstOf("Rectangle", pal.idle);
         const select = log.firstOf("Rectangle", pal.select);
         ok = this.styleYes("the shade is under the row that is chosen",
@@ -6078,7 +6078,7 @@ class MainForm extends Form {
         const ink = this.styleEq("the ink is the theme's own",
                                  style.hasColor(style.Foreground), true);
         const pal = ganttPalette(style);
-        const bar  = style.firstOf("Rectangle", pal.bar);
+        const bar  = style.firstOf("Fill", pal.bar);
         const link = style.firstOf("Polyline", pal.link);
         /* A plan with no dependency has no elbow to place, and saying so is
          * better than a claim that passes because it had nothing to look at:
@@ -6156,6 +6156,7 @@ class CallLog {
     Fill()           { this.note("Fill", []); }
     Stroke()         { this.note("Stroke", []); }
     Clip()           { this.note("Clip", []); }
+    Arc(...a)        { this.note("Arc", a); }
     ClosePath()      { this.note("ClosePath", []); }
     Push()           { this.note("Push", []); }
     Pop()            { this.note("Pop", []); }
