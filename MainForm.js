@@ -4935,9 +4935,9 @@ class MainForm extends Form {
          * the type to give way rather than a band to go. */
         const ruler = log.calls.filter((c) => c.name === "Text" &&
                                             c.font !== log.Font);
-        const week = ruler.filter((c) => String(c.args[0]).indexOf("/") >= 0);
-        const month = ruler.filter((c) => String(c.args[0]).indexOf("/") < 0);
-        ok = this.styleYes("the ruler carries a week over a month",
+        const week = ruler.filter((c) => /^\d+$/.test(String(c.args[0])));
+        const month = ruler.filter((c) => !/^\d+$/.test(String(c.args[0])));
+        ok = this.styleYes("the ruler carries a month over the days",
                            ruler.length > 0 && week.length > 0 && month.length > 0,
                            `${week.length} weeks, ${month.length} months, ` +
                            `type ${ruler.length ? ruler[0].font : "-"}`) && ok;

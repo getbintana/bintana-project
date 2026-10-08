@@ -329,17 +329,22 @@ const RULER_LINE = [13, 12, 11];
  * would not fit is left out rather than drawn on top of each other. */
 function ganttTimescaleBands(dayW) {
     const bands = [];
-    if (dayW >= 6) bands.push({ step: 7, label: (d) => `${d.getDate()}/${d.getMonth() + 1}` });
-    /* A month is named, as long as the cell lets it be: the month and the year,
-     * the month, its first three letters, and only then the number -- which is
-     * what a month squeezed to a few pixels can still say. The draw takes the
-     * first that fits. */
+    /* The month above, named as long as the cell lets it be: the month and the
+     * year, the month, its first three letters, and only then the number --
+     * which is what a month squeezed to a few pixels can still say. The draw
+     * takes the first that fits. */
     if (dayW >= 3) bands.push({ step: 30, label: (d) => {
         const name = Locale.Text(MONTH_NAMES[d.getMonth()]);
         return [`${name} ${d.getFullYear()}`, name, name.slice(0, 3),
                 d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
                                    : `${d.getMonth() + 1}`];
     } });
+    /* **Under it, only the number of the day**: the month is already above, and
+     * a "24/8" is the widest thing a column of a day can be asked to hold. A
+     * number fits wherever a day is wide enough to be told apart, so it is every
+     * day while a day is wide and every week once it is not. */
+    if (dayW >= 16) bands.push({ step: 1, label: (d) => String(d.getDate()) });
+    else if (dayW >= 6) bands.push({ step: 7, label: (d) => String(d.getDate()) });
     return bands;
 }
 
