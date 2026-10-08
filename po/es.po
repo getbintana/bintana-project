@@ -31,9 +31,6 @@ msgstr "_Ayuda"
 msgid "Open…"
 msgstr "Abrir…"
 
-msgid "New Project…"
-msgstr "Nuevo proyecto…"
-
 msgid "New Project"
 msgstr "Nuevo proyecto"
 
@@ -87,9 +84,6 @@ msgstr "{0} no es una fecha que este plan pueda usar."
 
 msgid "Project XML"
 msgstr "XML de proyecto"
-
-msgid "Project.xml"
-msgstr "Proyecto.xml"
 
 msgid "Open the sample"
 msgstr "Abrir el ejemplo"
@@ -340,9 +334,6 @@ msgstr "Indentar"
 msgid "Links"
 msgstr "Vínculos"
 
-msgid "Predecessors"
-msgstr "Predecesoras"
-
 msgid "Resources"
 msgstr "Recursos"
 
@@ -511,12 +502,6 @@ msgstr "Calendarios"
 msgid "Base"
 msgstr "Base"
 
-msgid "Edit…"
-msgstr "Editar…"
-
-msgid "The project's minutes and days must be numbers."
-msgstr "Los minutos y días del proyecto deben ser números."
-
 msgid "Recalculate after each change"
 msgstr "Recalcular después de cada cambio"
 
@@ -555,12 +540,6 @@ msgstr "Una excepción necesita una fecha."
 
 msgid "Recent"
 msgstr "Recientes"
-
-msgid "Up"
-msgstr "Subir"
-
-msgid "Down"
-msgstr "Bajar"
 
 msgid "Folder"
 msgstr "Carpeta"
@@ -655,11 +634,26 @@ msgstr "{0} no es una duración -- probá 2d, 8h o 30m"
 msgid "Cannot apply: {0}"
 msgstr "No se puede aplicar: {0}"
 
-msgid "{0} tasks, {1} milestones, {2} with attributes, {3} links"
-msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces"
+msgid "{0} task"
+msgid_plural "{0} tasks"
+msgstr[0] "{0} tarea"
+msgstr[1] "{0} tareas"
 
-msgid "{0} tasks, {1} milestones, {2} with attributes, {3} links -- {4} not modelled (see log)"
-msgstr "{0} tareas, {1} hitos, {2} con atributos, {3} enlaces -- {4} sin modelar (ver log)"
+msgid "{0} milestone"
+msgid_plural "{0} milestones"
+msgstr[0] "{0} hito"
+msgstr[1] "{0} hitos"
+
+msgid "{0} with attributes"
+msgstr "{0} con atributos"
+
+msgid "{0} link"
+msgid_plural "{0} links"
+msgstr[0] "{0} enlace"
+msgstr[1] "{0} enlaces"
+
+msgid "{0} not modelled (see log)"
+msgstr "{0} sin modelar (ver log)"
 
 msgid "Project data"
 msgstr "Datos del proyecto"
@@ -898,14 +892,8 @@ msgstr "Fecha actual"
 msgid "The project's numbers must be numbers."
 msgstr "Los números del proyecto deben ser números."
 
-msgid "Calendar…"
-msgstr "Calendario…"
-
 msgid "_Project"
 msgstr "_Proyecto"
-
-msgid "There are no calendars."
-msgstr "No hay calendarios."
 
 msgid "Dates"
 msgstr "Fechas"
@@ -1088,9 +1076,6 @@ msgstr "Desvío"
 
 msgid "The project summary cannot be deleted."
 msgstr "El resumen del proyecto no se puede borrar."
-
-msgid "New…"
-msgstr "Nuevo…"
 
 msgid "Baseline span"
 msgstr "Lapso de la línea base"

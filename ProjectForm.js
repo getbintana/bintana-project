@@ -51,8 +51,12 @@ function projectFormValues(dlg, project, tables) {
         values[prop] = dlg[tables.TEXT[prop]].Text;
     for (const prop in tables.NUMBER)
         values[prop] = resourceNumber(dlg[tables.NUMBER[prop]].Text);
+    /* **A day alone is a date**, as it is in New Project: it takes the time the
+     * plan's day starts at. Without one the shape refused "2026-10-01" with an
+     * error in English about a format nobody had been told. */
+    const morning = project.DefaultStartTime || DAY_START;
     for (const prop in tables.DATE)
-        values[prop] = parseMoment(dlg[tables.DATE[prop]].Text);
+        values[prop] = parseMoment(dlg[tables.DATE[prop]].Text, morning);
     for (const prop in tables.TIME)
         values[prop] = dlg[tables.TIME[prop]].Text.trim();
     for (const prop in tables.CHECK)

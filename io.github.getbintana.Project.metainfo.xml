@@ -18,7 +18,22 @@
   </categories>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="0.1.0" date="2026-09-24"/>
+    <release version="0.1.0" date="2026-09-24">
+      <description>
+        <p>First release: opens, edits and writes back MS Project (MSPDI) files, with a task tree beside an interactive Gantt chart.</p>
+        <p xml:lang="es">Primera versión: abre, edita y vuelve a escribir archivos de MS Project (MSPDI), con el árbol de tareas junto a un Gantt interactivo.</p>
+        <ul>
+          <li>Calendars, links of the four types (also to and from summaries), constraints and the critical path, checked against a plan saved by Project itself</li>
+          <li xml:lang="es">Calendarios, vínculos de los cuatro tipos (también desde y hacia resúmenes), restricciones y ruta crítica, medidos contra un plan guardado por Project</li>
+          <li>Resources, assignments, cost rates by date, baselines and plan statistics</li>
+          <li xml:lang="es">Recursos, asignaciones, tasas por fecha, líneas base y estadísticas del plan</li>
+          <li>Drawing a link by dragging between bars: the halves of the bars choose its type</li>
+          <li xml:lang="es">Vínculos dibujados arrastrando entre barras: las mitades de las barras eligen el tipo</li>
+          <li>PNG and PDF export of the chart and a printable report</li>
+          <li xml:lang="es">Exportación del gráfico a PNG y PDF e informe imprimible</li>
+        </ul>
+      </description>
+    </release>
   </releases>
   <developer id="io.github.getbintana">
     <name>Bintana</name>

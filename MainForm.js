@@ -158,8 +158,13 @@ class MainForm extends Form {
      * without a dialog. With nothing named, the window offers the ways in
      * instead of picking one. */
     openStartup() {
-        /* The form is built, so the window owns the settings now. */
+        /* The form is built, so the window owns the settings now -- and they
+         * are read **before** a plan is, so the first fill already has the
+         * columns, the custom field and the scale the last run left. Read after
+         * it, the attribute column came out with the first field until the next
+         * edit. */
         this.settingsReady = true;
+        this.applySettings();
 
         const given = Application.Arguments[0];
         if (given) {
@@ -179,7 +184,6 @@ class MainForm extends Form {
             this.Pages.Current = PAGE_WELCOME;
             this.documentCommands(false);
         }
-        this.applySettings();
         this.startAutosave();
     }
 
@@ -212,10 +216,13 @@ class MainForm extends Form {
      * written when a file does; these three are read here. */
     applySettings() {
         const scale  = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
-        const stored = Settings.Get("bintana-project.columns", []);
-        const columns = (stored || []).filter(
-            (id) => COLUMNS.some((c) => c.id === id));
-        if (columns.length) this.setColumns(columns);
+        /* **An empty list is a choice**: with every column but the name ticked
+         * off, `[]` is what was saved, and it used to be read as "nothing was
+         * saved" -- so the usual ones came back at the next start. Only a list
+         * that was never written (`null`) leaves the defaults. */
+        const stored = Settings.Get("bintana-project.columns", null);
+        if (Array.isArray(stored))
+            this.setColumns(stored.filter((id) => COLUMNS.some((c) => c.id === id)));
         this.fieldID = Settings.Get("bintana-project.field", "");
         this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.edit)
@@ -507,12 +514,18 @@ class MainForm extends Form {
 
         const s = summarize(project);
         const problems = this.holder.problems.length;
-        this.LblStatus.Text = problems
-            ? Locale.Text("{0} tasks, {1} milestones, {2} with attributes, {3} links" +
-                   " -- {4} not modelled (see log)",
-                   s.tasks, s.milestones, s.withAttrs, s.links, problems)
-            : Locale.Text("{0} tasks, {1} milestones, {2} with attributes, {3} links",
-                   s.tasks, s.milestones, s.withAttrs, s.links);
+        /* **One plural to a count**: the line was a single sentence with four
+         * numbers in it, and "1 tasks" is what a single sentence says. Each count
+         * is its own phrase, so each takes the form its number asks for in the
+         * catalogue's own language. */
+        const counts = [
+            Locale.Plural("{0} task", "{0} tasks", s.tasks),
+            Locale.Plural("{0} milestone", "{0} milestones", s.milestones),
+            Locale.Text("{0} with attributes", s.withAttrs),
+            Locale.Plural("{0} link", "{0} links", s.links),
+        ];
+        this.LblStatus.Text = counts.join(", ") +
+            (problems ? " -- " + Locale.Text("{0} not modelled (see log)", problems) : "");
 
         this.Log.Clear();
         this.log(`Opened ${File.Name(this.path)}: ${s.tasks} tasks, ` +
@@ -4879,6 +4892,13 @@ class MainForm extends Form {
              * road the app has for adding one, the dialog is opened again over the
              * two, and the whole of the move is undone at the end with the rest. */
             const wasCalendar = this.holder.project.CalendarUID;
+            /* **A day alone is a start**, with the plan's day start for its
+             * time -- read through the dialog's own road and not applied. */
+            pdlg.TxtProjStart.Text = "2026-10-01";
+            const typed = projectFormValues(pdlg, this.holder.project, pdlg.tables);
+            ok = !!typed && typed.StartDate ===
+                 `2026-10-01T${this.holder.project.DefaultStartTime || "08:00:00"}` && ok;
+            print(`edit project dialog start ${typed ? typed.StartDate : "(refused)"}`);
             pdlg.Close();
             let maxUID = 0;
             for (const calendar of cals)

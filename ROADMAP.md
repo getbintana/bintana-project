@@ -706,28 +706,22 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 ### La interfaz
 
-- **`Message.*` ya no pasa por `Locale.Text`** (2026-10-07): el diálogo traduce
-  y llena los `{n}` por su cuenta, así que el texto va directo; una carpeta
-  con "{0}" en el nombre ya no se rellena dos veces. Quince lugares.
-- Una fecha sin hora ("2026-10-01") en el inicio o la fecha de estado de
-  Datos del proyecto da un error en inglés; Nuevo proyecto la acepta.
-- Destildar todas las columnas guarda `[]`, que `applySettings` ignora: al
-  reiniciar vuelven las de siempre.
-- `openStartup` llena la tabla antes de que `applySettings` lea qué campo
-  personalizado mostrar: la columna de atributo sale con el primero hasta la
-  próxima edición.
+- **Resuelto** (2026-10-07): una fecha sin hora en Datos del proyecto toma la hora
+  de inicio del día del plan, como Nuevo proyecto; destildar todas las columnas
+  se guarda y vuelve así (solo una lista nunca escrita deja las de siempre);
+  `openStartup` lee los ajustes **antes** de abrir el plan, así la primera
+  tabla ya tiene el campo personalizado; la barra de estado dice "1 tarea" y
+  "2 tareas" con `Locale.Plural` (una frase por cuenta, con `Plural-Forms` en
+  `es.po`); y `es.po` ya no trae las diez entradas que nada usaba.
 - Setear `Tasks.Key` o `TxtFilter.Text` ya dispara el evento, y la llamada
-  explícita que sigue redibuja una segunda vez.
-- Los plurales: "{0} tasks" dice "1 tareas"; no se usa `Locale.Plural` en
-  ningún lado.
-- `es.po` tiene entradas que ya nada usa ("Save As", "Predecessors", "Up",
-  "Down", "Export", "Calendar…", "There are no calendars." y otras de la
-  pestaña Project que se fue).
+  explícita que sigue redibuja una segunda vez. Quedó sin tocar: está en una
+  veintena de lugares y en las pruebas, y cuesta un redibujo.
 
 ### Empaquetado y pruebas
 
-- El metainfo no tiene `<screenshots>` (Flathub y Software los esperan) ni
-  descripción en el release, y declara un 0.1.0 del 2026-09-24 que todavía
-  no tiene tag (el plan de ejemplo tiene el hito "0.1 publicado" pendiente).
-- `tests/run.sh` con `XSD=` valida todo `bintana-project-*.xml` que haya en
-  `$OUT`, salidas viejas incluidas, y sin ninguno cuenta el glob literal.
+- El metainfo ya trae la descripción del release (en inglés y castellano) y
+  valida. **Faltan `<screenshots>`** (Flathub y Software los esperan, y piden una
+  URL pública) y **el tag 0.1.0**, que el metainfo declara con fecha 2026-09-24
+  y no existe: publicarlo es del autor.
+- `tests/run.sh` con `XSD=` valida los `bintana-project-check-*` y `-edit-*`
+  que haya en `$OUT`, salidas viejas incluidas.
