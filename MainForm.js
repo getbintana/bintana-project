@@ -2058,6 +2058,9 @@ class MainForm extends Form {
      * the task's fields -- links and assignments are written where they are
      * made -- so it goes away on the others. */
     PropsTabs_Switch(index) {
+        /* The switcher announces its first page while the form is still being
+         * built, before the bar below it exists; that page shows Apply anyway. */
+        if (!this.ApplyBar) return;
         this.ApplyBar.Visible = index === 0 || index === 1;
     }
 
