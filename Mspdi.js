@@ -85,26 +85,58 @@ class MspBaseline extends Record {
     };
 }
 
-/* A custom-field value on a task: FieldID + Value, nothing else. The
- * ValueGUID/Ltuid half belongs to lookup-table fields, which a plain text
- * custom field is not. */
+/* A custom-field value on a task: FieldID, the text, and -- when the field
+ * has a value list -- the `ValueGUID` that points at the entry it came from
+ * (`Value/ID` of the list; the schema types it integer). A text the list does
+ * not carry leaves the pointer empty, which is a value the file does not
+ * point anywhere with. `DurationFormat` belongs to duration fields and is
+ * placed by the sequence, never written here. */
 class MspFieldValue extends Record {
-    static Xml = { Root: "ExtendedAttribute" };
+    static Xml = {
+        Root: "ExtendedAttribute",
+        Order: ["FieldID", "Value", "ValueGUID", "DurationFormat"],
+    };
     static Fields = {
-        FieldID: Field.Text({ key: true }),
-        Value:   Field.Text(),
+        FieldID:   Field.Text({ key: true }),
+        Value:     Field.Text(),
+        ValueGUID: Field.Text(),
+    };
+}
+
+/* One entry of a custom field's value list: the `ID` a task's `ValueGUID`
+ * points at (unique across the project's lists), the text a person reads and
+ * the description. */
+class MspValueEntry extends Record {
+    static Xml = { Root: "Value" };
+    static Fields = {
+        ID:          Field.Int({ key: true }),
+        Value:       Field.Text(),
+        Description: Field.Text(),
     };
 }
 
 /* A custom-field definition, under <ExtendedAttributes>. Same element name
  * as the value, different class: each is used in its own place, so the two
- * never meet. */
+ * never meet. `ValueList` is what makes the field a list; the rest of the
+ * schema's children (`Ltuid`, `DefaultGuid`, the rollup switches) are not
+ * modelled and stay where they are. The order is the schema's, which is what
+ * places a new <ValueList> after those elements. */
 class MspFieldDef extends Record {
-    static Xml = { Root: "ExtendedAttribute" };
+    static Xml = {
+        Root: "ExtendedAttribute",
+        Order: [
+            "FieldID", "FieldName", "CFType", "Guid", "ElemType",
+            "MaxMultiValues", "UserDef", "Alias", "SecondaryPID",
+            "AutoRollDown", "DefaultGuid", "Ltuid", "PhoneticAlias",
+            "RollupType", "CalculationType", "Formula", "RestrictValues",
+            "ValuelistSortOrder", "AppendNewValues", "Default", "ValueList",
+        ],
+    };
     static Fields = {
         FieldID:   Field.Text({ key: true }),
         FieldName: Field.Text(),
         Alias:     Field.Text(),
+        ValueList: Field.List(MspValueEntry, { in: "ValueList" }),
     };
 }
 
@@ -214,7 +246,13 @@ class MspTask extends Record {
         CalendarUID:      Field.Int(),
         ConstraintDate:   Field.DateTime(),
         Deadline:         Field.DateTime(),
+        /* The task's own hyperlink: the label, the address and the bookmark
+         * inside it. It is the file's place for a link -- **the custom fields
+         * have no link type**, their `CFType` is a number, a date, a flag or a
+         * text -- so a ticket's URL belongs here. */
+        Hyperlink:        Field.Text(),
         HyperlinkAddress: Field.Text(),
+        HyperlinkSubAddress: Field.Text(),
         Notes:            Field.Text(),
         Links:            Field.List(MspLink),
         Attributes:       Field.List(MspFieldValue),

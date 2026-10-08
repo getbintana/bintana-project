@@ -19,7 +19,6 @@ const COLUMN_CHECKS = {
     milestone:  "ChkColMilestone",
     work:       "ChkColWork",
     cost:       "ChkColCost",
-    attr:       "ChkColAttr",
     wbs:        "ChkColWbs",
     priority:   "ChkColPriority",
     constraint: "ChkColConstraint",
@@ -27,6 +26,7 @@ const COLUMN_CHECKS = {
     calendar:   "ChkColCalendar",
     type:       "ChkColType",
     notes:      "ChkColNotes",
+    link:       "ChkColLink",
 };
 
 class ColumnsForm extends Form {
@@ -35,6 +35,7 @@ class ColumnsForm extends Form {
         const dlg = new ColumnsForm();
 
         dlg.available = available;
+        dlg.current   = current;
         dlg.onSaved   = onSaved;
         dlg.Modal     = true;
 
@@ -51,6 +52,13 @@ class ColumnsForm extends Form {
         const chosen = [];
         for (const column of this.available)
             if (this[COLUMN_CHECKS[column.id]].Active) chosen.push(column.id);
+
+        /* The custom-field columns are not this dialog's to choose -- they are
+         * ticked where the fields are administered -- so they stay where they
+         * were instead of being dropped by a dialog that never showed them. */
+        for (const id of this.current)
+            if (isColumnId(id) && !this.available.some((c) => c.id === id))
+                chosen.push(id);
 
         this.Close();
         if (this.onSaved) this.onSaved(chosen);

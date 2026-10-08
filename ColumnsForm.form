@@ -89,11 +89,6 @@
         },
         {
           "type": "CheckButton",
-          "name": "ChkColAttr",
-          "properties": { "Text": "Custom field", "HAlign": "Start" }
-        },
-        {
-          "type": "CheckButton",
           "name": "ChkColWbs",
           "properties": { "Text": "WBS", "HAlign": "Start" }
         },
@@ -126,6 +121,11 @@
           "type": "CheckButton",
           "name": "ChkColNotes",
           "properties": { "Text": "Notes", "HAlign": "Start" }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColLink",
+          "properties": { "Text": "Hyperlink", "HAlign": "Start" }
         }
       ]
     },

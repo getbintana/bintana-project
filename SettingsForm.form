@@ -62,23 +62,6 @@
         },
         {
           "type": "Label",
-          "name": "LblField",
-          "properties": {
-            "Text": "Custom field",
-            "HAlign": "End"
-          }
-        },
-        {
-          "type": "TextBox",
-          "name": "TxtField",
-          "properties": {
-            "Placeholder": "FieldID, empty for the first",
-            "HExpand": true,
-            "HAlign": "Fill"
-          }
-        },
-        {
-          "type": "Label",
           "name": "LblUnit",
           "properties": {
             "Text": "Duration unit",

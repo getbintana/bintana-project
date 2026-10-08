@@ -44,17 +44,21 @@ ventana abre directamente el plan.
 ## La tabla
 
 Es la EDT en árbol, con los resúmenes plegables y las filas nulas salteadas.
-La columna **Duración** la lee en la unidad que el archivo declara; **Campo**
-muestra el campo personalizado que elijas en Configuración. **Costo** suma lo
-que cuestan las asignaciones de la tarea: unidades por tarifa del recurso, o el
-costo fijo del material; queda vacía si la tarea no cuesta nada.
+La columna **Duración** la lee en la unidad que el archivo declara. **Costo**
+suma lo que cuestan las asignaciones de la tarea: unidades por tarifa del
+recurso, o el costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 Las columnas se eligen en **Ver → Columnas…** (o en el menú de la fila,
 **Columnas…**): se agregan y se sacan con un tilde, entre duración, fechas,
 avance, crítica, holgura, desvío, hito, trabajo, costo, EDT, prioridad,
-restricción, fecha límite, calendario, tipo de tarea, notas y el campo
-personalizado del archivo. El nombre es el árbol y no se va. La elección es una vista, como la escala: se
+restricción, fecha límite, calendario, tipo de tarea, notas e hipervínculo. El
+nombre es el árbol y no se va. La elección es una vista, como la escala: se
 recuerda para la próxima ventana y no toca el archivo.
+
+Los **campos personalizados** que el plan define son columnas aparte, una por
+campo y con el nombre que el archivo les da: se tildan —varios a la vez— en
+**Proyecto → Campos personalizados…** y quedan en la lista como cualquier
+columna.
 
 La **holgura** es lo que el pase hacia atrás calcula y hasta ahora no guardaba:
 cuánto puede correrse la tarea antes de que se mueva el **fin del plan**. La
@@ -117,12 +121,17 @@ elige la tarea que está bajo el puntero.
 ## Editar una tarea
 
 Seleccioná una fila y usá el panel de la derecha. La pestaña **Tarea** tiene
-nombre, inicio, fin, duración (`2d`, `8h`, `30m`, `2ed` para elapsed, o un
-número en la unidad de la tarea), avance, hito, programada manualmente,
-condicionada por esfuerzo, estimada, tipo de tarea, restricción con su fecha,
-fecha límite, notas y el
-valor de un campo personalizado del archivo. **Aplicar** escribe todo junto:
-es un solo Deshacer.
+lo de todos los días: nombre, inicio, fin, duración (`2d`, `8h`, `30m`, `2ed`
+para elapsed, o un número en la unidad de la tarea), avance, hito, programada
+manualmente y notas. **Avanzado** tiene lo que se toca poco: tipo de tarea,
+calendario, condicionada por esfuerzo, estimada, restricción con su fecha,
+fecha límite, el valor de un campo personalizado del archivo y el
+**hipervínculo** de la tarea —texto, dirección y marcador—, con **Abrir** al
+lado para ir a la dirección (el ticket de GLPI de esa tarea, por ejemplo); en
+la columna **Hipervínculo** de la lista la celda es un enlace de verdad: se ve
+subrayada y se abre con un clic, o con Enter cuando tiene el foco.
+**Los campos personalizados no tienen tipo vínculo**: para una dirección, este
+es el lugar. **Aplicar** (está en las dos pestañas) escribe todo junto: es un solo Deshacer.
 
 - **Agregar** crea una tarea después de la seleccionada (y de su subárbol);
   **Eliminar** se lleva la tarea y todo lo que cuelga de ella.
@@ -192,14 +201,16 @@ cuántas restricciones incumplidas.
 
 ## Recursos y costos
 
-La pestaña **Recursos** lista los recursos con su máximo, **Pico** (las
-unidades simultáneas: si supera el máximo, está sobreasignado), su tasa y el
-costo de sus asignaciones. **Nuevo**/**Aplicar**/**Eliminar** editan el
-recurso; eliminar uno se lleva sus asignaciones. **Tasas…** abre las tablas de
-tasas por fecha del recurso (A–E): los períodos con sus fechas, su tasa, la
-extra y el costo por uso, con Agregar/Quitar; aceptar es un solo Deshacer.
+Los recursos son del plan y se administran en **Proyecto → Recursos…**, junto a
+los calendarios y los campos personalizados. El diálogo los lista con su
+máximo, **Pico** (las unidades simultáneas: si supera el máximo, está
+sobreasignado), su tasa y el costo de sus asignaciones. **Nuevo**/**Aplicar**/
+**Eliminar** editan el recurso; eliminar uno se lleva sus asignaciones.
+**Tasas…** abre las tablas de tasas por fecha del recurso (A–E): los períodos
+con sus fechas, su tasa, la extra y el costo por uso, con Agregar/Quitar;
+aceptar es un solo Deshacer.
 
-Abajo, las asignaciones de la tarea seleccionada: elegí recurso y unidades y
+La pestaña **Recursos** del panel solo asigna: las asignaciones de la tarea seleccionada. Elegí recurso y unidades y
 **Asignar**; **Quitar** las deshace. El trabajo se calcula desde la duración,
 y lo que las unidades le hacen a la duración depende del tipo de tarea y de
 si es condicionada por esfuerzo (una tarea que ya carga una unidad tarda la
@@ -221,8 +232,8 @@ tabla y el período en que arranca el trabajo fija el costo por uso.
 
 ## Proyecto y calendarios
 
-Las tres pestañas del panel lateral son **Tarea**, **Vínculos** y
-**Recursos**: lo que es de *esta* tarea. Lo que es del plan entero está en el
+Las cuatro pestañas del panel lateral son **Tarea**, **Avanzado**,
+**Vínculos** y **Recursos**: lo que es de *esta* tarea. Lo que es del plan entero está en el
 menú **Proyecto**, porque lo del plan no cambia con la selección y una pestaña
 para eso ocupaba lugar sin contenido propio.
 
@@ -248,6 +259,25 @@ excepciones, que es como se cargan los feriados. Muestra la semana **efectiva**
 
 En la pestaña **Tarea** y en el editor de recursos, **Calendario** elige cuál
 rige para esa tarea o ese recurso: **Del proyecto** o uno en particular.
+
+**Proyecto → Campos personalizados…** administra los que el archivo define: la
+lista con **Nuevo…** (arranca en el primer campo de texto libre, Text1 =
+188743731 en adelante), **Editar…** (el `FieldID` no se toca, porque es la
+identidad de los valores que las tareas ya llevan) y **Eliminar** (la
+definición se va junto con sus valores). **Mostrar en la lista** tilda el
+elegido, y se pueden mostrar **varios a la vez**: cada campo tildado es una
+columna con el alias —o el nombre— que el archivo le da, y la elección es una
+vista, se recuerda y no toca el archivo. Los valores de cada tarea se siguen
+escribiendo en la pestaña **Tarea**.
+
+Un campo puede ser **una lista de valores**: en **Editar…** se tilda *Una
+lista de valores* y se cargan las entradas —valor y descripción—, que se
+agregan y se quitan con los botones de abajo (cambiar una entrada es elegirla
+y volver a **Agregar**). En la pestaña **Tarea** el valor de ese campo es un
+desplegable con las entradas y **Ninguno** para dejarlo vacío, y el archivo
+guarda, además del texto, el puntero a la entrada elegida. Quitar una entrada
+o la lista entera no reescribe lo que las tareas decían: solo suelta el
+puntero.
 
 ## Estadísticas
 
@@ -358,10 +388,9 @@ nombre del proyecto y la ruta del archivo.
 ## Configuración
 
 **Herramientas → Configuración…** edita lo que la app recuerda: carpeta por
-donde abre el diálogo, escala, campo personalizado que muestra la lista,
-unidad de una duración sin sufijo, y si recalcula solo y si guarda la copia de
-recuperación. Las **columnas** también se recuerdan, pero se eligen en
-**Ver → Columnas…**.
+donde abre el diálogo, escala, unidad de una duración sin sufijo, y si
+recalcula solo y si guarda la copia de recuperación. Las **columnas** también
+se recuerdan, pero se eligen en **Ver → Columnas…**.
 
 ## Lo que no hace
 

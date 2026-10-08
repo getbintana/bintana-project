@@ -322,6 +322,12 @@ msgstr "Las tasas deben ser números."
 msgid "Add"
 msgstr "Agregar"
 
+msgid "New…"
+msgstr "Nuevo…"
+
+msgid "Edit…"
+msgstr "Editar…"
+
 msgid "Delete"
 msgstr "Eliminar"
 
@@ -550,11 +556,74 @@ msgstr "Dónde abre el diálogo"
 msgid "Custom field"
 msgstr "Campo personalizado"
 
+msgid "Custom fields"
+msgstr "Campos personalizados"
+
+msgid "Custom fields…"
+msgstr "Campos personalizados…"
+
+msgid "New custom field"
+msgstr "Campo personalizado nuevo"
+
+msgid "Edit custom field"
+msgstr "Editar campo personalizado"
+
+msgid "Delete custom field"
+msgstr "Eliminar campo personalizado"
+
+msgid "Delete \"{0}\"? Its values on the tasks go with it."
+msgstr "¿Eliminar \"{0}\"? Sus valores en las tareas se van con él."
+
+msgid "Field name"
+msgstr "Nombre del campo"
+
+msgid "What the plan calls it"
+msgstr "Cómo lo llama el plan"
+
+msgid "Project's text fields run Text1 to Text30, from 188743731. A list puts a drop-down on every task."
+msgstr "Los campos de texto de Project van de Texto1 a Texto30, desde 188743731. Una lista pone un desplegable en cada tarea."
+
+msgid "The field's ID must be a number."
+msgstr "El ID del campo debe ser un número."
+
+msgid "That field is already defined."
+msgstr "Ese campo ya está definido."
+
+msgid "A list value cannot be empty."
+msgstr "Un valor de la lista no puede estar vacío."
+
+msgid "Show in the list"
+msgstr "Mostrar en la lista"
+
+msgid "Shown"
+msgstr "En la lista"
+
+msgid "Values"
+msgstr "Valores"
+
+msgid "A list of values"
+msgstr "Una lista de valores"
+
+msgid "Description"
+msgstr "Descripción"
+
+msgid "Hyperlink"
+msgstr "Hipervínculo"
+
+msgid "Link text"
+msgstr "Texto del enlace"
+
+msgid "Address"
+msgstr "Dirección"
+
+msgid "Bookmark"
+msgstr "Marcador"
+
+msgid "None"
+msgstr "Ninguno"
+
 msgid "Value"
 msgstr "Valor"
-
-msgid "FieldID, empty for the first"
-msgstr "FieldID, vacío para el primero"
 
 msgid "Duration unit"
 msgstr "Unidad de duración"
@@ -1151,3 +1220,9 @@ msgstr "Un vínculo de fin no programa un resumen."
 
 msgid "That link would close a loop."
 msgstr "Ese vínculo cerraría un ciclo."
+
+msgid "Advanced"
+msgstr "Avanzado"
+
+msgid "Resources…"
+msgstr "Recursos…"

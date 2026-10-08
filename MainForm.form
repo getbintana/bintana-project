@@ -14,7 +14,7 @@
   "actions": [
     {
       "name": "ActNew",
-      "text": "New Project\u2026",
+      "text": "New Project…",
       "icon": "document-new-symbolic",
       "shortcut": "<Control><Shift>n"
     },
@@ -132,6 +132,16 @@
       "name": "ActCalendar",
       "text": "Calendars…",
       "icon": "x-office-calendar-symbolic"
+    },
+    {
+      "name": "ActResources",
+      "text": "Resources…",
+      "icon": "system-users-symbolic"
+    },
+    {
+      "name": "ActFields",
+      "text": "Custom fields…",
+      "icon": "document-edit-symbolic"
     },
     {
       "name": "ActStats",
@@ -278,6 +288,12 @@
         },
         {
           "action": "ActCalendar"
+        },
+        {
+          "action": "ActResources"
+        },
+        {
+          "action": "ActFields"
         },
         {
           "separator": true
@@ -922,6 +938,7 @@
                                 "HAlign": "Fill",
                                 "Tabs": [
                                   "Task",
+                                  "Advanced",
                                   "Links",
                                   "Resources"
                                 ]
@@ -1025,24 +1042,6 @@
                                         },
                                         {
                                           "type": "Label",
-                                          "name": "LblTaskCalendar",
-                                          "properties": {
-                                            "Text": "Calendar",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "ComboBox",
-                                          "name": "CmbTaskCalendar",
-                                          "properties": {
-                                            "Items": [],
-                                            "Index": 0,
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
                                           "name": "LblSecTracking",
                                           "properties": {
                                             "Text": "Tracking",
@@ -1080,24 +1079,6 @@
                                         },
                                         {
                                           "type": "CheckButton",
-                                          "name": "ChkEffortDriven",
-                                          "properties": {
-                                            "Text": "Effort driven",
-                                            "ColumnSpan": 2,
-                                            "HAlign": "Start"
-                                          }
-                                        },
-                                        {
-                                          "type": "CheckButton",
-                                          "name": "ChkEstimated",
-                                          "properties": {
-                                            "Text": "Estimated",
-                                            "ColumnSpan": 2,
-                                            "HAlign": "Start"
-                                          }
-                                        },
-                                        {
-                                          "type": "CheckButton",
                                           "name": "ChkManual",
                                           "properties": {
                                             "Text": "Manually scheduled",
@@ -1105,6 +1086,68 @@
                                             "HAlign": "Start"
                                           }
                                         },
+                                        {
+                                          "type": "Label",
+                                          "name": "LblSecNotes",
+                                          "properties": {
+                                            "Text": "Notes",
+                                            "Style": "heading",
+                                            "ColumnSpan": 2,
+                                            "HAlign": "Start"
+                                          }
+                                        },
+                                        {
+                                          "type": "Label",
+                                          "name": "LblNotes",
+                                          "properties": {
+                                            "Text": "Notes",
+                                            "ColumnSpan": 2,
+                                            "HAlign": "Start"
+                                          }
+                                        },
+                                        {
+                                          "type": "TextEditor",
+                                          "name": "TxtNotes",
+                                          "properties": {
+                                            "ColumnSpan": 2,
+                                            "Height": 60,
+                                            "Wrap": true,
+                                            "HAlign": "Fill"
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "type": "Button",
+                                      "name": "BtnApply",
+                                      "properties": {
+                                        "Text": "Apply",
+                                        "Icon": "document-save-symbolic",
+                                        "Enabled": false,
+                                        "HAlign": "Fill"
+                                      }
+                                    }
+                                  ]
+                                },
+                                {
+                                  "type": "Panel",
+                                  "name": "PageAdvanced",
+                                  "properties": {
+                                    "Arrangement": "Vertical",
+                                    "Spacing": 8,
+                                    "Padding": "8 0 8 0",
+                                    "HAlign": "Fill"
+                                  },
+                                  "children": [
+                                    {
+                                      "type": "Grid",
+                                      "name": "AdvFields",
+                                      "properties": {
+                                        "Columns": 2,
+                                        "RowSpacing": 4,
+                                        "ColumnSpacing": 8
+                                      },
+                                      "children": [
                                         {
                                           "type": "Label",
                                           "name": "LblSecPlanning",
@@ -1134,6 +1177,42 @@
                                             ],
                                             "Index": 0,
                                             "HAlign": "Fill"
+                                          }
+                                        },
+                                        {
+                                          "type": "Label",
+                                          "name": "LblTaskCalendar",
+                                          "properties": {
+                                            "Text": "Calendar",
+                                            "HAlign": "End"
+                                          }
+                                        },
+                                        {
+                                          "type": "ComboBox",
+                                          "name": "CmbTaskCalendar",
+                                          "properties": {
+                                            "Items": [],
+                                            "Index": 0,
+                                            "HExpand": true,
+                                            "HAlign": "Fill"
+                                          }
+                                        },
+                                        {
+                                          "type": "CheckButton",
+                                          "name": "ChkEffortDriven",
+                                          "properties": {
+                                            "Text": "Effort driven",
+                                            "ColumnSpan": 2,
+                                            "HAlign": "Start"
+                                          }
+                                        },
+                                        {
+                                          "type": "CheckButton",
+                                          "name": "ChkEstimated",
+                                          "properties": {
+                                            "Text": "Estimated",
+                                            "ColumnSpan": 2,
+                                            "HAlign": "Start"
                                           }
                                         },
                                         {
@@ -1230,18 +1309,35 @@
                                           }
                                         },
                                         {
-                                          "type": "TextBox",
-                                          "name": "TxtAttr",
+                                          "type": "Panel",
+                                          "name": "AttrValueBox",
                                           "properties": {
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
+                                            "Arrangement": "Vertical"
+                                          },
+                                          "children": [
+                                            {
+                                              "type": "TextBox",
+                                              "name": "TxtAttr",
+                                              "properties": {
+                                                "HExpand": true,
+                                                "HAlign": "Fill"
+                                              }
+                                            },
+                                            {
+                                              "type": "ComboBox",
+                                              "name": "CmbAttrValue",
+                                              "properties": {
+                                                "HAlign": "Fill",
+                                                "Visible": false
+                                              }
+                                            }
+                                          ]
                                         },
                                         {
                                           "type": "Label",
-                                          "name": "LblSecNotes",
+                                          "name": "LblSecLink",
                                           "properties": {
-                                            "Text": "Notes",
+                                            "Text": "Hyperlink",
                                             "Style": "heading",
                                             "ColumnSpan": 2,
                                             "HAlign": "Start"
@@ -1249,28 +1345,67 @@
                                         },
                                         {
                                           "type": "Label",
-                                          "name": "LblNotes",
+                                          "name": "LblLinkText",
                                           "properties": {
-                                            "Text": "Notes",
-                                            "ColumnSpan": 2,
-                                            "HAlign": "Start"
+                                            "Text": "Link text",
+                                            "HAlign": "End"
                                           }
                                         },
                                         {
-                                          "type": "TextEditor",
-                                          "name": "TxtNotes",
+                                          "type": "TextBox",
+                                          "name": "TxtLinkText",
                                           "properties": {
-                                            "ColumnSpan": 2,
-                                            "Height": 60,
-                                            "Wrap": true,
+                                            "HExpand": true,
                                             "HAlign": "Fill"
+                                          }
+                                        },
+                                        {
+                                          "type": "Label",
+                                          "name": "LblLinkAddress",
+                                          "properties": {
+                                            "Text": "Address",
+                                            "HAlign": "End"
+                                          }
+                                        },
+                                        {
+                                          "type": "TextBox",
+                                          "name": "TxtLinkAddress",
+                                          "properties": {
+                                            "HExpand": true,
+                                            "HAlign": "Fill"
+                                          }
+                                        },
+                                        {
+                                          "type": "Label",
+                                          "name": "LblLinkSub",
+                                          "properties": {
+                                            "Text": "Bookmark",
+                                            "HAlign": "End"
+                                          }
+                                        },
+                                        {
+                                          "type": "TextBox",
+                                          "name": "TxtLinkSub",
+                                          "properties": {
+                                            "HExpand": true,
+                                            "HAlign": "Fill"
+                                          }
+                                        },
+                                        {
+                                          "type": "LinkButton",
+                                          "name": "BtnLinkUri",
+                                          "properties": {
+                                            "Text": "Open",
+                                            "ColumnSpan": 2,
+                                            "HAlign": "Start",
+                                            "Enabled": false
                                           }
                                         }
                                       ]
                                     },
                                     {
                                       "type": "Button",
-                                      "name": "BtnApply",
+                                      "name": "BtnApplyAdv",
                                       "properties": {
                                         "Text": "Apply",
                                         "Icon": "document-save-symbolic",
@@ -1425,223 +1560,6 @@
                                   },
                                   "children": [
                                     {
-                                      "type": "TableView",
-                                      "name": "Resources",
-                                      "properties": {
-                                        "Columns": [
-                                          {
-                                            "Text": "Name",
-                                            "Width": 0
-                                          },
-                                          {
-                                            "Text": "Max",
-                                            "Width": 50,
-                                            "Alignment": "Right"
-                                          },
-                                          {
-                                            "Text": "Peak",
-                                            "Width": 50,
-                                            "Alignment": "Right"
-                                          },
-                                          {
-                                            "Text": "Rate",
-                                            "Width": 60,
-                                            "Alignment": "Right"
-                                          },
-                                          {
-                                            "Text": "Cost",
-                                            "Width": 70,
-                                            "Alignment": "Right"
-                                          }
-                                        ],
-                                        "Height": 110,
-                                        "HAlign": "Fill"
-                                      }
-                                    },
-                                    {
-                                      "type": "Label",
-                                      "name": "LblResEmpty",
-                                      "properties": {
-                                        "Text": "No resources in this file",
-                                        "Style": "dim-label",
-                                        "Visible": false,
-                                        "HAlign": "Start"
-                                      }
-                                    },
-                                    {
-                                      "type": "Grid",
-                                      "name": "ResFields",
-                                      "properties": {
-                                        "Columns": 2,
-                                        "RowSpacing": 4,
-                                        "ColumnSpacing": 8
-                                      },
-                                      "children": [
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResName",
-                                          "properties": {
-                                            "Text": "Name",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "TextBox",
-                                          "name": "TxtResName",
-                                          "properties": {
-                                            "Placeholder": "Ana",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResType",
-                                          "properties": {
-                                            "Text": "Type",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "ComboBox",
-                                          "name": "CmbResType",
-                                          "properties": {
-                                            "Items": [
-                                              "Material",
-                                              "Work",
-                                              "Cost"
-                                            ],
-                                            "Index": 1,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResMax",
-                                          "properties": {
-                                            "Text": "Max units",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "TextBox",
-                                          "name": "TxtResMax",
-                                          "properties": {
-                                            "Placeholder": "1",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResRate",
-                                          "properties": {
-                                            "Text": "Rate",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "TextBox",
-                                          "name": "TxtResRate",
-                                          "properties": {
-                                            "Placeholder": "50",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResCostUse",
-                                          "properties": {
-                                            "Text": "Cost per use",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "TextBox",
-                                          "name": "TxtResCostUse",
-                                          "properties": {
-                                            "Placeholder": "0",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Label",
-                                          "name": "LblResCalendar",
-                                          "properties": {
-                                            "Text": "Calendar",
-                                            "HAlign": "End"
-                                          }
-                                        },
-                                        {
-                                          "type": "ComboBox",
-                                          "name": "CmbResCalendar",
-                                          "properties": {
-                                            "Items": [],
-                                            "Index": 0,
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "Panel",
-                                      "name": "ResButtons",
-                                      "properties": {
-                                        "Arrangement": "Horizontal",
-                                        "Spacing": 6
-                                      },
-                                      "children": [
-                                        {
-                                          "type": "Button",
-                                          "name": "BtnResNew",
-                                          "properties": {
-                                            "Text": "New",
-                                            "Icon": "document-new-symbolic",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Button",
-                                          "name": "BtnResApply",
-                                          "properties": {
-                                            "Text": "Apply",
-                                            "Icon": "document-save-symbolic",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Button",
-                                          "name": "BtnResDel",
-                                          "properties": {
-                                            "Text": "Delete",
-                                            "Icon": "user-trash-symbolic",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        },
-                                        {
-                                          "type": "Button",
-                                          "name": "BtnResRates",
-                                          "properties": {
-                                            "Text": "Rates…",
-                                            "Icon": "view-list-symbolic",
-                                            "HExpand": true,
-                                            "HAlign": "Fill"
-                                          }
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "type": "Separator",
-                                      "name": "RuleRes",
-                                      "properties": {}
-                                    },
-                                    {
                                       "type": "Label",
                                       "name": "LblAssigns",
                                       "properties": {
@@ -1783,6 +1701,16 @@
                                             "HExpand": true,
                                             "HAlign": "Fill"
                                           }
+                                        },
+                                        {
+                                          "type": "Button",
+                                          "name": "BtnResManage",
+                                          "properties": {
+                                            "Text": "Resources…",
+                                            "Icon": "system-users-symbolic",
+                                            "HExpand": true,
+                                            "HAlign": "Fill"
+                                          }
                                         }
                                       ]
                                     }
@@ -1819,7 +1747,7 @@
                   }
                 }
               ]
-        }
+            }
           ]
         }
       ]

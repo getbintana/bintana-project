@@ -70,11 +70,9 @@ class MainForm extends Form {
     forceClose = false;
 
     /* Settings are read and written only on the window's road: a headless
-     * check must not touch what the user chose. `fieldID` is the custom field
-     * the list shows (empty is the first) and `unit` the unit a bare duration
-     * is read in (empty is the task's own). */
+     * check must not touch what the user chose. `unit` is the unit a bare
+     * duration is read in (empty is the task's own). */
     settingsReady = false;
-    fieldID = "";
     unit    = "";
 
     /* The files the menu offers, parallel to its entries by index, and the
@@ -87,19 +85,20 @@ class MainForm extends Form {
     drawnRows = null;
     foldTimer = null;
 
-    /* The Resources page: the table's records, the resource being edited and
-     * the assignments of the selected task, each parallel to its control. */
-    resRows       = [];
+    /* The Resources page: the resources the assignment editor offers and the
+     * assignments of the selected task, each parallel to its control. The
+     * resources themselves are edited in their own dialog. */
     resChoices    = [];
-    selectedResUID = null;
-    selectedRes = null;     // the record itself, which a new plan or an undo replaces
     assignRows    = [];
 
-    /* The custom fields the Task page offers, by FieldID, and what the table
-     * is filtered to. */
+    /* The custom fields the Task page offers, by FieldID, the one it is
+     * showing -- it follows the selection from task to task -- and what the
+     * table is filtered to. */
     attrChoices = [];
+    attrShown   = "";
+    valueItems  = [];
     filter = "";
-    columns = ["duration", "start", "finish", "attr", "cost"];
+    columns = ["duration", "start", "finish", "cost"];
 
     Form_Open() {
         this.startFoldWatch();
@@ -161,9 +160,8 @@ class MainForm extends Form {
     openStartup() {
         /* The form is built, so the window owns the settings now -- and they
          * are read **before** a plan is, so the first fill already has the
-         * columns, the custom field and the scale the last run left. Read after
-         * it, the attribute column came out with the first field until the next
-         * edit. */
+         * columns and the scale the last run left. Read after it, the table
+         * came out with the defaults until the next edit. */
         this.settingsReady = true;
         this.applySettings();
 
@@ -209,7 +207,8 @@ class MainForm extends Form {
                            this.ActAdd, this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
                            this.ActRecalc, this.ActBaseline, this.ActProjData,
-                           this.ActProjOptions, this.ActCalendar, this.ActStats])
+                           this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields,
+                           this.ActStats])
             act.Enabled = on;
     }
 
@@ -223,8 +222,7 @@ class MainForm extends Form {
          * that was never written (`null`) leaves the defaults. */
         const stored = Settings.Get("bintana-project.columns", null);
         if (Array.isArray(stored))
-            this.setColumns(stored.filter((id) => COLUMNS.some((c) => c.id === id)));
-        this.fieldID = Settings.Get("bintana-project.field", "");
+            this.setColumns(stored.filter((id) => isColumnId(id)));
         this.unit    = Settings.Get("bintana-project.unit", "");
         if (this.edit)
             this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
@@ -497,6 +495,11 @@ class MainForm extends Form {
         const at = this.Tasks.ScrollY;
 
         this.Tasks.Clear();
+        /* La columna del enlace, si está a la vista: la tabla la declara
+         * `Link: true` y el destino va por fila -- el texto es la etiqueta (o
+         * la dirección) y la dirección es a donde va. `""` deja la celda sin
+         * link, que es una tarea con etiqueta y sin dirección. */
+        const linkAt = this.visibleColumns().indexOf("link");
         const stack = [];
         for (const task of this.visibleTasks(project)) {
             const key = String(task.UID);
@@ -506,6 +509,8 @@ class MainForm extends Form {
             const options = { Key: key };
             if (stack.length) options.Parent = stack[stack.length - 1].key;
             this.Tasks.Add(this.cells(task), options);
+            if (linkAt >= 0)
+                this.Tasks.SetUri(key, linkAt + 1, task.HyperlinkAddress || "");
             stack.push({ level: task.OutlineLevel, key: key });
         }
 
@@ -585,12 +590,14 @@ class MainForm extends Form {
     cells(task) {
         const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
         const row  = [name];
-        for (const id of this.columns) row.push(this.columnValue(id, task));
+        for (const id of this.visibleColumns()) row.push(this.columnValue(id, task));
         return row;
     }
 
     columnValue(id, task) {
         const project = this.holder.project;
+        if (id.slice(0, FIELD_COLUMN.length) === FIELD_COLUMN)
+            return attrOf(task, id.slice(FIELD_COLUMN.length));
         switch (id) {
         case "duration":   return durationText(task, project);
         case "start":      return shortDate(task.Start);
@@ -606,7 +613,6 @@ class MainForm extends Form {
             const cost = taskCost(project, task);
             return cost ? Locale.Number(cost, 2) : "";
         }
-        case "attr":       return attrOf(task, this.fieldID);
         case "wbs":        return task.WBS;
         case "priority":   return String(task.Priority);
         case "constraint": return this.CmbConstraint.Items[task.ConstraintType || 0] || "";
@@ -614,20 +620,58 @@ class MainForm extends Form {
         case "calendar":   return this.calendarName(task.CalendarUID);
         case "type":       return this.CmbTaskType.Items[taskKind(project, task)] || "";
         case "notes":      return task.Notes;
+        case "link":       return task.Hyperlink || task.HyperlinkAddress || "";
         }
         return "";
     }
 
+    /* The definition a custom-field column names, or null: its id is
+     * `attr:` plus the `FieldID`, and a field the plan does not define is a
+     * column the plan cannot show. */
+    columnField(id) {
+        if (id.slice(0, FIELD_COLUMN.length) !== FIELD_COLUMN) return null;
+        const fieldID = id.slice(FIELD_COLUMN.length);
+        if (!this.holder) return null;
+        for (const def of this.holder.project.FieldDefs)
+            if (def.FieldID === fieldID) return def;
+        return null;
+    }
+
+    /* What the table is showing: the chosen columns the plan can put up, in
+     * the order `columns` says. The table's headings, its cells and the
+     * heading's menu all walk this one list, so they cannot disagree. */
+    visibleColumns() {
+        return this.columns.filter((id) =>
+            COLUMNS.some((c) => c.id === id) || this.columnField(id));
+    }
+
+    /* Everything the table could show -- the catalog's columns and one per
+     * custom field the plan defines; what *Show every column* means. */
+    allColumnIds() {
+        const ids = COLUMNS.map((c) => c.id);
+        if (this.holder)
+            for (const def of this.holder.project.FieldDefs)
+                ids.push(fieldColumnID(def.FieldID));
+        return ids;
+    }
+
     /* The table's declaration, rebuilt whole: the rows come from `cells`, so
-     * both move together and a column that is not shown is not read. */
+     * both move together and a column that is not shown is not read. A custom
+     * field's heading is the name the plan gives it -- the file's own words,
+     * not a catalog entry -- so it does not go through `Locale`. */
     applyColumns() {
         const specs = [{ Text: Locale.Text("Task"), Width: 0 }];
-        for (const id of this.columns) {
+        for (const id of this.visibleColumns()) {
             const column = COLUMNS.find((c) => c.id === id);
-            if (!column) continue;
-            const spec = { Text: Locale.Text(column.Text), Width: column.Width };
-            if (column.Alignment) spec.Alignment = column.Alignment;
-            specs.push(spec);
+            if (column) {
+                const spec = { Text: Locale.Text(column.Text), Width: column.Width };
+                if (column.Alignment) spec.Alignment = column.Alignment;
+                if (column.Link) spec.Link = true;
+                specs.push(spec);
+                continue;
+            }
+            specs.push({ Text: fieldLabel(this.columnField(id)),
+                         Width: 90, Alignment: "Right" });
         }
         this.Tasks.Columns = specs;
     }
@@ -675,61 +719,49 @@ class MainForm extends Form {
             { name: "MnuColHide", text: Locale.Text("Hide this column"),
               enabled: column > 0 },
             { name: "MnuColShowAll", text: Locale.Text("Show every column"),
-              enabled: this.columns.length < COLUMNS.length },
+              enabled: this.visibleColumns().length < this.allColumnIds().length },
             { separator: true },
             { name: "MnuColDialog", text: Locale.Text("Columns…") },
         ];
     }
 
     /* The heading's own index: zero is the name, so the first real column is
-     * one further along `columns`. The item was greyed; this is the guard. */
+     * one further along what the table is showing. The item was greyed; this
+     * is the guard. */
     MnuColHide_Click(column) {
+        const visible = this.visibleColumns();
         const at = column - 1;
-        if (at < 0 || at >= this.columns.length) return;
-        this.showColumns(this.columns.filter((id, i) => i !== at));
+        if (at < 0 || at >= visible.length) return;
+        const gone = visible[at];
+        this.showColumns(this.columns.filter((id) => id !== gone));
     }
 
     MnuColShowAll_Click() {
-        this.showColumns(COLUMNS.map((c) => c.id));
+        this.showColumns(this.allColumnIds());
     }
 
     MnuColDialog_Click() {
         this.ActColumns_Click();
     }
 
-    /* The plan's resources, with the cost of their assignments added up, and
-     * the list the assignment editor offers. */
+    /* The resources the assignment editor offers. */
     fillResources() {
-        this.Resources.Clear();
-        this.resRows = [];
         const project = this.holder ? this.holder.project : null;
         if (!project) return;
 
-        for (const resource of project.Resources) {
-            /* UID 0 is Project's "Unassigned": it is not a resource anybody
-             * edits or assigns, so it is not listed. */
-            if (resource.IsNull || resource.UID === 0) continue;
-            this.resRows.push(resource);
-            this.Resources.Add([
-                resource.Name,
-                String(resource.MaxUnits),
-                String(resourcePeak(project, resource)),
-                String(resource.StandardRate),
-                Locale.Number(resourceCost(project, resource), 2),
-            ]);
-        }
-        this.LblResEmpty.Visible = this.resRows.length === 0;
-
         const items = [];
         this.resChoices = [];
-        for (const resource of this.resRows) {
+        for (const resource of project.Resources) {
+            /* UID 0 is Project's "Unassigned": it is not a resource anybody
+             * assigns, so it is not listed. */
+            if (resource.IsNull || resource.UID === 0) continue;
             this.resChoices.push(resource.UID);
             items.push(resource.Name);
         }
         this.CmbAssignRes.Items = items;
         this.CmbAssignRes.Index = items.length ? 0 : -1;
 
-        /* The calendars a task or a resource may name, with the plan's own in
+        /* The calendars a task may name, with the plan's own in
          * front. **The plan's own is chosen in the project dialog** -- it is a
          * property of the file, and a tab of the side panel for it was a tab
          * that took space to say something the menu already says. */
@@ -740,17 +772,6 @@ class MainForm extends Form {
             workNames.push(calendar.Name);
         }
         this.CmbTaskCalendar.Items = workNames;
-        this.CmbResCalendar.Items  = workNames;
-
-        /* **The editor is about one resource, and only while it is there.** A
-         * plan opened in its place, an undo that took it back or a delete
-         * leaves the fields empty: they used to keep the old one, and Apply
-         * wrote its name and rates over whatever had that UID now. Clearing
-         * the table raises no `Select`, so this is the only place to say it. */
-        if (this.selectedRes && !this.resRows.includes(this.selectedRes)) {
-            this.Resources.DeselectAll();
-            this.Resources_Select();
-        }
     }
 
     /* The project's data -- the document's metadata, the scheduling settings
@@ -771,6 +792,40 @@ class MainForm extends Form {
             if (!this.applyProject(values)) return;
             this.log(Locale.Text("Project data saved."));
         });
+    }
+
+    /* The plan's custom fields themselves: their own dialog in the project's
+     * menu, beside the calendars -- they are the file's, like them. The
+     * dialog calls back here, so every definition is a command with its own
+     * undo, and showing one in the table is the same view choice the columns
+     * are -- more than one at a time, remembered with them. */
+    ActFields_Click() {
+        if (!this.holder) return;
+        FieldsForm.open(this.holder.project, this.fieldActions());
+    }
+
+    /* The plan's custom fields as commands, the road the calendars walk: the
+     * dialog calls back here, so nothing edits the file but `Edit`. */
+    fieldActions() {
+        return {
+            set: (values) => {
+                if (!this.edit.setFieldDef(values)) return false;
+                this.fill(this.selectedUID);
+                return true;
+            },
+            remove: (fieldID) => {
+                if (!this.edit.removeFieldDef(fieldID)) return false;
+                this.fill(this.selectedUID);
+                return true;
+            },
+            shown: (fieldID) => this.columns.indexOf(fieldColumnID(fieldID)) >= 0,
+            show: (fieldID, on) => {
+                const id = fieldColumnID(fieldID);
+                const kept = this.columns.filter((c) => c !== id);
+                if (on) kept.push(id);
+                this.showColumns(kept);
+            },
+        };
     }
 
     /* The file's own preferences -- the defaults for new tasks, the
@@ -836,97 +891,40 @@ class MainForm extends Form {
         StatsForm.open(this.holder.project);
     }
 
-    /* A resource picked: the editor shows it, so Apply updates it. */
-    Resources_Select() {
-        const resource = this.Resources.Index >= 0
-                       ? this.resRows[this.Resources.Index] : null;
-        this.selectedRes       = resource;
-        this.selectedResUID    = resource ? resource.UID : null;
-        this.TxtResName.Text   = resource ? resource.Name : "";
-        this.CmbResType.Index  = resource ? (resource.Type || 0) : 1;
-        this.TxtResMax.Text    = resource ? String(resource.MaxUnits) : "1";
-        this.TxtResRate.Text   = resource ? String(resource.StandardRate) : "";
-        this.TxtResCostUse.Text = resource ? String(resource.CostPerUse) : "0";
-        this.BtnResDel.Enabled   = !!resource;
-        this.BtnResRates.Enabled = !!resource;
-        const atCal = resource
-                    ? this.workCalChoices.indexOf(resource.CalendarUID > 0
-                                                  ? resource.CalendarUID : -1)
-                    : 0;
-        this.CmbResCalendar.Index = atCal >= 0 ? atCal : 0;
+    /* From the menu: the resources themselves -- new, edit, rates, delete --
+     * and not the ones assigned to the task. The dialog calls back here so
+     * every change is a command with its own undo. */
+    ActResources_Click() {
+        if (!this.holder) return;
+        ResourcesForm.open(this.holder.project, this.resourceActions());
     }
 
-    BtnResNew_Click() {
-        this.Resources.DeselectAll();
-        this.Resources_Select();
-        this.TxtResName.SetFocus();
-    }
-
-    BtnResApply_Click() {
-        const values = {
-            Name:          this.TxtResName.Text,
-            Type:          Math.max(this.CmbResType.Index, 0),
-            MaxUnits:      resourceNumber(this.TxtResMax.Text),
-            StandardRate:  resourceNumber(this.TxtResRate.Text),
-            CostPerUse:    resourceNumber(this.TxtResCostUse.Text),
-            CalendarUID:   this.workCalChoices[this.CmbResCalendar.Index] !== undefined
-                         ? this.workCalChoices[this.CmbResCalendar.Index] : -1,
-        };
-        if (values.Name === "" || isNaN(values.MaxUnits) ||
-            isNaN(values.StandardRate) || isNaN(values.CostPerUse)) {
-            Message.Error("A resource needs a name, and its numbers must be numbers.");
-            return;
-        }
-        try {
-            const probe = new MspResource();
-            for (const name in values) probe[name] = values[name];
-        } catch (e) {
-            Message.Error("Cannot apply: {0}", e.message);
-            return;
-        }
-
-        let resource;
-        if (this.selectedResUID === null) {
-            resource = this.edit.addResource(values);
-        } else {
-            this.edit.setResource(this.selectedResUID, values);
-            resource = this.edit.resource(this.selectedResUID);
-        }
-        this.fill(this.selectedUID);
-        if (resource) {
-            const at = this.resRows.findIndex((r) => r.UID === resource.UID);
-            if (at >= 0) { this.Resources.Select(at); this.Resources_Select(); }
-        }
-    }
-
-    BtnResDel_Click() {
-        const resource = this.selectedResUID === null
-                       ? null : this.edit.resource(this.selectedResUID);
-        if (!resource) return;
-        ConfirmForm.ask(Locale.Text("Delete resource"),
-            Locale.Text('Delete "{0}" and its assignments?', resource.Name),
-            Locale.Text("Delete"), () => {
-                this.edit.removeResource(resource.UID);
-                this.selectedResUID = null;
+    resourceActions() {
+        return {
+            add: (values) => {
+                const resource = this.edit.addResource(values);
                 this.fill(this.selectedUID);
-            });
+                return resource;
+            },
+            set: (uid, values) => {
+                this.edit.setResource(uid, values);
+                this.fill(this.selectedUID);
+                return this.edit.resource(uid);
+            },
+            remove: (uid) => {
+                this.edit.removeResource(uid);
+                this.fill(this.selectedUID);
+            },
+            setRates: (uid, rates) => {
+                if (!this.edit.setResourceRates(uid, rates)) return false;
+                this.fill(this.selectedUID);
+                this.log(Locale.Text("Rates saved."));
+                return true;
+            },
+        };
     }
 
-    /* The resource's rate tables, in their own dialog: the list comes back
-     * whole and it is one undo like any edit. */
-    BtnResRates_Click() {
-        const uid = this.selectedResUID;
-        const resource = uid === null ? null : this.edit.resource(uid);
-        if (!resource) return;
-
-        RatesForm.open(resource, (rates) => {
-            if (!this.edit.setResourceRates(uid, rates)) return;
-            this.fill(this.selectedUID);
-            const at = this.resRows.findIndex((r) => r.UID === uid);
-            if (at >= 0) { this.Resources.Select(at); this.Resources_Select(); }
-            this.log(Locale.Text("Rates saved."));
-        });
-    }
+    BtnResManage_Click() { this.ActResources_Click(); }
 
     /* The assignments of the selected task, with the cost each one adds. */
     fillAssignments(task) {
@@ -1054,6 +1052,10 @@ class MainForm extends Form {
         this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
         this.TxtDeadline.Text    = has ? shortDate(task.Deadline) : "";
         this.TxtNotes.Text       = has ? task.Notes : "";
+        this.TxtLinkText.Text    = has ? task.Hyperlink : "";
+        this.TxtLinkAddress.Text = has ? task.HyperlinkAddress : "";
+        this.TxtLinkSub.Text     = has ? task.HyperlinkSubAddress : "";
+        this.updateLinkUri();
 
         this.TxtName.Enabled = has;
         /* A summary's dates, duration and completion are what Project
@@ -1069,7 +1071,8 @@ class MainForm extends Form {
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
                            this.ActUp, this.ActDown])
             act.Enabled = has;
-        for (const w of [this.BtnApply, this.TxtNotes,
+        for (const w of [this.BtnApply, this.BtnApplyAdv, this.TxtNotes,
+                         this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
                          this.CmbPred, this.CmbType, this.SpinLag,
                          this.BtnLinkAdd])
             w.Enabled = has;
@@ -1083,34 +1086,91 @@ class MainForm extends Form {
         this.fillAttrs(has ? task : null);
     }
 
+    /* The open button is the desktop's opener (`LinkButton`): the address it
+     * holds follows the box, so a link can be tried before Apply, and with
+     * nothing to open it is grey. */
+    TxtLinkAddress_Change() { this.updateLinkUri(); }
+
+    updateLinkUri() {
+        const uri = this.TxtLinkAddress.Text.trim();
+        this.BtnLinkUri.Uri     = uri;
+        this.BtnLinkUri.Enabled = uri !== "";
+    }
+
+    /* The custom fields the plan defines, as `{ id, label }` pairs: the label
+     * is what the Task page's combo shows (alias, field name, or the ID). */
+    planFields() {
+        const out = [];
+        if (this.holder)
+            for (const def of this.holder.project.FieldDefs)
+                out.push({ id: def.FieldID, label: fieldLabel(def) });
+        return out;
+    }
+
     /* The custom fields the file defines, and the value the selected task
      * carries in the one the combo shows. */
     fillAttrs(task) {
-        const project = this.holder.project;
         const items = [];
         this.attrChoices = [];
-        for (const def of project.FieldDefs) {
-            this.attrChoices.push(def.FieldID);
-            items.push(def.Alias || def.FieldName || def.FieldID);
+        for (const field of this.planFields()) {
+            this.attrChoices.push(field.id);
+            items.push(field.label);
         }
         this.CmbAttr.Items = items;
 
-        let at = this.attrChoices.indexOf(this.fieldID);
+        let at = this.attrChoices.indexOf(this.attrShown);
         if (at < 0) at = items.length ? 0 : -1;
         this.CmbAttr.Index = at;
+        this.attrShown = at >= 0 ? this.attrChoices[at] : "";
 
         const enabled = !!task && at >= 0;
         this.CmbAttr.Enabled = enabled;
         this.TxtAttr.Enabled = enabled;
-        this.TxtAttr.Text = enabled
-            ? attrOf(task, this.attrChoices[at]) : "";
+        this.CmbAttrValue.Enabled = enabled;
+        this.fillAttrValue(task);
+    }
+
+    /* The value control follows the field: a list is a combo of its entries
+     * -- a `None` first, to take the value out -- and anything else is the
+     * text box. A text the list does not carry stays as an item so it can be
+     * read -- and picked away. `TxtAttr` holds the value either way: it is
+     * what Apply reads. */
+    fillAttrValue(task) {
+        const def   = this.attrShown ? this.edit.fieldDef(this.attrShown) : null;
+        const list  = def ? def.ValueList || [] : [];
+        const value = task && def ? attrOf(task, def.FieldID) : "";
+
+        this.CmbAttrValue.Visible = list.length > 0;
+        this.TxtAttr.Visible      = list.length === 0;
+
+        this.valueItems = [];
+        if (!list.length) {
+            this.TxtAttr.Text = value;
+            return;
+        }
+        this.valueItems.push("");
+        for (const entry of list) this.valueItems.push(entry.Value);
+        if (value !== "" && this.valueItems.indexOf(value) < 0)
+            this.valueItems.push(value);
+        this.CmbAttrValue.Items = this.valueItems.map((item) =>
+            item === "" ? Locale.Text("None") : item);
+        this.CmbAttrValue.Index = this.valueItems.indexOf(value);
+        this.TxtAttr.Text = value;
     }
 
     CmbAttr_Select() {
         const task = this.selectedTask();
         const at = this.CmbAttr.Index;
-        this.TxtAttr.Text = task && at >= 0
-            ? attrOf(task, this.attrChoices[at]) : "";
+        if (at >= 0) this.attrShown = this.attrChoices[at];
+        this.fillAttrValue(task);
+    }
+
+    /* The chosen row is the value: the text box keeps it, so Apply -- and the
+     * undo of an Apply -- move as one. */
+    CmbAttrValue_Select() {
+        const at = this.CmbAttrValue.Index;
+        this.TxtAttr.Text = at >= 0 && at < this.valueItems.length
+                          ? this.valueItems[at] : "";
     }
 
     /* The links of the selected task, as the panel's own table: `linkRows`
@@ -1862,8 +1922,12 @@ class MainForm extends Form {
         const task = this.selectedTask();
         if (!task) return false;
 
-        /* Notes and custom fields belong to any task, a summary included. */
-        const values = { Name: this.TxtName.Text, Notes: this.TxtNotes.Text };
+        /* Notes, hyperlinks and custom fields belong to any task, a summary
+         * included. */
+        const values = { Name: this.TxtName.Text, Notes: this.TxtNotes.Text,
+                         Hyperlink: this.TxtLinkText.Text,
+                         HyperlinkAddress: this.TxtLinkAddress.Text,
+                         HyperlinkSubAddress: this.TxtLinkSub.Text };
 
         const attrAt = this.CmbAttr.Index;
         if (attrAt >= 0 && this.attrChoices[attrAt]) {
@@ -1871,7 +1935,9 @@ class MainForm extends Form {
             const kept = task.Attributes.filter((a) => a.FieldID !== fieldID);
             if (this.TxtAttr.Text !== "")
                 kept.push(new MspFieldValue({ FieldID: fieldID,
-                                              Value: this.TxtAttr.Text }));
+                                              Value: this.TxtAttr.Text,
+                                              ValueGUID: this.edit.entryID(fieldID,
+                                                                           this.TxtAttr.Text) }));
             if (JSON.stringify(task.Attributes) !== JSON.stringify(kept))
                 values.Attributes = kept;
         }
@@ -1933,6 +1999,7 @@ class MainForm extends Form {
     }
 
     BtnApply_Click() { this.applyFields(); }
+    BtnApplyAdv_Click() { this.applyFields(); }
 
     ActAdd_Click() {
         const added = this.edit.addTask(this.selectedUID);
@@ -5383,16 +5450,150 @@ class MainForm extends Form {
             print(`edit calendars copy=${copy.UID} ` +
                   `then=${edit.holder.project.Calendars.length}`);
 
-            /* A custom field through the panel: the file gets the definition,
-             * the task gets the value. */
-            ok = edit.setProject({ FieldDefs: [new MspFieldDef({
-                     FieldID: "188743731", FieldName: "Text1",
-                     Alias: "External_ID" })] }) && ok;
+            /* A custom field through the panel: the definition is a command of
+             * its own, and then the task gets the value. */
+            ok = edit.setFieldDef({ FieldID: "188743731", FieldName: "Text1",
+                                    Alias: "External_ID" }) && ok;
             this.fill(2);
             this.TxtAttr.Text = "4821";
             ok = this.applyFields() &&
                  attrOf(edit.task(2), "188743731") === "4821" && ok;
             print(`edit custom field=${attrOf(edit.task(2), "188743731")}`);
+
+            /* Another one, added, edited and removed: renaming keeps the
+             * values, and deleting the definition takes them along. */
+            ok = edit.setFieldDef({ FieldID: "188743732", FieldName: "Text2",
+                                    Alias: "Temp" }) &&
+                 edit.setFieldValue(2, "188743732", "x") && ok;
+            ok = edit.setFieldDef({ FieldID: "188743732", FieldName: "Text2",
+                                    Alias: "Temporal" }) &&
+                 attrOf(edit.task(2), "188743732") === "x" && ok;
+            ok = edit.removeFieldDef("188743732") &&
+                 edit.holder.project.FieldDefs.length === 1 &&
+                 attrOf(edit.task(2), "188743732") === "" && ok;
+            print(`edit fields left=${edit.holder.project.FieldDefs.length}`);
+
+            /* A list: the definition carries its entries, a value taken from
+             * it is paired with the entry's ID, one the list does not carry
+             * loses the pointer, and taking the field out takes both. */
+            ok = edit.setFieldDef({ FieldID: "188743733", FieldName: "Text3",
+                                    Alias: "Estado",
+                                    ValueList: [
+                                        { ID: 0, Value: "Pendiente" },
+                                        { ID: 0, Value: "En curso",
+                                          Description: "trabajando" },
+                                    ] }) &&
+                 edit.setFieldValue(2, "188743733", "En curso") && ok;
+            const estado = edit.task(2).Attributes.find(
+                (a) => a.FieldID === "188743733");
+            ok = !!estado && estado.ValueGUID === "2" && ok;
+            ok = edit.setFieldValue(2, "188743733", "Libre") &&
+                 edit.task(2).Attributes.find(
+                     (a) => a.FieldID === "188743733").ValueGUID === "" && ok;
+            ok = edit.removeFieldDef("188743733") &&
+                 edit.holder.project.FieldDefs.length === 1 && ok;
+            print(`edit list ${estado ? estado.Value : "-"} ` +
+                  `guid=${estado ? estado.ValueGUID : "-"}`);
+
+            /* El hipervínculo de la tarea -- el lugar del archivo para un
+             * enlace, porque los campos personalizados no tienen ese tipo --,
+             * con el botón de abrir siguiendo la dirección. Se limpia antes de
+             * guardar, para no mover el golden. */
+            this.fill(2);
+            this.TxtLinkText.Text    = "Ticket 4821";
+            this.TxtLinkAddress.Text = "https://glpi.example/front/ticket.form.php?id=4821";
+            this.TxtLinkAddress_Change();
+            this.TxtLinkSub.Text     = "comentarios";
+            ok = this.applyFields() &&
+                 edit.task(2).Hyperlink === "Ticket 4821" &&
+                 edit.task(2).HyperlinkAddress ===
+                     "https://glpi.example/front/ticket.form.php?id=4821" &&
+                 edit.task(2).HyperlinkSubAddress === "comentarios" &&
+                 this.BtnLinkUri.Enabled && ok;
+            print(`edit hyperlink=${edit.task(2).HyperlinkAddress}`);
+
+            /* Y su columna: un link de verdad -- la tabla la declara `Link` y
+             * cada celda se abre sola --, con el texto del enlace o la
+             * dirección cuando no hay texto. */
+            const linkColumns = this.columns.slice();
+            this.setColumns(["link"]);
+            ok = this.Tasks.Columns.length === 2 &&
+                 this.Tasks.Columns[1].Link === true &&
+                 this.Tasks.Row("2")[1] === "Ticket 4821" && ok;
+            this.setColumns(linkColumns);
+
+            this.TxtLinkText.Text    = "";
+            this.TxtLinkAddress.Text = "";
+            this.TxtLinkAddress_Change();
+            this.TxtLinkSub.Text     = "";
+            ok = this.applyFields() &&
+                 edit.task(2).HyperlinkAddress === "" &&
+                 !this.BtnLinkUri.Enabled && ok;
+
+            /* The resources' own dialog, beside the calendars: the list, a new
+             * one through the fields, and the same one renamed through them. */
+            const resCount = edit.holder.project.Resources.length;
+            const resdlg = ResourcesForm.open(edit.holder.project,
+                                              this.resourceActions());
+            ok = resdlg.rows.length === 2 && resdlg.Resources.Index < 0 && ok;
+            resdlg.TxtResName.Text = "Carla";
+            resdlg.TxtResRate.Text = "30";
+            resdlg.BtnResApply_Click();
+            ok = edit.holder.project.Resources.length === resCount + 1 &&
+                 resdlg.rows.length === 3 &&
+                 resdlg.TxtResName.Text === "Carla" && resdlg.BtnResDel.Enabled && ok;
+            resdlg.TxtResName.Text = "Carlota";
+            resdlg.BtnResApply_Click();
+            ok = edit.holder.project.Resources.length === resCount + 1 &&
+                 edit.resource(resdlg.selectedUID).Name === "Carlota" && ok;
+            print(`edit resources dialog rows=${resdlg.rows.length}`);
+            /* Taken back, so what follows sees the plan the dialog found. */
+            edit.undo(); edit.undo();
+            this.fill(this.selectedUID);
+            ok = edit.holder.project.Resources.length === resCount && ok;
+            resdlg.Close();
+
+            /* The dialog beside the calendars: the list of what the plan
+             * defines -- with its tick -- and a new field starting on the next
+             * free text one. */
+            const fdlg = FieldsForm.open(edit.holder.project, this.fieldActions());
+            ok = fdlg.rows.length === 1 && fdlg.ChkShown.Enabled &&
+                 typeof fdlg.ChkShown_Click === "function" &&
+                 typeof fdlg.BtnFieldNew_Click === "function" &&
+                 typeof fdlg.BtnFieldEdit_Click === "function" &&
+                 typeof fdlg.BtnFieldDel_Click === "function" && ok;
+            fdlg.Close();
+            const fform = FieldForm.open(null, edit.holder.project.FieldDefs,
+                                         () => {});
+            ok = fform.TxtFieldID.Text === "188743732" &&
+                 fform.TxtFieldName.Text === "Text2" && ok;
+            print(`edit field form next=${fform.TxtFieldID.Text}`);
+            fform.Close();
+
+            /* Y el editor de un campo con lista: las filas son las entradas. */
+            const listDef = new MspFieldDef({
+                FieldID: "188743733", FieldName: "Text3", Alias: "Estado",
+                ValueList: [new MspValueEntry({ ID: 1, Value: "A" }),
+                            new MspValueEntry({ ID: 2, Value: "B" })] });
+            const lform = FieldForm.open(listDef, edit.holder.project.FieldDefs,
+                                         () => {});
+            ok = lform.ChkList.Active && lform.ListBox.Visible &&
+                 lform.FieldValues.Count === 2 &&
+                 typeof lform.ChkList_Click === "function" &&
+                 typeof lform.BtnValAdd_Click === "function" &&
+                 typeof lform.BtnValDel_Click === "function" &&
+                 typeof lform.FieldValues_Select === "function" && ok;
+            lform.TxtValValue.Text = "C";
+            lform.TxtValDescription.Text = "tercera";
+            lform.BtnValAdd_Click();
+            ok = lform.entries.length === 3 && lform.FieldValues.Count === 3 && ok;
+            lform.FieldValues.Index = 2;
+            lform.FieldValues_Select();
+            ok = lform.BtnValDel.Enabled && lform.TxtValValue.Text === "C" && ok;
+            lform.BtnValDel_Click();
+            ok = lform.entries.length === 2 && ok;
+            print(`edit list form entries=${lform.FieldValues.Count}`);
+            lform.Close();
 
             /* The baseline keeps the plan as it stands, and a hundred per
              * cent finishes the task: the actual dates follow. Two numbers
@@ -5434,7 +5635,16 @@ class MainForm extends Form {
                  this.Tasks.Row("2")[1] === durationText(edit.task(2),
                                                          this.holder.project) &&
                  String(this.Tasks.Row("2")[2]).endsWith("%") && ok;
-            this.setColumns(["duration", "start", "finish", "attr", "cost"]);
+
+            /* A custom field is one more column -- and more than one at a
+             * time: each one is read by its `FieldID`. */
+            this.setColumns(["duration", fieldColumnID("188743731"), "cost"]);
+            ok = this.Tasks.Columns.length === 4 &&
+                 this.Tasks.Columns[2].Text === "External_ID" &&
+                 this.Tasks.Row("2")[2] === "4821" && ok;
+
+            this.setColumns(["duration", "start", "finish",
+                             fieldColumnID("188743731"), "cost"]);
 
             /* The heading's menu: built for the secondary click only, and the
              * name -- the tree -- cannot be taken away, so its item is greyed.
@@ -5457,8 +5667,8 @@ class MainForm extends Form {
             print(`edit headermenu=${menu.length} ` +
                   `hidden=${this.columns.length}`);
             this.MnuColShowAll_Click();
-            ok = this.columns.length === COLUMNS.length &&
-                 this.Tasks.Columns.length === COLUMNS.length + 1 &&
+            ok = this.columns.length === COLUMNS.length + 1 &&
+                 this.Tasks.Columns.length === COLUMNS.length + 2 &&
                  !item(this.Tasks_HeaderClick(2, 3, false, false),
                        "MnuColShowAll").enabled && ok;
             this.showColumns(remembered);
@@ -5534,17 +5744,17 @@ class MainForm extends Form {
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns",
-                        "BtnApply", "BtnLinkAdd",
+                        "BtnApply", "BtnApplyAdv", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog",
-                        "BtnResNew", "BtnResApply", "BtnResDel", "BtnResRates",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
-                        "ActProjData", "ActProjOptions", "ActCalendar"]
+                        "ActProjData", "ActProjOptions", "ActCalendar", "ActResources", "ActFields"]
             .map((name) => `${name}_Click`)
             .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
                      "CmbScale_Select",
-                     "Links_Select", "Resources_Select", "Assignments_Select",
-                     "CmbAttr_Select", "TxtFilter_Change",
+                     "Links_Select", "Assignments_Select",
+                     "CmbAttr_Select", "CmbAttrValue_Select", "TxtLinkAddress_Change",
+                     "TxtFilter_Change",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseUp", "Gantt_KeyPress",
                      "Tasks_Activate", "Gantt_DblClick"]);
@@ -5577,7 +5787,7 @@ class MainForm extends Form {
             if (!this.Tasks.Exists(key)) { ok = false; continue; }
             const row  = this.Tasks.Row(key);
             const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-            const at   = 1 + this.columns.indexOf("duration");
+            const at   = 1 + this.visibleColumns().indexOf("duration");
             if (row[0] !== name ||
                 (at > 0 && row[at] !== durationText(task, this.holder.project)))
                 ok = false;
@@ -5819,7 +6029,6 @@ const COLUMNS = [
     { id: "milestone",  Text: "Milestone",        Width: 60,  Alignment: "Center" },
     { id: "work",       Text: "Work",             Width: 84,  Alignment: "Right" },
     { id: "cost",       Text: "Cost",             Width: 80,  Alignment: "Right" },
-    { id: "attr",       Text: "Custom field",     Width: 90,  Alignment: "Right" },
     { id: "wbs",        Text: "WBS",              Width: 80 },
     { id: "priority",   Text: "Priority",         Width: 60,  Alignment: "Right" },
     { id: "constraint", Text: "Constraint",       Width: 110 },
@@ -5827,7 +6036,25 @@ const COLUMNS = [
     { id: "calendar",   Text: "Calendar",         Width: 100 },
     { id: "type",       Text: "Task type",        Width: 100 },
     { id: "notes",      Text: "Notes",            Width: 160 },
+    { id: "link",       Text: "Hyperlink",        Width: 160, Link: true },
 ];
+
+/* A custom-field column: one per field the plan defines, and its id carries
+ * the `FieldID` -- so the choice survives a file swap and a field that is not
+ * defined in the file is not a column. The label is the file's own words, in
+ * the same order the side panel's combo offers them. */
+const FIELD_COLUMN = "attr:";
+
+function fieldColumnID(fieldID) { return FIELD_COLUMN + fieldID; }
+
+function fieldLabel(def) { return def.Alias || def.FieldName || def.FieldID; }
+
+/* What a stored column list may carry: a catalog id, or a custom field's. */
+function isColumnId(id) {
+    return COLUMNS.some((c) => c.id === id) ||
+           (id.slice(0, FIELD_COLUMN.length) === FIELD_COLUMN &&
+            id.length > FIELD_COLUMN.length);
+}
 
 /* The four link types, in MSPDI's own numbering (0 FF, 1 FS, 2 SF, 3 SS) and
  * in the order the panel's combo shows them: FS, SS, FF, SF. */

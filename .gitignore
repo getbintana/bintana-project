@@ -1,0 +1,3 @@
+# The official MSPDI schema (Microsoft's, 240 KB): it is kept here so a run can
+# validate against it with `XSD=mspdi_pj12.xsd`, and it is never committed.
+mspdi_pj12.xsd

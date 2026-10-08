@@ -468,17 +468,104 @@ class Edit {
         return true;
     }
 
+    /* The definition a custom field has, or null: what tells a list from a
+     * free text, and where the entries are. */
+    fieldDef(fieldID) {
+        for (const def of this.holder.project.FieldDefs)
+            if (def.FieldID === fieldID) return def;
+        return null;
+    }
+
+    /* The ID of the list entry that carries that text, as text, or "" -- the
+     * pointer a task value keeps to the entry it came from. */
+    entryID(fieldID, value) {
+        const def = this.fieldDef(fieldID);
+        if (!def) return "";
+        for (const entry of def.ValueList || [])
+            if (entry.Value === value) return String(entry.ID);
+        return "";
+    }
+
     /* A custom-field value on a task: empty takes the record out, since a
-     * value with no text is a value the file does not carry. */
+     * value with no text is a value the file does not carry. **A value the
+     * field's list carries is paired with its entry**; a text the list does
+     * not hold keeps no pointer, and any stale one goes. */
     setFieldValue(taskUID, fieldID, value) {
         const task = this.task(taskUID);
         if (!task || !fieldID) return false;
 
         const kept = task.Attributes.filter((a) => a.FieldID !== fieldID);
-        if (value !== "") kept.push(new MspFieldValue({ FieldID: fieldID, Value: value }));
+        if (value !== "")
+            kept.push(new MspFieldValue({ FieldID: fieldID, Value: value,
+                                          ValueGUID: this.entryID(fieldID, value) }));
         if (JSON.stringify(task.Attributes) === JSON.stringify(kept)) return false;
 
         task.Attributes = kept;
+        this.commit();
+        return true;
+    }
+
+    /* A custom-field definition, by `FieldID`: that is its identity -- the
+     * values on the tasks are keyed by it -- so a new one is appended and an
+     * edit replaces the record in place: name, alias and the value list.
+     * Entries arrive with the IDs they had; a fresh one takes the next number
+     * free in the project, which is what keeps `ValueGUID` a pointer. **When
+     * the list changed, the task values' pointers follow it in the same
+     * command**: a value the new list carries keeps step and one it does not
+     * loses the pointer, text and all. */
+    setFieldDef(values) {
+        const project = this.holder.project;
+        const fieldID = values.FieldID;
+        if (!fieldID) return false;
+
+        let nextID = 1;
+        for (const other of project.FieldDefs)
+            for (const entry of other.ValueList || [])
+                if (entry.ID >= nextID) nextID = entry.ID + 1;
+
+        const entries = [];
+        for (const entry of values.ValueList || []) {
+            if (String(entry.Value || "") === "") continue;
+            entries.push(new MspValueEntry({
+                ID:          entry.ID > 0 ? entry.ID : nextID++,
+                Value:       String(entry.Value),
+                Description: String(entry.Description || "") }));
+        }
+
+        const old = this.fieldDef(fieldID);
+        const listChanged = JSON.stringify(old ? old.ValueList || [] : []) !==
+                            JSON.stringify(entries);
+
+        const kept = [], def = new MspFieldDef({ FieldID:   fieldID,
+                                                 FieldName: String(values.FieldName || ""),
+                                                 Alias:     String(values.Alias || ""),
+                                                 ValueList: entries });
+        for (const previous of project.FieldDefs)
+            kept.push(previous.FieldID === fieldID ? def : previous);
+        if (!old) kept.push(def);
+        if (JSON.stringify(project.FieldDefs) === JSON.stringify(kept)) return false;
+
+        project.FieldDefs = kept;
+        if (listChanged)
+            for (const task of project.Tasks)
+                for (const attr of task.Attributes)
+                    if (attr.FieldID === fieldID)
+                        attr.ValueGUID = this.entryID(fieldID, attr.Value);
+
+        this.commit();
+        return true;
+    }
+
+    /* Removing a definition takes its values with it: a value whose field the
+     * file does not define is a value that means nothing, and leaving those
+     * behind would leave them in the file forever. One undo, like the add. */
+    removeFieldDef(fieldID) {
+        const project = this.holder.project;
+        if (!project.FieldDefs.some((d) => d.FieldID === fieldID)) return false;
+
+        project.FieldDefs = project.FieldDefs.filter((d) => d.FieldID !== fieldID);
+        for (const task of project.Tasks)
+            task.Attributes = task.Attributes.filter((a) => a.FieldID !== fieldID);
         this.commit();
         return true;
     }

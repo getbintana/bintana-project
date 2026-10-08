@@ -19,7 +19,6 @@ class SettingsForm extends Form {
 
         dlg.TxtFolder.Text = Settings.Get("bintana-project.folder", "");
         dlg.CmbScale.Index = Number(Settings.Get("bintana-project.timescale", 0)) || 0;
-        dlg.TxtField.Text  = Settings.Get("bintana-project.field", "");
 
         const unit = UNIT_KEYS.indexOf(Settings.Get("bintana-project.unit", ""));
         dlg.CmbUnit.Index = unit >= 0 ? unit : 0;
@@ -35,7 +34,6 @@ class SettingsForm extends Form {
     BtnSave_Click() {
         Settings.Set("bintana-project.folder", trim(this.TxtFolder.Text));
         Settings.Set("bintana-project.timescale", this.CmbScale.Index);
-        Settings.Set("bintana-project.field", trim(this.TxtField.Text));
         Settings.Set("bintana-project.unit", UNIT_KEYS[this.CmbUnit.Index] || "");
         Settings.Set("bintana-project.autorecalc", this.ChkAutorecalc.Active);
         Settings.Set("bintana-project.autosave", this.ChkAutosave.Active);

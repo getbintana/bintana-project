@@ -1,0 +1,124 @@
+{
+  "format": "bintana-form/1",
+  "class": "FieldsForm",
+  "properties": {
+    "Text": "Custom fields",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 560,
+    "Height": 460,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Label",
+      "name": "LblFields",
+      "properties": {
+        "Text": "Custom fields",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "TableView",
+      "name": "FieldList",
+      "properties": {
+        "Columns": [
+          {
+            "Text": "Name",
+            "Width": 0
+          },
+          {
+            "Text": "FieldID",
+            "Width": 140
+          },
+          {
+            "Text": "Values",
+            "Width": 80,
+            "Alignment": "Center"
+          },
+          {
+            "Text": "Shown",
+            "Width": 90,
+            "Alignment": "Center"
+          }
+        ],
+        "Height": 220,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "CheckButton",
+      "name": "ChkShown",
+      "properties": {
+        "Text": "Show in the list",
+        "Enabled": false,
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Panel",
+      "name": "ListButtons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 6
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnFieldNew",
+          "properties": {
+            "Text": "New\u2026",
+            "Icon": "list-add-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnFieldEdit",
+          "properties": {
+            "Text": "Edit\u2026",
+            "Icon": "document-properties-symbolic",
+            "Enabled": false,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnFieldDel",
+          "properties": {
+            "Text": "Delete",
+            "Icon": "user-trash-symbolic",
+            "Enabled": false,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnClose",
+          "properties": {
+            "Text": "Close",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

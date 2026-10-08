@@ -246,6 +246,16 @@ vertical. Se hizo en tres partes y ninguna era de la app:
   (medido: a 10, 11, 12 y 13 puntos el encabezado sigue en 25 y las filas van de
   36 a 41). Con ese alto entran las dos bandas de la regla a 9 puntos, sin
   encoger la letra ni perder el mes.
+- **El panel se reorganiza** (2026-10-08): había crecido hasta no servir. La
+  pestaña **Tarea** era una grilla de unos treinta controles en seis secciones
+  con **Aplicar** al fondo, y **Recursos** mezclaba el editor del recurso --que
+  es del plan-- con las asignaciones --que son de la tarea--. Ahora son cuatro
+  pestañas: **Tarea** (nombre, fechas, avance, hito, manual, notas),
+  **Avanzado** (tipo, calendario, esfuerzo, estimada, restricción, fecha límite,
+  campo personalizado, hipervínculo), **Vínculos** y **Recursos**, esta última
+  solo con las asignaciones. Los recursos pasan a **Proyecto → Recursos…**
+  (`ResourcesForm`), junto a Calendarios y Campos personalizados, y llaman a
+  `Edit` como ellos. **Aplicar** está en las dos primeras pestañas.
 - **La pestaña Proyecto sale del panel** (2026-09-30): el panel lateral tiene
   tres pestañas y las tres son de la tarea —Tarea, Vínculos, Recursos— porque
   es lo que cambia con la selección. Lo del plan entero estaba en una cuarta,
@@ -724,9 +734,47 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   de inicio del día del plan, como Nuevo proyecto; destildar todas las columnas
   se guarda y vuelve así (solo una lista nunca escrita deja las de siempre);
   `openStartup` lee los ajustes **antes** de abrir el plan, así la primera
-  tabla ya tiene el campo personalizado; la barra de estado dice "1 tarea" y
+  tabla ya tiene las columnas elegidas; la barra de estado dice "1 tarea" y
   "2 tareas" con `Locale.Plural` (una frase por cuenta, con `Plural-Forms` en
   `es.po`); y `es.po` ya no trae las diez entradas que nada usaba.
+- **Los campos personalizados son del proyecto** (2026-10-08): viven en su
+  propio diálogo -- **Proyecto → Campos personalizados…**, al lado de
+  Calendarios… -- y no en Configuración, que es de la aplicación. Ahí se
+  agregan (el primer campo `Text` libre, de Text1 = 188743731 en adelante), se
+  editan (el `FieldID` queda fijo: es la identidad de los valores que las
+  tareas ya llevan) y se eliminan (la definición se va con sus valores, un
+  solo undo). **Mostrar en la lista** tilda más de uno y cada campo es una
+  columna propia, con el nombre que el archivo le da -- id `attr:<FieldID>` en
+  la lista de columnas, elegida y recordada como las demás --; la columna
+  fija «Custom field» y su `FieldID` a mano en Configuración se fueron.
+  `check-edit` cubre el alta, la edición, la baja y las dos columnas a la vez.
+- **Las listas de valores** (2026-10-08): un campo extendido puede llevar su
+  `ValueList` -- el XSD la pone última en la secuencia, con `ID`, `Value` y
+  `Description` por entrada -- y el editor del campo la carga en una tabla con
+  su par de casillas: **Agregar** agrega o reemplaza la fila elegida, como las
+  excepciones del calendario. El valor de la tarea pasa a ser un desplegable
+  con las entradas y **Ninguno** para vaciarlo, y el archivo guarda el
+  `ValueGUID` que apunta a la entrada (un entero: los IDs son únicos en el
+  plan y los reparte `Edit.setFieldDef`). Cambiar la lista reajusta los
+  punteros en el mismo comando: la tarea cuyo texto la lista no lleva pierde
+  el puntero y conserva el texto. `check-edit` cubre el alta, el puntero, un
+  texto libre y la baja. El XSD oficial quedó en `mspdi_pj12.xsd` -- ignorado
+  por git, adentro del repo -- y la suite entera valida contra él con
+  `XSD=mspdi_pj12.xsd`: 12 salidas, `HARNESS-OK`.
+- **El hipervínculo de la tarea** (2026-10-08): `Hyperlink` y
+  `HyperlinkSubAddress` se sumaron al modelo junto al `HyperlinkAddress` que ya
+  viajaba, y el panel los edita con un `LinkButton` al lado que abre la
+  dirección (el ticket de GLPI de la tarea, para el caso que lo pidió). **Los
+  campos personalizados no tienen tipo vínculo** -- el `CFType` del XSD no lo
+  tiene -- y eso queda dicho en el manual. La lista tiene su columna
+  (**Hipervínculo**, en Ver → Columnas…), que muestra el texto del enlace o la
+  dirección cuando no hay texto. `check-edit` pone el enlace, lo afirma -- con
+  su columna -- y lo limpia antes de guardar, así el golden no se mueve.
+  **Y la celda es un enlace de verdad** (2026-10-08, runtime 5fa768b): la
+  columna se declara `Link: true` y la dirección va por fila con `SetUri` -- el
+  texto es la etiqueta y una tarea con etiqueta y sin dirección queda texto
+  plano --, así que la celda se subraya y se abre con un clic (o con Enter al
+  enfocarla). `check-edit` también afirma el `Link` de la spec.
 - Setear `Tasks.Key` o `TxtFilter.Text` ya dispara el evento, y la llamada
   explícita que sigue redibuja una segunda vez. Quedó sin tocar: está en una
   veintena de lugares y en las pruebas, y cuesta un redibujo.

@@ -1,0 +1,257 @@
+{
+  "format": "bintana-form/1",
+  "class": "ResourcesForm",
+  "properties": {
+    "Text": "Resources",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 620,
+    "Height": 560,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Label",
+      "name": "LblList",
+      "properties": {
+        "Text": "Resources",
+        "Style": "heading",
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "TableView",
+      "name": "Resources",
+      "properties": {
+        "Columns": [
+          {
+            "Text": "Name",
+            "Width": 0
+          },
+          {
+            "Text": "Max",
+            "Width": 50,
+            "Alignment": "Right"
+          },
+          {
+            "Text": "Peak",
+            "Width": 50,
+            "Alignment": "Right"
+          },
+          {
+            "Text": "Rate",
+            "Width": 60,
+            "Alignment": "Right"
+          },
+          {
+            "Text": "Cost",
+            "Width": 70,
+            "Alignment": "Right"
+          }
+        ],
+        "Height": 170,
+        "HAlign": "Fill"
+      }
+    },
+    {
+      "type": "Label",
+      "name": "LblResEmpty",
+      "properties": {
+        "Text": "No resources in this file",
+        "Style": "dim-label",
+        "Visible": false,
+        "HAlign": "Start"
+      }
+    },
+    {
+      "type": "Grid",
+      "name": "ResFields",
+      "properties": {
+        "Columns": 2,
+        "RowSpacing": 4,
+        "ColumnSpacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblResName",
+          "properties": {
+            "Text": "Name",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtResName",
+          "properties": {
+            "Placeholder": "Ana",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblResType",
+          "properties": {
+            "Text": "Type",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbResType",
+          "properties": {
+            "Items": [
+              "Material",
+              "Work",
+              "Cost"
+            ],
+            "Index": 1,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblResMax",
+          "properties": {
+            "Text": "Max units",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtResMax",
+          "properties": {
+            "Placeholder": "1",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblResRate",
+          "properties": {
+            "Text": "Rate",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtResRate",
+          "properties": {
+            "Placeholder": "50",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblResCostUse",
+          "properties": {
+            "Text": "Cost per use",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtResCostUse",
+          "properties": {
+            "Placeholder": "0",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblResCalendar",
+          "properties": {
+            "Text": "Calendar",
+            "HAlign": "End"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbResCalendar",
+          "properties": {
+            "Items": [],
+            "Index": 0,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "ResButtons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 6
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnResNew",
+          "properties": {
+            "Text": "New",
+            "Icon": "document-new-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnResApply",
+          "properties": {
+            "Text": "Apply",
+            "Icon": "document-save-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnResDel",
+          "properties": {
+            "Text": "Delete",
+            "Icon": "user-trash-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnResRates",
+          "properties": {
+            "Text": "Rates…",
+            "Icon": "view-list-symbolic",
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Spacing": 8,
+        "VAlign": "End"
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnClose",
+          "properties": {
+            "Text": "Close",
+            "Default": true,
+            "HExpand": true,
+            "HAlign": "Fill"
+          }
+        }
+      ]
+    }
+  ]
+}

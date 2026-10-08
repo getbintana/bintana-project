@@ -230,10 +230,13 @@ The panel on the right is a view of the selected row: type a name, a moment
 (`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, `2ed` for elapsed, or a
 bare number in the task's own unit), a percentage, the milestone, estimated and
 effort-driven ticks, the task type (Fixed Units/Duration/Work), a constraint
-(`ASAP` through `FNLT`, with its date), a deadline, notes, or the value of a
+(`ASAP` through `FNLT`, with its date), a deadline, notes, the value of a
 custom field the file defines -- the same
-`FieldID` the list's column can be pointed at -- and Apply writes them as one
-command -- one undo. **Add** puts a new task after the selected one and its
+`FieldID` the list's column can be pointed at -- or the task's hyperlink (text,
+address and bookmark, with **Open** beside it: there is no link type among the
+custom fields, so a ticket's URL goes here), and Apply writes them as one
+command -- one undo. The **Hyperlink** column carries the cell as a real link:
+underlined, and a click -- or Enter with its focus -- opens the address. **Add** puts a new task after the selected one and its
 subtree, **Delete** takes that subtree and every link into it, and
 **Indent**/**Outdent** move a task a level, recomputing which tasks are
 summaries, and **Up**/**Down** swap it with its sibling, subtree and all.
@@ -243,6 +246,16 @@ data…** (start date, default calendar, currency) and **Project options…**
 **Calendars…** lists them, where **Edit…** opens one whole:
 its week days (each with its working times as prose, `08:00-12:00
 13:00-17:00`, because a day may have more than one span) and its exceptions.
+**Custom fields…** administers the ones the file defines: **New…** starts on
+the next free `Text` field (Text1 is 188743731), **Edit…** keeps the `FieldID`
+-- the identity the values on the tasks are keyed by -- and **Delete** takes
+the definition and its values, one undo each. **Show in the list** puts up as
+many of them as columns as are ticked, and the choice is remembered with the
+rest of the columns. A field may be **a list of values**: the entries -- value
+and description -- are loaded in the editor, every task's value becomes a
+drop-down of them plus `None`, and the file keeps the `ValueGUID` pointer to
+the entry a task took; changing the list only adjusts those pointers, it does
+not rewrite what the tasks said.
 The minutes a day is not decoration: it is what a typed `1d` means.
 
 **Recent** drops the last eight files. The **Resources** tab lists the plan's
@@ -368,14 +381,14 @@ through XML. The corpus measures the road to it; see `ROADMAP.md`.
 
 ## Settings and translation
 
-Eight things are remembered, all under `bintana-project.*` in `Settings` (the
+Seven things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
-folder the last file came from, the timescale, which custom field the list
-shows (by `FieldID`, empty for the first), which columns the list shows (chosen
-in View → Columns…, the name always among them), the unit a bare duration is
-read in, the recent list, whether the plan is recalculated after each change
-(off by default: a date typed by hand is the user's until they ask), and
-whether the recovery copy is kept.
+folder the last file came from, the timescale, which columns the list shows
+(chosen in View → Columns…, the name always among them -- a custom field's
+column is ticked in Project → Custom fields… and remembered with them), the
+unit a bare duration is read in, the recent list, whether the plan is
+recalculated after each change (off by default: a date typed by hand is the
+user's until they ask), and whether the recovery copy is kept.
 
 **The autosave is a copy, not a save**: while there is unsaved work the app
 writes it every minute to the config directory -- never beside the schedule,
