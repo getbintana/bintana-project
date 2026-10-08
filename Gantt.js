@@ -231,23 +231,23 @@ function fade(color, alpha) {
 }
 
 /*
- * The chart's colour themes: the three inks of a bar -- a task, a critical
- * one and the progress inside it -- as `[light, dark]`. Everything else in the
+ * The chart's colour themes: the two inks of a bar -- a task and a critical
+ * one -- as `[light, dark]`. Everything else in the
  * palette is a shade of the theme's own and does not change with these. The
  * first is what Project reads; the critical colour is kept apart from the bar's
  * in every one, because that difference is the point of drawing it.
  */
 const GANTT_THEMES = {
-    classic:  [{ bar: "#1c71d8", late: "#c01c28", done: "#0b4ea2" },
-               { bar: "#3584e4", late: "#e01b24", done: "#1a5fb4" }],
-    forest:   [{ bar: "#26a269", late: "#c64600", done: "#0d6b40" },
-               { bar: "#33d17a", late: "#ff7800", done: "#1b8a50" }],
-    amber:    [{ bar: "#e5a50a", late: "#c01c28", done: "#8f5902" },
-               { bar: "#f5c211", late: "#e01b24", done: "#a0720a" }],
-    violet:   [{ bar: "#813d9c", late: "#c64600", done: "#4f2468" },
-               { bar: "#9141ac", late: "#ff7800", done: "#613583" }],
-    graphite: [{ bar: "#5e5c64", late: "#c01c28", done: "#241f31" },
-               { bar: "#9a9996", late: "#e01b24", done: "#3d3846" }],
+    classic:  [{ bar: "#1c71d8", late: "#c01c28" },
+               { bar: "#3584e4", late: "#e01b24" }],
+    forest:   [{ bar: "#26a269", late: "#c64600" },
+               { bar: "#33d17a", late: "#ff7800" }],
+    amber:    [{ bar: "#e5a50a", late: "#c01c28" },
+               { bar: "#f5c211", late: "#e01b24" }],
+    violet:   [{ bar: "#813d9c", late: "#c64600" },
+               { bar: "#9141ac", late: "#ff7800" }],
+    graphite: [{ bar: "#5e5c64", late: "#c01c28" },
+               { bar: "#9a9996", late: "#e01b24" }],
 };
 /* In the order the format dialog offers them. */
 const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite"];
@@ -294,7 +294,9 @@ function ganttPalette(p, theme) {
         select:   dark ? "rgba(53,132,228,0.20)" : "rgba(28,113,216,0.13)",
         bar:      look.bar,
         late:     look.late,       // critical, as Project reads
-        done:     look.done,
+        /* What progress is painted with, over the bar's own colour: a shade, so
+         * a critical task that is finished is still a darker red and not a blue. */
+        progress: dark ? "rgba(0,0,0,0.38)" : "rgba(0,0,0,0.26)",
         link:     dark ? "rgba(255,255,255,0.34)" : "rgba(0,0,0,0.34)",
         baseline: dark ? "rgba(255,255,255,0.42)" : "rgba(0,0,0,0.40)",
         today:    dark ? "#ff6b6b" : "#e01b24",
@@ -597,6 +599,17 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Stroke();
     }
 
+    /* A hairline under each row, where the list rules its own: the two read as
+     * one table and a bar is read against the row it belongs to. */
+    p.Color = c.faint;
+    for (let i = 0; i < rows.length; i++) {
+        const yy = top(i) + rowH - 0.5;
+        if (yy < headH || yy - rowH > height) continue;
+        p.MoveTo(0, yy);
+        p.LineTo(width, yy);
+        p.Stroke();
+    }
+
     /* The selected row, behind its bar. It is the row the table is
      * highlighting and it is painted where the table paints it, which is what a
      * chart beside a list is for. */
@@ -694,12 +707,18 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         }
 
         if (task.Summary) {
-            const cap = y + 1, drop = Math.max(5, barH * 0.7);
-            p.Color = colour;
-            p.LineWidth = 2;
-            p.Polyline([x0, cap, x0, cap + drop, x1, cap + drop, x1, cap]);
-            p.Stroke();
-            p.LineWidth = 1;
+            /* A thin solid bar with a point down at each end, as Project draws
+             * the summary: in the ink and not the bar's colour, so it reads as
+             * the frame the tasks under it sit in -- red when it is critical. */
+            const h = Math.max(3, Math.round(barH * 0.42)), pt = Math.max(4, h + 1);
+            const top0 = y + Math.round((barH - h) / 2) - 1;
+            p.Color = task.Critical && fmt.critical ? c.late : fade(c.ink, 0.75);
+            p.Rectangle(x0, top0, Math.max(x1 - x0, 1), h);
+            p.Fill();
+            p.Polygon([x0, top0 + h, x0 + pt, top0 + h, x0, top0 + h + pt]);
+            p.Fill();
+            p.Polygon([x1, top0 + h, x1 - pt, top0 + h, x1, top0 + h + pt]);
+            p.Fill();
             continue;
         }
         if (task.Milestone) {
@@ -721,13 +740,12 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.Color = colour;
         p.Rectangle(x0, y, x1 - x0, barH);
         p.Fill();
-        /* The progress is a thinner band inside the bar, not a repaint of it: at
-         * 100% a critical task is still visibly critical. */
+        /* The progress is the bar's own left part, shaded: the colour of the task
+         * stays the colour of the task, and the shade says how far along it is.
+         * A repaint in another hue made a finished critical task look blue. */
         if (fmt.progress && task.PercentComplete > 0) {
-            const band = Math.max(2, Math.round(barH * 0.34));
-            p.Color = c.done;
-            p.Rectangle(x0, y + (barH - band) / 2,
-                        (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, band);
+            p.Color = c.progress;
+            p.Rectangle(x0, y, (x1 - x0) * Math.min(task.PercentComplete, 100) / 100, barH);
             p.Fill();
         }
     }
@@ -744,6 +762,9 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
         p.ClipRectangle(plotX, 0, width - plotX, height);
         p.Font = "Sans 9";
         p.Color = c.ink;
+        const leaves = {};
+        for (const row of rows)
+            for (const edge of row.Links) leaves[edge.PredecessorUID] = true;
         for (let i = 0; i < rows.length; i++) {
             const task = rows[i];
             const first = top(i);
@@ -754,7 +775,18 @@ function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom)
             if (!text) continue;
             const end = x(Math.max(s, f)) +
                         (task.Milestone ? Math.max(5, Math.round(barH * 0.62)) : 0);
-            p.Text(text, end + 6, first + (rowH - p.TextHeight(text)) / 2);
+            const tx = end + 6, th = p.TextHeight(text);
+            const ty = first + (rowH - th) / 2;
+            /* A task with a link leaving it has a line running through the
+             * place the label goes: the label sits on a veil of the ground's
+             * own colour so the line does not strike through the words. */
+            if (fmt.links && leaves[task.UID]) {
+                p.Color = fade(c.paper, 0.88);
+                p.Rectangle(tx - 2, ty - 1, p.TextWidth(text) + 4, th + 2);
+                p.Fill();
+                p.Color = c.ink;
+            }
+            p.Text(text, tx, ty);
         }
         p.Pop();
     }
