@@ -330,11 +330,22 @@ const RULER_LINE = [13, 12, 11];
 function ganttTimescaleBands(dayW) {
     const bands = [];
     if (dayW >= 6) bands.push({ step: 7, label: (d) => `${d.getDate()}/${d.getMonth() + 1}` });
-    if (dayW >= 3) bands.push({ step: 30, label: (d) =>
-        d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
-                           : `${d.getMonth() + 1}` });
+    /* A month is named, as long as the cell lets it be: the month and the year,
+     * the month, its first three letters, and only then the number -- which is
+     * what a month squeezed to a few pixels can still say. The draw takes the
+     * first that fits. */
+    if (dayW >= 3) bands.push({ step: 30, label: (d) => {
+        const name = Locale.Text(MONTH_NAMES[d.getMonth()]);
+        return [`${name} ${d.getFullYear()}`, name, name.slice(0, 3),
+                d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
+                                   : `${d.getMonth() + 1}`];
+    } });
     return bands;
 }
+
+const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
+                     "July", "August", "September", "October", "November",
+                     "December"];
 
 /*
  * **The instants a ruler or a grid falls on**, stepped on the wall clock as
@@ -500,8 +511,10 @@ function drawGanttRuler(p, width, g, c) {
                 p.LineTo(at, headH);
                 p.Stroke();
             }
-            const label = band.label(new Date(t));
-            if (p.TextWidth(label) + 6 <= Math.min(room, band.step * dayW)) {
+            const fit = Math.min(room, band.step * dayW);
+            const label = [].concat(band.label(new Date(t)))
+                .find((text) => p.TextWidth(text) + 6 <= fit);
+            if (label !== undefined) {
                 p.Color = g.strip ? c.headInk : c.ink;
                 p.Text(label, at + 3, y - bandH + 2);
                 p.Color = c.dim;
