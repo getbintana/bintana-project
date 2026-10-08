@@ -86,16 +86,31 @@ class CalendarForm extends Form {
             return;
         }
 
+        /* **What the fields do not show is the exception's own**: one picked
+         * keeps the recurrence it had -- its type, period, days of the week,
+         * month and occurrences -- and only the dates, the name and whether it
+         * is worked are what is typed. Rebuilt from the fields alone, renaming a
+         * "every Monday for ten weeks" turned it into a plain range of days. A
+         * new one is the daily range (type 1) the fields describe. */
+        const was = this.Exc.Index >= 0 ? this.excRows[this.Exc.Index] : null;
+        const kept = was ? {
+            Type: was.Type, EnteredByOccurrences: was.EnteredByOccurrences,
+            Occurrences: was.Occurrences, Period: was.Period,
+            DaysOfWeek: was.DaysOfWeek, MonthItem: was.MonthItem,
+            MonthPosition: was.MonthPosition, Month: was.Month,
+            MonthDay: was.MonthDay } : { Type: 1 };
+
         /* A date that is not one is the record's to refuse, said as an error
          * rather than thrown at the user. */
         let ex;
         try {
-            ex = new MspException({
+            const fields = {
                 TimePeriod: new MspTimePeriod({ FromDate: from, ToDate: to }),
                 Name:       this.TxtExcName.Text,
-                Type:       1,
                 DayWorking: this.ChkExcWorking.Active,
-            });
+            };
+            for (const name in kept) fields[name] = kept[name];
+            ex = new MspException(fields);
         } catch (e) {
             Message.Error("Cannot apply: {0}", e.message);
             return;
@@ -103,7 +118,6 @@ class CalendarForm extends Form {
         /* The times of a working exception are what the file wrote, and this
          * dialog does not edit them; a new one takes the week's first working
          * day. A holiday has no times. */
-        const was = this.Exc.Index >= 0 ? this.excRows[this.Exc.Index] : null;
         if (ex.DayWorking) {
             if (was && was.WorkingTimes.length) ex.WorkingTimes = was.WorkingTimes;
             else ex.WorkingTimes = this.firstWorkingTimes();

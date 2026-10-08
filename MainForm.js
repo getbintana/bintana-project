@@ -3781,6 +3781,31 @@ class MainForm extends Form {
                     2) && ok;
             File.Delete(scratch);
 
+            /* **Renombrar una excepción recurrente no la vuelve un rango.** El
+             * diálogo la rearmaba con los campos que muestra y perdía el tipo, el
+             * período, los días de la semana y las ocurrencias: "cada lunes diez
+             * semanas" quedaba como un rango diario. */
+            const cal = new MspCalendar({ UID: 9, Name: "Con recurrente" });
+            cal.Exceptions = [new MspException({
+                Name: "Cada lunes", Type: 5, Period: 1, DaysOfWeek: 2,
+                EnteredByOccurrences: true, Occurrences: 10, DayWorking: false,
+                TimePeriod: new MspTimePeriod({ FromDate: "2026-09-07T00:00:00",
+                                                ToDate: "2026-11-09T23:59:00" }) })];
+            let saved = null;
+            const rdlg = CalendarForm.open(this.holder.project, cal, (v) => { saved = v; });
+            rdlg.Exc.Index = 0;
+            rdlg.Exc_Select();
+            rdlg.TxtExcName.Text = "Lunes sin trabajo";
+            rdlg.BtnExcAdd_Click();
+            const rex = rdlg.excRows[0];
+            ok = eq("renombrada, sigue siendo recurrente",
+                    [rex.Name, rex.Type, rex.Period, rex.DaysOfWeek,
+                     rex.Occurrences, rex.EnteredByOccurrences].join("/"),
+                    "Lunes sin trabajo/5/1/2/10/true") && ok;
+            ok = eq("y conserva su período", rex.TimePeriod.ToDate,
+                    "2026-11-09T23:59:00") && ok;
+            rdlg.Close();
+
             /* **Borrar una excepción no le pasa su recurrencia a la otra.** Sin
              * clave se emparejan por posición, y la segunda se escribía en el
              * elemento de la primera conservando su `Month`/`MonthDay`. */

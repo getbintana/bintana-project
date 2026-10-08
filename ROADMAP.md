@@ -660,10 +660,11 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   el costo se calcula de nuevo. Queda sin cubrir el trabajo que cambia por
   otras vías (editar la duración de una tarea no toca el `Cost` de sus
   asignaciones).
-- **Las excepciones recurrentes se pierden al editarlas.** El diálogo de
-  calendario rearma la excepción con `Type: 1` y sin `Occurrences`,
-  `Period`, `DaysOfWeek` ni `Month*`: renombrar una recurrente la vuelve un
-  rango diario.
+- **Las excepciones recurrentes sobreviven a editarlas** (2026-10-07): el
+  diálogo del calendario las rearmaba con `Type: 1` y sin período, días de la
+  semana, mes ni ocurrencias, así que renombrar "cada lunes diez semanas" la
+  volvía un rango diario. Ahora la que se elige conserva su recurrencia y solo
+  cambian las fechas, el nombre y si se trabaja. `check-commands` lo fija.
 - **Los `WeekDay` se aparean por posición** y su `TimePeriod` no está
   modelado: el mismo problema que `MspException` ya resolvió. Sólo afecta a
   archivos viejos, con excepciones escritas como `DayType 0`.
