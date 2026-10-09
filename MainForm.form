@@ -334,6 +334,21 @@
           "check": true
         },
         {
+          "name": "MnuTasks",
+          "text": "Show task list",
+          "check": true
+        },
+        {
+          "name": "MnuChart",
+          "text": "Show Gantt chart",
+          "check": true
+        },
+        {
+          "name": "MnuProps",
+          "text": "Show properties panel",
+          "check": true
+        },
+        {
           "separator": true
         },
         {
@@ -448,6 +463,9 @@
         "VAlign": "Fill",
         "VExpand": true,
         "Width": 1240
+      },
+      "design": {
+        "Current": 1
       },
       "children": [
         {
@@ -796,6 +814,49 @@
                     "HExpand": true,
                     "Style": "dim-label"
                   }
+                },
+                {
+                  "type": "Panel",
+                  "name": "viewButtons",
+                  "properties": {
+                    "Arrangement": "Horizontal",
+                    "Anchored": false,
+                    "Height": 36,
+                    "Style": "linked",
+                    "Width": 114
+                  },
+                  "children": [
+                    {
+                      "type": "ToggleButton",
+                      "name": "ToolTasks",
+                      "properties": {
+                        "Height": 30,
+                        "Icon": "view-list-symbolic",
+                        "Tooltip": "Show or hide the task list",
+                        "Width": 34
+                      }
+                    },
+                    {
+                      "type": "ToggleButton",
+                      "name": "ToolChart",
+                      "properties": {
+                        "Height": 30,
+                        "Icon": "x-office-calendar-symbolic",
+                        "Tooltip": "Show or hide the Gantt chart",
+                        "Width": 34
+                      }
+                    },
+                    {
+                      "type": "ToggleButton",
+                      "name": "ToolProps",
+                      "properties": {
+                        "Height": 30,
+                        "Icon": "document-properties-symbolic",
+                        "Tooltip": "Show or hide the properties panel",
+                        "Width": 34
+                      }
+                    }
+                  ]
                 }
               ]
             },
@@ -1034,6 +1095,9 @@
                                           "Resources"
                                         ]
                                       },
+                                      "design": {
+                                        "Current": 3
+                                      },
                                       "children": [
                                         {
                                           "type": "Panel",
@@ -1187,21 +1251,13 @@
                                                   }
                                                 },
                                                 {
-                                                  "type": "Label",
-                                                  "name": "LblNotes",
-                                                  "properties": {
-                                                    "ColumnSpan": 2,
-                                                    "HAlign": "Start",
-                                                    "Text": "Notes"
-                                                  }
-                                                },
-                                                {
                                                   "type": "TextEditor",
                                                   "name": "TxtNotes",
                                                   "properties": {
                                                     "ColumnSpan": 2,
                                                     "HAlign": "Fill",
-                                                    "Height": 60
+                                                    "Height": 120,
+                                                    "Style": "frame"
                                                   }
                                                 }
                                               ]
@@ -1514,7 +1570,8 @@
                                                   }
                                                 ],
                                                 "HAlign": "Fill",
-                                                "Height": 90
+                                                "Height": 120,
+                                                "Style": "frame"
                                               }
                                             },
                                             {
@@ -1666,7 +1723,8 @@
                                                   }
                                                 ],
                                                 "HAlign": "Fill",
-                                                "Height": 90
+                                                "Height": 120,
+                                                "Style": "frame"
                                               }
                                             },
                                             {
@@ -1736,6 +1794,7 @@
                                               "name": "AssignButtons",
                                               "properties": {
                                                 "Arrangement": "Horizontal",
+                                                "Homogeneous": true,
                                                 "Spacing": 6
                                               },
                                               "children": [

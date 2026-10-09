@@ -108,6 +108,10 @@ class MainForm extends Form {
 
     Form_Open() {
         this.startFoldWatch();
+        this.MnuProps.Value = true;
+        this.ToolProps.Active = true;
+        this.MnuTasks.Value = this.MnuChart.Value = true;
+        this.ToolTasks.Active = this.ToolChart.Active = true;
         try {
             if (Application.Arguments.indexOf("check-corpus") >= 0) {
                 this.checkCorpus();
@@ -297,6 +301,57 @@ class MainForm extends Form {
 
     /* The View menu's tick, and the Help menu's one line. */
     MnuLog_Click(on) { this.Log.Visible = on; }
+
+    /* The panel of properties, out of the way: the chart gets the room. The
+     * button and the menu tick are one switch seen twice, and assigning either
+     * one's state from here raises nothing on the menu -- on the button it
+     * raises `Click`, which is why the guard. The divider is remembered, so the
+     * panel comes back the width it left with. */
+    MnuProps_Click(on) { this.showProps(on); }
+    ToolProps_Click()  { if (this.ToolProps) this.showProps(this.ToolProps.Active); }
+
+    /* The list and the chart: either can go, but never both -- a plan with
+     * neither is an empty window. The one that would be the last is put back
+     * where it was, so the switch the user pressed simply does not move. */
+    MnuTasks_Click(on) { this.showPlanPart("Tasks", on); }
+    MnuChart_Click(on) { this.showPlanPart("ChartCol", on); }
+    ToolTasks_Click()  { if (this.ToolTasks) this.showPlanPart("Tasks", this.ToolTasks.Active); }
+    ToolChart_Click()  { if (this.ToolChart) this.showPlanPart("ChartCol", this.ToolChart.Active); }
+
+    showPlanPart(name, on) {
+        const part  = this[name];
+        const other = this[name === "Tasks" ? "ChartCol" : "Tasks"];
+        const menu  = name === "Tasks" ? this.MnuTasks : this.MnuChart;
+        const tool  = name === "Tasks" ? this.ToolTasks : this.ToolChart;
+        const sync  = (v) => {
+            menu.Value = v;
+            if (tool.Active !== v) tool.Active = v;
+        };
+        if (part.Visible === on) return;
+        if (!on && !other.Visible) { sync(true); return; }
+        if (!on) this.planPosition = this.PlanSplit.Position;
+        part.Visible = on;
+        sync(on);
+        Timer.After(0, () => {
+            if (on && other.Visible && this.planPosition > 0)
+                this.PlanSplit.Position = this.planPosition;
+            this.syncGanttSize();
+            this.redrawChart();
+        });
+    }
+
+    showProps(on) {
+        if (this.PropsCol.Visible === on) return;
+        if (!on) this.propsPosition = this.BodySplit.Position;
+        this.PropsCol.Visible = on;
+        this.MnuProps.Value = on;
+        if (this.ToolProps.Active !== on) this.ToolProps.Active = on;
+        Timer.After(0, () => {
+            if (on && this.propsPosition > 0) this.BodySplit.Position = this.propsPosition;
+            this.syncGanttSize();
+            this.redrawChart();
+        });
+    }
 
     MnuAbout_Click() {
         Message.Info("bintana-project {0} — MSPDI (MS Project XML) in Bintana",
@@ -6366,7 +6421,7 @@ class MainForm extends Form {
                         "ActLevel3",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
-                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuAbout",
+                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
                         "MnuColLeft", "MnuColRight",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
