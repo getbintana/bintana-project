@@ -2038,13 +2038,13 @@ class MainForm extends Form {
         const strip = Math.round(this.Header ? this.Header.Bounds().Height : 0);
         if (strip > headH) this.Tasks.HeaderMinHeight = strip;
 
-        /* The chart is floored to the rows' area, which is the scroller's own
-         * height -- the pane less the strip above it, and the pane less the
-         * heading on the other side. A floor, not a size, for the reason written
-         * above this function: a size here would feed the window's own minimum
-         * back into itself. */
-        const view = this.GanttScroll ? this.GanttScroll.Bounds().Height : 0;
-        if (view > 0) this.Gantt.MinHeight = Math.max(this.rowHeight(), view);
+        /* **The chart is floored to one row, not to the pane.** Flooring it to
+         * the scroller's own height fed the window's minimum back into itself:
+         * the floor was read from a pane that was not on screen yet, and opening
+         * a plan from the welcome page grew the window by the heading's height.
+         * The chart expands to fill the pane anyway, so it takes whatever there
+         * is, and the log's strip comes out of it rather than out of the window. */
+        this.Gantt.MinHeight = this.rowHeight();
 
         this.syncZoom();
         this.redrawChart();
