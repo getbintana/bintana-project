@@ -16,10 +16,12 @@
       "name": "Body",
       "properties": {
         "Arrangement": "Horizontal",
-        "Spacing": 12,
         "Expand": true,
         "HExpand": true,
-        "VExpand": true
+        "Height": 630,
+        "Spacing": 12,
+        "VExpand": true,
+        "Width": 976
       },
       "children": [
         {
@@ -28,8 +30,8 @@
           "properties": {
             "Arrangement": "Vertical",
             "Scrollbars": "Vertical",
-            "Width": 250,
-            "VExpand": true
+            "VExpand": true,
+            "Width": 250
           },
           "children": [
             {
@@ -37,58 +39,190 @@
               "name": "Options",
               "properties": {
                 "Arrangement": "Vertical",
-                "Spacing": 4,
-                "HExpand": true
+                "HExpand": true,
+                "Spacing": 4
               },
               "children": [
-                { "type": "Label", "name": "LblContent",
-                  "properties": { "Text": "Content", "Style": "heading", "HAlign": "Start" } },
-                { "type": "Label", "name": "LblTitle",
-                  "properties": { "Text": "Title", "HAlign": "Start" } },
-                { "type": "TextBox", "name": "TxtTitle",
-                  "properties": { "HAlign": "Fill" } },
-                { "type": "CheckButton", "name": "ChkPath",
-                  "properties": { "Text": "Show the file's path" } },
-                { "type": "Label", "name": "LblTasks",
-                  "properties": { "Text": "Tasks", "HAlign": "Start" } },
-                { "type": "ComboBox", "name": "CmbTasks",
-                  "properties": { "HAlign": "Fill",
-                                  "Items": ["All tasks", "Only critical tasks", "Only unfinished tasks"] } },
-                { "type": "CheckButton", "name": "ChkSummaries",
-                  "properties": { "Text": "Include summary tasks" } },
-                { "type": "CheckButton", "name": "ChkStripes",
-                  "properties": { "Text": "Shade alternate rows" } },
-
-                { "type": "Label", "name": "LblColumns",
-                  "properties": { "Text": "Columns", "Style": "heading", "HAlign": "Start" } },
-                { "type": "CheckButton", "name": "ChkColStart",
-                  "properties": { "Text": "Start" } },
-                { "type": "CheckButton", "name": "ChkColFinish",
-                  "properties": { "Text": "Finish" } },
-                { "type": "CheckButton", "name": "ChkColDuration",
-                  "properties": { "Text": "Duration" } },
-                { "type": "CheckButton", "name": "ChkColComplete",
-                  "properties": { "Text": "Complete" } },
-                { "type": "CheckButton", "name": "ChkColCritical",
-                  "properties": { "Text": "Critical" } },
-                { "type": "CheckButton", "name": "ChkColCost",
-                  "properties": { "Text": "Cost" } },
-
-                { "type": "Label", "name": "LblPageSetup",
-                  "properties": { "Text": "Page", "Style": "heading", "HAlign": "Start" } },
-                { "type": "Label", "name": "LblPaper",
-                  "properties": { "Text": "Paper", "HAlign": "Start" } },
-                { "type": "ComboBox", "name": "CmbPaper",
-                  "properties": { "HAlign": "Fill" } },
-                { "type": "Label", "name": "LblOrientation",
-                  "properties": { "Text": "Orientation", "HAlign": "Start" } },
-                { "type": "ComboBox", "name": "CmbOrientation",
-                  "properties": { "HAlign": "Fill",
-                                  "Items": ["Portrait", "Landscape"] } },
-                { "type": "Label", "name": "LblMargins",
-                  "properties": { "Text": "Margins (mm)", "HAlign": "Start" } },
-                { "type": "SpinBox", "name": "SpnMargins",
-                  "properties": { "HAlign": "Fill", "Min": 0, "Max": 50, "Step": 1 } }
+                {
+                  "type": "Label",
+                  "name": "LblContent",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Style": "heading",
+                    "Text": "Content"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblTitle",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Title"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtTitle",
+                  "properties": {
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkPath",
+                  "properties": {
+                    "Text": "Show the file's path"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblTasks",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Tasks"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbTasks",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "All tasks",
+                      "Only critical tasks",
+                      "Only unfinished tasks"
+                    ],
+                    "Text": "All tasks"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkSummaries",
+                  "properties": {
+                    "Text": "Include summary tasks"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkStripes",
+                  "properties": {
+                    "Text": "Shade alternate rows"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblColumns",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Style": "heading",
+                    "Text": "Columns"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColStart",
+                  "properties": {
+                    "Text": "Start"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColFinish",
+                  "properties": {
+                    "Text": "Finish"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColDuration",
+                  "properties": {
+                    "Text": "Duration"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColComplete",
+                  "properties": {
+                    "Text": "Complete"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColCritical",
+                  "properties": {
+                    "Text": "Critical"
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkColCost",
+                  "properties": {
+                    "Text": "Cost"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblPageSetup",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Style": "heading",
+                    "Text": "Page"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblPaper",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Paper"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbPaper",
+                  "properties": {
+                    "HAlign": "Fill"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblOrientation",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Orientation"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbOrientation",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Portrait",
+                      "Landscape"
+                    ],
+                    "Text": "Portrait"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblMargins",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Margins (mm)"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnMargins",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 50,
+                    "Min": 0
+                  }
+                }
               ]
             }
           ]
@@ -100,14 +234,20 @@
             "Arrangement": "Vertical",
             "Expand": true,
             "HExpand": true,
-            "VExpand": true,
-            "Style": "frame"
+            "Style": "frame",
+            "VExpand": true
           },
           "children": [
             {
               "type": "Report",
               "name": "Preview",
-              "properties": { "Expand": true, "HExpand": true, "VExpand": true }
+              "properties": {
+                "Expand": true,
+                "HExpand": true,
+                "VExpand": true,
+                "Width": 480,
+                "Height": 640
+              }
             }
           ]
         }
@@ -118,26 +258,84 @@
       "name": "Bar",
       "properties": {
         "Arrangement": "Horizontal",
-        "Spacing": 8
+        "Height": 34,
+        "Spacing": 8,
+        "Width": 976
       },
       "children": [
-        { "type": "Button", "name": "BtnPrev",
-          "properties": { "Icon": "go-previous-symbolic", "Tooltip": "Previous page" } },
-        { "type": "Label", "name": "LblPage",
-          "properties": { "Text": "1 / 1", "Width": 70 } },
-        { "type": "Button", "name": "BtnNext",
-          "properties": { "Icon": "go-next-symbolic", "Tooltip": "Next page" } },
-        { "type": "ComboBox", "name": "CmbZoom",
-          "properties": { "Width": 150,
-                          "Items": ["Whole page", "Page width", "50%", "75%", "100%", "150%", "200%"] } },
-        { "type": "Label", "name": "Spacer",
-          "properties": { "Text": "", "HExpand": true } },
-        { "type": "Button", "name": "BtnPrint",
-          "properties": { "Text": "Print…" } },
-        { "type": "Button", "name": "BtnSave",
-          "properties": { "Text": "Save PDF…", "Style": "suggested-action" } },
-        { "type": "Button", "name": "BtnClose",
-          "properties": { "Text": "Close", "Cancel": true } }
+        {
+          "type": "Button",
+          "name": "BtnPrev",
+          "properties": {
+            "Icon": "go-previous-symbolic",
+            "Tooltip": "Previous page"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblPage",
+          "properties": {
+            "Alignment": "Center",
+            "Text": "1 / 1",
+            "Width": 70
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnNext",
+          "properties": {
+            "Icon": "go-next-symbolic",
+            "Tooltip": "Next page"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbZoom",
+          "properties": {
+            "Index": 0,
+            "Items": [
+              "Whole page",
+              "Page width",
+              "50%",
+              "75%",
+              "100%",
+              "150%",
+              "200%"
+            ],
+            "Text": "Whole page",
+            "Width": 150
+          }
+        },
+        {
+          "type": "Label",
+          "name": "Spacer",
+          "properties": {
+            "HExpand": true
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnPrint",
+          "properties": {
+            "Text": "Print…"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSave",
+          "properties": {
+            "Style": "suggested-action",
+            "Text": "Save PDF…"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnClose",
+          "properties": {
+            "Cancel": true,
+            "Text": "Close"
+          }
+        }
       ]
     }
   ]
