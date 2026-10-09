@@ -101,7 +101,7 @@ else
     # statistics the Project menu shows, the welcome page a bare start lands on
     # and the commands themselves pressed as commands -- asserted inside the app
     # -- no golden, because the values are the assertion.
-    for what in cpm drag view stats welcome commands; do
+    for what in cpm drag view stats report welcome commands; do
         if "$TRY" "$PWD" "check-$what" > "$OUT/$what.report" 2>&1; then
             echo "check $what: $(grep -c "^$what " "$OUT/$what.report") assertions ok"
         else

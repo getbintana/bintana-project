@@ -1882,13 +1882,6 @@
           ]
         }
       ]
-    },
-    {
-      "type": "Report",
-      "name": "Plan",
-      "properties": {
-        "Visible": false
-      }
     }
   ]
 }

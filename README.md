@@ -210,9 +210,14 @@ left. **Export Chart…** writes the same rows.
 The chart's width is what the **Timescale** combo asks -- `Auto` fits the view,
 `Day`/`Week`/`Month` set a day width. **Export Chart…** writes the whole plan
 as a PNG or a PDF, from its first row and with the task names in a gutter, since
-a file has no list beside it; **Report…** (File menu, over `lib/report`) writes
-the plan as a banded document -- tasks with dates, duration, progress and cost,
-totalled -- which is how any of it reaches somebody who does not run the app.
+a file has no list beside it; **Report…** (File menu, over `lib/report`) opens
+a preview of the plan as a banded document -- tasks with dates, duration,
+progress and cost, totalled -- with the columns, the tasks, the paper and the
+zoom chosen beside it, and saves it as a PDF or prints it. That is how any of it
+reaches somebody who does not run the app. The bands are `planReport`'s
+(`PlanReport.js`), a pure function of the plan and the options, and the dialog
+(`ReportForm`) holds the `Report` control: it used to be a hidden control on
+the main window, which the designer drew under the welcome page.
 
 The pointer edits too: click a bar to select it, **drag** it to move the task,
 drag its **end** to resize (the duration follows, measured in working time on
@@ -365,8 +370,8 @@ acceptance is a real `Save As → XML` from MS Project, opened back by Project.
 also plays one scripted round of the editing commands over `01-minimal`, holding
 each saved output and its `touched` report against the goldens in
 `tests/expected/` (`--update` rewrites them after a deliberate change), and then
-runs the six in-app roads -- `check-cpm`, `check-drag`, `check-view`,
-`check-stats`, `check-welcome` and `check-commands` -- where the values are the
+runs the seven in-app roads -- `check-cpm`, `check-drag`, `check-view`,
+`check-stats`, `check-report`, `check-welcome` and `check-commands` -- where the values are the
 assertion and there is no golden, and `check-cpm` again in three zones whose
 clocks change. `tests/FIDELITY.md` classifies what they measure -- including
 the first upstream bug the corpus found; `tests/run.sh <name>` runs one file.

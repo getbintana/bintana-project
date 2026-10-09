@@ -137,6 +137,10 @@ class MainForm extends Form {
                 this.checkOracle();
                 return;
             }
+            if (Application.Arguments.indexOf("check-report") >= 0) {
+                this.checkReport();
+                return;
+            }
             if (Application.Arguments.indexOf("check-stats") >= 0) {
                 this.checkStats();
                 return;
@@ -2540,98 +2544,14 @@ class MainForm extends Form {
 
     /*
      * The plan as a document: a banded report of the tasks -- dates, duration,
-     * progress, cost -- that leaves as one PDF. The bands are declared here,
-     * which is what keeps the totals from drifting from the rows.
+     * progress, cost -- seen before it leaves, as a PDF or on paper. What it
+     * carries and how is the dialog's (ReportForm), and the bands are
+     * `planReport`'s (PlanReport.js).
      */
     ActReport_Click() {
-        const base = File.BaseName(this.path) || "plan";
-        Dialog.SaveFile(Locale.Text("Save the report"),
-            { Folder: File.Directory(this.path), Name: `${base}-report.pdf`,
-              Filters: [[Locale.Text("PDF document"), "*.pdf"]] },
-            (path) => {
-                try {
-                    this.buildReport();
-                    this.Plan.SavePdf(path);
-                    this.log(`Reported ${path}.`);
-                } catch (e) {
-                    Message.Error("Cannot save {0}: {1}", path, e.message);
-                }
-            });
-    }
-
-    buildReport() {
-        const project = this.holder.project;
-        const rows = [];
-        for (const task of project.Tasks) {
-            if (task.IsNull || task.Summary) continue;
-
-            rows.push({
-                Task:     task.Name,
-                Start:    String(task.Start || "").slice(0, 10),
-                Finish:   String(task.Finish || "").slice(0, 10),
-                Duration: durationText(task, project),
-                Complete: `${task.PercentComplete}%`,
-                Critical: task.Critical ? Locale.Text("Critical") : "",
-                Cost:     taskCost(project, task),
-            });
-        }
-
-        const money = (x, y, w) => ({ Kind: "Total", Field: "Cost", Op: "Sum",
-                                      Format: "Money", X: x, Y: y, Width: w,
-                                      Align: "Right" });
-        const head = (text, x, w, align) => ({ Kind: "Text", Text: text, X: x,
-                                               Y: 30, Width: w,
-                                               Align: align || "Left",
-                                               Font: "Bold 9" });
-        const cell = (field, x, w, align, format) => ({ Kind: "Field",
-                                                        Field: field, X: x, Y: 0,
-                                                        Width: w,
-                                                        Align: align || "Left",
-                                                        Format: format || "" });
-
-        this.Plan.Paper       = "A4";
-        this.Plan.Orientation = "Landscape";
-        this.Plan.Sections = {
-            /* The page header sits at the top of every page and the rest of
-             * the bands flow under it, so the title belongs here with the
-             * captions -- and it repeats with them, which a plan across
-             * pages wants anyway. */
-            PageHeader: { Height: 48, Elements: [
-                { Kind: "Text", Text: project.Name || File.Name(this.path),
-                  X: 0, Y: 0, Font: "Bold 12" },
-                { Kind: "Text", Text: this.path, X: 0, Y: 16, Font: "8" },
-                head(Locale.Text("Task"), 0, 240),
-                head(Locale.Text("Start"), 248, 70),
-                head(Locale.Text("Finish"), 322, 70),
-                head(Locale.Text("Duration"), 396, 60, "Right"),
-                head(Locale.Text("Complete"), 460, 60, "Right"),
-                head(Locale.Text("Critical"), 524, 60),
-                head(Locale.Text("Cost"), 588, 80, "Right"),
-                { Kind: "Line", Y1: 46, X2: 668, Y2: 46, Color: "#999999" },
-            ]},
-            Detail: { Height: 15, Elements: [
-                cell("Task", 0, 240),
-                cell("Start", 248, 70),
-                cell("Finish", 322, 70),
-                cell("Duration", 396, 60, "Right"),
-                cell("Complete", 460, 60, "Right"),
-                cell("Critical", 524, 60),
-                cell("Cost", 588, 80, "Right", "Money"),
-            ]},
-            PageFooter: { Height: 16, Elements: [
-                { Kind: "Field", Field: "@Page", X: 600, Y: 0, Width: 30,
-                  Align: "Right", Font: "8" },
-                { Kind: "Text", Text: "/", X: 632, Y: 0, Font: "8" },
-                { Kind: "Field", Field: "@Pages", X: 640, Y: 0, Width: 30,
-                  Font: "8" },
-            ]},
-            ReportFooter: { Height: 22, Elements: [
-                { Kind: "Text", Text: Locale.Text("Total"), X: 480, Y: 4,
-                  Width: 100, Align: "Right", Font: "Bold 9" },
-                money(588, 4, 80),
-            ]},
-        };
-        this.Plan.Data = rows;
+        if (!this.holder) return;
+        this.reportForm = ReportForm.open(this.holder.project, this.path,
+                                          (text) => this.log(text));
     }
 
     /* The plan as it stands, kept so a later date can be compared with it: one
@@ -3537,6 +3457,146 @@ class MainForm extends Form {
      * There is no golden for this one -- the values *are* the assertion, the
      * way they are for `check-cpm`.
      */
+    /*
+     * The report: what `planReport` puts on the page for each option, and the
+     * dialog that shows it. Values asserted rather than a golden, like
+     * `check-stats` -- the rows are the arithmetic, and the PDF's bytes are
+     * Pango's and cairo's.
+     */
+    checkReport() {
+        let ok = true;
+        const eq = (what, got, want) => {
+            const same = got === want;
+            print(`report ${what}: ${got}${same ? "" : ` (want ${want})`} ` +
+                  `${same ? "ok" : "FAILED"}`);
+            return same;
+        };
+        /* Settings are the user's: put back whatever the dialog wrote. */
+        const kept = {};
+        for (const key of ["path", "summaries", "stripes", "paper", "orientation",
+                           "margins", "tasks", "columns", "zoom"])
+            if (Settings.Has(REPORT_KEY + key)) kept[key] = Settings.Get(REPORT_KEY + key);
+
+        try {
+            const task = (uid, name, level, more) => new MspTask({
+                UID: uid, ID: uid, Name: name, IsNull: false, OutlineLevel: level,
+                Start: "2026-09-07T08:00:00", Finish: "2026-09-08T17:00:00",
+                ...(more || {}),
+            });
+            const project = new MspProject({
+                Name: "Obra", StartDate: "2026-09-07T08:00:00",
+                Tasks: [
+                    task(0, "Obra", 0, { Summary: true }),
+                    task(1, "Diseño", 1, { Summary: true }),
+                    task(2, "Planos", 2, { PercentComplete: 100 }),
+                    task(3, "Permisos", 2, { Critical: true }),
+                    task(4, "Construcción", 1, { Summary: true }),
+                    task(5, "Cimientos", 2, { PercentComplete: 100 }),
+                    task(6, "Muros", 2),
+                    new MspTask({ UID: 7, ID: 7, IsNull: true }),
+                ],
+                Resources: [new MspResource({ UID: 1, Name: "Ana", Type: 1,
+                                              MaxUnits: 1, StandardRate: 50 })],
+                Assignments: [2, 3, 5, 6].map((t) => new MspAssignment({
+                    UID: t, TaskUID: t, ResourceUID: 1, Units: 1,
+                    Work: `PT${t * 4}H0M0S` })),
+            });
+            const costOf = (uid) => taskCost(project, project.Tasks.find((t) => t.UID === uid));
+            const names  = (rows) => rows.map((r) => r.Task.trim()).join(",");
+
+            /* --- the rows ---------------------------------------------------- */
+
+            const plain = planReport(project, "/x/obra.xml", {});
+            ok = eq("tasks, and not summaries or blanks", names(plain.Data),
+                    "Planos,Permisos,Cimientos,Muros") && ok;
+
+            const sums = planReport(project, "", { summaries: true }).Data;
+            ok = eq("with the summaries, in the plan's order", names(sums),
+                    "Obra,Diseño,Planos,Permisos,Construcción,Cimientos,Muros") && ok;
+            ok = eq("indented by level", sums[2].Task, "    Planos") && ok;
+            ok = eq("a summary is marked", sums[1].Summary, true) && ok;
+            ok = eq("a summary costs its tasks", sums[1].RollCost, costOf(2) + costOf(3)) && ok;
+            ok = eq("the top one, all of them", sums[0].RollCost,
+                    costOf(2) + costOf(3) + costOf(5) + costOf(6)) && ok;
+            ok = eq("and adds nothing to the total", sums[0].Cost, 0) && ok;
+            ok = eq("costs are not nothing", costOf(6) > 0, true) && ok;
+
+            ok = eq("only the critical, and what holds them",
+                    names(planReport(project, "", { tasks: "critical", summaries: true }).Data),
+                    "Obra,Diseño,Permisos") && ok;
+            ok = eq("only the unfinished",
+                    names(planReport(project, "", { tasks: "open" }).Data),
+                    "Permisos,Muros") && ok;
+
+            /* --- the bands --------------------------------------------------- */
+
+            ok = eq("the cost column brings the total",
+                    !!plain.Sections.ReportFooter, true) && ok;
+            const noCost = planReport(project, "", { columns: ["start", "finish"] });
+            ok = eq("and without it there is none", noCost.Sections.ReportFooter, undefined) && ok;
+            ok = eq("a heading per column, the task's included",
+                    noCost.Sections.PageHeader.Elements
+                        .filter((e) => e.Kind === "Text" && e.Font === "Sans Bold 9").length, 3) && ok;
+
+            /* Portrait A4 with every column is narrower than they are wide, so
+             * they shrink together and the line still ends inside the margins. */
+            const narrow = planReport(project, "", { orientation: "Portrait" });
+            const rule   = narrow.Sections.PageHeader.Elements.find((e) => e.Kind === "Line");
+            ok = eq("every column fits the paper",
+                    rule.X2 <= Printer.Papers.A4.Width - 2 * 40, true) && ok;
+            ok = eq("stripes are a shaded box on odd rows",
+                    planReport(project, "", { stripes: true }).Sections.Detail.Elements[0].When,
+                    "@Odd") && ok;
+
+            /* --- the dialog -------------------------------------------------- */
+
+            const said = [];
+            const dlg  = ReportForm.open(project, "/x/obra.xml", (t) => said.push(t));
+            ok = eq("the dialog shows a report", dlg.Preview.PageCount >= 1, true) && ok;
+            ok = eq("and says which page", dlg.LblPage.Text, `1 / ${dlg.Preview.PageCount}`) && ok;
+            ok = eq("the title stands behind an empty field", dlg.TxtTitle.Placeholder, "Obra") && ok;
+
+            dlg.ChkColCost.Active = false;
+            ok = eq("a column taken out takes its total", dlg.Preview.Sections.ReportFooter,
+                    undefined) && ok;
+            dlg.ChkSummaries.Active = true;
+            ok = eq("an option reaches the rows", dlg.Preview.Data.length, 7) && ok;
+            dlg.CmbOrientation.Index = 0;
+            ok = eq("and the paper", dlg.Preview.Orientation, "Portrait") && ok;
+            dlg.SpnMargins.Value = 20;
+            ok = eq("margins in millimetres, kept in points",
+                    dlg.Preview.Margins, Math.round(20 * 72 / 25.4)) && ok;
+
+            dlg.CmbZoom.Index = 4;
+            ok = eq("100% is the paper at the screen's size",
+                    dlg.Preview.Width, Math.round(Printer.Papers.A4.Width * 96 / 72)) && ok;
+            dlg.CmbZoom.Index = 0;
+            ok = eq("the whole page fills the view", dlg.Preview.Expand, true) && ok;
+
+            const pdf = File.Join(Environment.TempDirectory, "bintana-project-report-check.pdf");
+            dlg.Preview.SavePdf(pdf);
+            const info = File.Info(pdf);
+            ok = eq("what is previewed is what is saved", !!info && info.Size > 0, true) && ok;
+            File.Delete(pdf);
+
+            dlg.BtnClose_Click();
+            ok = eq("the choices are kept", Settings.Get(REPORT_KEY + "orientation", ""),
+                    "Portrait") && ok;
+        } catch (e) {
+            print(`report threw: ${e.message}\n${e.stack}`);
+            ok = false;
+        } finally {
+            for (const key of ["path", "summaries", "stripes", "paper", "orientation",
+                               "margins", "tasks", "columns", "zoom"]) {
+                if (Dictionary.Has(kept, key)) Settings.Set(REPORT_KEY + key, kept[key]);
+                else                           Settings.Delete(REPORT_KEY + key);
+            }
+        }
+
+        print(ok ? "report ok" : "report FAILED");
+        Application.Quit(ok ? 0 : 1);
+    }
+
     checkStats() {
         let ok = true;
         const eq = (what, got, want) => {
@@ -6234,12 +6294,13 @@ class MainForm extends Form {
 
             /* The report: the bands are declared, the rows are the plan, and
              * the PDF is what a colleague who does not run the app opens. */
-            this.buildReport();
+            const doc = new ReportDocument();
+            fillReport(doc, planReport(this.holder.project, this.path, {}));
             const report = File.Join(out, "bintana-project-report.pdf");
-            this.Plan.SavePdf(report);
+            doc.SavePdf(report);
             const paper = File.Info(report);
-            ok = this.Plan.PageCount >= 1 && paper && paper.Size > 0 && ok;
-            print(`edit report pages=${this.Plan.PageCount} ` +
+            ok = doc.PageCount >= 1 && paper && paper.Size > 0 && ok;
+            print(`edit report pages=${doc.PageCount} ` +
                   `pdf=${paper ? paper.Size : -1}`);
 
             const outPath = File.Join(out, "bintana-project-edit-" + name);

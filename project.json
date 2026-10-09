@@ -23,6 +23,8 @@
     "InsertColumnForm.js",
     "OptionsForm.js",
     "StatsForm.js",
+    "PlanReport.js",
+    "ReportForm.js",
     "MainForm.js"
   ],
   "version": "0.1.0",

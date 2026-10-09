@@ -550,8 +550,9 @@ cero, que es lo que dice el schema.
 
 **Adelantado**: export del gráfico a PNG/PDF y **Archivo → Informe…**, que
 arma con `lib/report` el plan como documento paginado (tareas con fechas,
-duración, avance y costo, con total) y lo guarda en PDF. Es lo que un
-compañero sin la app puede abrir.
+duración, avance y costo, con total) en una vista previa con columnas, filtro de
+tareas, resúmenes, papel, márgenes y zoom, y lo guarda en PDF o lo imprime. Es lo
+que un compañero sin la app puede abrir.
 
 - Windows primero: los compañeros van a usar la app, no solo recibir XML.
 - Seguir el port de Bintana (zip portable sin verificar en un desktop real),

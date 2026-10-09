@@ -396,10 +396,27 @@ fondo.
 
 ## Informes
 
-**Archivo → Informe…** arma un documento con todas las tareas —inicio, fin,
-duración, avance, criticidad y costo— con el total al pie, en A4 apaisado, y lo
-guarda como PDF. Las columnas se repiten en cada página y el título lleva el
-nombre del proyecto y la ruta del archivo.
+**Archivo → Informe…** abre la vista previa del plan como documento: una
+tabla de tareas con el total de costo al pie, paginada como va a salir. Las
+columnas y el título se repiten en cada página. A la izquierda se elige qué
+lleva y cómo:
+
+- **Título** (por defecto, el nombre del proyecto) y si muestra la ruta del
+  archivo.
+- **Tareas**: todas, solo las críticas o solo las sin terminar. Con **Incluir
+  tareas resumen**, los resúmenes aparecen en negrita, con su costo sumado y
+  las tareas sangradas por nivel; un resumen sin ninguna tarea elegida debajo
+  no aparece.
+- **Sombrear filas alternas**.
+- **Columnas**: inicio, fin, duración, avance, críticas y costo. La tarea va
+  siempre y toma el ancho que sobra; si no entran en el papel, se achican
+  juntas. Sin la columna de costo no hay total.
+- **Papel**, **orientación** y **márgenes** en milímetros.
+
+Abajo están las páginas (◀ n / N ▶), el **zoom** —página entera, ancho de la
+ventana o de 50 a 200 %— y las salidas: **Guardar PDF…** e **Imprimir…**. Lo
+que se ve es lo que se guarda y se imprime. Las elecciones se recuerdan para la
+próxima vez, salvo el título, que es de cada proyecto.
 
 ## Atajos
 
