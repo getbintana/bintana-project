@@ -330,7 +330,7 @@ class MainForm extends Form {
      *
      * The folder it opens on is the last one a file came from, which is where a
      * new plan belongs until somebody says otherwise. */
-    ActNew_Click() {
+    ActNew_Execute() {
         this.confirmDiscard(() =>
             NewProjectForm.ask(Settings.Get("bintana-project.folder",
                                             Environment.HomeDirectory),
@@ -708,7 +708,7 @@ class MainForm extends Form {
 
     /* The columns the table shows, in their own dialog; the choice is a view
      * setting, like the timescale, and survives the window. */
-    ActColumns_Click() {
+    ActColumns_Execute() {
         ColumnsForm.open(COLUMNS, this.columns,
                          (chosen) => this.showColumns(chosen));
     }
@@ -818,7 +818,7 @@ class MainForm extends Form {
     }
 
     MnuColDialog_Click() {
-        this.ActColumns_Click();
+        this.ActColumns_Execute();
     }
 
     /* The resources the assignment editor offers. */
@@ -864,7 +864,7 @@ class MainForm extends Form {
         return true;
     }
 
-    ActProjData_Click() {
+    ActProjData_Execute() {
         ProjectForm.open(this.holder.project, (values) => {
             if (!this.applyProject(values)) return;
             this.log(Locale.Text("Project data saved."));
@@ -876,7 +876,7 @@ class MainForm extends Form {
      * dialog calls back here, so every definition is a command with its own
      * undo, and showing one in the table is the same view choice the columns
      * are -- more than one at a time, remembered with them. */
-    ActFields_Click() {
+    ActFields_Execute() {
         if (!this.holder) return;
         FieldsForm.open(this.holder.project, this.fieldActions());
     }
@@ -908,7 +908,7 @@ class MainForm extends Form {
     /* The file's own preferences -- the defaults for new tasks, the
      * calculation switches, the earned-value method -- in their dialog and
      * as one undo, like any other edit. */
-    ActProjOptions_Click() {
+    ActProjOptions_Execute() {
         OptionsForm.open(this.holder.project, (values) => {
             if (!this.edit.setProject(values)) return;
             this.fill(this.selectedUID);
@@ -931,7 +931,7 @@ class MainForm extends Form {
     /* From the menu: the calendars themselves -- new, edit, delete -- and not
      * the one assigned to anything. The dialog calls back here so every
      * change is a command with its own undo. */
-    ActCalendar_Click() {
+    ActCalendar_Execute() {
         CalendarsForm.open(this.holder.project, {
             add: (fromUID) => {
                 let maxUID = 0;
@@ -963,7 +963,7 @@ class MainForm extends Form {
      * either**, or opening a window about the plan would quietly move it and
      * a dialog nobody asked to edit would be the one edit nobody could take
      * back. A plan that was never scheduled is shown as it stands. */
-    ActStats_Click() {
+    ActStats_Execute() {
         if (!this.holder) return;
         StatsForm.open(this.holder.project);
     }
@@ -971,7 +971,7 @@ class MainForm extends Form {
     /* From the menu: the resources themselves -- new, edit, rates, delete --
      * and not the ones assigned to the task. The dialog calls back here so
      * every change is a command with its own undo. */
-    ActResources_Click() {
+    ActResources_Execute() {
         if (!this.holder) return;
         ResourcesForm.open(this.holder.project, this.resourceActions());
     }
@@ -1001,7 +1001,7 @@ class MainForm extends Form {
         };
     }
 
-    BtnResManage_Click() { this.ActResources_Click(); }
+    BtnResManage_Click() { this.ActResources_Execute(); }
 
     /* The assignments of the selected task, with the cost each one adds. */
     fillAssignments(task) {
@@ -1295,7 +1295,7 @@ class MainForm extends Form {
     }
 
     /* Ctrl+F: the filter field takes the keyboard. */
-    ActFilter_Click() {
+    ActFilter_Execute() {
         this.TxtFilter.SetFocus();
     }
 
@@ -1448,7 +1448,7 @@ class MainForm extends Form {
 
     /* The chart's own look, in its dialog: a view setting that is remembered,
      * and one the exported chart wears too. */
-    ActFormat_Click() {
+    ActFormat_Execute() {
         FormatForm.open(this.format, (fmt) => this.setFormat(fmt));
     }
 
@@ -2104,7 +2104,7 @@ class MainForm extends Form {
      * re-read here, so nothing needs a restart. The rows are rebuilt only when
      * there is a plan to rebuild -- the settings are also the app's, and Tools
      * is a menu that a window with nothing open still has. */
-    ActSettings_Click() {
+    ActSettings_Execute() {
         SettingsForm.open(() => {
             this.applySettings();
             if (this.holder) this.fill(this.selectedUID);
@@ -2113,7 +2113,7 @@ class MainForm extends Form {
 
     /* The chart as a file to send: PNG by the dialog's filter, PDF when the
      * name says so, at the chart's own size so nothing is cropped. */
-    ActExport_Click() {
+    ActExport_Execute() {
         const base = File.BaseName(this.path) || "gantt";
         Dialog.SaveFile(Locale.Text("Export the chart"),
             { Folder: Settings.Get("bintana-project.folder", File.Directory(this.path)),
@@ -2172,8 +2172,8 @@ class MainForm extends Form {
     rowKey(key, ctrl) {
         if (!ctrl || !this.holder) return false;
         const k = String(key).toLowerCase();
-        if (k === "c") { this.ActCopy_Click(); return true; }
-        if (k === "v") { this.ActPaste_Click(); return true; }
+        if (k === "c") { this.ActCopy_Execute(); return true; }
+        if (k === "v") { this.ActPaste_Execute(); return true; }
         return false;
     }
 
@@ -2184,7 +2184,7 @@ class MainForm extends Form {
     /* The selected task and what hangs from it, twice: as data kept here, for a
      * paste that is exact -- links, assignments, outline -- and as tab-separated
      * text on the clipboard, which is what a spreadsheet takes. */
-    ActCopy_Click() {
+    ActCopy_Execute() {
         const task = this.selectedTask();
         if (!task || !this.edit) return;
         const clip = this.edit.copyTasks(task.UID);
@@ -2207,7 +2207,7 @@ class MainForm extends Form {
      * own copy when the text is the one it put there, otherwise one task a line
      * -- the name first and, when the list shows a duration column, a duration
      * from the same place. */
-    ActPaste_Click() {
+    ActPaste_Execute() {
         if (!this.edit) return;
         Clipboard.Paste((text) => {
             if (!this.edit || !text) return;
@@ -2241,11 +2241,11 @@ class MainForm extends Form {
 
     /* --- the outline and the timescale ---------------------------------- */
 
-    ActExpandAll_Click()   { this.Tasks.ExpandAll();   this.redrawChart(); }
-    ActCollapseAll_Click() { this.showLevel(1); }
-    ActLevel1_Click()      { this.showLevel(1); }
-    ActLevel2_Click()      { this.showLevel(2); }
-    ActLevel3_Click()      { this.showLevel(3); }
+    ActExpandAll_Execute()   { this.Tasks.ExpandAll();   this.redrawChart(); }
+    ActCollapseAll_Execute() { this.showLevel(1); }
+    ActLevel1_Execute()      { this.showLevel(1); }
+    ActLevel2_Execute()      { this.showLevel(2); }
+    ActLevel3_Execute()      { this.showLevel(3); }
 
     /* The outline shown down to a level: the project summary open, every
      * summary at that level or deeper closed, the ones above it open. The
@@ -2306,10 +2306,10 @@ class MainForm extends Form {
         if (from) this.setZoom(from * factor);
     }
 
-    ActZoomIn_Click()  { this.zoom(1.5); }
-    ActZoomOut_Click() { this.zoom(1 / 1.5); }
+    ActZoomIn_Execute()  { this.zoom(1.5); }
+    ActZoomOut_Execute() { this.zoom(1 / 1.5); }
 
-    ActZoomFit_Click() {
+    ActZoomFit_Execute() {
         this.CmbScale.Index = 0;
         this.CmbScale_Select();
     }
@@ -2411,12 +2411,12 @@ class MainForm extends Form {
         this.ApplyBar.Visible = index === 0 || index === 1;
     }
 
-    ActAdd_Click() {
+    ActAdd_Execute() {
         const added = this.edit.addTask(this.selectedUID);
         this.fill(added.UID);
     }
 
-    ActDelete_Click() {
+    ActDelete_Execute() {
         const task = this.selectedTask();
         if (!task) return;
         /* The project summary is the whole plan; `removeTask` refuses it,
@@ -2432,8 +2432,8 @@ class MainForm extends Form {
             });
     }
 
-    ActIndent_Click()  { this.nudge(1); }
-    ActOutdent_Click() { this.nudge(-1); }
+    ActIndent_Execute()  { this.nudge(1); }
+    ActOutdent_Execute() { this.nudge(-1); }
 
     nudge(delta) {
         const task = this.selectedTask();
@@ -2442,8 +2442,8 @@ class MainForm extends Form {
     }
 
     /* Up and Down swap the task with its sibling, subtree and all. */
-    ActUp_Click()   { this.move(-1); }
-    ActDown_Click() { this.move(1); }
+    ActUp_Execute()   { this.move(-1); }
+    ActDown_Execute() { this.move(1); }
 
     move(delta) {
         const task = this.selectedTask();
@@ -2453,7 +2453,7 @@ class MainForm extends Form {
 
     /* The plan-wide command: place every task from its links. It is one undo
      * and it says how many it placed. */
-    ActRecalc_Click() {
+    ActRecalc_Execute() {
         const result = this.edit.recalculate();
         if (!result.placed) {
             Message.Warning("Nothing to schedule: the project has no start date.");
@@ -2548,7 +2548,7 @@ class MainForm extends Form {
      * carries and how is the dialog's (ReportForm), and the bands are
      * `planReport`'s (PlanReport.js).
      */
-    ActReport_Click() {
+    ActReport_Execute() {
         if (!this.holder) return;
         this.reportForm = ReportForm.open(this.holder.project, this.path,
                                           (text) => this.log(text));
@@ -2569,23 +2569,23 @@ class MainForm extends Form {
         this.log(Locale.Text("Baseline {0} saved.", number));
     }
 
-    ActBaseline_Click() {
+    ActBaseline_Execute() {
         this.saveBaseline();
     }
 
-    ActUndo_Click() {
+    ActUndo_Execute() {
         const keep = this.selectedUID;
         if (this.edit.undo()) this.fill(keep);
     }
 
-    ActRedo_Click() {
+    ActRedo_Execute() {
         const keep = this.selectedUID;
         if (this.edit.redo()) this.fill(keep);
     }
 
     /* --- opening, saving and closing ------------------------------------ */
 
-    ActOpen_Click() {
+    ActOpen_Execute() {
         const folder = Settings.Get("bintana-project.folder",
                                     this.path ? File.Directory(this.path)
                                               : File.Join(Application.Directory,
@@ -2597,11 +2597,11 @@ class MainForm extends Form {
             (path) => this.openFile(path));
     }
 
-    ActQuit_Click() { this.Close(); }
+    ActQuit_Execute() { this.Close(); }
 
-    ActSave_Click() { this.save(); }
+    ActSave_Execute() { this.save(); }
 
-    ActSaveAs_Click() {
+    ActSaveAs_Execute() {
         Dialog.SaveFile(Locale.Text("Save Project XML"),
             { Folder: File.Directory(this.path), Name: File.Name(this.path),
               Filters: [[Locale.Text("Project XML"), "*.xml"]] },
@@ -4111,7 +4111,7 @@ class MainForm extends Form {
     /* The commands, pressed as commands.
      *
      * `checkWiring` asks whether a handler exists. This asks whether the command
-     * **does something**: `Action.Click()` is the same road the menu, the toolbar
+     * **does something**: `Action.Execute()` is the same road the menu, the toolbar
      * and the keyboard take, so what is asserted here is what a reader presses and
      * not a method call.
      *
@@ -4130,21 +4130,21 @@ class MainForm extends Form {
             return same;
         };
         try {
-            /* **A grey command refuses, and says so.** `Action.Click()` on a
+            /* **A grey command refuses, and says so.** `Action.Execute()` on a
              * disabled one throws `TypeError`, which is a better answer than
              * doing nothing quietly -- and it is the only thing that makes the
              * gate of `documentCommands` observable from here. */
             let ran = 0;
-            const realDelete = this.ActDelete_Click;
-            this.ActDelete_Click = () => { ran++; };
+            const realDelete = this.ActDelete_Execute;
+            this.ActDelete_Execute = () => { ran++; };
             this.ActDelete.Enabled = false;
             try {
-                this.ActDelete.Click();
+                this.ActDelete.Execute();
                 ok = eq("a grey command no se aprieta", ran, 0) && ok;
             } catch (e) {
                 ok = eq("y lo dice", e.message, "ActDelete is disabled") && ok;
             }
-            this.ActDelete_Click = realDelete;
+            this.ActDelete_Execute = realDelete;
 
             /* The fixture the fidelity corpus uses: tasks in a chain, so a
              * command has something to move.
@@ -4169,7 +4169,7 @@ class MainForm extends Form {
             ok = eq("hay una fila elegida", this.selectedUID === null, false) && ok;
 
             const before = tasks();
-            this.ActAdd.Click();
+            this.ActAdd.Execute();
             ok = eq("agregar una tarea es una de mas", tasks(), before + 1) && ok;
             ok = eq("y es un undo", this.edit.canUndo, true) && ok;
             this.edit.undo();
@@ -4182,47 +4182,47 @@ class MainForm extends Form {
              * what makes the assertion mean something. */
             pick(2);
             const was = level(2);
-            this.ActIndent.Click();
+            this.ActIndent.Execute();
             ok = eq("indentar baja un nivel", level(2), was + 1) && ok;
-            this.ActOutdent.Click();
+            this.ActOutdent.Execute();
             ok = eq("y desindentar lo devuelve", level(2), was) && ok;
 
             /* Move down and back: the order is what the reader sees. */
             const order = () => this.holder.project.Tasks.map((t) => t.UID).join(",");
             pick(1);
             const first = order();
-            this.ActDown.Click();
+            this.ActDown.Execute();
             const moved = order();
             ok = eq("mover abajo cambia el orden", moved !== first, true) && ok;
-            this.ActUp.Click();
+            this.ActUp.Execute();
             ok = eq("y mover arriba lo devuelve", order(), first) && ok;
 
             /* Recalculate is the one that has no visible effect on a plan that
              * is already scheduled, so what it is asserted on is the log: it
              * says what it did either way. */
             const said = this.Log.Text;
-            this.ActRecalc.Click();
+            this.ActRecalc.Execute();
             ok = eq("recalcular dice que hizo", this.Log.Text !== said, true) && ok;
 
             /* Set Baseline touches every task, and it is the road that gives the
              * variance something to compare against. */
-            this.ActBaseline.Click();
+            this.ActBaseline.Execute();
             let baselined = 0;
             for (const t of this.holder.project.Tasks)
                 if (t.Baselines.length) baselined++;
             ok = eq("la linea base alcanza a todas", baselined, tasks()) && ok;
-            this.ActBaseline.Click();
+            this.ActBaseline.Execute();
             ok = eq("y volver a guardarla reemplaza, no apila",
                     taskOf(this.holder.project, 1).Baselines.length, 1) && ok;
 
-            this.ActFilter.Click();
+            this.ActFilter.Execute();
             ok = eq("el filtro toma el foco", this.TxtFilter.Focused, true) && ok;
 
             /* Copy and paste, at the layer that does the work (the clipboard
              * answers later, and a check cannot wait for it). */
             pick(1);
             const tasksBefore = tasks();
-            this.ActCopy.Click();
+            this.ActCopy.Execute();
             ok = eq("copiar guarda la tarea", !!this.clip && this.clip.tasks.length >= 1,
                     true) && ok;
             const pasted = this.edit.pasteTasks(this.clip, 1);
@@ -4233,13 +4233,13 @@ class MainForm extends Form {
                     this.holder.project.Tasks.filter((t) => t.UID === pasted.UID).length,
                     1) && ok;
             ok = eq("y el mismo nombre", pasted.Name, taskOf(this.holder.project, 1).Name) && ok;
-            this.ActUndo.Click();
+            this.ActUndo.Execute();
             ok = eq("deshacer el pegado lo quita", tasks(), tasksBefore) && ok;
             const lines = this.linesOf("Uno\t2d\nDos\n\n");
             ok = eq("el texto pegado es una tarea por linea", lines.length, 2) && ok;
             this.edit.pasteLines(lines, 1);
             ok = eq("y pegar lineas las agrega", tasks(), tasksBefore + 2) && ok;
-            this.ActUndo.Click();
+            this.ActUndo.Execute();
 
             /* The status filter composes with the name's. */
             const all = this.visibleTasks(this.holder.project).length;
@@ -4252,11 +4252,11 @@ class MainForm extends Form {
             ok = eq("y Todas lo devuelve", this.visibleTasks(this.holder.project).length, all) && ok;
 
             /* The outline and the zoom. */
-            this.ActLevel1.Click();
-            this.ActExpandAll.Click();
-            this.ActZoomIn.Click();
+            this.ActLevel1.Execute();
+            this.ActExpandAll.Execute();
+            this.ActZoomIn.Execute();
             ok = eq("acercar fija un ancho de dia", this.dayW !== null && this.dayW > 0, true) && ok;
-            this.ActZoomFit.Click();
+            this.ActZoomFit.Execute();
             ok = eq("ajustar vuelve a la ventana", this.dayW, null) && ok;
 
             /* **Lo guardado es un estado, no un número de paso.** Guardar,
@@ -6371,7 +6371,8 @@ class MainForm extends Form {
                         "MnuColLeft", "MnuColRight",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
                         "ActProjData", "ActProjOptions", "ActCalendar", "ActResources", "ActFields"]
-            .map((name) => `${name}_Click`)
+            /* A command raises `Execute`; a button and a menu item, `Click`. */
+            .map((name) => name.startsWith("Act") ? `${name}_Execute` : `${name}_Click`)
             .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
                      "CmbScale_Select",
                      "Links_Select", "Assignments_Select", "PropsTabs_Switch",
