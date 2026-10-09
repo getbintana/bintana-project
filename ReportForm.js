@@ -87,6 +87,10 @@ class ReportForm extends Form {
         this.SpnMargins.Value        = Math.round(o.margins / MM_POINT);
         this.CmbZoom.Index           = Math.max(0, Math.min(REPORT_ZOOMS.length - 1, zoom));
 
+        /* What is kept already, so opening the dialog and changing nothing
+         * writes nothing. */
+        const { title, ...kept } = o;
+        this.kept  = JSON.stringify([kept, this.CmbZoom.Index]);
         this.ready = true;
         this.rebuild();
     }

@@ -1373,3 +1373,87 @@ msgstr "El resumen del proyecto no se puede copiar."
 
 msgid "Copied {0} tasks."
 msgstr "Se copiaron {0} tareas."
+
+msgid "New Project…"
+msgstr "Nuevo proyecto…"
+
+msgid "Welcome"
+msgstr "Bienvenida"
+
+msgid "Workspace"
+msgstr "Espacio de trabajo"
+
+msgid "Alias"
+msgstr "Alias"
+
+msgid "Report"
+msgstr "Informe"
+
+msgid "Content"
+msgstr "Contenido"
+
+msgid "Show the file's path"
+msgstr "Mostrar la ruta del archivo"
+
+msgid "Include summary tasks"
+msgstr "Incluir tareas resumen"
+
+msgid "Shade alternate rows"
+msgstr "Sombrear filas alternas"
+
+msgid "Only critical tasks"
+msgstr "Solo las tareas críticas"
+
+msgid "Only unfinished tasks"
+msgstr "Solo las tareas sin terminar"
+
+msgid "Page"
+msgstr "Página"
+
+msgid "Paper"
+msgstr "Papel"
+
+msgid "Orientation"
+msgstr "Orientación"
+
+msgid "Portrait"
+msgstr "Vertical"
+
+msgid "Landscape"
+msgstr "Apaisada"
+
+msgid "Margins (mm)"
+msgstr "Márgenes (mm)"
+
+msgid "Previous page"
+msgstr "Página anterior"
+
+msgid "Next page"
+msgstr "Página siguiente"
+
+msgid "{0} / {1}"
+msgstr "{0} / {1}"
+
+msgid "Zoom"
+msgstr "Zoom"
+
+msgid "Whole page"
+msgstr "Página entera"
+
+msgid "Page width"
+msgstr "Ancho de la ventana"
+
+msgid "Print…"
+msgstr "Imprimir…"
+
+msgid "Save PDF…"
+msgstr "Guardar PDF…"
+
+msgid "Plan"
+msgstr "Plan"
+
+msgid "Reported {0}."
+msgstr "Informe guardado en {0}."
+
+msgid "Sent {0} copies of the report to the printer."
+msgstr "Se enviaron {0} copias del informe a la impresora."
