@@ -806,7 +806,7 @@
                 "Arrangement": "Vertical",
                 "Expand": true,
                 "HExpand": true,
-                "Margin": 12,
+                "Style": "frame",
                 "VExpand": true
               },
               "children": [
@@ -831,7 +831,7 @@
                         "Expand": true,
                         "Grows": "Start",
                         "HExpand": true,
-                        "Position": 660,
+                        "Position": 706,
                         "VExpand": true
                       },
                       "children": [
@@ -987,6 +987,7 @@
                           "properties": {
                             "Arrangement": "Vertical",
                             "HAlign": "Fill",
+                            "Style": "sidebar",
                             "VAlign": "Fill"
                           },
                           "children": [
@@ -1831,7 +1832,7 @@
               "name": "StatusBar",
               "properties": {
                 "Arrangement": "Horizontal",
-                "Padding": "6 12 6 12",
+                "Padding": "0 8 0 8",
                 "Spacing": 8,
                 "Style": "toolbar"
               },
