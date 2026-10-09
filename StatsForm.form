@@ -15,11 +15,12 @@
       "type": "Label",
       "name": "LblStatsTitle",
       "properties": {
-        "Text": "",
-        "Style": "heading",
         "Ellipsize": true,
+        "HAlign": "Fill",
         "HExpand": true,
-        "HAlign": "Fill"
+        "Height": 20,
+        "Style": "heading",
+        "Width": 728
       }
     },
     {
@@ -29,9 +30,12 @@
         "Arrangement": "Vertical",
         "Expand": true,
         "HAlign": "Fill",
-        "VAlign": "Fill",
+        "HExpand": true,
+        "Height": 420,
         "Scrollbars": "Vertical",
-        "Height": 420
+        "VAlign": "Fill",
+        "VExpand": true,
+        "Width": 728
       },
       "children": [
         {
@@ -39,8 +43,8 @@
           "name": "Stats",
           "properties": {
             "Arrangement": "Vertical",
-            "Spacing": 10,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "Spacing": 10
           },
           "children": [
             {
@@ -48,8 +52,8 @@
               "name": "Sheets",
               "properties": {
                 "Arrangement": "Horizontal",
-                "Spacing": 16,
-                "HAlign": "Fill"
+                "HAlign": "Fill",
+                "Spacing": 16
               },
               "children": [
                 {
@@ -57,53 +61,53 @@
                   "name": "LeftSheet",
                   "properties": {
                     "Arrangement": "Vertical",
-                    "Spacing": 8,
+                    "HAlign": "Fill",
                     "HExpand": true,
-                    "HAlign": "Fill"
+                    "Spacing": 8
                   },
                   "children": [
                     {
                       "type": "Label",
                       "name": "LblCostHeading",
                       "properties": {
-                        "Text": "Cost",
+                        "HAlign": "Start",
                         "Style": "heading",
-                        "HAlign": "Start"
+                        "Text": "Cost"
                       }
                     },
                     {
                       "type": "Grid",
                       "name": "GridCost",
                       "properties": {
-                        "Columns": 2,
+                        "ColumnSpacing": 8,
                         "RowSpacing": 4,
-                        "ColumnSpacing": 8
+                        "Spacing": 8
                       },
                       "children": [
                         {
                           "type": "Label",
                           "name": "LblTotalCost",
                           "properties": {
-                            "Text": "Total cost",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Total cost"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtTotalCost",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblBaselineSpan",
                           "properties": {
-                            "Text": "Baseline span",
                             "HAlign": "End",
+                            "Text": "Baseline span",
                             "Tooltip": "The dates the baseline caught, and the working days they covered"
                           }
                         },
@@ -111,18 +115,18 @@
                           "type": "TextBox",
                           "name": "TxtBaselineSpan",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblScheduleVariance",
                           "properties": {
-                            "Text": "Schedule variance",
                             "HAlign": "End",
+                            "Text": "Schedule variance",
                             "Tooltip": "Calendar days the plan's finish moved against its baseline; a minus means it finished early"
                           }
                         },
@@ -130,54 +134,54 @@
                           "type": "TextBox",
                           "name": "TxtScheduleVariance",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblBaselineCost",
                           "properties": {
-                            "Text": "Baseline cost",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Baseline cost"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtBaselineCost",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblVariance",
                           "properties": {
-                            "Text": "Cost variance",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Cost variance"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtVariance",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblBudget",
                           "properties": {
-                            "Text": "Budget",
                             "HAlign": "End",
+                            "Text": "Budget",
                             "Tooltip": "What the assignments say this plan will cost; empty when it took no budget"
                           }
                         },
@@ -185,18 +189,18 @@
                           "type": "TextBox",
                           "name": "TxtBudget",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblBudgetVariance",
                           "properties": {
-                            "Text": "Budget variance",
                             "HAlign": "End",
+                            "Text": "Budget variance",
                             "Tooltip": "How far over or under the budget the plan is; a minus means under"
                           }
                         },
@@ -204,118 +208,118 @@
                           "type": "TextBox",
                           "name": "TxtBudgetVariance",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblBudgetPercent",
                           "properties": {
-                            "Text": "Budget used",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Budget used"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtBudgetPercent",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblWork",
                           "properties": {
-                            "Text": "Work",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Work"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtWork",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblWorkCost",
                           "properties": {
-                            "Text": "Work resources",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Work resources"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtWorkCost",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblMaterialCost",
                           "properties": {
-                            "Text": "Material resources",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Material resources"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtMaterialCost",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblCostCost",
                           "properties": {
-                            "Text": "Cost resources",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Cost resources"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtCostCost",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblOver",
                           "properties": {
-                            "Text": "Over-allocated",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Over-allocated"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtOver",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         }
                       ]
@@ -324,126 +328,126 @@
                       "type": "Label",
                       "name": "LblBehindHeading",
                       "properties": {
-                        "Text": "Behind",
+                        "HAlign": "Start",
                         "Style": "heading",
-                        "HAlign": "Start"
+                        "Text": "Behind"
                       }
                     },
                     {
                       "type": "Grid",
                       "name": "GridBehind",
                       "properties": {
-                        "Columns": 2,
+                        "ColumnSpacing": 8,
                         "RowSpacing": 4,
-                        "ColumnSpacing": 8
+                        "Spacing": 8
                       },
                       "children": [
                         {
                           "type": "Label",
                           "name": "LblLate",
                           "properties": {
-                            "Text": "Tasks late",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Tasks late"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtLate",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblWorst",
                           "properties": {
-                            "Text": "Worst slip (days)",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Worst slip (days)"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtWorst",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblPastDeadline",
                           "properties": {
-                            "Text": "Past deadline",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Past deadline"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtPastDeadline",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblPastBaseline",
                           "properties": {
-                            "Text": "Past baseline",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Past baseline"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtPastBaseline",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblNotMet",
                           "properties": {
-                            "Text": "Constraints not met",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Constraints not met"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtNotMet",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblDaysBehind",
                           "properties": {
-                            "Text": "Plan days behind",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Plan days behind"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtDaysBehind",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         }
                       ]
@@ -455,153 +459,153 @@
                   "name": "RightSheet",
                   "properties": {
                     "Arrangement": "Vertical",
-                    "Spacing": 8,
+                    "HAlign": "Fill",
                     "HExpand": true,
-                    "HAlign": "Fill"
+                    "Spacing": 8
                   },
                   "children": [
                     {
                       "type": "Label",
                       "name": "LblDateHeading",
                       "properties": {
-                        "Text": "Dates",
+                        "HAlign": "Start",
                         "Style": "heading",
-                        "HAlign": "Start"
+                        "Text": "Dates"
                       }
                     },
                     {
                       "type": "Grid",
                       "name": "GridDates",
                       "properties": {
-                        "Columns": 2,
+                        "ColumnSpacing": 8,
                         "RowSpacing": 4,
-                        "ColumnSpacing": 8
+                        "Spacing": 8
                       },
                       "children": [
                         {
                           "type": "Label",
                           "name": "LblStart",
                           "properties": {
-                            "Text": "Start date",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Start date"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtStart",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblFinish",
                           "properties": {
-                            "Text": "Finish",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Finish"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtFinish",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblReadAt",
                           "properties": {
-                            "Text": "Read at",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Read at"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtReadAt",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblDuration",
                           "properties": {
-                            "Text": "Duration (working days)",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Duration (working days)"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtDuration",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblCalendar",
                           "properties": {
-                            "Text": "Calendar days",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Calendar days"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtCalendar",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblElapsed",
                           "properties": {
-                            "Text": "Elapsed (working days)",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Elapsed (working days)"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtElapsed",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblRemaining",
                           "properties": {
-                            "Text": "Remaining (working days)",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Remaining (working days)"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtRemaining",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         }
                       ]
@@ -610,162 +614,162 @@
                       "type": "Label",
                       "name": "LblProgressHeading",
                       "properties": {
-                        "Text": "Progress",
+                        "HAlign": "Start",
                         "Style": "heading",
-                        "HAlign": "Start"
+                        "Text": "Progress"
                       }
                     },
                     {
                       "type": "Grid",
                       "name": "GridProgress",
                       "properties": {
-                        "Columns": 2,
+                        "ColumnSpacing": 8,
                         "RowSpacing": 4,
-                        "ColumnSpacing": 8
+                        "Spacing": 8
                       },
                       "children": [
                         {
                           "type": "Label",
                           "name": "LblPercent",
                           "properties": {
-                            "Text": "Complete",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Complete"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtPercent",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblTasks",
                           "properties": {
-                            "Text": "Tasks",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Tasks"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtTasks",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblSummaries",
                           "properties": {
-                            "Text": "Summaries",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Summaries"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtSummaries",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblMilestones",
                           "properties": {
-                            "Text": "Milestones",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Milestones"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtMilestones",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblDone",
                           "properties": {
-                            "Text": "Done",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Done"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtDone",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblRunning",
                           "properties": {
-                            "Text": "In progress",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "In progress"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtRunning",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblWaiting",
                           "properties": {
-                            "Text": "Not started",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Not started"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtWaiting",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         },
                         {
                           "type": "Label",
                           "name": "LblCritical",
                           "properties": {
-                            "Text": "Critical",
-                            "HAlign": "End"
+                            "HAlign": "End",
+                            "Text": "Critical"
                           }
                         },
                         {
                           "type": "TextBox",
                           "name": "TxtCritical",
                           "properties": {
-                            "Width": 150,
-                            "HExpand": true,
                             "HAlign": "Fill",
-                            "ReadOnly": true
+                            "HExpand": true,
+                            "ReadOnly": true,
+                            "Width": 150
                           }
                         }
                       ]
@@ -783,17 +787,19 @@
       "name": "LatePanel",
       "properties": {
         "Arrangement": "Vertical",
+        "HAlign": "Fill",
+        "Height": 174,
         "Spacing": 4,
-        "HAlign": "Fill"
+        "Width": 728
       },
       "children": [
         {
           "type": "Label",
           "name": "LblLateHeading",
           "properties": {
-            "Text": "Tasks behind their promise",
+            "HAlign": "Start",
             "Style": "heading",
-            "HAlign": "Start"
+            "Text": "Tasks behind their promise"
           }
         },
         {
@@ -824,8 +830,9 @@
                 "Alignment": "Right"
               }
             ],
+            "HAlign": "Fill",
             "Height": 150,
-            "HAlign": "Fill"
+            "Style": "frame"
           }
         }
       ]
@@ -835,18 +842,20 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 728
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnClose",
           "properties": {
-            "Text": "Close",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Close"
           }
         }
       ]

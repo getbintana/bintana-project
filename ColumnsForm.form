@@ -6,8 +6,8 @@
     "Arrangement": "Vertical",
     "Spacing": 8,
     "Padding": "16",
-    "Width": 560,
-    "Height": 420,
+    "Width": 468,
+    "Height": 236,
     "Resizable": false
   },
   "children": [
@@ -15,51 +15,71 @@
       "type": "Label",
       "name": "LblIntro",
       "properties": {
-        "Text": "Columns the plan shows",
+        "HAlign": "Start",
+        "Height": 20,
         "Style": "heading",
-        "HAlign": "Start"
+        "Text": "Columns the plan shows",
+        "Width": 180
       }
     },
     {
       "type": "Grid",
       "name": "Cols",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 16,
+        "Height": 282,
+        "Homogeneous": true,
         "RowSpacing": 6,
-        "ColumnSpacing": 16
+        "Spacing": 16,
+        "Width": 528
       },
       "children": [
         {
           "type": "CheckButton",
           "name": "ChkColDuration",
-          "properties": { "Text": "Duration", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Duration"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColStart",
-          "properties": { "Text": "Start", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Start"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColFinish",
-          "properties": { "Text": "Finish", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Finish"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColPercent",
-          "properties": { "Text": "Percent complete", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Percent complete"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColCritical",
-          "properties": { "Text": "Critical", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Critical"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColSlack",
           "properties": {
-            "Text": "Slack",
             "HAlign": "Start",
+            "Text": "Slack",
             "Tooltip": "How long the task can slip before the plan's finish moves"
           }
         },
@@ -67,65 +87,98 @@
           "type": "CheckButton",
           "name": "ChkColVariance",
           "properties": {
-            "Text": "Variance",
             "HAlign": "Start",
+            "Text": "Variance",
             "Tooltip": "How late the task's finish is against its baseline; a minus means ahead"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkColMilestone",
-          "properties": { "Text": "Milestone", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Milestone"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColWork",
-          "properties": { "Text": "Work", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Work"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColCost",
-          "properties": { "Text": "Cost", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Cost"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColWbs",
-          "properties": { "Text": "WBS", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "WBS"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColPriority",
-          "properties": { "Text": "Priority", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Priority"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColConstraint",
-          "properties": { "Text": "Constraint", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Constraint"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColDeadline",
-          "properties": { "Text": "Deadline", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Deadline"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColCalendar",
-          "properties": { "Text": "Calendar", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Calendar"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColType",
-          "properties": { "Text": "Task type", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Task type"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColNotes",
-          "properties": { "Text": "Notes", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Notes"
+          }
         },
         {
           "type": "CheckButton",
           "name": "ChkColLink",
-          "properties": { "Text": "Hyperlink", "HAlign": "Start" }
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Hyperlink"
+          }
         }
       ]
     },
@@ -134,28 +187,32 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 528,
+        "Y": -184
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnOk",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

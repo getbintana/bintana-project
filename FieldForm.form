@@ -7,7 +7,7 @@
     "Spacing": 8,
     "Padding": "16",
     "Width": 560,
-    "Height": 480,
+    "Height": 176,
     "Resizable": false
   },
   "children": [
@@ -15,60 +15,62 @@
       "type": "Grid",
       "name": "FieldGrid",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 114,
         "RowSpacing": 6,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 528
       },
       "children": [
         {
           "type": "Label",
           "name": "LblFieldID",
           "properties": {
-            "Text": "FieldID",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "FieldID"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtFieldID",
           "properties": {
-            "Placeholder": "188743731",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "188743731"
           }
         },
         {
           "type": "Label",
           "name": "LblFieldName",
           "properties": {
-            "Text": "Field name",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Field name"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtFieldName",
           "properties": {
-            "Placeholder": "Text1",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "Text1"
           }
         },
         {
           "type": "Label",
           "name": "LblFieldAlias",
           "properties": {
-            "Text": "Alias",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Alias"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtFieldAlias",
           "properties": {
-            "Placeholder": "What the plan calls it",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "What the plan calls it"
           }
         }
       ]
@@ -77,8 +79,10 @@
       "type": "CheckButton",
       "name": "ChkList",
       "properties": {
+        "HAlign": "Start",
+        "Height": 18,
         "Text": "A list of values",
-        "HAlign": "Start"
+        "Width": 114
       }
     },
     {
@@ -86,8 +90,10 @@
       "name": "ListBox",
       "properties": {
         "Arrangement": "Vertical",
+        "Height": 12,
         "Spacing": 6,
-        "Visible": false
+        "Visible": false,
+        "Width": 12
       },
       "children": [
         {
@@ -104,49 +110,49 @@
                 "Width": 240
               }
             ],
-            "Height": 140,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "Height": 140
           }
         },
         {
           "type": "Grid",
           "name": "ValueGrid",
           "properties": {
-            "Columns": 2,
+            "ColumnSpacing": 8,
             "RowSpacing": 6,
-            "ColumnSpacing": 8
+            "Spacing": 8
           },
           "children": [
             {
               "type": "Label",
               "name": "LblValValue",
               "properties": {
-                "Text": "Value",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Value"
               }
             },
             {
               "type": "TextBox",
               "name": "TxtValValue",
               "properties": {
-                "HExpand": true,
-                "HAlign": "Fill"
+                "HAlign": "Fill",
+                "HExpand": true
               }
             },
             {
               "type": "Label",
               "name": "LblValDescription",
               "properties": {
-                "Text": "Description",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Description"
               }
             },
             {
               "type": "TextBox",
               "name": "TxtValDescription",
               "properties": {
-                "HExpand": true,
-                "HAlign": "Fill"
+                "HAlign": "Fill",
+                "HExpand": true
               }
             }
           ]
@@ -163,21 +169,21 @@
               "type": "Button",
               "name": "BtnValAdd",
               "properties": {
-                "Text": "Add",
-                "Icon": "list-add-symbolic",
+                "HAlign": "Fill",
                 "HExpand": true,
-                "HAlign": "Fill"
+                "Icon": "list-add-symbolic",
+                "Text": "Add"
               }
             },
             {
               "type": "Button",
               "name": "BtnValDel",
               "properties": {
-                "Text": "Delete",
-                "Icon": "user-trash-symbolic",
                 "Enabled": false,
+                "HAlign": "Fill",
                 "HExpand": true,
-                "HAlign": "Fill"
+                "Icon": "user-trash-symbolic",
+                "Text": "Delete"
               }
             }
           ]
@@ -188,10 +194,12 @@
       "type": "Label",
       "name": "LblFieldHint",
       "properties": {
-        "Text": "Project's text fields run Text1 to Text30, from 188743731. A list puts a drop-down on every task.",
+        "HAlign": "Start",
+        "Height": 36,
         "Style": "dim-label",
-        "Wrap": true,
-        "HAlign": "Start"
+        "Text": "Project's text fields run Text1 to Text30, from 188743731. A list puts a drop-down on every task.",
+        "Width": 321,
+        "Wrap": true
       }
     },
     {
@@ -199,28 +207,32 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 528,
+        "Y": -304
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnOk",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

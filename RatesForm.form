@@ -15,11 +15,13 @@
       "type": "Label",
       "name": "LblRatesTitle",
       "properties": {
-        "Text": "Rates",
-        "Style": "heading",
         "Ellipsize": true,
+        "HAlign": "Fill",
         "HExpand": true,
-        "HAlign": "Fill"
+        "Height": 20,
+        "Style": "heading",
+        "Text": "Rates",
+        "Width": 668
       }
     },
     {
@@ -55,65 +57,71 @@
             "Alignment": "Right"
           }
         ],
+        "HAlign": "Fill",
         "Height": 160,
-        "HAlign": "Fill"
+        "Style": "frame",
+        "Width": 666
       }
     },
     {
       "type": "Grid",
       "name": "RateFields",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 234,
         "RowSpacing": 6,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 668
       },
       "children": [
         {
           "type": "Label",
           "name": "LblRateFrom",
           "properties": {
-            "Text": "From",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "From"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtRateFrom",
           "properties": {
-            "Placeholder": "YYYY-MM-DD HH:MM",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "YYYY-MM-DD HH:MM"
           }
         },
         {
           "type": "Label",
           "name": "LblRateTo",
           "properties": {
-            "Text": "To",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "To"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtRateTo",
           "properties": {
-            "Placeholder": "YYYY-MM-DD HH:MM",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "YYYY-MM-DD HH:MM"
           }
         },
         {
           "type": "Label",
           "name": "LblRateTable",
           "properties": {
-            "Text": "Table",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Table"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbRateTable",
           "properties": {
+            "HAlign": "Fill",
+            "Index": 0,
             "Items": [
               "A",
               "B",
@@ -121,59 +129,58 @@
               "D",
               "E"
             ],
-            "Index": 0,
-            "HAlign": "Fill"
+            "Text": "A"
           }
         },
         {
           "type": "Label",
           "name": "LblRateStandard",
           "properties": {
-            "Text": "Rate",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Rate"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtRateStandard",
           "properties": {
-            "Placeholder": "0",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "0"
           }
         },
         {
           "type": "Label",
           "name": "LblRateOvertime",
           "properties": {
-            "Text": "Overtime rate",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Overtime rate"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtRateOvertime",
           "properties": {
-            "Placeholder": "0",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "0"
           }
         },
         {
           "type": "Label",
           "name": "LblRateCostUse",
           "properties": {
-            "Text": "Cost per use",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Cost per use"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtRateCostUse",
           "properties": {
-            "Placeholder": "0",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "0"
           }
         }
       ]
@@ -183,27 +190,30 @@
       "name": "RateButtons",
       "properties": {
         "Arrangement": "Horizontal",
-        "Spacing": 6
+        "Height": 34,
+        "Homogeneous": true,
+        "Spacing": 6,
+        "Width": 668
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnRateAdd",
           "properties": {
-            "Text": "Add",
-            "Icon": "list-add-symbolic",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Icon": "list-add-symbolic",
+            "Text": "Add"
           }
         },
         {
           "type": "Button",
           "name": "BtnRateDel",
           "properties": {
-            "Text": "Remove",
-            "Icon": "list-remove-symbolic",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Icon": "list-remove-symbolic",
+            "Text": "Remove"
           }
         }
       ]
@@ -213,28 +223,31 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 668
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnOk",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

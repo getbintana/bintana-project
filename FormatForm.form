@@ -6,31 +6,37 @@
     "Arrangement": "Vertical",
     "Spacing": 12,
     "Padding": "16",
-    "Width": 420,
-    "Resizable": false
+    "Width": 360,
+    "Resizable": false,
+    "Height": 256
   },
   "children": [
     {
       "type": "Grid",
       "name": "Fields",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 356,
         "RowSpacing": 8,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 388
       },
       "children": [
         {
           "type": "Label",
           "name": "LblTheme",
           "properties": {
-            "Text": "Colors",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Colors"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbTheme",
           "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
             "Items": [
               "Classic",
               "Forest",
@@ -39,21 +45,19 @@
               "Graphite",
               "Custom"
             ],
-            "Index": 0,
-            "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Classic"
           }
         },
         {
           "type": "Grid",
           "name": "CustomColors",
           "properties": {
-            "Columns": 2,
-            "RowSpacing": 8,
             "ColumnSpacing": 8,
             "ColumnSpan": 2,
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
+            "RowSpacing": 8,
+            "Spacing": 8,
             "Visible": false
           },
           "children": [
@@ -61,63 +65,62 @@
               "type": "Label",
               "name": "LblBar",
               "properties": {
-                "Text": "Task color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Task color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrBar",
               "properties": {
-                "Value": "#1c71d8",
-                "HAlign": "Start"
+                "HAlign": "Start",
+                "Value": "#1c71d8"
               }
             },
             {
               "type": "Label",
               "name": "LblLate",
               "properties": {
-                "Text": "Critical task color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Critical task color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrLate",
               "properties": {
-                "Value": "#c01c28",
-                "HAlign": "Start"
+                "HAlign": "Start",
+                "Value": "#c01c28"
               }
             },
             {
               "type": "Label",
               "name": "LblTodayColor",
               "properties": {
-                "Text": "Today's line color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Today's line color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrToday",
               "properties": {
-                "Value": "#e01b24",
-                "HAlign": "Start"
+                "HAlign": "Start",
+                "Value": "#e01b24"
               }
             },
             {
               "type": "Label",
               "name": "LblProgress",
               "properties": {
-                "Text": "Progress color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Progress color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrProgress",
               "properties": {
-                "Value": "",
                 "HAlign": "Start"
               }
             },
@@ -125,15 +128,14 @@
               "type": "Label",
               "name": "LblLink",
               "properties": {
-                "Text": "Dependency color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Dependency color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrLink",
               "properties": {
-                "Value": "",
                 "HAlign": "Start"
               }
             },
@@ -141,15 +143,14 @@
               "type": "Label",
               "name": "LblIdle",
               "properties": {
-                "Text": "Non-working days color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Non-working days color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrIdle",
               "properties": {
-                "Value": "",
                 "HAlign": "Start"
               }
             },
@@ -157,15 +158,14 @@
               "type": "Label",
               "name": "LblBaseline",
               "properties": {
-                "Text": "Baseline color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Baseline color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrBaseline",
               "properties": {
-                "Value": "",
                 "HAlign": "Start"
               }
             },
@@ -173,15 +173,14 @@
               "type": "Label",
               "name": "LblSelect",
               "properties": {
-                "Text": "Selected row color",
-                "HAlign": "End"
+                "HAlign": "End",
+                "Text": "Selected row color"
               }
             },
             {
               "type": "ColorButton",
               "name": "ClrSelect",
               "properties": {
-                "Value": "",
                 "HAlign": "Start"
               }
             }
@@ -191,14 +190,17 @@
           "type": "Label",
           "name": "LblLabel",
           "properties": {
-            "Text": "Next to the bar",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Next to the bar"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbLabel",
           "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
             "Items": [
               "Nothing",
               "Name",
@@ -210,101 +212,100 @@
               "Cost",
               "WBS"
             ],
-            "Index": 0,
-            "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Nothing"
           }
         },
         {
           "type": "Label",
           "name": "LblSize",
           "properties": {
-            "Text": "Bar size",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Bar size"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbSize",
           "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 1,
             "Items": [
               "Small",
               "Normal",
               "Large"
             ],
-            "Index": 1,
-            "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Normal"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkCritical",
           "properties": {
-            "Text": "Critical tasks in their own color",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Critical tasks in their own color"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkProgress",
           "properties": {
-            "Text": "Show progress inside the bar",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Show progress inside the bar"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkLinks",
           "properties": {
-            "Text": "Show dependencies",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Show dependencies"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkToday",
           "properties": {
-            "Text": "Show today's line",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Show today's line"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkRows",
           "properties": {
-            "Text": "Show row lines",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Show row lines"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkGrid",
           "properties": {
-            "Text": "Show vertical grid lines",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Show vertical grid lines"
           }
         },
         {
           "type": "CheckButton",
           "name": "ChkIdle",
           "properties": {
-            "Text": "Shade non-working days",
             "Active": true,
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Shade non-working days"
           }
         }
       ]
@@ -314,28 +315,32 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 388,
+        "Y": -44
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnSave",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

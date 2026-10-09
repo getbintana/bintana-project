@@ -16,16 +16,18 @@
       "name": "OptTabs",
       "properties": {
         "Current": 0,
-        "Strip": "Top",
+        "Expand": true,
         "HAlign": "Fill",
-        "VAlign": "Fill",
         "HExpand": true,
-        "VExpand": true,
+        "Height": 676,
         "Tabs": [
           "Defaults",
           "Calculation",
           "Earned value"
-        ]
+        ],
+        "VAlign": "Fill",
+        "VExpand": true,
+        "Width": 628
       },
       "children": [
         {
@@ -33,78 +35,80 @@
           "name": "PageDefaults",
           "properties": {
             "Arrangement": "Vertical",
-            "Spacing": 8,
+            "HAlign": "Fill",
             "Padding": "8 0 8 0",
-            "HAlign": "Fill"
+            "Spacing": 8
           },
           "children": [
             {
               "type": "Grid",
               "name": "GridPageDefaults",
               "properties": {
-                "Columns": 2,
+                "ColumnSpacing": 8,
                 "RowSpacing": 6,
-                "ColumnSpacing": 8
+                "Spacing": 8
               },
               "children": [
                 {
                   "type": "Label",
                   "name": "LblOptTaskType",
                   "properties": {
-                    "Text": "Default task type",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default task type"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptTaskType",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Fixed units",
                       "Fixed duration",
                       "Fixed work"
                     ],
-                    "Index": 0
+                    "Text": "Fixed units"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptAccrual",
                   "properties": {
-                    "Text": "Default fixed cost accrual",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default fixed cost accrual"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptAccrual",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Start",
                       "Prorated",
                       "End"
                     ],
-                    "Index": 0
+                    "Text": "Start"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptStdRate",
                   "properties": {
-                    "Text": "Default standard rate",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default standard rate"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptStdRate",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "0"
                   }
                 },
@@ -112,16 +116,16 @@
                   "type": "Label",
                   "name": "LblOptOtRate",
                   "properties": {
-                    "Text": "Default overtime rate",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default overtime rate"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptOtRate",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "0"
                   }
                 },
@@ -129,16 +133,17 @@
                   "type": "Label",
                   "name": "LblOptDurationFormat",
                   "properties": {
-                    "Text": "Duration format",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Duration format"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptDurationFormat",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Minutes",
                       "Hours",
@@ -146,23 +151,24 @@
                       "Weeks",
                       "Months"
                     ],
-                    "Index": 0
+                    "Text": "Minutes"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptWorkFormat",
                   "properties": {
-                    "Text": "Work format",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Work format"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptWorkFormat",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Minutes",
                       "Hours",
@@ -170,23 +176,24 @@
                       "Weeks",
                       "Months"
                     ],
-                    "Index": 0
+                    "Text": "Minutes"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptWeekStart",
                   "properties": {
-                    "Text": "Week starts",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Week starts"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptWeekStart",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Sunday",
                       "Monday",
@@ -196,44 +203,45 @@
                       "Friday",
                       "Saturday"
                     ],
-                    "Index": 0
+                    "Text": "Sunday"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptNewTaskStart",
                   "properties": {
-                    "Text": "New task start date",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "New task start date"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptNewTaskStart",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Project start date",
                       "Current date"
                     ],
-                    "Index": 0
+                    "Text": "Project start date"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptMinutesDay",
                   "properties": {
-                    "Text": "Minutes a day",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Minutes a day"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptMinutesDay",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "480"
                   }
                 },
@@ -241,16 +249,16 @@
                   "type": "Label",
                   "name": "LblOptMinutesWeek",
                   "properties": {
-                    "Text": "Minutes a week",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Minutes a week"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptMinutesWeek",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "2400"
                   }
                 },
@@ -258,16 +266,16 @@
                   "type": "Label",
                   "name": "LblOptDaysMonth",
                   "properties": {
-                    "Text": "Days a month",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Days a month"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptDaysMonth",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "20"
                   }
                 },
@@ -275,16 +283,16 @@
                   "type": "Label",
                   "name": "LblOptStartTime",
                   "properties": {
-                    "Text": "Default start time",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default start time"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptStartTime",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "08:00"
                   }
                 },
@@ -292,16 +300,16 @@
                   "type": "Label",
                   "name": "LblOptFinishTime",
                   "properties": {
-                    "Text": "Default finish time",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default finish time"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptFinishTime",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "17:00"
                   }
                 },
@@ -309,16 +317,16 @@
                   "type": "Label",
                   "name": "LblOptSlack",
                   "properties": {
-                    "Text": "Critical slack limit (days)",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Critical slack limit (days)"
                   }
                 },
                 {
                   "type": "TextBox",
                   "name": "TxtOptSlack",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
                     "Placeholder": "0"
                   }
                 },
@@ -326,16 +334,17 @@
                   "type": "Label",
                   "name": "LblOptFY",
                   "properties": {
-                    "Text": "Fiscal year starts",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Fiscal year starts"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptFY",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "January",
                       "February",
@@ -350,16 +359,16 @@
                       "November",
                       "December"
                     ],
-                    "Index": 0
+                    "Text": "January"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptFiscal",
                   "properties": {
-                    "Text": "Fiscal year start",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Fiscal year start"
                   }
                 }
               ]
@@ -371,171 +380,171 @@
           "name": "PageCalc",
           "properties": {
             "Arrangement": "Vertical",
-            "Spacing": 8,
+            "HAlign": "Fill",
             "Padding": "8 0 8 0",
-            "HAlign": "Fill"
+            "Spacing": 8
           },
           "children": [
             {
               "type": "Grid",
               "name": "GridPageCalc",
               "properties": {
-                "Columns": 2,
+                "ColumnSpacing": 8,
                 "RowSpacing": 6,
-                "ColumnSpacing": 8
+                "Spacing": 8
               },
               "children": [
                 {
                   "type": "CheckButton",
                   "name": "ChkOptEditableCosts",
                   "properties": {
-                    "Text": "Editable actual costs",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Editable actual costs"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptHonor",
                   "properties": {
-                    "Text": "Honor constraints",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Honor constraints"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptInserted",
                   "properties": {
-                    "Text": "Inserted projects like summary",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Inserted projects like summary"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptMultiCritical",
                   "properties": {
-                    "Text": "Multiple critical paths",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Multiple critical paths"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptEffort",
                   "properties": {
-                    "Text": "New tasks effort driven",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "New tasks effort driven"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptEstimated",
                   "properties": {
-                    "Text": "New tasks estimated",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "New tasks estimated"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptSplits",
                   "properties": {
-                    "Text": "Splits in progress tasks",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Splits in progress tasks"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptSpreadActual",
                   "properties": {
-                    "Text": "Spread actual cost",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Spread actual cost"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptSpreadPercent",
                   "properties": {
-                    "Text": "Spread percent complete",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Spread percent complete"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptTaskUpdates",
                   "properties": {
-                    "Text": "Task updates resource",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Task updates resource"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptMoveCompletedBack",
                   "properties": {
-                    "Text": "Move completed ends back",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Move completed ends back"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptMoveRemainingBack",
                   "properties": {
-                    "Text": "Move remaining starts back",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Move remaining starts back"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptMoveRemainingForward",
                   "properties": {
-                    "Text": "Move remaining starts forward",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Move remaining starts forward"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptMoveCompletedForward",
                   "properties": {
-                    "Text": "Move completed ends forward",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Move completed ends forward"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptAutoAdd",
                   "properties": {
-                    "Text": "Auto add new resources and tasks",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Auto add new resources and tasks"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptAutolink",
                   "properties": {
-                    "Text": "Autolink",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Autolink"
                   }
                 },
                 {
                   "type": "CheckButton",
                   "name": "ChkOptServerUrl",
                   "properties": {
-                    "Text": "Microsoft Project Server URL",
                     "ColumnSpan": 2,
-                    "HAlign": "Start"
+                    "HAlign": "Start",
+                    "Text": "Microsoft Project Server URL"
                   }
                 }
               ]
@@ -547,55 +556,57 @@
           "name": "PageEV",
           "properties": {
             "Arrangement": "Vertical",
-            "Spacing": 8,
+            "HAlign": "Fill",
             "Padding": "8 0 8 0",
-            "HAlign": "Fill"
+            "Spacing": 8
           },
           "children": [
             {
               "type": "Grid",
               "name": "GridPageEV",
               "properties": {
-                "Columns": 2,
+                "ColumnSpacing": 8,
                 "RowSpacing": 6,
-                "ColumnSpacing": 8
+                "Spacing": 8
               },
               "children": [
                 {
                   "type": "Label",
                   "name": "LblOptEVMethod",
                   "properties": {
-                    "Text": "Earned value method",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Earned value method"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptEVMethod",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Percent complete",
                       "Physical percent complete"
                     ],
-                    "Index": 0
+                    "Text": "Percent complete"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptEVBaseline",
                   "properties": {
-                    "Text": "Baseline for earned value",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Baseline for earned value"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptEVBaseline",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Baseline",
                       "Baseline 1",
@@ -609,28 +620,29 @@
                       "Baseline 9",
                       "Baseline 10"
                     ],
-                    "Index": 0
+                    "Text": "Baseline"
                   }
                 },
                 {
                   "type": "Label",
                   "name": "LblOptTaskEV",
                   "properties": {
-                    "Text": "Default task earned value method",
-                    "HAlign": "End"
+                    "HAlign": "End",
+                    "Text": "Default task earned value method"
                   }
                 },
                 {
                   "type": "ComboBox",
                   "name": "CmbOptTaskEV",
                   "properties": {
-                    "HExpand": true,
                     "HAlign": "Fill",
+                    "HExpand": true,
+                    "Index": 0,
                     "Items": [
                       "Percent complete",
                       "Physical percent complete"
                     ],
-                    "Index": 0
+                    "Text": "Percent complete"
                   }
                 }
               ]
@@ -644,28 +656,31 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 628
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnOk",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

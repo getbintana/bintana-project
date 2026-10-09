@@ -15,162 +15,166 @@
       "type": "Label",
       "name": "LblData",
       "properties": {
-        "Text": "Data",
+        "HAlign": "Start",
+        "Height": 20,
         "Style": "heading",
-        "HAlign": "Start"
+        "Text": "Data",
+        "Width": 36
       }
     },
     {
       "type": "Grid",
       "name": "GridData",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 394,
         "RowSpacing": 6,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 628
       },
       "children": [
         {
           "type": "Label",
           "name": "LblProjName",
           "properties": {
-            "Text": "Name",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Name"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjName",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjTitle",
           "properties": {
-            "Text": "Title",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Title"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjTitle",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjSubject",
           "properties": {
-            "Text": "Subject",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Subject"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjSubject",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjAuthor",
           "properties": {
-            "Text": "Author",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Author"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjAuthor",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjManager",
           "properties": {
-            "Text": "Manager",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Manager"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjManager",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjCompany",
           "properties": {
-            "Text": "Company",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Company"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCompany",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjCategory",
           "properties": {
-            "Text": "Category",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Category"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCategory",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjRevision",
           "properties": {
-            "Text": "Revision",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Revision"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjRevision",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjCreation",
           "properties": {
-            "Text": "Creation date",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Creation date"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCreation",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "ReadOnly": true
           }
         },
@@ -178,16 +182,16 @@
           "type": "Label",
           "name": "LblProjSaved",
           "properties": {
-            "Text": "Last saved",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Last saved"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjSaved",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "ReadOnly": true
           }
         }
@@ -197,52 +201,54 @@
       "type": "Label",
       "name": "LblScheduling",
       "properties": {
-        "Text": "Scheduling",
+        "HAlign": "Start",
+        "Height": 20,
         "Style": "heading",
-        "HAlign": "Start"
+        "Text": "Scheduling",
+        "Width": 82
       }
     },
     {
       "type": "Grid",
       "name": "GridScheduling",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 226,
         "RowSpacing": 6,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 628
       },
       "children": [
         {
           "type": "Label",
           "name": "LblProjCalendar",
           "properties": {
-            "Text": "Default calendar",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Default calendar"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbProjCalendar",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
-            "Items": [],
-            "Index": -1
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblProjTotal",
           "properties": {
-            "Text": "Total cost",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Total cost"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjTotal",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "ReadOnly": true
           }
         },
@@ -250,25 +256,25 @@
           "type": "CheckButton",
           "name": "ChkProjFromStart",
           "properties": {
-            "Text": "Schedule from start",
             "ColumnSpan": 2,
-            "HAlign": "Start"
+            "HAlign": "Start",
+            "Text": "Schedule from start"
           }
         },
         {
           "type": "Label",
           "name": "LblProjStart",
           "properties": {
-            "Text": "Start date",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Start date"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjStart",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Placeholder": "YYYY-MM-DD HH:MM"
           }
         },
@@ -276,16 +282,16 @@
           "type": "Label",
           "name": "LblProjFinish",
           "properties": {
-            "Text": "Finish",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Finish"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjFinish",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "ReadOnly": true
           }
         },
@@ -293,16 +299,16 @@
           "type": "Label",
           "name": "LblProjStatus",
           "properties": {
-            "Text": "Status date",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Status date"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjStatus",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Placeholder": "YYYY-MM-DD HH:MM"
           }
         }
@@ -312,34 +318,38 @@
       "type": "Label",
       "name": "LblCurrency",
       "properties": {
-        "Text": "Currency",
+        "HAlign": "Start",
+        "Height": 20,
         "Style": "heading",
-        "HAlign": "Start"
+        "Text": "Currency",
+        "Width": 67
       }
     },
     {
       "type": "Grid",
       "name": "GridCurrency",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 154,
         "RowSpacing": 6,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 628
       },
       "children": [
         {
           "type": "Label",
           "name": "LblProjCurrencyCode",
           "properties": {
-            "Text": "Currency code",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Currency code"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCurrencyCode",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Placeholder": "USD"
           }
         },
@@ -347,16 +357,16 @@
           "type": "Label",
           "name": "LblProjCurrencySymbol",
           "properties": {
-            "Text": "Currency symbol",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Currency symbol"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCurrencySymbol",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Placeholder": "$"
           }
         },
@@ -364,16 +374,16 @@
           "type": "Label",
           "name": "LblProjCurrencyDigits",
           "properties": {
-            "Text": "Currency digits",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Currency digits"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtProjCurrencyDigits",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Placeholder": "2"
           }
         },
@@ -381,23 +391,24 @@
           "type": "Label",
           "name": "LblProjCurrencyPosition",
           "properties": {
-            "Text": "Symbol position",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Symbol position"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbProjCurrencyPosition",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
             "Items": [
               "Before",
               "After",
               "Before with space",
               "After with space"
             ],
-            "Index": 0
+            "Text": "Before"
           }
         }
       ]
@@ -407,28 +418,31 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 628
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnOk",
           "properties": {
-            "Text": "OK",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "OK"
           }
         }
       ]

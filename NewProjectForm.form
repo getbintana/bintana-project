@@ -6,8 +6,8 @@
     "Arrangement": "Vertical",
     "Spacing": 8,
     "Padding": "16",
-    "Width": 520,
-    "Height": 400,
+    "Width": 472,
+    "Height": 224,
     "Resizable": false
   },
   "children": [
@@ -15,75 +15,77 @@
       "type": "Grid",
       "name": "Fields",
       "properties": {
-        "Columns": 2,
+        "ColumnSpacing": 8,
+        "Height": 228,
         "RowSpacing": 8,
-        "ColumnSpacing": 8
+        "Spacing": 8,
+        "Width": 488
       },
       "children": [
         {
           "type": "Label",
           "name": "LblName",
           "properties": {
-            "Text": "Name",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Name"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtName",
           "properties": {
-            "Placeholder": "What the plan is called",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "What the plan is called"
           }
         },
         {
           "type": "Label",
           "name": "LblTitle",
           "properties": {
-            "Text": "Title",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Title"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtTitle",
           "properties": {
-            "Placeholder": "Optional, the line Project shows over it",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Placeholder": "Optional, the line Project shows over it"
           }
         },
         {
           "type": "Label",
           "name": "LblStart",
           "properties": {
-            "Text": "Start",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Start"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtStart",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
           "type": "Label",
           "name": "LblFolder",
           "properties": {
-            "Text": "Folder",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "Folder"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtFolder",
           "properties": {
-            "HExpand": true,
             "HAlign": "Fill",
+            "HExpand": true,
             "Icon": "folder-open"
           }
         },
@@ -91,16 +93,16 @@
           "type": "Label",
           "name": "LblFile",
           "properties": {
-            "Text": "File",
-            "HAlign": "End"
+            "HAlign": "End",
+            "Text": "File"
           }
         },
         {
           "type": "TextBox",
           "name": "TxtFile",
           "properties": {
-            "HExpand": true,
-            "HAlign": "Fill"
+            "HAlign": "Fill",
+            "HExpand": true
           }
         },
         {
@@ -110,7 +112,6 @@
             "ColumnSpan": 2,
             "HAlign": "Fill",
             "Style": "dim-label",
-            "Text": "",
             "Wrap": true
           }
         }
@@ -121,29 +122,32 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 488,
+        "Y": -176
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnCancel",
           "properties": {
-            "Text": "Cancel",
             "Cancel": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Cancel"
           }
         },
         {
           "type": "Button",
           "name": "BtnCreate",
           "properties": {
-            "Text": "Create",
             "Default": true,
-            "Style": "suggested-action",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Style": "suggested-action",
+            "Text": "Create"
           }
         }
       ]

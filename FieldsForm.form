@@ -7,7 +7,7 @@
     "Spacing": 8,
     "Padding": "16",
     "Width": 560,
-    "Height": 460,
+    "Height": 168,
     "Resizable": false
   },
   "children": [
@@ -15,9 +15,11 @@
       "type": "Label",
       "name": "LblFields",
       "properties": {
-        "Text": "Custom fields",
+        "HAlign": "Start",
+        "Height": 20,
         "Style": "heading",
-        "HAlign": "Start"
+        "Text": "Custom fields",
+        "Width": 102
       }
     },
     {
@@ -44,17 +46,21 @@
             "Alignment": "Center"
           }
         ],
+        "HAlign": "Fill",
         "Height": 220,
-        "HAlign": "Fill"
+        "Style": "frame",
+        "Width": 528
       }
     },
     {
       "type": "CheckButton",
       "name": "ChkShown",
       "properties": {
-        "Text": "Show in the list",
         "Enabled": false,
-        "HAlign": "Start"
+        "HAlign": "Start",
+        "Height": 18,
+        "Text": "Show in the list",
+        "Width": 119
       }
     },
     {
@@ -62,39 +68,42 @@
       "name": "ListButtons",
       "properties": {
         "Arrangement": "Horizontal",
-        "Spacing": 6
+        "Height": 34,
+        "Homogeneous": true,
+        "Spacing": 6,
+        "Width": 528
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnFieldNew",
           "properties": {
-            "Text": "New\u2026",
-            "Icon": "list-add-symbolic",
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Icon": "list-add-symbolic",
+            "Text": "New…"
           }
         },
         {
           "type": "Button",
           "name": "BtnFieldEdit",
           "properties": {
-            "Text": "Edit\u2026",
-            "Icon": "document-properties-symbolic",
             "Enabled": false,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Icon": "document-properties-symbolic",
+            "Text": "Edit…"
           }
         },
         {
           "type": "Button",
           "name": "BtnFieldDel",
           "properties": {
-            "Text": "Delete",
-            "Icon": "user-trash-symbolic",
             "Enabled": false,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Icon": "user-trash-symbolic",
+            "Text": "Delete"
           }
         }
       ]
@@ -104,18 +113,21 @@
       "name": "Buttons",
       "properties": {
         "Arrangement": "Horizontal",
+        "Height": 34,
         "Spacing": 8,
-        "VAlign": "End"
+        "VAlign": "End",
+        "Width": 528,
+        "Y": -292
       },
       "children": [
         {
           "type": "Button",
           "name": "BtnClose",
           "properties": {
-            "Text": "Close",
             "Default": true,
+            "HAlign": "Fill",
             "HExpand": true,
-            "HAlign": "Fill"
+            "Text": "Close"
           }
         }
       ]
