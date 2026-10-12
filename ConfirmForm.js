@@ -12,7 +12,7 @@
  */
 "use strict";
 
-class ConfirmForm extends Form {
+export class ConfirmForm extends Form {
 
     static ask(title, message, acceptText, onConfirm, other, acceptStyle) {
         const dlg = new ConfirmForm();

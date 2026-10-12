@@ -31,7 +31,7 @@ function statsDate(ms) {
     return ms === null || ms === undefined ? "" : shortDate(isoLocal(ms));
 }
 
-class StatsForm extends Form {
+export class StatsForm extends Form {
 
     static open(project) {
         const dlg = new StatsForm();

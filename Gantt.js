@@ -20,15 +20,15 @@
  */
 "use strict";
 
-const GUTTER = 170;   // the names, for a chart that travels on its own
-const PAD    = 8;     // the chart's own margin when the list shows the names
+export const GUTTER = 170;   // the names, for a chart that travels on its own
+export const PAD    = 8;     // the chart's own margin when the list shows the names
 const BAR_H  = 12;
 
 /* What the chart uses before the table has been laid out, and what an
  * assertion compares against: a row is never taller than this, and the
  * fallback keeps a frame drawable while `RowHeight` is still 0. */
-const ROW_H  = 24;
-const HEADER = 24;
+export const ROW_H  = 24;
+export const HEADER = 24;
 
 /* The chart's own geometry, read from the table beside it. The fallbacks are
  * what the first frame uses, before GTK has measured a row. */
@@ -47,7 +47,7 @@ function chartGeometry(geom) {
  * blank row -- IsNull is nothing. **This is the whole plan, not the view**: the
  * chart draws the rows it is handed, and what it is handed is whatever the
  * table is showing, so a filtered list takes its rows out of the chart too. */
-function ganttRows(project) {
+export function ganttRows(project) {
     const rows = [];
     for (const task of project.Tasks) {
         if (task.IsNull) continue;
@@ -58,7 +58,7 @@ function ganttRows(project) {
 
 /* The chart's time, padded a day each side so end bars never touch the edge.
  * Null when nothing has two dates to stand on. */
-function ganttRange(rows) {
+export function ganttRange(rows) {
     let from = null, to = null;
     for (const task of rows) {
         const s = whenMs(task.Start), f = whenMs(task.Finish);
@@ -89,7 +89,7 @@ function ganttRange(rows) {
  * branch that holds the plan's first start is not a reason for every bar to
  * move sideways.
  */
-function ganttGeometry(rows, width, height, step, geom) {
+export function ganttGeometry(rows, width, height, step, geom) {
     const g = chartGeometry(geom);
     const range = geom && geom.range !== undefined ? geom.range
                                                    : ganttRange(rows || []);
@@ -130,20 +130,20 @@ function ganttGeometry(rows, width, height, step, geom) {
  * finish as a predecessor, the start as a successor), so a plain drag from one
  * to another is the FS everybody means.
  */
-function linkEndAt(task, g, px, role) {
+export function linkEndAt(task, g, px, role) {
     const s = whenMs(task.Start), f = whenMs(task.Finish);
     const mid = s === null || f === null ? px : (g.x(s) + g.x(f)) / 2;
     if (role === "from") return px >= mid ? "finish" : "start";
     return px <= mid ? "start" : "finish";
 }
 
-function linkTypeOf(from, to) {
+export function linkTypeOf(from, to) {
     if (from === "finish") return to === "start" ? 1 : 0;   // FS, FF
     return to === "start" ? 3 : 2;                          // SS, SF
 }
 
 /* The ends a type joins, the other way round: what a forced type draws. */
-function linkEndsOf(type) {
+export function linkEndsOf(type) {
     return { from: type === 1 || type === 0 ? "finish" : "start",
              to:   type === 1 || type === 3 ? "start" : "finish" };
 }
@@ -173,7 +173,7 @@ function linkShape(x, cy, rows, rowOf, i, edge) {
 /* The link under a point, if any: the nearest line within `tol` pixels, and
  * which part of it -- `pred` and `succ` are the last `grab` pixels at either
  * end, where it can be picked up and moved to another task, `mid` the rest. */
-function ganttLinkAt(g, px, py, tol = 4, grab = 9) {
+export function ganttLinkAt(g, px, py, tol = 4, grab = 9) {
     const rows = g.rows || [];
     const rowOf = {};
     for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
@@ -202,7 +202,7 @@ function ganttLinkAt(g, px, py, tol = 4, grab = 9) {
 }
 
 /* The shape of one particular link, for the handles of a chosen one. */
-function ganttLinkOf(g, predUID, succUID) {
+export function ganttLinkOf(g, predUID, succUID) {
     const rows = g.rows || [];
     const rowOf = {};
     for (let i = 0; i < rows.length; i++) rowOf[rows[i].UID] = i;
@@ -250,12 +250,12 @@ const GANTT_THEMES = {
                { bar: "#9a9996", late: "#e01b24" }],
 };
 /* In the order the format dialog offers them. */
-const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite", "custom"];
+export const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphite", "custom"];
 
 /* What the view may ask of the chart, with what it is when it asks nothing --
  * which is how the chart looked before there was a choice. A bar's *size* is
  * the share of the row it takes and the most it grows to. */
-const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
+export const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
                        critical: true, progress: true, links: true, today: true,
                        rows: true, grid: true, idle: true,
                        barColor: "#1c71d8", lateColor: "#c01c28",
@@ -263,12 +263,12 @@ const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
                        progressColor: "", linkColor: "", idleColor: "",
                        baselineColor: "", selectColor: "" };
 /* The custom theme's colours; an empty one is the palette's own shade. */
-const GANTT_CUSTOM_COLORS = ["barColor", "lateColor", "todayColor", "progressColor",
+export const GANTT_CUSTOM_COLORS = ["barColor", "lateColor", "todayColor", "progressColor",
                              "linkColor", "idleColor", "baselineColor", "selectColor"];
 const GANTT_BAR_SIZE = [{ share: 0.26, max: 9 }, { share: 0.38, max: 14 },
                         { share: 0.52, max: 20 }];
 
-function ganttFormat(fmt) {
+export function ganttFormat(fmt) {
     const out = {};
     for (const key in GANTT_FORMAT)
         out[key] = fmt && fmt[key] !== undefined ? fmt[key] : GANTT_FORMAT[key];
@@ -291,7 +291,7 @@ function ganttFormat(fmt) {
  * a background to sit on. What is left is the chart's own palette: two
  * coherent sets, one per ground, and every colour a frame can draw is here.
  */
-function ganttPalette(p, theme, custom) {
+export function ganttPalette(p, theme, custom) {
     const dark = p.Dark;
     custom = custom || GANTT_FORMAT;
     const look = theme === "custom"
@@ -414,7 +414,7 @@ function ganttTicks(range, step, cap) {
  * reason, and the two use the same day boundaries, so a shaded day is always a
  * ruled day.
  */
-function ganttIdleDays(range, calendar) {
+export function ganttIdleDays(range, calendar) {
     const spans = [];
     if (!calendar || !range) return spans;
 
@@ -452,7 +452,7 @@ function rulerRange(g) {
  * none and its dates are unset, and the rows can be there with no dates too,
  * which is why the span is asked and not the count.
  */
-function rulerHasRange(g) {
+export function rulerHasRange(g) {
     return !!rulerRange(g);
 }
 
@@ -470,7 +470,7 @@ function rulerHasRange(g) {
  * the band is drawn here as a shade over the ground, so it sits on the theme's
  * rather than guessing one.
  */
-function drawGanttRuler(p, width, g, c) {
+export function drawGanttRuler(p, width, g, c) {
     const headH = g.headH;
     if (!(headH > 0)) return;
     const range = rulerRange(g);
@@ -572,7 +572,7 @@ function roundedBar(p, x, y, w, h, r) {
     p.ClosePath();
 }
 
-function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
+export function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
     const g = ganttGeometry(rows, width, height, step, geom);
     rows = g.rows;
     if (!rows.length) {

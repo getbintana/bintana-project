@@ -12,7 +12,7 @@
  */
 "use strict";
 
-class CalendarForm extends Form {
+export class CalendarForm extends Form {
 
     static open(project, calendar, onSaved, onCancelled) {
         const dlg = new CalendarForm();
@@ -185,7 +185,7 @@ class CalendarForm extends Form {
 /* "08:00-12:00 13:00-17:00" as `WorkingTime` records, or null when a piece
  * is not a span: "8:00" is read as 08:00 and written the way the file spells
  * it, and an end of 24:00 or 00:00 is midnight (`clockSpan`). */
-function parseSpans(text) {
+export function parseSpans(text) {
     const out = [];
     for (const piece of String(text || "").split(/[\s,]+/)) {
         if (!piece) continue;

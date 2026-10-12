@@ -9,7 +9,7 @@
  * task's own `DurationFormat`. */
 const UNIT_KEYS = ["", "m", "h", "d", "w", "mo"];
 
-class SettingsForm extends Form {
+export class SettingsForm extends Form {
 
     static open(onSaved) {
         const dlg = new SettingsForm();
@@ -45,6 +45,6 @@ class SettingsForm extends Form {
 }
 
 /* `String.prototype.trim` is not part of the curated language. */
-function trim(text) {
+export function trim(text) {
     return String(text || "").replace(/^\s+|\s+$/g, "");
 }

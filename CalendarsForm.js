@@ -11,7 +11,7 @@
  */
 "use strict";
 
-class CalendarsForm extends Form {
+export class CalendarsForm extends Form {
 
     static open(project, actions) {
         const dlg = new CalendarsForm();

@@ -16,7 +16,7 @@
  */
 "use strict";
 
-class Edit {
+export class Edit {
 
     static LIMIT = 50;   // steps kept; a plan is not a video
 

@@ -72,7 +72,7 @@ function daysBetween(from, to) {
  * own arithmetic over the working time in between read as days of whatever
  * the file says a day is. Zero when either end is missing or the span is
  * backwards: there is no work between nothing and something. */
-function workingDays(project, calendar, from, to) {
+export function workingDays(project, calendar, from, to) {
     if (from === null || to === null || to <= from) return 0;
     const perDay = project.MinutesPerDay || 480;
     return Math.round(calendar.between(from, to) / perDay * 10) / 10;
@@ -83,7 +83,7 @@ function workingDays(project, calendar, from, to) {
  * and null, and both are true: a plan with no cost has a cost of zero, and a
  * plan that never wrote a start date has none.
  */
-function projectStats(project) {
+export function projectStats(project) {
     /* The plan's own calendar -- what a task gets when it names none, and
      * what the whole plan's spans are measured on. */
     const calendar = new WorkCalendar(project, -1);

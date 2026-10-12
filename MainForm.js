@@ -36,7 +36,7 @@
 const PAGE_WELCOME = 0;
 const PAGE_WORK    = 1;
 
-class MainForm extends Form {
+export class MainForm extends Form {
 
     /* What was read, and the document it came out of -- SaveXml writes into
      * that tree, so both travel together (see Mspdi.js). */
@@ -6730,10 +6730,10 @@ const FIELD_COLUMN = "attr:";
 
 function fieldColumnID(fieldID) { return FIELD_COLUMN + fieldID; }
 
-function fieldLabel(def) { return def.Alias || def.FieldName || def.FieldID; }
+export function fieldLabel(def) { return def.Alias || def.FieldName || def.FieldID; }
 
 /* What a stored column list may carry: a catalog id, or a custom field's. */
-function isColumnId(id) {
+export function isColumnId(id) {
     return COLUMNS.some((c) => c.id === id) ||
            (id.slice(0, FIELD_COLUMN.length) === FIELD_COLUMN &&
             id.length > FIELD_COLUMN.length);
@@ -6786,7 +6786,7 @@ function rowsKey(rows) {
 
 /* A number typed in a field, with the comma a keyboard may give it; NaN when
  * it is not one, which the caller refuses. */
-function resourceNumber(text) {
+export function resourceNumber(text) {
     return Number(String(text || "").replace(",", "."));
 }
 
@@ -6802,7 +6802,7 @@ function pathHash(path) {
 }
 
 /* "2026-10-01T17:00:00" reads better as "2026-10-01 17:00" in a row. */
-function shortDate(when) {
+export function shortDate(when) {
     return String(when || "").slice(0, 16).replace("T", " ");
 }
 
@@ -6859,7 +6859,7 @@ function varianceText(task, project) {
  * counts elapsed time and a `?` when it is estimated -- the field's own flag
  * or the format's spelling, whichever says so.
  */
-function durationText(task, project) {
+export function durationText(task, project) {
     const minutes = mspdiMinutes(task.Duration);
     if (minutes === null) return task.Duration || "";
     const format = durationFormat(task.DurationFormat, project);
@@ -6877,7 +6877,7 @@ function durationText(task, project) {
  * one that means something -- the first minute of an exception or a rate
  * period, the last one of its end -- and otherwise goes through as typed, for
  * the field to refuse: a task's start at midnight would be an invented time. */
-function parseMoment(text, time) {
+export function parseMoment(text, time) {
     const t = String(text || "").trim();
     if (t === "") return "";
     const m = /^(\d{4}-\d{2}-\d{2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/.exec(t);

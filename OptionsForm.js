@@ -11,7 +11,7 @@
  */
 "use strict";
 
-class OptionsForm extends Form {
+export class OptionsForm extends Form {
 
     static TEXT = {};
     static NUMBER = {

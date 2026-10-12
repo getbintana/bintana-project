@@ -29,7 +29,7 @@ const COLUMN_CHECKS = {
     link:       "ChkColLink",
 };
 
-class ColumnsForm extends Form {
+export class ColumnsForm extends Form {
 
     static open(available, current, onSaved) {
         const dlg = new ColumnsForm();

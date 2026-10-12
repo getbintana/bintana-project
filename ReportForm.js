@@ -14,7 +14,7 @@
 "use strict";
 
 /* Where each choice is kept. The title is the project's and is not kept. */
-const REPORT_KEY = "bintana-project.report.";
+export const REPORT_KEY = "bintana-project.report.";
 
 /* The zoom combo, in its order: the two fits, then a scale of the paper. */
 const REPORT_ZOOMS = ["page", "width", 0.5, 0.75, 1, 1.5, 2];
@@ -44,7 +44,7 @@ function saveReportOptions(o, zoom) {
     Settings.Set(REPORT_KEY + "zoom", zoom);
 }
 
-class ReportForm extends Form {
+export class ReportForm extends Form {
 
     /*
      * ReportForm.open(project, path, log)

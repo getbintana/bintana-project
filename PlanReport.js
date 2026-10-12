@@ -38,7 +38,7 @@ function reportColumnTitle(id) {
 }
 
 /* Which tasks, by the index of the dialog's combo. */
-const REPORT_TASKS = ["all", "critical", "open"];
+export const REPORT_TASKS = ["all", "critical", "open"];
 
 /* What a report is when nobody chose anything: the columns the old one had,
  * landscape A4, and the 40 points a `ReportDocument` defaults to (14 mm). */
@@ -59,7 +59,7 @@ const REPORT_NAME_W  = 120;  // the least the task's name is given
 const REPORT_INDENT  = "    ";
 
 /* The options with every key there, whatever was passed. */
-function reportOptions(o) {
+export function reportOptions(o) {
     const out = {};
     for (const key in REPORT_DEFAULTS) {
         out[key] = o && o[key] !== undefined ? o[key] : REPORT_DEFAULTS[key];
@@ -155,7 +155,7 @@ function reportLayout(width, ids) {
 }
 
 /* The whole report: what a `ReportDocument` (or a `Report`) is filled with. */
-function planReport(project, path, options) {
+export function planReport(project, path, options) {
     const o = reportOptions(options);
 
     const sheet = Printer.Papers[o.paper] || Printer.Papers.A4;
@@ -236,7 +236,7 @@ function planReport(project, path, options) {
 
 /* Into a `ReportDocument` or a `Report`: the paper first, since the bands are
  * measured against it, and the rows last, which is what measures. */
-function fillReport(target, spec) {
+export function fillReport(target, spec) {
     target.Paper       = spec.Paper;
     target.Orientation = spec.Orientation;
     target.Margins     = spec.Margins;

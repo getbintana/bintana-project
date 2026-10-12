@@ -35,8 +35,8 @@
  * (`TENTHS`). A variance is signed, but the engine works in whole minutes, so
  * what it writes is a multiple of ten and `-1` -- a tenth of a minute early --
  * is a value it never produces: it reads as the omission. */
-const NO_MINUTES = -1;
-const TENTHS     = 10;   // file units per minute, for the four fields above
+export const NO_MINUTES = -1;
+export const TENTHS     = 10;   // file units per minute, for the four fields above
 
 /* <PredecessorLink>, repeated bare under its task (no wrapper).
  *
@@ -44,7 +44,7 @@ const TENTHS     = 10;   // file units per minute, for the four fields above
  * value an absent one can be taken to mean, so the shape starts at -1 ("the
  * file did not say") and a present 0 -- one of the four real values --
  * survives the round trip. */
-class MspLink extends Record {
+export class MspLink extends Record {
     static Xml = {
         Root: "PredecessorLink",
         Order: [
@@ -62,7 +62,7 @@ class MspLink extends Record {
 
 /* One baseline: the plan as it was when it was saved. `Number` says which
  * baseline it is; 0 is the one Project's "Set Baseline" writes. */
-class MspBaseline extends Record {
+export class MspBaseline extends Record {
     static Xml = { Root: "Baseline" };
     static Fields = {
         Number:            Field.Int({ key: true }),
@@ -91,7 +91,7 @@ class MspBaseline extends Record {
  * not carry leaves the pointer empty, which is a value the file does not
  * point anywhere with. `DurationFormat` belongs to duration fields and is
  * placed by the sequence, never written here. */
-class MspFieldValue extends Record {
+export class MspFieldValue extends Record {
     static Xml = {
         Root: "ExtendedAttribute",
         Order: ["FieldID", "Value", "ValueGUID", "DurationFormat"],
@@ -106,7 +106,7 @@ class MspFieldValue extends Record {
 /* One entry of a custom field's value list: the `ID` a task's `ValueGUID`
  * points at (unique across the project's lists), the text a person reads and
  * the description. */
-class MspValueEntry extends Record {
+export class MspValueEntry extends Record {
     static Xml = { Root: "Value" };
     static Fields = {
         ID:          Field.Int({ key: true }),
@@ -121,7 +121,7 @@ class MspValueEntry extends Record {
  * schema's children (`Ltuid`, `DefaultGuid`, the rollup switches) are not
  * modelled and stay where they are. The order is the schema's, which is what
  * places a new <ValueList> after those elements. */
-class MspFieldDef extends Record {
+export class MspFieldDef extends Record {
     static Xml = {
         Root: "ExtendedAttribute",
         Order: [
@@ -140,7 +140,7 @@ class MspFieldDef extends Record {
     };
 }
 
-class MspTask extends Record {
+export class MspTask extends Record {
     static Xml = {
         Root: "Task",
         Order: [
@@ -264,7 +264,7 @@ class MspTask extends Record {
  * date it holds, and `RateTable` which of the five tables (0 A .. 4 E) the row
  * belongs to. The schema makes the two dates required, so every row has a
  * period and there is no open end to guess at. */
-class MspRate extends Record {
+export class MspRate extends Record {
     static Xml = {
         Root: "Rate",
         Order: [
@@ -285,7 +285,7 @@ class MspRate extends Record {
     };
 }
 
-class MspResource extends Record {
+export class MspResource extends Record {
     static Xml = {
         Root: "Resource",
         Order: [
@@ -339,7 +339,7 @@ class MspResource extends Record {
     };
 }
 
-class MspAssignment extends Record {
+export class MspAssignment extends Record {
     static Xml = {
         Root: "Assignment",
         Order: [
@@ -460,7 +460,7 @@ class MspAssignment extends Record {
 }
 
 /* <WorkingTime>: a span of the day that is worked, `HH:MM[:SS]`. */
-class MspWorkingTime extends Record {
+export class MspWorkingTime extends Record {
     static Xml = { Root: "WorkingTime" };
     static Fields = {
         FromTime: Field.Time(),
@@ -469,7 +469,7 @@ class MspWorkingTime extends Record {
 }
 
 /* One day of the week. MSPDI's `DayType` is 1 Sunday through 7 Saturday. */
-class MspWeekDay extends Record {
+export class MspWeekDay extends Record {
     static Xml = {
         Root: "WeekDay",
         Order: [
@@ -484,7 +484,7 @@ class MspWeekDay extends Record {
 }
 
 /* The dates an exception covers, inclusive. */
-class MspTimePeriod extends Record {
+export class MspTimePeriod extends Record {
     static Xml = { Root: "TimePeriod" };
     static Fields = {
         FromDate: Field.DateTime(),
@@ -505,7 +505,7 @@ class MspTimePeriod extends Record {
  * `Month`, `MonthItem` and `MonthPosition` count from 0 (January is 0), so
  * their absent is -1, the bargain `MspLink.Type` makes; the other two take the
  * same for symmetry, since neither has a zero that means anything. */
-class MspException extends Record {
+export class MspException extends Record {
     static Xml = {
         Root: "Exception",
         Order: [
@@ -531,7 +531,7 @@ class MspException extends Record {
     };
 }
 
-class MspCalendar extends Record {
+export class MspCalendar extends Record {
     static Xml = {
         Root: "Calendar",
         Order: [
@@ -549,7 +549,7 @@ class MspCalendar extends Record {
     };
 }
 
-class MspProject extends Record {
+export class MspProject extends Record {
     /* Declaration order is write order, so SaveVersion -- required by the
      * schema and first in it -- is declared first. */
     static Xml = { Root: "Project",
@@ -675,7 +675,7 @@ class MspProject extends Record {
  * ("P2W") is refused by the parser underneath, so files carry the
  * PT-normalised form and so does this.
  */
-function mspdiMinutes(text) {
+export function mspdiMinutes(text) {
     /* **An `M` before the `T` is a month and after it a minute**: `P1M` used to
      * read as one minute because the pattern did not tell the two sides of the
      * `T` apart. A day is the schema's working day (480) and a month 20 of
@@ -726,7 +726,7 @@ const DURATION_FORMATS = {
  * own -- a day is `MinutesPerDay`, a week `MinutesPerWeek` and a month a
  * month of days -- while the elapsed ones are calendar time and do not move.
  */
-function durationFormat(format, project) {
+export function durationFormat(format, project) {
     const f = DURATION_FORMATS[format] || DURATION_FORMATS[7];
     if (f.elapsed || !project) return f;
 
@@ -738,12 +738,12 @@ function durationFormat(format, project) {
                 : f.unit === "d" ? day : f.unit === "w" ? week : month };
 }
 
-function isElapsed(format) {
+export function isElapsed(format) {
     return durationFormat(format).elapsed;
 }
 
 /* The format a typed unit names: "d" is working days, "ed" elapsed days. */
-function formatOfUnit(unit) {
+export function formatOfUnit(unit) {
     const name = unit.replace(/^e/, "");
     const elapsed = unit.charAt(0) === "e";
     for (const code in DURATION_FORMATS) {
@@ -757,7 +757,7 @@ function formatOfUnit(unit) {
  * writes them: PT16H0M0S, PT30M0S. A fraction of a minute goes to the
  * seconds -- `PT8H0.5M0S` is not an `xsd:duration`, and read back it was
  * nothing at all -- and a negative one carries the schema's leading sign. */
-function mspdiDuration(minutes) {
+export function mspdiDuration(minutes) {
     const sign = minutes < 0 ? "-" : "";
     const secs = Math.round(Math.abs(minutes) * 60);
     if (secs === 0) return "PT0H0M0S";
@@ -768,7 +768,7 @@ function mspdiDuration(minutes) {
 
 /* Minutes from midnight as "HH:MM:SS", which is how a working time reads in
  * the file and in the calendar dialog. */
-function clockText(minutes) {
+export function clockText(minutes) {
     /* The end of the day is written as Project writes it, 00:00 -- the
      * "24 Hours" calendar's -- because `24:00:00` is not a time. */
     const whole = Math.round(minutes) % 1440;
@@ -779,7 +779,7 @@ function clockText(minutes) {
 
 /* MSPDI's link types: 0 FF, 1 FS, 2 SF, 3 SS. A file that left `Type` out
  * gets FS, the relation a reader assumes and the one Project draws. */
-function linkKind(link) {
+export function linkKind(link) {
     const type = link ? link.Type : -1;
     return type >= 0 && type <= 3 ? type : 1;
 }
@@ -787,7 +787,7 @@ function linkKind(link) {
 /* A task's type (0 Fixed Units, 1 Fixed Duration, 2 Fixed Work). A file that
  * left it out falls back to the project's `DefaultTaskType`, which is what
  * the schema makes of an absent `Type`. */
-function taskKind(project, task) {
+export function taskKind(project, task) {
     const type = task ? task.Type : -1;
     if (type >= 0 && type <= 2) return type;
     const fallback = project ? project.DefaultTaskType : 0;
@@ -797,13 +797,13 @@ function taskKind(project, task) {
 /* MSPDI's resource types: 0 material, 1 work, 2 cost. */
 const RESOURCE_TYPES = ["Material", "Work", "Cost"];
 
-function resourceOf(project, uid) {
+export function resourceOf(project, uid) {
     for (const resource of project.Resources)
         if (resource.UID === uid) return resource;
     return null;
 }
 
-function taskOf(project, uid) {
+export function taskOf(project, uid) {
     for (const task of project.Tasks)
         if (task.UID === uid) return task;
     return null;
@@ -841,7 +841,7 @@ function rateAt(rows, when) {
  * means. Overtime and accrual are not modelled, so a file that means them
  * keeps the `Cost` Project wrote.
  */
-function assignmentCost(project, assignment) {
+export function assignmentCost(project, assignment) {
     if (assignment.Cost) return assignment.Cost;
     const resource = resourceOf(project, assignment.ResourceUID);
     if (!resource) return 0;
@@ -896,7 +896,7 @@ function assignmentCost(project, assignment) {
  * overlap add up there, which is what over-allocation is. It answers 0 when
  * nothing is dated. It reports and never reschedules -- leveling is not here.
  */
-function resourcePeak(project, resource) {
+export function resourcePeak(project, resource) {
     const spans = [];
     for (const assignment of project.Assignments) {
         if (assignment.ResourceUID !== resource.UID) continue;
@@ -920,7 +920,7 @@ function resourcePeak(project, resource) {
 }
 
 /* Every assignment of one task, added up: what the task costs. */
-function taskCost(project, task) {
+export function taskCost(project, task) {
     let total = 0;
     for (const assignment of project.Assignments)
         if (assignment.TaskUID === task.UID)
@@ -929,7 +929,7 @@ function taskCost(project, task) {
 }
 
 /* Every assignment of one resource, added up. */
-function resourceCost(project, resource) {
+export function resourceCost(project, resource) {
     let total = 0;
     for (const assignment of project.Assignments)
         if (assignment.ResourceUID === resource.UID)
@@ -938,7 +938,7 @@ function resourceCost(project, resource) {
 }
 
 /* The whole plan, added up. */
-function projectCost(project) {
+export function projectCost(project) {
     let total = 0;
     for (const assignment of project.Assignments)
         total += assignmentCost(project, assignment);
@@ -952,9 +952,9 @@ function projectCost(project) {
  * clears it. Next to `baselineOf` because it is that function's argument, and
  * the two are said once -- a variance read against a different number is a
  * different question and not one this app asks. */
-const BASELINE = 0;
+export const BASELINE = 0;
 
-function baselineOf(task, number) {
+export function baselineOf(task, number) {
     for (const baseline of task.Baselines)
         if (baseline.Number === number) return baseline;
     return null;
@@ -962,7 +962,7 @@ function baselineOf(task, number) {
 
 /* A custom-field value by `FieldID`, or the first one when no field is asked
  * for; "" when the task carries none. The field's meaning is the file's. */
-function attrOf(task, fieldID) {
+export function attrOf(task, fieldID) {
     if (fieldID) {
         for (const attr of task.Attributes)
             if (attr.FieldID === fieldID) return attr.Value;
@@ -972,7 +972,7 @@ function attrOf(task, fieldID) {
 }
 
 /* One paragraph about a file, for the log and the status line. */
-function summarize(project) {
+export function summarize(project) {
     let tasks = 0, milestones = 0, withAttrs = 0, links = 0;
     for (const task of project.Tasks) {
         if (task.IsNull || task.Summary) continue;
@@ -1002,13 +1002,13 @@ function summarize(project) {
  * per write makes the output the original plus the model, every time, which
  * is the golden rule stated as a function.
  */
-function readMspdi(path) {
+export function readMspdi(path) {
     const doc     = File.LoadXml(path);
     const project = MspProject.LoadXml(doc.Root);
     return { doc, project, problems: project.Problems, source: Xml.Stringify(doc) };
 }
 
-function writeMspdi(path, holder) {
+export function writeMspdi(path, holder) {
     const doc = holder.source !== undefined ? Xml.Parse(holder.source) : holder.doc;
     holder.project.SaveXml(doc.Root);
     /* The whole document, not just the root: a comment before it is a node in
@@ -1085,14 +1085,14 @@ $WEEKDAYS
  * says it finishes at a different time than the text declared is a plan whose
  * day does not add up.
  */
-const DAY_START  = "08:00:00";
+export const DAY_START  = "08:00:00";
 const DAY_FINISH = "17:00:00";
-const SHIFT = [[DAY_START, "12:00:00"], ["13:00:00", DAY_FINISH]];
+export const SHIFT = [[DAY_START, "12:00:00"], ["13:00:00", DAY_FINISH]];
 
 /* A day is enough to start a plan and a time is not. What arrives here is what
  * the dialog's field holds, so it may be either, and a bare day takes the
  * default start of the day above. */
-function planStart(text) {
+export function planStart(text) {
     const typed = String(text || "").trim();
     if (!typed)              return Day.Today + "T" + DAY_START;
     return typed.indexOf("T") >= 0 ? typed : typed + "T" + DAY_START;
@@ -1108,7 +1108,7 @@ function planWeekdays() {
         `<WorkingTimes>${shift}</WorkingTimes></WeekDay>`).join("\n");
 }
 
-function newMspdi(values) {
+export function newMspdi(values) {
     const v = values || {};
     const start = planStart(v.Start);
     const title = String(v.Title || "").trim();

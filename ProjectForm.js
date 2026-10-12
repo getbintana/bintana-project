@@ -15,7 +15,7 @@
 
 /* Fill a project dialog's controls from the shape, and read them back; the
  * two dialogs differ in their tables and nothing else. */
-function fillProjectForm(dlg, project, tables) {
+export function fillProjectForm(dlg, project, tables) {
     for (const prop in tables.TEXT)
         dlg[tables.TEXT[prop]].Text = project[prop];
     for (const prop in tables.NUMBER)
@@ -45,7 +45,7 @@ function fillProjectForm(dlg, project, tables) {
 
 /* The values the dialog holds, or null when a number is not one. A combo
  * with no matching item keeps what the file wrote. */
-function projectFormValues(dlg, project, tables) {
+export function projectFormValues(dlg, project, tables) {
     const values = {};
     for (const prop in tables.TEXT)
         values[prop] = dlg[tables.TEXT[prop]].Text;
@@ -76,7 +76,7 @@ function projectFormValues(dlg, project, tables) {
     return values;
 }
 
-class ProjectForm extends Form {
+export class ProjectForm extends Form {
 
     static TEXT = {
         Name:     "TxtProjName",

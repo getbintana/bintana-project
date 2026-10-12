@@ -11,7 +11,7 @@
  */
 "use strict";
 
-class RatesForm extends Form {
+export class RatesForm extends Form {
 
     static open(resource, onSaved) {
         const dlg = new RatesForm();

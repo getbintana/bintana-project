@@ -12,7 +12,7 @@
  */
 "use strict";
 
-class FieldsForm extends Form {
+export class FieldsForm extends Form {
 
     static open(project, actions) {
         const dlg = new FieldsForm();

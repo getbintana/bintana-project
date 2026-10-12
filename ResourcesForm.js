@@ -10,7 +10,7 @@
  */
 "use strict";
 
-class ResourcesForm extends Form {
+export class ResourcesForm extends Form {
 
     static open(project, actions) {
         const dlg = new ResourcesForm();

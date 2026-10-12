@@ -7,7 +7,7 @@
  */
 "use strict";
 
-class InsertColumnForm extends Form {
+export class InsertColumnForm extends Form {
 
     /* `choices` is `[{ id, text }]`, already labelled. */
     static open(choices, onPicked) {

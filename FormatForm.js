@@ -23,7 +23,7 @@ const LABEL_KEYS = ["", "name", "resources", "percent", "dates", "duration",
 const FORMAT_KEY = "bintana-project.format.";
 
 /* The chart's format as the last run left it. */
-function loadFormat() {
+export function loadFormat() {
     const fmt = {};
     fmt.theme    = Settings.Get(FORMAT_KEY + "theme", GANTT_FORMAT.theme);
     fmt.label    = Settings.Get(FORMAT_KEY + "label", GANTT_FORMAT.label);
@@ -40,7 +40,7 @@ function loadFormat() {
     return ganttFormat(fmt);
 }
 
-class FormatForm extends Form {
+export class FormatForm extends Form {
 
     static open(current, onSaved) {
         const dlg = new FormatForm();

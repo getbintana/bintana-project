@@ -30,7 +30,7 @@ function nextTextField(defs) {
     return { FieldID: "", FieldName: "" };
 }
 
-class FieldForm extends Form {
+export class FieldForm extends Form {
 
     static open(field, defs, onSaved) {
         const dlg = new FieldForm();

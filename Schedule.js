@@ -25,19 +25,19 @@
  */
 "use strict";
 
-const DAY_MS = 24 * 3600 * 1000;
+export const DAY_MS = 24 * 3600 * 1000;
 const MIN_MS = 60 * 1000;
 const HOUR_MS = 60 * MIN_MS;
 
 /* MSPDI's constraint types. The forward pass honors MSO, MFO, SNET and FNET;
  * ALAP and the two "no later than" constraints need Project's own backward
  * scheduling, so a task carrying one keeps the dates the file wrote. */
-const CONSTRAINT_ALAP = 1, CONSTRAINT_MSO = 2, CONSTRAINT_MFO = 3,
+export const CONSTRAINT_ALAP = 1, CONSTRAINT_MSO = 2, CONSTRAINT_MFO = 3,
       CONSTRAINT_SNET = 4, CONSTRAINT_SNLT = 5, CONSTRAINT_FNET = 6,
       CONSTRAINT_FNLT = 7;
 
 /* "08:00:00" or "08:00" as minutes from midnight. */
-function clockMinutes(text) {
+export function clockMinutes(text) {
     const m = /^(\d{1,2}):(\d{2})(?::(\d{2}))?$/.exec(String(text || ""));
     if (!m) return null;
     return Number(m[1]) * 60 + Number(m[2]) + (m[3] ? Number(m[3]) / 60 : 0);
@@ -55,7 +55,7 @@ function clockSpan(wt) {
 }
 
 /* A local instant as the `YYYY-MM-DDTHH:MM:SS` Project writes. */
-function isoLocal(ms) {
+export function isoLocal(ms) {
     const d = new Date(ms);
     const p = (n) => String(n).padStart(2, "0");
     return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T` +
@@ -73,7 +73,7 @@ function isoLocal(ms) {
  * back, and when its fields are not the ones asked for, the hour either side
  * is tried; a moment the clock skips altogether keeps what the runtime said.
  */
-function localMs(year, month, day, hours = 0, minutes = 0, seconds = 0) {
+export function localMs(year, month, day, hours = 0, minutes = 0, seconds = 0) {
     const want = new Date(Date.UTC(year, month, day, hours, minutes, seconds));
     const fits = (ms) => {
         const d = new Date(ms);
@@ -91,7 +91,7 @@ function localMs(year, month, day, hours = 0, minutes = 0, seconds = 0) {
 }
 
 /* A file's `YYYY-MM-DDTHH:MM:SS`, read as the local moment it names. */
-function whenMs(text) {
+export function whenMs(text) {
     const m = /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2})(?::(\d{2}))?)?/.exec(String(text || ""));
     if (m) return localMs(Number(m[1]), Number(m[2]) - 1, Number(m[3]),
                           Number(m[4] || 0), Number(m[5] || 0), Number(m[6] || 0));
@@ -99,7 +99,7 @@ function whenMs(text) {
     return isNaN(ms) ? null : ms;
 }
 
-class WorkCalendar {
+export class WorkCalendar {
 
     days = {};        // DayType 1..7 -> [[from, to], ...], minutes from midnight
     exceptions = {};  // "YYYY-MM-DD" -> spans, or null for a day that is not worked
@@ -370,7 +370,7 @@ function lagBefore(work, t, link) {
  * add up; Fixed Duration (1) ignores the flag, because its duration is the
  * point, and every other type keeps the duration and lets the work grow.
  */
-function assignmentDuration(project, task, before, after) {
+export function assignmentDuration(project, task, before, after) {
     const minutes = mspdiMinutes(task.Duration) || 0;
     const effort  = task.EffortDriven && taskKind(project, task) !== 1;
     return effort && minutes > 0 ? Math.round(minutes * before / after) : minutes;
@@ -385,7 +385,7 @@ function assignmentDuration(project, task, before, after) {
  * schedules the duration the resources actually add up to. A task with no
  * work resource is left exactly as the file wrote it.
  */
-function workDuration(project, task, minutes, mine) {
+export function workDuration(project, task, minutes, mine) {
     const assignments = mine || project.Assignments.filter(
         (a) => a.TaskUID === task.UID);
 
@@ -470,7 +470,7 @@ function varianceOf(work, promised, actual) {
  * start to place them from. A link whose predecessor is not in the file is
  * ignored; a cycle is left where it was rather than hung on.
  */
-function recalculate(project) {
+export function recalculate(project) {
     const tasks = project.Tasks.filter((t) => !t.IsNull);
     const byUID = {};
     let roots = 0;

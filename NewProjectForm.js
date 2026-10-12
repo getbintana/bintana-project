@@ -21,7 +21,7 @@
  * reason -- a path that goes somewhere else is not what the field says. */
 const BAD_FILE = /[/\\]/
 
-class NewProjectForm extends Form {
+export class NewProjectForm extends Form {
 
     /* `folder` is where the last file came from, which is where a new one belongs
      * until somebody says otherwise; the caller reads it, so this only has a
