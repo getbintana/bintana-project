@@ -586,6 +586,10 @@ export class MainForm extends Form {
          * was the first keystroke of every edit throwing the plan away.
          * Asked for before the rows go, handed back after they are in. */
         const at = this.Tasks.ScrollY;
+        /* The cell the reader was on, kept across the rebuild by the column's
+         * id: the table's columns are declared again, so an index would name
+         * another field the moment one is hidden or moved. */
+        const cur = this.cell;
 
         this.Tasks.Clear();
         /* La columna del enlace, si está a la vista: la tabla la declara
@@ -653,11 +657,22 @@ export class MainForm extends Form {
          * own size depends on how many rows there now are. */
         this.syncGanttSize();
 
+        /* **The cell the reader was on comes back with the rows**, by the
+         * column's id, and the selection restore below puts the frame and the
+         * entry bar back on the row -- `Tasks_Select` is what places it. A row
+         * the filter left out, or a column the view does not show, is no cell:
+         * it is dropped rather than pointed at something else. */
+        if (cur && this.byUID[cur.key] && this.entryColumn(cur.id) >= 0)
+            this.cell = { key: cur.key, id: cur.id };
+        else
+            this.cell = null;
+
         if (keep !== undefined && keep !== null && this.Tasks.Exists(String(keep))) {
             this.Tasks.Key = String(keep);
             this.Tasks_Select();
         } else {
             this.cell = null;
+            this.Tasks.CurrentCell = null;
             this.showEntry();
             this.showTask(null);
         }
@@ -1281,16 +1296,72 @@ export class MainForm extends Form {
     Tasks_Select() {
         const key = this.Tasks.Key;
         this.selectedUID = key === "" ? null : Number(key);
-        /* **The cell follows the row**: moving the selection down the list
-         * keeps the column, which is what a cell cursor does, and the entry
-         * bar goes with it. */
-        if (this.cell && this.selectedUID !== null)
+        /* **The cell follows the row**: moving the selection down the list --
+         * an arrow, a click, the restore after a command -- keeps the column,
+         * which is what a cell cursor does. The runtime's current cell is what
+         * draws the frame, so it moves with it, and the entry bar goes after. */
+        if (this.cell && this.selectedUID !== null) {
             this.cell.key = String(this.selectedUID);
-        else if (this.selectedUID === null)
+            this.placeCell();
+        } else if (this.selectedUID === null) {
             this.cell = null;
+            this.Tasks.CurrentCell = null;
+        }
         this.showEntry();
         this.showTask(this.selectedTask());
         this.redrawChart();
+    }
+
+    /* **The runtime's current cell, from `this.cell`**: the frame the reader
+     * sees and the address the keys move from. A column the view does not show
+     * is no cell, and neither is a row the table does not hold. */
+    placeCell() {
+        const at = this.cell ? this.entryColumn(this.cell.id) : -1;
+        this.Tasks.CurrentCell = at < 0 || !this.byUID || !this.byUID[this.cell.key]
+            ? null
+            : { Row: this.cell.key, Column: at };
+    }
+
+    /* **The cell moved**, whichever way it moved: a press, `EditCell`, an
+     * assignment from a key, a rebuild. The bar follows it, and the cell is
+     * remembered by the column's id -- never by its index, which a hidden or
+     * moved column changes under it. */
+    Tasks_CellChange(row, column) {
+        if (row === null || row === undefined) {
+            this.cell = null;
+            this.showEntry();
+            return;
+        }
+        this.rememberCell(String(row), column);
+    }
+
+    /* **The cell one step away**, as the grid's keys mean it: Enter down, Tab
+     * right, Shift+Tab left, wrapping at the ends of a row. The rows are the
+     * ones the list is showing -- a folded branch is not a row to land on --
+     * and the address is the row's key, which a rebuild cannot move. */
+    moveCell(where) {
+        const cell = this.cell;
+        if (!cell || !this.holder || !this.Tasks) return;
+
+        const rows  = this.chartRows();
+        const keys  = rows.map((t) => String(t.UID));
+        const cols  = this.Tasks.Columns.length;
+        let   rowAt = keys.indexOf(cell.key);
+        let   colAt = this.entryColumn(cell.id);
+        if (rowAt < 0 || colAt < 0 || cols <= 0) return;
+
+        if (where === "down") {
+            rowAt++;
+        } else if (where === "right") {
+            if (++colAt >= cols) { colAt = 0; rowAt++; }
+        } else if (where === "left") {
+            if (--colAt < 0) { colAt = cols - 1; rowAt--; }
+        }
+        if (rowAt < 0 || rowAt >= keys.length) return;
+
+        /* Assigning moves the frame, selects the row and says so; the bar
+         * follows through `Tasks_CellChange`. */
+        this.Tasks.CurrentCell = { Row: keys[rowAt], Column: colAt };
     }
 
     /* Ctrl+F: the filter field takes the keyboard. */
@@ -2189,7 +2260,25 @@ export class MainForm extends Form {
     }
 
     Tasks_KeyPress(key, ctrl, shift, alt) {
-        return this.rowKey(key, ctrl);
+        if (this.rowKey(key, ctrl)) return true;
+        if (!this.holder || !this.Tasks) return false;
+
+        /* **The grid's keys, as Project answers them in the sheet**: Enter
+         * down, Tab right, Shift+Tab left, Insert a task after this one and
+         * Delete the selected one. The move keys are the same the cell's own
+         * commit reports, so the bar and the cell move the same way. */
+        const k = String(key);
+        if (k === "Return" || k === "KP_Enter" || k === "ISO_Enter") {
+            this.moveCell("down");
+            return true;
+        }
+        if (k === "Tab" || k === "KP_Tab" || k === "ISO_Left_Tab") {
+            this.moveCell(k === "ISO_Left_Tab" || shift ? "left" : "right");
+            return true;
+        }
+        if (k === "Insert") { this.ActAdd_Execute(); return true; }
+        if (k === "Delete") { this.ActDelete_Execute(); return true; }
+        return false;
     }
 
     /* The selected task and what hangs from it, twice: as data kept here, for a
@@ -2519,10 +2608,20 @@ export class MainForm extends Form {
     /* The cell left its editing state -- Enter, the focus moving away, a day
      * or an item picked, a tick turned. **The entry bar follows the cell**: it
      * is recorded here and in `Tasks_CellEditor`, so the bar shows what was
-     * edited even when the edit is refused. */
-    Tasks_CellEdit(key, column, text) {
+     * edited even when the edit is refused. **And the move-on keys move the
+     * cell**, which is why the runtime says how the edit ended: Enter down, Tab
+     * right, Shift+Tab left. A refusal stays where it was -- that is the cell
+     * the reader has to fix -- and so does a day or an item picked. */
+    Tasks_CellEdit(key, column, text, how) {
         this.rememberCell(key, column);
-        return this.applyCell(String(key), column, text);
+        const answer = this.applyCell(String(key), column, text);
+
+        if (answer !== false) {
+            if (how === "enter") this.moveCell("down");
+            else if (how === "tab") this.moveCell("right");
+            else if (how === "shift-tab") this.moveCell("left");
+        }
+        return answer;
     }
 
     /* One cell, one command -- what the table's commit and the entry bar both
@@ -6912,6 +7011,98 @@ export class MainForm extends Form {
             ok = edit.task(1).Name === "Analyse II" && ok;
             print(`edit cell name back=${edit.task(1).Name}`);
 
+            /* **La celda se mueve como la grilla de Project**: Enter baja,
+             * Tab a la derecha y Shift+Tab a la izquierda. El commit dice con
+             * qué terminó (`how`), y el mismo movimiento es el de la tecla
+             * suelta; la barra de entrada sigue a la celda. Una tercera fila
+             * -- que se deshace al final -- es lo que hay para bajar. */
+            const navTask = edit.addTask(2);
+            const navKey  = String(navTask.UID);
+            this.setColumns(["duration", "start"]);
+            this.fill(2);
+            const atDur2   = 1 + this.visibleColumns().indexOf("duration");
+            const atStart2 = 1 + this.visibleColumns().indexOf("start");
+
+            this.Tasks.CurrentCell = { Row: "2", Column: atDur2 };
+            ok = JSON.stringify(this.Tasks.CurrentCell) ===
+                 `{"Row":"2","Column":${atDur2}}` &&
+                 this.cell.key === "2" && this.cell.id === "duration" && ok;
+
+            const cellEnter = this.Tasks.Emit("CellEdit", "2", atDur2, "3d", "enter");
+            ok = cellEnter !== false && this.cell.key === navKey &&
+                 this.cell.id === "duration" &&
+                 JSON.stringify(this.Tasks.CurrentCell) ===
+                 `{"Row":"${navKey}","Column":${atDur2}}` && ok;
+            print(`edit cell enter -> ${this.cell.key}/${this.cell.id}`);
+            edit.undo();
+            this.fill(2);
+
+            this.Tasks.CurrentCell = { Row: "2", Column: atDur2 };
+            const cellTab = this.Tasks.Emit("CellEdit", "2", atDur2, "3d", "tab");
+            ok = cellTab !== false && this.cell.key === "2" &&
+                 this.cell.id === "start" && ok;
+            edit.undo();
+            this.fill(2);
+
+            /* El final de una fila da la vuelta a la primera columna de la
+             * siguiente, y el comienzo a la última de la anterior. */
+            this.Tasks.CurrentCell = { Row: "2", Column: atStart2 };
+            this.moveCell("right");
+            ok = this.cell.key === navKey && this.cell.id === "name" && ok;
+            this.moveCell("left");
+            ok = this.cell.key === "2" && this.cell.id === "start" && ok;
+
+            /* La tecla suelta es el mismo movimiento, y la barra de entrada
+             * muestra la celda nueva. */
+            this.Tasks.CurrentCell = { Row: "2", Column: atDur2 };
+            ok = this.Tasks_KeyPress("Return", false, false, false) === true &&
+                 this.cell.key === navKey && this.cell.id === "duration" &&
+                 this.TxtEntry.Text === this.Tasks.Cell(navKey, atDur2) &&
+                 this.LblEntry.Text === Locale.Text("Duration") && ok;
+            ok = this.Tasks_KeyPress("Tab", false, false, false) === true &&
+                 this.cell.key === navKey && this.cell.id === "start" && ok;
+            ok = this.Tasks_KeyPress("ISO_Left_Tab", false, true, false) === true &&
+                 this.cell.key === navKey && this.cell.id === "duration" && ok;
+            print(`edit cell keys -> ${this.cell.key}/${this.cell.id}`);
+
+            /* Insert agrega una tarea después de la elegida y Delete borra la
+             * elegida -- la puerta de los comandos de siempre. */
+            const wasTasks = edit.holder.project.Tasks.length;
+            ok = this.Tasks_KeyPress("Insert", false, false, false) === true &&
+                 edit.holder.project.Tasks.length === wasTasks + 1 && ok;
+            edit.undo();
+            this.fill(2);
+            const realDelete = this.ActDelete_Execute;
+            let askedDelete = 0;
+            this.ActDelete_Execute = () => { askedDelete++; };
+            ok = this.Tasks_KeyPress("Delete", false, false, false) === true &&
+                 askedDelete === 1 && ok;
+            this.ActDelete_Execute = realDelete;
+
+            /* Una edición rechazada no mueve la celda: es la que hay que
+             * corregir. */
+            this.Tasks.CurrentCell = { Row: "2", Column: atDur2 };
+            const cellBad = this.Tasks.Emit("CellEdit", "2", atDur2, "3x", "enter");
+            ok = cellBad === false && this.cell.key === "2" &&
+                 this.cell.id === "duration" && ok;
+
+            /* **La celda sobrevive a la reconstrucción**: la columna queda y la
+             * fila es la que la tabla conserva; una columna que se oculta deja
+             * la celda en nada, que es lo que no puede apuntar a otro campo. */
+            this.Tasks.CurrentCell = { Row: "2", Column: atStart2 };
+            this.fill(2);
+            ok = this.cell.key === "2" && this.cell.id === "start" &&
+                 JSON.stringify(this.Tasks.CurrentCell) ===
+                 `{"Row":"2","Column":${atStart2}}` && ok;
+            this.setColumns(["duration"]);
+            ok = this.cell === null && this.Tasks.CurrentCell === null && ok;
+            print(`edit cell survives fill, hidden column clears`);
+            edit.undo();
+            this.setColumns(["duration", "start", "percent", "milestone",
+                             "priority", "calendar", "type", "constraint",
+                             "notes", fieldColumnID("188743731")]);
+            this.fill(2);
+
             /* **Información de la tarea**: the double click's door -- the
              * panel's own fields over the window, OK writing them as one
              * command -- and the summary's derived fields greyed there too. */
@@ -7113,7 +7304,7 @@ export class MainForm extends Form {
                      "TxtFilter_Change", "CmbStatus_Select", "SldZoom_Change", "Tasks_KeyPress",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseLeave", "Gantt_MouseUp", "Gantt_KeyPress",
-                     "Tasks_Activate", "Tasks_CellEdit", "Tasks_CellEditor", "Gantt_DblClick",
+                     "Tasks_Activate", "Tasks_CellEdit", "Tasks_CellEditor", "Tasks_CellChange", "Gantt_DblClick",
                      "TxtEntry_Activate", "TxtEntry_KeyPress"]);
 
         let ok = true;

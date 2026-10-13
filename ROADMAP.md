@@ -27,13 +27,14 @@ las notas fechadas de las fases; esto es la lista para retomar.
    lo más delicado del runtime (pedido explícito: cuidado con performance y
    memoria). Son gestos de puntero sobre la tabla:
    - **Navegación**: Enter baja, Tab a la derecha, Ins agrega, Supr borra.
-     Necesita dos cosas del runtime: que `CellEdit` diga **cómo terminó** la
-     edición (Enter, Tab, el foco que se va) y una noción de **celda
-     seleccionada** —hoy el runtime resuelve "la celda" al vuelo para F2;
-     falta que la mantenga, la exponga y la resalte.
-   - **Asa de relleno**: el cuadradito de la celda seleccionada; arrastrar
-     hacia abajo copia el valor a las filas siguientes. Necesita la celda
-     seleccionada y el gesto.
+     **Hecha** (2026-10-13): el runtime dice **cómo terminó** la edición
+     (`CellEdit(row, column, text, how)`) y mantiene, expone y resalta una
+     **celda actual** (`CurrentCell`/`CellChange`); la app mueve la celda con
+     Enter/Tab/Mayús+Tab, agrega con Insert y borra con Supr. Ver *La celda
+     actual y las teclas* en la fase 3.
+   - **Asa de relleno**: el cuadradito de la celda actual; arrastrar hacia
+     abajo copia el valor a las filas siguientes. Necesita la celda
+     seleccionada —que ya está— y el gesto.
    - **Arrastrar filas** para mover/reordenar, con el indicador de inserción.
    - **Copiar/pegar celdas**: hoy se puede a través de los editores y la barra
      de entrada (copiar del editor abierto o de la barra, pegar en la barra o
@@ -378,6 +379,34 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
   **Quedan para la pasada de gestos** —con la navegación— el asa de relleno y
   arrastrar filas: son gestos de puntero sobre la grilla, la misma familia
   delicada.
+
+- **La celda actual y las teclas** (2026-10-13): la grilla se navega como la
+  hoja de Project. El runtime paga dos cosas y las documenta: `CellEdit` gana
+  un cuarto argumento, **`how`** (`enter`, `tab`, `shift-tab`, `pick`, `focus`,
+  `code`, `left`), y una edición que termina con una tecla de movimiento se
+  reporta aunque no haya cambiado nada -- el programa lee el motivo y mueve --;
+  y la **celda actual** es del control (`CurrentCell` de lectura y asignación,
+  el evento `CellChange`), dibujada con un `outline` sobre la caja de la celda
+  (clase `bta-cell-current`) que se aplica en cada bind, así que scrollear no
+  cuesta nada y moverla es la misma caminata que F2 ya hacía -- una vez por
+  movimiento, no por cuadro. Asignarla selecciona la fila, y los verbos que
+  vacían la tabla (`Clear`, `RemoveRow`, `RemoveNode`, `Count`) la sueltan.
+  Además, **Enter se le ofrece al programa antes de que la vista active la
+  fila**: GTK se queda con Return para `Activate` antes de la fase de burbuja
+  -- medido en 4.22, el diálogo de la fila se abría en vez de moverse la celda
+  --, así que el control lo levanta como `KeyPress` y un handler que contesta
+  `true` lo consume. Del lado de la app: `Tasks_KeyPress` mueve con
+  Enter/Tab/Mayús+Tab, agrega con Insert y borra con Supr; `moveCell` camina
+  las filas que la lista muestra (`chartRows`: un pliegue no es una fila donde
+  caer) y da la vuelta en los extremos de una fila (al nombre de la siguiente);
+  `Tasks_CellChange` deja que la barra siga la celda, y `fill` la recuerda por
+  el **id** de su columna para que una reconstrucción no la apunte a otro
+  campo. `check-edit` lo afirma -- el commit con `how`, la vuelta, las teclas
+  sueltas, Insert/Delete, el rechazo que no mueve y la celda que sobrevive al
+  `fill` --; `tests/widgets` suma `TableCell` y `TableCellHow`, y el gesto real
+  quedó verificado a mano con xdotool sobre Xvfb: el recuadro sobre una celda
+  que no es campo, Enter/Tab/Mayús+Tab con el editor abierto y sin él, Insert y
+  el diálogo de Supr.
 
 - **El recálculo, como Project** (2026-10-13): el automático pasa a ser el
   default (`bintana-project.autorecalc` y el tilde de Configuración): cambiar

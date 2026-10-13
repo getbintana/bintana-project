@@ -266,6 +266,13 @@ selected row's first field), Enter or the focus leaving commits, Escape gives
 up, and `CellEdit` decides -- `false` puts the cell back, and a string answer is
 the spelling the cell keeps (`75%`, `3d?`, `2026-10-01 08:00`).
 
+**The grid moves like Project's sheet**: a press marks the cell -- the frame
+around it, a field or not -- and **Enter** commits and moves down, **Tab**
+right, **Shift+Tab** left (past the end of a row the wrap lands on the next
+row's name); **Insert** adds a task after the selected one and **Delete**
+removes it. The move keys are the same inside an edit and out of it, and the
+entry bar follows the cell.
+
 **An edit reschedules, the way Project's automatic calculation does**: with the
 setting on -- the default -- every accepted command is followed by the schedule
 pass before the snapshot, so a duration typed by hand moves the finish and the

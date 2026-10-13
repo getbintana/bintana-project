@@ -169,6 +169,14 @@ primera celda editable de la fila elegida. Cada cambio es **un Deshacer**, y
 el clic que empieza una edición también **selecciona la fila**: el panel y el
 Gantt siguen a la tarea que estás editando.
 
+**La celda elegida lleva el recuadro y se mueve como en la hoja de Project**:
+hacé clic en una celda —editable o no— y **Enter** confirma y baja una fila,
+**Tab** confirma y va a la derecha y **Mayús+Tab** a la izquierda; al final de
+una fila la vuelta cae en la primera columna de la siguiente (el nombre).
+**Insert** agrega una tarea después de la elegida y **Supr** la borra con la
+pregunta de siempre. Las teclas mueven dentro de la edición y fuera de ella, y
+la barra de entrada sigue a la celda.
+
 Lo que no se puede escribir se rechaza con el motivo y la celda vuelve a lo
 que decía: una duración que no es una duración, una fecha que no es una fecha,
 un avance fuera de 0 a 100, una prioridad fuera de 0 a 1000, un calendario que
