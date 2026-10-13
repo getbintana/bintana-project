@@ -186,6 +186,12 @@ versiona: es de un tercero. Se copió a `/tmp` y se midió con `check` y con
   en el XSD y MPXJ lee la ausencia como falso, pero Project los escribe
   siempre; conviene confirmarlo abriendo la salida en Project.
 
+Quinta medición, 2026-10-13, con el recálculo automático por defecto: la salida
+de `check-edit` suma la restricción que el panel deja al tipear un inicio
+(`ConstraintType` 4 y `ConstraintDate` para UID 1, dos elementos), y es
+deliberado -- es lo que Project escribe cuando una fecha se tipea. Los ocho
+fixtures no cambian: abrir un archivo no recalcula.
+
 ## Qué sigue
 
 1. Abrir en Project el XML que sale de acá (el archivo real ya está): contesta

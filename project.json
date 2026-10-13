@@ -9,6 +9,8 @@
     "Edit.js",
     "Gantt.js",
     "ConfirmForm.js",
+    "ConstraintForm.js",
+    "TaskForm.js",
     "SettingsForm.js",
     "FieldsForm.js",
     "FieldForm.js",

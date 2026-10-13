@@ -379,11 +379,13 @@ export function assignmentDuration(project, task, before, after) {
 /*
  * The work identity the pass applies: a task with work resources carries
  * `Work = Duration × Units`, and the type says which of the three is pinned.
- * Fixed Duration keeps the duration and derives the work; every other keeps
- * the work and derives the duration. It answers the duration in minutes and
- * leaves the task's and its assignments' work in step -- so `recalculate`
- * schedules the duration the resources actually add up to. A task with no
- * work resource is left exactly as the file wrote it.
+ * **Fixed Work (2) is the one that keeps the work and derives the duration;
+ * every other type keeps the duration and derives the work.** That is the
+ * direction Project edits in -- a duration typed into a fixed-units task
+ * grows the work and the duration stays -- so a duration typed by hand is not
+ * undone by the assignment's older work the moment the pass runs. It answers
+ * the duration in minutes and leaves the task's and its assignments' work in
+ * step. A task with no work resource is left exactly as the file wrote it.
  */
 export function workDuration(project, task, minutes, mine) {
     const assignments = mine || project.Assignments.filter(
@@ -398,9 +400,10 @@ export function workDuration(project, task, minutes, mine) {
     }
     if (units <= 0) return minutes;
 
-    if (taskKind(project, task) === 1) work = Math.round(minutes * units);   // Fixed Duration
-    else if (work > 0)          minutes = Math.round(work / units);
-    else                        work = Math.round(minutes * units);
+    if (taskKind(project, task) === 2 && work > 0)   // Fixed Work: the work pins it
+        minutes = Math.round(work / units);
+    else                                             // the duration pins the work
+        work = Math.round(minutes * units);
 
     task.Work = mspdiDuration(work);
     for (const assignment of assignments) {

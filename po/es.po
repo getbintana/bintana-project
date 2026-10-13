@@ -142,6 +142,24 @@ msgstr "Abrir reciente"
 msgid "Show log"
 msgstr "Ver log"
 
+msgid "Show task list"
+msgstr "Mostrar la lista de tareas"
+
+msgid "Show Gantt chart"
+msgstr "Mostrar el Gantt"
+
+msgid "Show properties panel"
+msgstr "Mostrar el panel de propiedades"
+
+msgid "Show or hide the task list"
+msgstr "Mostrar u ocultar la lista de tareas"
+
+msgid "Show or hide the Gantt chart"
+msgstr "Mostrar u ocultar el Gantt"
+
+msgid "Show or hide the properties panel"
+msgstr "Mostrar u ocultar el panel de propiedades"
+
 msgid "About bintana-project"
 msgstr "Acerca de bintana-project"
 
@@ -699,6 +717,45 @@ msgstr "Elegí una predecesora primero."
 
 msgid "{0} is not a duration -- try 2d, 8h or 30m"
 msgstr "{0} no es una duración -- probá 2d, 8h o 30m"
+
+msgid "{0} is not a date -- try 2026-10-01 08:00"
+msgstr "{0} no es una fecha -- probá 2026-10-01 08:00"
+
+msgid "{0} is not a percentage -- 0 to 100"
+msgstr "{0} no es un porcentaje -- de 0 a 100"
+
+msgid "{0} is not a priority -- 0 to 1000"
+msgstr "{0} no es una prioridad -- de 0 a 1000"
+
+msgid "{0} is not a calendar of the plan"
+msgstr "{0} no es un calendario del plan"
+
+msgid "{0} is not a task type"
+msgstr "{0} no es un tipo de tarea"
+
+msgid "Task information"
+msgstr "Información de la tarea"
+
+msgid "Task information…"
+msgstr "Información de la tarea…"
+
+msgid "Show entry bar"
+msgstr "Mostrar la barra de entrada"
+
+msgid "Predecessors"
+msgstr "Predecesoras"
+
+msgid "\"{0}\" is not a predecessor -- try 3FS+2d"
+msgstr "\"{0}\" no es una predecesora -- probá 3FS+2d"
+
+msgid "There is no task {0}."
+msgstr "No hay una tarea {0}."
+
+msgid "A constraint of that type needs a date."
+msgstr "Una restricción de ese tipo necesita una fecha."
+
+msgid "A summary takes its dates, duration and completion from its children."
+msgstr "Un resumen toma sus fechas, su duración y su avance de sus hijas."
 
 msgid "Cannot apply: {0}"
 msgstr "No se puede aplicar: {0}"

@@ -101,6 +101,7 @@ export class MainForm extends Form {
     zoomSync = false;
     status = 0;      // the status filter's choice, an index into STATUS_FILTERS
     clip   = null;   // what Copy kept: { tasks, assignments, text }
+    cell   = null;   // the entry bar's cell: { key, id }, the last one opened
     format = ganttFormat(null);
     tipText = "";
     cursorName = "Auto";
@@ -244,8 +245,20 @@ export class MainForm extends Form {
             this.setColumns(stored.filter((id) => isColumnId(id)));
         this.format  = loadFormat();
         this.unit    = Settings.Get("bintana-project.unit", "");
-        if (this.edit)
-            this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
+        /* **The entry bar: hidden until asked for, like Project 2013's**, and
+         * then the way it was left -- a strip a reader put away and that came
+         * back at the next window would be a switch that does not switch. */
+        const entry  = Settings.Get("bintana-project.entrybar", false);
+        this.MnuEntry.Value   = entry;
+        this.EntryBar.Visible = entry;
+        if (this.edit) {
+            /* **Project's own default**: the plan is recalculated after every
+             * accepted command -- so a duration typed by hand moves the finish
+             * and the chain with it -- and a date typed by hand leaves the
+             * constraint that keeps it. Turning it off in Settings leaves the
+             * dates as typed until F5 asks, which is Project's manual mode. */
+            this.edit.auto = Settings.Get("bintana-project.autorecalc", true);
+        }
         if (this.CmbScale.Index !== scale) {
             this.CmbScale.Index = scale;
             this.CmbScale_Select();
@@ -301,6 +314,15 @@ export class MainForm extends Form {
 
     /* The View menu's tick, and the Help menu's one line. */
     MnuLog_Click(on) { this.Log.Visible = on; }
+
+    /* **The entry bar can go**, and stays gone: Project 2013 on hide it by
+     * default, and a reader who puts it away should not have it back at the
+     * next window -- so the choice is remembered with the columns and the
+     * timescale. */
+    MnuEntry_Click(on) {
+        this.EntryBar.Visible = on;
+        if (this.settingsReady) Settings.Set("bintana-project.entrybar", on);
+    }
 
     /* The panel of properties, out of the way: the chart gets the room. The
      * button and the menu tick are one switch seen twice, and assigning either
@@ -450,7 +472,7 @@ export class MainForm extends Form {
         this.holder = readMspdi(path);
         this.path   = keepPath || path;
         this.edit   = new Edit(this.holder);
-        this.edit.auto = Settings.Get("bintana-project.autorecalc", false);
+        this.edit.auto = Settings.Get("bintana-project.autorecalc", true);
         this.forceClose = false;
         this.documentCommands(true);
         this.fill();
@@ -570,7 +592,20 @@ export class MainForm extends Form {
          * `Link: true` y el destino va por fila -- el texto es la etiqueta (o
          * la dirección) y la dirección es a donde va. `""` deja la celda sin
          * link, que es una tarea con etiqueta y sin dirección. */
-        const linkAt = this.visibleColumns().indexOf("link");
+        const cols   = this.visibleColumns();
+        const linkAt = cols.indexOf("link");
+
+        /* **The cells a summary does not edit**, one past the name (which the
+         * tree does not list among the columns): what Project derives from its
+         * children. Shut where they are drawn rather than refused after the
+         * typing, so a summary's dates read dim and open nothing -- the same
+         * bargain the panel makes greying its controls. */
+        const shut = [];
+        for (const id of SUMMARY_SHUT) {
+            const at = cols.indexOf(id);
+            if (at >= 0) shut.push(at + 1);
+        }
+
         const stack = [];
         for (const task of this.visibleTasks(project)) {
             const key = String(task.UID);
@@ -582,6 +617,9 @@ export class MainForm extends Form {
             this.Tasks.Add(this.cells(task), options);
             if (linkAt >= 0)
                 this.Tasks.SetUri(key, linkAt + 1, task.HyperlinkAddress || "");
+            if (task.Summary)
+                for (const at of shut)
+                    this.Tasks.SetEditable(key, at, false);
             stack.push({ level: task.OutlineLevel, key: key });
         }
 
@@ -619,6 +657,8 @@ export class MainForm extends Form {
             this.Tasks.Key = String(keep);
             this.Tasks_Select();
         } else {
+            this.cell = null;
+            this.showEntry();
             this.showTask(null);
         }
         this.updateTitle();
@@ -679,6 +719,7 @@ export class MainForm extends Form {
             return attrOf(task, id.slice(FIELD_COLUMN.length));
         switch (id) {
         case "duration":   return durationText(task, project);
+        case "predecessors": return linksText(task, project);
         case "start":      return shortDate(task.Start);
         case "finish":     return shortDate(task.Finish);
         case "percent":    return `${task.PercentComplete || 0}%`;
@@ -735,22 +776,27 @@ export class MainForm extends Form {
     }
 
     /* The table's declaration, rebuilt whole: the rows come from `cells`, so
-     * both move together and a column that is not shown is not read. A custom
-     * field's heading is the name the plan gives it -- the file's own words,
-     * not a catalog entry -- so it does not go through `Locale`. */
+     * both move together and a column that is not shown is not read. **The
+     * name is always a field** -- it is the tree and never goes, and renaming
+     * in the row is the first thing a reader asks of it. A custom field's
+     * heading is the name the plan gives it -- the file's own words, not a
+     * catalog entry -- so it does not go through `Locale`, and its kind is a
+     * field unless the file says the values are a list (`Tasks_CellEditor`
+     * answers the combo). */
     applyColumns() {
-        const specs = [{ Text: Locale.Text("Task"), Width: 0 }];
+        const specs = [{ Text: Locale.Text("Task"), Width: 0, Editor: "Text" }];
         for (const id of this.visibleColumns()) {
             const column = COLUMNS.find((c) => c.id === id);
             if (column) {
                 const spec = { Text: Locale.Text(column.Text), Width: column.Width };
                 if (column.Alignment) spec.Alignment = column.Alignment;
                 if (column.Link) spec.Link = true;
+                if (column.Editor) spec.Editor = column.Editor;
                 specs.push(spec);
                 continue;
             }
             specs.push({ Text: fieldLabel(this.columnField(id)),
-                         Width: 90, Alignment: "Right" });
+                         Width: 90, Alignment: "Right", Editor: "Text" });
         }
         this.Tasks.Columns = specs;
     }
@@ -897,13 +943,9 @@ export class MainForm extends Form {
          * front. **The plan's own is chosen in the project dialog** -- it is a
          * property of the file, and a tab of the side panel for it was a tab
          * that took space to say something the menu already says. */
-        this.workCalChoices = [-1];
-        const workNames = [Locale.Text("Project default")];
-        for (const calendar of project.Calendars) {
-            this.workCalChoices.push(calendar.UID);
-            workNames.push(calendar.Name);
-        }
-        this.CmbTaskCalendar.Items = workNames;
+        const work = workCalendarNames(project);
+        this.workCalChoices = work.choices;
+        this.CmbTaskCalendar.Items = work.items;
     }
 
     /* The project's data -- the document's metadata, the scheduling settings
@@ -1159,49 +1201,18 @@ export class MainForm extends Form {
     /* The panel is a view of the selected record, not a copy: it is written
      * when the selection moves and read only by Apply. */
     showTask(task) {
-        const has      = task !== null && task !== undefined;
-        const editable = has && !task.Summary;
+        const has = task !== null && task !== undefined;
 
-        this.LblTask.Text     = has ? task.Name : Locale.Text("No task selected");
-        this.TxtName.Text     = has ? task.Name : "";
-        this.TxtStart.Text    = has ? shortDate(task.Start) : "";
-        this.TxtFinish.Text   = has ? shortDate(task.Finish) : "";
-        this.TxtDuration.Text = has
-            ? durationText(task, this.holder.project) : "";
-        this.ChkMilestone.Active    = has ? task.Milestone : false;
-        this.ChkManual.Active       = has ? task.Manual : false;
-        this.ChkEffortDriven.Active = has ? task.EffortDriven : false;
-        this.ChkEstimated.Active    = has ? task.Estimated : false;
-        this.CmbTaskType.Index = has
-            ? taskKind(this.holder.project, task) : 0;
-        const atCal = has
-                    ? this.workCalChoices.indexOf(task.CalendarUID > 0
-                                                  ? task.CalendarUID : -1)
-                    : 0;
-        this.CmbTaskCalendar.Index = atCal >= 0 ? atCal : 0;
-        this.SpinPercent.Value   = has ? task.PercentComplete : 0;
-        this.CmbConstraint.Index = has ? (task.ConstraintType || 0) : 0;
-        this.TxtConstraint.Text  = has ? shortDate(task.ConstraintDate) : "";
-        this.TxtDeadline.Text    = has ? shortDate(task.Deadline) : "";
-        this.TxtNotes.Text       = has ? task.Notes : "";
-        this.TxtLinkText.Text    = has ? task.Hyperlink : "";
-        this.TxtLinkAddress.Text = has ? task.HyperlinkAddress : "";
-        this.TxtLinkSub.Text     = has ? task.HyperlinkSubAddress : "";
-        this.updateLinkUri();
+        this.LblTask.Text = has ? task.Name : Locale.Text("No task selected");
+        /* The fields -- values and the summary locks -- are filled by the same
+         * function the dialog uses; what is the panel's own is below. */
+        fillTaskForm(this, task, this.holder.project);
 
-        this.TxtName.Enabled = has;
-        /* A summary's dates, duration and completion are what Project
-         * derives from its children; only its name is the user's. */
-        for (const w of [this.TxtStart, this.TxtFinish, this.TxtDuration,
-                         this.ChkMilestone, this.ChkEffortDriven,
-                         this.ChkEstimated, this.CmbTaskType,
-                         this.SpinPercent, this.CmbConstraint,
-                         this.TxtConstraint, this.TxtDeadline])
-            w.Enabled = editable;
         /* The commands the toolbar, the menu and the panel share are one
          * `Enabled`: assigning the button's would be refused, and rightly. */
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
-                           this.ActUp, this.ActDown, this.ActCopy])
+                           this.ActUp, this.ActDown, this.ActCopy,
+                           this.ActTaskInfo])
             act.Enabled = has;
         for (const w of [this.BtnApply, this.TxtNotes,
                          this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
@@ -1215,95 +1226,20 @@ export class MainForm extends Form {
 
         this.fillLinks(has ? task : null);
         this.fillAssignments(has ? task : null);
-        this.fillAttrs(has ? task : null);
     }
 
     /* The open button is the desktop's opener (`LinkButton`): the address it
      * holds follows the box, so a link can be tried before Apply, and with
      * nothing to open it is grey. */
-    TxtLinkAddress_Change() { this.updateLinkUri(); }
-
-    updateLinkUri() {
-        const uri = this.TxtLinkAddress.Text.trim();
-        this.BtnLinkUri.Uri     = uri;
-        this.BtnLinkUri.Enabled = uri !== "";
-    }
-
-    /* The custom fields the plan defines, as `{ id, label }` pairs: the label
-     * is what the Task page's combo shows (alias, field name, or the ID). */
-    planFields() {
-        const out = [];
-        if (this.holder)
-            for (const def of this.holder.project.FieldDefs)
-                out.push({ id: def.FieldID, label: fieldLabel(def) });
-        return out;
-    }
-
-    /* The custom fields the file defines, and the value the selected task
-     * carries in the one the combo shows. */
-    fillAttrs(task) {
-        const items = [];
-        this.attrChoices = [];
-        for (const field of this.planFields()) {
-            this.attrChoices.push(field.id);
-            items.push(field.label);
-        }
-        this.CmbAttr.Items = items;
-
-        let at = this.attrChoices.indexOf(this.attrShown);
-        if (at < 0) at = items.length ? 0 : -1;
-        this.CmbAttr.Index = at;
-        this.attrShown = at >= 0 ? this.attrChoices[at] : "";
-
-        const enabled = !!task && at >= 0;
-        this.CmbAttr.Enabled = enabled;
-        this.TxtAttr.Enabled = enabled;
-        this.CmbAttrValue.Enabled = enabled;
-        this.fillAttrValue(task);
-    }
-
-    /* The value control follows the field: a list is a combo of its entries
-     * -- a `None` first, to take the value out -- and anything else is the
-     * text box. A text the list does not carry stays as an item so it can be
-     * read -- and picked away. `TxtAttr` holds the value either way: it is
-     * what Apply reads. */
-    fillAttrValue(task) {
-        const def   = this.attrShown ? this.edit.fieldDef(this.attrShown) : null;
-        const list  = def ? def.ValueList || [] : [];
-        const value = task && def ? attrOf(task, def.FieldID) : "";
-
-        this.CmbAttrValue.Visible = list.length > 0;
-        this.TxtAttr.Visible      = list.length === 0;
-
-        this.valueItems = [];
-        if (!list.length) {
-            this.TxtAttr.Text = value;
-            return;
-        }
-        this.valueItems.push("");
-        for (const entry of list) this.valueItems.push(entry.Value);
-        if (value !== "" && this.valueItems.indexOf(value) < 0)
-            this.valueItems.push(value);
-        this.CmbAttrValue.Items = this.valueItems.map((item) =>
-            item === "" ? Locale.Text("None") : item);
-        this.CmbAttrValue.Index = this.valueItems.indexOf(value);
-        this.TxtAttr.Text = value;
-    }
+    TxtLinkAddress_Change() { updateLinkUri(this); }
 
     CmbAttr_Select() {
-        const task = this.selectedTask();
-        const at = this.CmbAttr.Index;
-        if (at >= 0) this.attrShown = this.attrChoices[at];
-        this.fillAttrValue(task);
+        selectTaskAttr(this, this.selectedTask(), this.holder.project);
     }
 
     /* The chosen row is the value: the text box keeps it, so Apply -- and the
      * undo of an Apply -- move as one. */
-    CmbAttrValue_Select() {
-        const at = this.CmbAttrValue.Index;
-        this.TxtAttr.Text = at >= 0 && at < this.valueItems.length
-                          ? this.valueItems[at] : "";
-    }
+    CmbAttrValue_Select() { selectTaskAttrValue(this); }
 
     /* The links of the selected task, as the panel's own table: `linkRows`
      * holds the records the strings came from, and `predChoices` the UIDs the
@@ -1345,6 +1281,14 @@ export class MainForm extends Form {
     Tasks_Select() {
         const key = this.Tasks.Key;
         this.selectedUID = key === "" ? null : Number(key);
+        /* **The cell follows the row**: moving the selection down the list
+         * keeps the column, which is what a cell cursor does, and the entry
+         * bar goes with it. */
+        if (this.cell && this.selectedUID !== null)
+            this.cell.key = String(this.selectedUID);
+        else if (this.selectedUID === null)
+            this.cell = null;
+        this.showEntry();
         this.showTask(this.selectedTask());
         this.redrawChart();
     }
@@ -1354,10 +1298,14 @@ export class MainForm extends Form {
         this.TxtFilter.SetFocus();
     }
 
-    /* A double click on a row -- or Enter -- is "edit this one": the panel's
-     * name field takes the keyboard, which is where a rename starts. */
+    /* **A double click on a row -- or Enter -- where the cell is not a field
+     * opens Información de la tarea**, which is what Project's double click
+     * means. **An editable cell keeps the gesture**: the press is claimed to
+     * open the field, so a double click on a name or a date stays in the
+     * cell, and this road is what is left for the columns that are not
+     * fields. */
     Tasks_Activate() {
-        if (this.selectedTask()) this.TxtName.SetFocus();
+        return this.ActTaskInfo_Execute();
     }
 
     /* --- the chart's pointer ------------------------------------------- */
@@ -1762,7 +1710,7 @@ export class MainForm extends Form {
 
     Gantt_DblClick(x, y, button, ctrl, shift) {
         if (button !== 1 || !this.selectedTask()) return;
-        this.TxtName.SetFocus();
+        this.ActTaskInfo_Execute();
     }
 
     /* **What the chart says about what is under the pointer**: the task of a
@@ -1905,9 +1853,17 @@ export class MainForm extends Form {
 
         const values = { Start: isoLocal(drag.start),
                          Finish: isoLocal(drag.finish) };
-        if (drag.mode === "resize")
+        if (drag.mode === "resize") {
             values.Duration = mspdiDuration(
                 this.workingMinutes(task, drag.start, drag.finish));
+        } else if (values.Start !== task.Start) {
+            /* **Moving the bar is writing the start by hand**, and in Project
+             * that leaves the constraint a typed start leaves: the pass keeps
+             * the task where the pointer dropped it. A stretch is the
+             * duration's own gesture and pins nothing. */
+            values.ConstraintType = CONSTRAINT_SNET;
+            values.ConstraintDate = values.Start;
+        }
         /* **A gesture that moved nothing is not an edit**, and a click on a
          * bar is exactly that: the button goes down and comes up with the
          * pointer where it was. Rebuilding the table for it would cost the
@@ -2371,82 +2327,393 @@ export class MainForm extends Form {
 
     /* --- editing ------------------------------------------------------- */
 
+    /* **One cell, typed**: what the table's `CellEdit` is answered with. The
+     * column is read by its index in the table -- 0 is the name, which the
+     * tree does not list among the columns -- and the text is what the cell's
+     * own gesture produced: what was typed, the item a combo picked, the day a
+     * calendar chose, or what a tick turned into. What comes back is either
+     * the fields the command writes -- with `answer`, the spelling the cell
+     * should keep when that is not the text -- or the sentence that refuses
+     * them. A refusal answers `false` to the runtime, which puts the cell
+     * back: nothing is written and nothing is remembered.
+     *
+     * The fields are the panel's own and so are the parsers. A summary takes
+     * its dates and duration from its children: its cells are shut in `fill`,
+     * and this refuses the same list if a text arrives anyway. The `◆` a
+     * milestone wears is the row's decoration and comes off the name; a bare
+     * day -- what the calendar beside a `Date` cell picks -- takes the plan's
+     * own default time for what it is; and a custom field goes through
+     * `setFieldValue`, whose business the `FieldID` and the `ValueGUID`
+     * pointer are -- not a cell's.
+     */
+    cellValues(task, id, text) {
+        if (id === "name") {
+            const name = task.Milestone && text.indexOf("◆ ") === 0
+                       ? text.slice(2) : text;
+            return { values: { Name: name } };
+        }
+
+        if (id.indexOf(FIELD_COLUMN) === 0)
+            /* A list field's combo offers `None` to take the value out, as the
+             * panel's does; a text one never shows it. */
+            return { field: id.slice(FIELD_COLUMN.length),
+                     value: text === Locale.Text("None") ? "" : text };
+
+        if (task.Summary && SUMMARY_SHUT.indexOf(id) >= 0)
+            return { refused: Locale.Text("A summary takes its dates, duration and completion from its children.") };
+
+        switch (id) {
+        case "duration": {
+            const duration = parseDuration(text, task.DurationFormat, this.unit,
+                                            this.holder.project);
+            if (duration === null)
+                return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", text) };
+            const values = { Duration: mspdiDuration(duration.minutes),
+                             DurationFormat: duration.format };
+            return { values,
+                     answer: durationText({ Duration: values.Duration,
+                                            DurationFormat: values.DurationFormat,
+                                            Estimated: task.Estimated },
+                                          this.holder.project) };
+        }
+        case "start":
+            return this.momentPin("Start", CONSTRAINT_SNET, text, task,
+                this.holder.project.DefaultStartTime || "08:00:00");
+        case "finish":
+            return this.momentPin("Finish", CONSTRAINT_FNET, text, task,
+                this.holder.project.DefaultFinishTime || "17:00:00");
+        case "deadline":
+            return this.momentValues("Deadline", text,
+                this.holder.project.DefaultFinishTime || "17:00:00");
+        case "predecessors":
+            return this.linkValues(task, text);
+        case "percent": {
+            const m = /^\s*(\d+(?:[.,]\d+)?)\s*%?\s*$/.exec(String(text || ""));
+            const percent = m ? Math.round(Number(m[1].replace(",", "."))) : NaN;
+            if (!m || !(percent >= 0 && percent <= 100))
+                return { refused: Locale.Text("{0} is not a percentage -- 0 to 100", text) };
+
+            /* The percentage moves the actual dates the way the panel's Apply
+             * reads them: started above zero, finished at a hundred, and back
+             * at zero it has neither. */
+            const values = { PercentComplete: percent };
+            const start = task.Start || "";
+            if (percent > 0 && task.ActualStart === "") values.ActualStart = start;
+            if (percent >= 100) {
+                if (values.ActualStart === "") values.ActualStart = start;
+                values.ActualFinish = task.Finish || "";
+            }
+            if (percent === 0) {
+                values.ActualStart  = "";
+                values.ActualFinish = "";
+            }
+            return { values, answer: `${percent}%` };
+        }
+        case "priority": {
+            const m = /^\s*(\d+)\s*$/.exec(String(text || ""));
+            const priority = m ? Number(m[1]) : NaN;
+            if (!m || priority > 1000)
+                return { refused: Locale.Text("{0} is not a priority -- 0 to 1000", text) };
+            return { values: { Priority: priority } };
+        }
+        case "milestone": {
+            const on = text === "◆";
+            return { values: { Milestone: on }, answer: on ? "◆" : "" };
+        }
+        case "calendar":
+            if (text === Locale.Text("Project default"))
+                return { values: { CalendarUID: -1 } };
+            for (const calendar of this.holder.project.Calendars)
+                if (calendar.Name === text)
+                    return { values: { CalendarUID: calendar.UID } };
+            return { refused: Locale.Text("{0} is not a calendar of the plan", text) };
+        case "type": {
+            const at = this.CmbTaskType.Items.indexOf(text);
+            if (at < 0)
+                return { refused: Locale.Text("{0} is not a task type", text) };
+            return { values: { Type: at } };
+        }
+        case "notes": return { values: { Notes: text } };
+        }
+        return null;
+    }
+
+    /* A typed moment, or the sentence that refuses it: `parseMoment` keeps
+     * anything it does not know as text for the field to refuse, and a cell
+     * wants the sentence where the reader is looking instead of a value that
+     * throws somewhere else. **A bare day takes `time`** -- the plan's default
+     * for the field -- because that is what the calendar beside a `Date` cell
+     * hands over, and a start at midnight would be an invented moment. */
+    momentValues(field, text, time) {
+        const moment = parseMoment(text, time);
+        if (moment !== "" &&
+            !/^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(moment))
+            return { refused: Locale.Text("{0} is not a date -- try 2026-10-01 08:00", text) };
+
+        const values = {};
+        values[field] = moment;
+        return { values, answer: shortDate(moment) };
+    }
+
+    /* **A date typed by hand is a constraint**, as it is in Project: writing a
+     * start leaves a Start No Earlier Than and writing a finish a Finish No
+     * Earlier Than, dated at what was typed -- so the pass puts the task where
+     * the hand did and not back where its links had it. A value the task
+     * already had pins nothing, and clearing a date is not a date to pin. */
+    momentPin(field, type, text, task, time) {
+        const written = this.momentValues(field, text, time);
+        if (written.values && written.values[field] !== task[field] &&
+            written.values[field] !== "") {
+            written.values.ConstraintType = type;
+            written.values.ConstraintDate = written.values[field];
+        }
+        return written;
+    }
+
+    /* **The Predecessors cell, parsed whole**: `UID[TYPE][+/-lag]`, several
+     * separated by commas -- `3FS+2d, 7SS`. A link with no letters is
+     * finish-to-start, and a bare lag is in days; what is typed replaces the
+     * task's links in one command. Anything the engine refuses -- a task that
+     * is not there, a loop, a summary and its own branch -- refuses the cell
+     * with the reason, and the cell goes back to what it said. */
+    linkValues(task, text) {
+        const links = [];
+
+        for (const part of String(text || "").split(",")) {
+            const item = part.trim();
+            if (!item) continue;
+
+            const m = /^(\d+)\s*(FS|SS|FF|SF)?\s*(?:([+-])\s*(\d+(?:[.,]\d+)?)\s*(e?mo|e?m|e?h|e?d|e?w)?)?$/i.exec(item);
+            if (!m)
+                return { refused: Locale.Text('"{0}" is not a predecessor -- try 3FS+2d', item) };
+
+            const uid  = Number(m[1]);
+            const pred = taskOf(this.holder.project, uid);
+            if (!pred || pred.IsNull)
+                return { refused: Locale.Text("There is no task {0}.", m[1]) };
+
+            const type = m[2] ? LINK_NAMES.indexOf(m[2].toUpperCase()) : 1;
+            const old  = task.Links.find((l) => l.PredecessorUID === uid);
+
+            let lag = 0, format = old && old.LagFormat ? old.LagFormat : 7;
+            if (m[4]) {
+                const duration = parseDuration(m[4], format, "", this.holder.project);
+                if (duration === null)
+                    return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", m[4]) };
+                lag    = (m[3] === "-" ? -1 : 1) * duration.minutes;
+                format = duration.format;
+            }
+
+            const problem = this.edit.linkProblem(uid, task.UID, type);
+            if (problem) return { refused: Locale.Text(problem) };
+
+            const link = new MspLink({ PredecessorUID: uid, Type: type,
+                                       LinkLag: Math.round(lag * 10),
+                                       LagFormat: format });
+            const kept = links.findIndex((l) => l.PredecessorUID === uid);
+            if (kept >= 0) links[kept] = link; else links.push(link);
+        }
+        return { links };
+    }
+
+    /* The cell left its editing state -- Enter, the focus moving away, a day
+     * or an item picked, a tick turned. **The entry bar follows the cell**: it
+     * is recorded here and in `Tasks_CellEditor`, so the bar shows what was
+     * edited even when the edit is refused. */
+    Tasks_CellEdit(key, column, text) {
+        this.rememberCell(key, column);
+        return this.applyCell(String(key), column, text);
+    }
+
+    /* One cell, one command -- what the table's commit and the entry bar both
+     * call: the same `setFields` the panel's Apply uses, so an edit is one undo
+     * wherever it is typed, and the recalculation setting is the one `commit`
+     * already reads. **`written.answer` is what the cell keeps** when it is
+     * there -- the canonical spelling, so a percent stays a percent and a
+     * duration keeps its unit. */
+    applyCell(key, column, text) {
+        const task = this.byUID ? this.byUID[key] : null;
+        if (!task || !this.edit) return false;
+
+        const id = column === 0 ? "name" : this.visibleColumns()[column - 1];
+        const written = id ? this.cellValues(task, id, text) : null;
+        if (!written) return false;
+
+        if (written.refused) {
+            Message.Error(written.refused);
+            return false;
+        }
+
+        /* A whole list of links is its own command: `setLinks` is the one the
+         * panel's Link button and the chart's drag call. */
+        if (written.links !== undefined) {
+            if (this.edit.setLinks(task.UID, written.links))
+                this.fill(task.UID);
+            return true;
+        }
+
+        if (written.field !== undefined) {
+            if (this.edit.setFieldValue(task.UID, written.field, written.value))
+                this.fill(task.UID);
+            return true;
+        }
+
+        /* The setters validate; a bad value throws before anything is
+         * committed -- the same probe the panel's Apply makes, on the same
+         * fields. */
+        try {
+            const probe = new MspTask();
+            for (const name in written.values) probe[name] = written.values[name];
+        } catch (e) {
+            Message.Error("Cannot apply: {0}", e.message);
+            return false;
+        }
+
+        if (this.edit.setFields(task.UID, written.values))
+            this.fill(task.UID);
+        return written.answer !== undefined ? written.answer : true;
+    }
+
+    /* The current cell, as the entry bar knows it: the row's key and the
+     * column's **id**, which survives a column being hidden or moved -- an
+     * index would name another column the moment the view changes. */
+    rememberCell(key, column) {
+        const id = column === 0 ? "name" : this.visibleColumns()[column - 1];
+
+        if (id && this.byUID && this.byUID[String(key)])
+            this.cell = { key: String(key), id };
+        this.showEntry();
+    }
+
+    /* Where the bar's column is in the table *now*: -1 when it is not shown,
+     * which is a cell there is nothing to edit. */
+    entryColumn(id) {
+        if (id === "name") return 0;
+        const at = this.visibleColumns().indexOf(id);
+        return at < 0 ? -1 : at + 1;
+    }
+
+    /* **The cell's value in the bar Project keeps above the sheet**: the whole
+     * text of the cell the last edit opened -- a long name, a list of links --
+     * as the spelling an edit of it parses, so what is typed here goes through
+     * the same one command. A cell the plan derives in a summary is shown and
+     * not edited, as the cell itself is. */
+    showEntry() {
+        const cell = this.cell;
+        const task = cell && this.byUID ? this.byUID[cell.key] : null;
+        const at   = cell ? this.entryColumn(cell.id) : -1;
+
+        if (!task || at < 0) {
+            this.LblEntry.Text    = "";
+            this.TxtEntry.Text    = "";
+            this.TxtEntry.Enabled = false;
+            return;
+        }
+
+        const column  = COLUMNS.find((c) => c.id === cell.id);
+        const heading = cell.id === "name" ? Locale.Text("Task")
+                      : column ? Locale.Text(column.Text)
+                      : fieldLabel(this.columnField(cell.id));
+
+        this.LblEntry.Text    = heading;
+        this.TxtEntry.Text    = this.Tasks.Cell(cell.key, at);
+        this.TxtEntry.Enabled = !(task.Summary && SUMMARY_SHUT.indexOf(cell.id) >= 0);
+    }
+
+    /* Enter in the bar: the same parse and the same command as the cell, and
+     * the bar comes back with what the cell says now. */
+    TxtEntry_Activate() {
+        const cell = this.cell;
+        if (!cell || !this.TxtEntry.Enabled) return false;
+        return this.applyCell(cell.key, this.entryColumn(cell.id), this.TxtEntry.Text);
+    }
+
+    /* Escape puts the cell's value back, as it does in a cell. */
+    TxtEntry_KeyPress(key, ctrl, shift, alt) {
+        if (String(key).toLowerCase() !== "escape") return false;
+        this.showEntry();
+        return true;
+    }
+
+    /* **An edit is about to begin**: the items of a cell that is a choice, or
+     * the dialog a `Custom` cell opens. Every other kind is the column's own
+     * and the answer is nothing -- which is what "the declaration decides"
+     * means. The lists are the plan's, built per edit so a calendar added
+     * since the table was drawn is in the combo. */
+    Tasks_CellEditor(key, column) {
+        const task = this.byUID ? this.byUID[String(key)] : null;
+        const id   = column === 0 ? "name" : this.visibleColumns()[column - 1];
+        if (!task || !id) return false;
+
+        /* An edit is about to begin: this is the cell the bar shows. */
+        this.rememberCell(key, column);
+
+        if (id === "calendar") return { Items: this.calendarItems() };
+        if (id === "type")     return { Items: this.CmbTaskType.Items };
+
+        if (id.indexOf(FIELD_COLUMN) === 0) {
+            const def  = this.edit.fieldDef(id.slice(FIELD_COLUMN.length));
+            const list = def ? def.ValueList || [] : [];
+            if (list.length)
+                return { Kind: "Combo",
+                         Items: [Locale.Text("None")].concat(list.map((e) => e.Value)) };
+            return undefined;
+        }
+
+        if (id === "constraint") {
+            this.openConstraint(task);
+            return undefined;
+        }
+        return undefined;
+    }
+
+    /* The calendars a task may name, with the plan's own in front: the same
+     * list the panel's combo offers, so the two cannot disagree. */
+    calendarItems() {
+        const items = [Locale.Text("Project default")];
+        for (const calendar of this.holder.project.Calendars)
+            items.push(calendar.Name);
+        return items;
+    }
+
+    /* The constraint's two halves -- the type and, for the six that need one,
+     * the date -- in one dialog, because one cell cannot hold both. Its OK is
+     * one command like any other edit, and the check it runs before closing is
+     * the date's shape: what the runtime refuses is the dialog's, not a second
+     * copy of it here. */
+    openConstraint(task) {
+        const startTime = () => this.holder.project.DefaultStartTime || "08:00:00";
+
+        ConstraintForm.open(
+            this.CmbConstraint.Items,
+            task.ConstraintType > 0 ? task.ConstraintType : 0,
+            shortDate(task.ConstraintDate),
+            (type, text) => {
+                const date = type > 1 ? parseMoment(text, startTime()) : "";
+                if (this.edit.setFields(task.UID,
+                                        { ConstraintType: type, ConstraintDate: date }))
+                    this.fill(task.UID);
+            },
+            (type, text) => {
+                if (type <= 1) return "";
+                if (String(text || "").trim() === "")
+                    return Locale.Text("A constraint of that type needs a date.");
+                const moment = parseMoment(text, startTime());
+                return /^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$/.test(moment)
+                     ? "" : Locale.Text("{0} is not a date -- try 2026-10-01 08:00", text);
+            });
+    }
+
     /* Read the panel, validate against a scratch record so a bad value cannot
      * half-apply, then one command -- one undo for one Apply. */
     applyFields() {
         const task = this.selectedTask();
         if (!task) return false;
 
-        /* Notes, hyperlinks and custom fields belong to any task, a summary
-         * included. */
-        const values = { Name: this.TxtName.Text, Notes: this.TxtNotes.Text,
-                         Hyperlink: this.TxtLinkText.Text,
-                         HyperlinkAddress: this.TxtLinkAddress.Text,
-                         HyperlinkSubAddress: this.TxtLinkSub.Text };
-
-        const attrAt = this.CmbAttr.Index;
-        if (attrAt >= 0 && this.attrChoices[attrAt]) {
-            const fieldID = this.attrChoices[attrAt];
-            const kept = task.Attributes.filter((a) => a.FieldID !== fieldID);
-            if (this.TxtAttr.Text !== "")
-                kept.push(new MspFieldValue({ FieldID: fieldID,
-                                              Value: this.TxtAttr.Text,
-                                              ValueGUID: this.edit.entryID(fieldID,
-                                                                           this.TxtAttr.Text) }));
-            if (JSON.stringify(task.Attributes) !== JSON.stringify(kept))
-                values.Attributes = kept;
-        }
-
-        /* A summary is what Project derives it from: only the name is read. */
-        if (!task.Summary) {
-            const duration = parseDuration(this.TxtDuration.Text, task.DurationFormat,
-                                            this.unit, this.holder.project);
-            if (duration === null) {
-                Message.Error("{0} is not a duration -- try 2d, 8h or 30m",
-                              this.TxtDuration.Text);
-                return false;
-            }
-            values.Start           = parseMoment(this.TxtStart.Text);
-            values.Finish          = parseMoment(this.TxtFinish.Text);
-            values.Duration        = mspdiDuration(duration.minutes);
-            values.DurationFormat  = duration.format;
-            values.Type            = Math.max(this.CmbTaskType.Index, 0);
-            values.CalendarUID     = this.workCalChoices[this.CmbTaskCalendar.Index] !== undefined
-                                   ? this.workCalChoices[this.CmbTaskCalendar.Index] : -1;
-            values.Milestone       = this.ChkMilestone.Active;
-            values.Manual          = this.ChkManual.Active;
-            values.EffortDriven    = this.ChkEffortDriven.Active;
-            values.Estimated       = this.ChkEstimated.Active;
-            values.PercentComplete = Math.round(this.SpinPercent.Value);
-
-            /* A percentage moves the actual dates the way Project reads them:
-             * started above zero, finished at a hundred, and back to none. */
-            const start = values.Start || task.Start;
-            if (values.PercentComplete > 0 && task.ActualStart === "")
-                values.ActualStart = start;
-            if (values.PercentComplete >= 100) {
-                if (values.ActualStart === "") values.ActualStart = start;
-                values.ActualFinish = values.Finish || task.Finish;
-            }
-            if (values.PercentComplete === 0) {
-                values.ActualStart  = "";
-                values.ActualFinish = "";
-            }
-
-            /* ASAP and ALAP carry no date; the rest need one. */
-            values.ConstraintType  = Math.max(this.CmbConstraint.Index, 0);
-            values.ConstraintDate  = values.ConstraintType > 1
-                                   ? parseMoment(this.TxtConstraint.Text) : "";
-            values.Deadline        = parseMoment(this.TxtDeadline.Text);
-        }
-
-        try {
-            const probe = new MspTask();
-            for (const name in values) probe[name] = values[name];
-        } catch (e) {
-            Message.Error("Cannot apply: {0}", e.message);
-            return false;
-        }
+        /* One read for the panel and the dialog: the same controls by name,
+         * the same refusals, the same values. */
+        const values = taskFormValues(this, task, this.holder.project, this.unit);
+        if (!values) return false;
 
         this.edit.setFields(task.UID, values);
         this.fill(task.UID);
@@ -2454,6 +2721,19 @@ export class MainForm extends Form {
     }
 
     BtnApply_Click() { this.applyFields(); }
+
+    /* **Información de la tarea**, the door Project opens with a double click:
+     * the panel's Task and Advanced pages over the window, OK writing them as
+     * one command like Apply. Links and assignments stay in the panel. */
+    ActTaskInfo_Execute() {
+        const task = this.selectedTask();
+        if (!task) return null;
+
+        return TaskForm.open(this.holder.project, task, this.unit, (values) => {
+            this.edit.setFields(task.UID, values);
+            this.fill(task.UID);
+        });
+    }
 
     /* **Apply is the panel's and not a page's**: it sits under the tabs, out
      * of what scrolls, and means something only for the two pages that edit
@@ -3237,9 +3517,10 @@ export class MainForm extends Form {
                     { Duration: "PT8H0M0S", EffortDriven: false, Type: 0 }, 1, 2),
                     480) && ok;
 
-            /* And what the pass derives: two units carrying eight hours each
-             * make an eight-hour task, while Fixed Duration keeps the
-             * duration and doubles the work. */
+            /* And the direction the pass keeps: **the duration is the input**
+             * -- two units at a hundred per cent over a sixteen-hour task
+             * make thirty-two hours of work -- while Fixed Work is the one
+             * that keeps the work and derives the duration. */
             const w = projectOf([task(1, "PT16H0M0S")]);
             w.Resources = [
                 new MspResource({ UID: 1, Name: "Ana", Type: 1,
@@ -3254,13 +3535,17 @@ export class MainForm extends Form {
                                     Units: 1, Work: "PT8H0M0S" }),
             ];
             w.Tasks[0].Type = 0;
-            ok = eq("work derives the duration",
-                    workDuration(w, w.Tasks[0], 960), 480) && ok;
-            ok = eq("...and the work is in step", w.Tasks[0].Work, "PT16H0M0S") && ok;
+            ok = eq("the duration keeps its own",
+                    workDuration(w, w.Tasks[0], 960), 960) && ok;
+            ok = eq("...and the work grows to match",
+                    w.Tasks[0].Work, "PT32H0M0S") && ok;
             w.Tasks[0].Type = 1;
-            ok = eq("duration keeps its own",
+            ok = eq("fixed duration keeps it too",
                     workDuration(w, w.Tasks[0], 240), 240) && ok;
             ok = eq("...and derives the work", w.Tasks[0].Work, "PT8H0M0S") && ok;
+            w.Tasks[0].Type = 2;
+            ok = eq("fixed work pins the duration",
+                    workDuration(w, w.Tasks[0], 120), 240) && ok;
 
             /* The backward pass: the chain is critical and the parallel task
              * has the Wednesday to slip -- the Tuesday is the holiday. */
@@ -4211,6 +4496,11 @@ export class MainForm extends Form {
              * up again each time instead of once at the start. */
             this.settingsReady = false;
             this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
+            /* **Este check corre en el modo manual de Project a propósito**:
+             * es sobre los comandos, y sus aserciones se escribieron donde nada
+             * se recalcula solo. El recálculo tiene su bloque en `checkEdit`,
+             * que prende el automático alrededor de sus propias ediciones. */
+            this.edit.auto = false;
             const tasks = () => this.holder.project.Tasks.length;
             const level = (uid) => taskOf(this.holder.project, uid).OutlineLevel;
             const pick  = (uid) => {
@@ -4621,6 +4911,12 @@ export class MainForm extends Form {
         try {
             this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             const edit = this.edit;
+
+            /* **La geometría se mide en el modo manual**: las fechas que este
+             * check escribe son el fixture del puntero -- dónde cae una barra,
+             * dónde el extremo de un vínculo -- y con el automático encendido el
+             * pase las movería y los puntos medidos ya no serían los mismos. */
+            edit.auto = false;
 
             /* Where the first task's bar is, from the chart's own geometry --
              * which is the table's row height and heading, so the y a pointer
@@ -5828,6 +6124,83 @@ export class MainForm extends Form {
                             () => {}).Close();
             SettingsForm.open(() => {}).Close();
 
+            /* **El check corre en el modo manual de Project a propósito**: es
+             * sobre los comandos y el ida y vuelta -- y sus goldens se
+             * escribieron donde una fecha tipeada se queda quieta --, así que
+             * el automático se prende solo en el bloque del recálculo, que
+             * deja el plan y el modo como estaban. */
+            edit.auto = false;
+
+            /* **El recálculo, que es lo que Project hace solo**: con el
+             * automático encendido -- el modo con el que la app nace -- una
+             * duración tipeada mueve el fin y la cadena con ella, y una fecha
+             * tipeada deja la restricción que la sostiene; apagado, la fecha
+             * queda como se tipeó hasta F5, que es el modo manual. */
+            const colsWere  = this.columns.slice();
+            const autoWasR  = edit.auto;
+            const buildWas  = { Duration: edit.task(2).Duration,
+                                Start: edit.task(2).Start,
+                                Finish: edit.task(2).Finish,
+                                ConstraintType: edit.task(2).ConstraintType || 0,
+                                ConstraintDate: edit.task(2).ConstraintDate || "" };
+            this.setColumns(["duration", "start", "finish"]);
+            const atDurR    = 1 + this.visibleColumns().indexOf("duration");
+            const atStartR  = 1 + this.visibleColumns().indexOf("start");
+            const atFinishR = 1 + this.visibleColumns().indexOf("finish");
+            edit.auto = true;
+
+            /* La duración por la puerta de la celda: Build espera a Analyse, el
+             * comienzo no se mueve y el fin se corre tres días de trabajo. */
+            ok = this.Tasks.Emit("CellEdit", "2", atDurR, "3d") !== false &&
+                 edit.task(2).Duration === "PT24H0M0S" &&
+                 edit.task(2).Start === buildWas.Start &&
+                 edit.task(2).Finish === "2026-09-07T17:00:00" && ok;
+            print(`edit recalc duration=PT24H0M0S ` +
+                  `finish=${shortDate(edit.task(2).Finish)}`);
+            edit.undo();
+            this.fill(2);
+
+            /* Una fecha tipeada queda -- Inicio no antes de, con su fecha -- y
+             * el pase la respeta; un fin tipeado es Fin no antes de. */
+            ok = this.Tasks.Emit("CellEdit", "2", atStartR, "2026-09-10") !== false &&
+                 edit.task(2).ConstraintType === 4 &&
+                 edit.task(2).ConstraintDate === "2026-09-10T08:00:00" &&
+                 edit.task(2).Start === "2026-09-10T08:00:00" && ok;
+            print(`edit recalc start pin=${edit.task(2).ConstraintType}`);
+            edit.undo();
+            this.fill(2);
+            ok = this.Tasks.Emit("CellEdit", "2", atFinishR, "2026-09-30") !== false &&
+                 edit.task(2).ConstraintType === 6 &&
+                 edit.task(2).ConstraintDate === "2026-09-30T17:00:00" &&
+                 edit.task(2).Finish === "2026-09-30T17:00:00" && ok;
+            print(`edit recalc finish pin=${edit.task(2).ConstraintType} ` +
+                  `finish=${shortDate(edit.task(2).Finish)}`);
+            edit.undo();
+            this.fill(2);
+
+            /* Apagado -- el modo manual -- la duración queda como se tipeó y F5
+             * la lleva. */
+            edit.auto = false;
+            ok = this.Tasks.Emit("CellEdit", "2", atDurR, "5d") !== false &&
+                 edit.task(2).Duration === "PT40H0M0S" &&
+                 edit.task(2).Finish === buildWas.Finish && ok;
+            const recalcRun = edit.recalculate();
+            ok = recalcRun.changed &&
+                 edit.task(2).Finish === "2026-09-09T17:00:00" && ok;
+            print(`edit manual recalc changed=${recalcRun.changed} ` +
+                  `finish=${shortDate(edit.task(2).Finish)}`);
+            edit.undo();
+            edit.undo();
+
+            edit.auto = autoWasR;
+            this.setColumns(colsWere);
+            this.fill(2);
+            ok = edit.task(2).Duration === buildWas.Duration &&
+                 edit.task(2).Start === buildWas.Start &&
+                 edit.task(2).Finish === buildWas.Finish &&
+                 (edit.task(2).ConstraintType || 0) === buildWas.ConstraintType &&
+                 (edit.task(2).ConstraintDate || "") === buildWas.ConstraintDate && ok;
+
             /* **The project dialog carries what the side panel's Project tab
              * carried** -- the plan's default calendar and its total -- so it is
              * opened here and read, because a control that moved is a control
@@ -6071,6 +6444,24 @@ export class MainForm extends Form {
             ok = this.applyFields() &&
                  edit.task(2).Duration === "PT7H0M0S" && ok;
             print(`edit minutes a day: 1d -> ${edit.task(2).Duration}`);
+
+            /* **Y con el automático encendido la duración tipeada no se
+             * revierte**: la tarea lleva una asignación, y dos días escritos
+             * son dos días de duración -- catorce horas de trabajo -- y no los
+             * que el trabajo viejo decía. Es la dirección en que Project edita,
+             * y el paso que la aplica es el mismo `commit`. */
+            this.edit.auto = true;
+            this.TxtDuration.Text = "2d";
+            ok = this.applyFields() &&
+                 edit.task(2).Duration === "PT14H0M0S" &&
+                 edit.task(2).Work === "PT28H0M0S" && ok;
+            print(`edit minutes a day auto: 2d -> ${edit.task(2).Duration} ` +
+                  `work=${edit.task(2).Work}`);
+            edit.undo();
+            this.fill(2);
+            this.edit.auto = false;
+            ok = edit.task(2).Duration === "PT7H0M0S" &&
+                 edit.task(2).Work === "PT8H0M0S" && ok;
 
             /* A calendar edited whole: Sunday works a morning from now on. */
             const cal = edit.calendar(1);
@@ -6343,6 +6734,292 @@ export class MainForm extends Form {
                  this.Tasks.Columns.length === COLUMNS.length + 2 &&
                  !item(this.Tasks_HeaderClick(2, 3, false, false),
                        "MnuColShowAll").enabled && ok;
+
+            /* **The grid's own road.** Each column declares the editor its
+             * values need, a summary's cells are shut where they are drawn, and
+             * an edit is the panel's own commands -- one field, one undo.
+             * The gesture is driven through `EditCell`/`EndEdit` where the
+             * editor is the point (a `Number`, a `Check`, the dialog a
+             * `Custom` cell opens) and through `Emit` where what is asserted is
+             * how a text maps to the model (the value kinds, the refusals). */
+            this.setColumns(["duration", "start", "percent", "milestone",
+                             "priority", "calendar", "type", "constraint",
+                             "notes", fieldColumnID("188743731")]);
+            const atDur   = 1 + this.visibleColumns().indexOf("duration");
+            const atStart = 1 + this.visibleColumns().indexOf("start");
+            const atPct   = 1 + this.visibleColumns().indexOf("percent");
+            const atMile  = 1 + this.visibleColumns().indexOf("milestone");
+            const atPrio  = 1 + this.visibleColumns().indexOf("priority");
+            const atCal   = 1 + this.visibleColumns().indexOf("calendar");
+            const atType  = 1 + this.visibleColumns().indexOf("type");
+            const atCon   = 1 + this.visibleColumns().indexOf("constraint");
+            const atNotes = 1 + this.visibleColumns().indexOf("notes");
+            const atField = 1 + this.visibleColumns().indexOf(fieldColumnID("188743731"));
+            const specOf  = (at) => this.Tasks.Columns[at].Editor;
+            this.fill(2);
+
+            ok = specOf(atDur) === "Text" &&
+                 specOf(atStart) === "Date" &&
+                 specOf(atPct).Kind === "Number" && specOf(atPct).Max === 100 &&
+                 specOf(atMile).Kind === "Check" && specOf(atMile).ActiveText === "◆" &&
+                 specOf(atCal) === "Combo" && specOf(atType) === "Combo" &&
+                 specOf(atCon) === "Custom" && ok;
+            print(`edit cell editors pct=${specOf(atPct).Kind} ` +
+                  `start=${specOf(atStart)} mile=${specOf(atMile).Kind} ` +
+                  `cal=${specOf(atCal)} con=${specOf(atCon)}`);
+
+            /* **A summary's cells are shut, not refused after the typing**:
+             * no editor opens at all, and the field does not move. */
+            const wasStart = edit.task(1).Start;
+            ok = this.Tasks.EditCell("1", atStart) === false &&
+                 this.Tasks.EditCell("1", atDur) === false &&
+                 edit.task(1).Start === wasStart && ok;
+            print(`edit cell summary shut`);
+
+            /* A Number: the spin opens on `40%`, answers `40`, and the model
+             * follows -- one command, one undo. */
+            const wasPct = edit.task(2).PercentComplete;
+            this.Tasks.SetCell("2", atPct, "40%");
+            ok = this.Tasks.EditCell("2", atPct) === true &&
+                 this.Tasks.EndEdit() === true &&
+                 edit.task(2).PercentComplete === 40 && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).PercentComplete === wasPct && ok;
+            print(`edit cell percent ${wasPct} -> 40 -> undone=` +
+                  `${edit.task(2).PercentComplete}`);
+
+            /* A Check: opening it is turning it, and its text is the flag. */
+            const wasMile = edit.task(2).Milestone;
+            ok = this.Tasks.EditCell("2", atMile) === true &&
+                 edit.task(2).Milestone === !wasMile && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Milestone === wasMile && ok;
+            print(`edit cell milestone ${wasMile} -> ${!wasMile}`);
+
+            /* A field: the text, one command, and a word where a duration goes
+             * is refused with the cell put back. The `3d` also proves the
+             * answer is the canonical spelling, not the text -- the cell is
+             * handed one in its own unit. */
+            const wasDuration = edit.task(2).Duration;
+            /* A day is the plan's own `MinutesPerDay` -- the check edits it
+             * earlier, so the arithmetic is read from the project. */
+            const threeDays = mspdiDuration(3 * (this.holder.project.MinutesPerDay || 480));
+            const cellDur  = this.Tasks.Emit("CellEdit", "2", atDur, "3d");
+            ok = cellDur !== false && edit.task(2).Duration === threeDays && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Duration === wasDuration && ok;
+            print(`edit cell duration=${wasDuration} -> ${threeDays} -> undone=` +
+                  `${edit.task(2).Duration}`);
+
+            ok = this.Tasks.Emit("CellEdit", "2", atDur, "3x") === false &&
+                 edit.task(2).Duration === wasDuration && ok;
+            print(`edit cell duration refused`);
+
+            /* A Date: a bare day -- what the calendar picks -- takes the plan's
+             * own start time, and a word is refused. */
+            const wasTaskStart = edit.task(2).Start;
+            ok = this.Tasks.Emit("CellEdit", "2", atStart, "2026-09-10") !== false &&
+                 edit.task(2).Start === "2026-09-10T08:00:00" && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Start === wasTaskStart && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atStart, "soon") === false &&
+                 edit.task(2).Start === wasTaskStart && ok;
+            print(`edit cell start bare day=${wasTaskStart} -> undone=` +
+                  `${edit.task(2).Start}`);
+
+            /* The lists a `CellEditor` answers: the plan's calendars, the three
+             * task types -- and a custom field is a field unless the file says
+             * its values are a list. */
+            const calItems = this.Tasks_CellEditor("2", atCal);
+            ok = calItems && calItems.Items[0] === Locale.Text("Project default") &&
+                 calItems.Items.indexOf("Standard") > 0 && ok;
+            const typeItems = this.Tasks_CellEditor("2", atType);
+            ok = typeItems && typeItems.Items.length === 3 &&
+                 typeItems.Items[0] === "Fixed units" && ok;
+            ok = this.Tasks_CellEditor("2", atField) === undefined && ok;
+            print(`edit cell lists cal=${calItems ? calItems.Items.join("|") : "-"} ` +
+                  `type=${typeItems ? typeItems.Items.length : "-"}`);
+
+            ok = this.Tasks.Emit("CellEdit", "2", atCal, Locale.Text("Project default")) !== false &&
+                 edit.task(2).CalendarUID === -1 && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).CalendarUID === 1 && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atCal, "Nope") === false && ok;
+
+            ok = this.Tasks.Emit("CellEdit", "2", atType, "Fixed work") !== false &&
+                 edit.task(2).Type === 2 && ok;
+            edit.undo();
+            this.fill(2);
+            ok = this.Tasks.Emit("CellEdit", "2", atType, "Fixed") === false && ok;
+
+            /* The constraint's dialog: opened by the cell, one command on
+             * accept, and the check that keeps it open while the date it needs
+             * is missing. The dialog is asked through a spy here so the check
+             * drives the wiring and not a window. */
+            let askedCon = null;
+            const realConstraint = ConstraintForm.open;
+            ConstraintForm.open = (names, type, date, accept, clean) => {
+                askedCon = { names, type, date, accept, clean };
+            };
+            ok = this.Tasks_CellEditor("2", atCon) === undefined && !!askedCon && ok;
+            ConstraintForm.open = realConstraint;
+            ok = askedCon.names.length === 8 && askedCon.type === 0 && ok;
+            ok = askedCon.clean(2, "") !== "" && askedCon.clean(0, "") === "" &&
+                 askedCon.clean(2, "2026-09-10") === "" && ok;
+            askedCon.accept(2, "2026-09-10 08:00");
+            ok = edit.task(2).ConstraintType === 2 &&
+                 edit.task(2).ConstraintDate === "2026-09-10T08:00:00" && ok;
+            edit.undo();
+            this.fill(2);
+            print(`edit cell constraint dialog type=${edit.task(2).ConstraintType} ` +
+                  `back=${JSON.stringify(edit.task(2).ConstraintDate)}`);
+
+            /* The dialog itself builds and closes, like every other one. */
+            ConstraintForm.open(this.CmbConstraint.Items, 4, "2026-09-04 08:00",
+                                () => {}, () => "").Close();
+
+            const cellNotes = this.Tasks.Emit("CellEdit", "2", atNotes, "Desde la celda");
+            ok = cellNotes !== false && edit.task(2).Notes === "Desde la celda" && ok;
+            edit.undo();
+            this.fill(2);
+            print(`edit cell notes=${cellNotes !== false}`);
+
+            /* The cell of a custom field, through the command that owns the
+             * `ValueGUID` pointer. */
+            const cellAttr = this.Tasks.Emit("CellEdit", "2", atField, "9001");
+            ok = cellAttr !== false && attrOf(edit.task(2), "188743731") === "9001" && ok;
+            edit.undo();
+            this.fill(2);
+            ok = attrOf(edit.task(2), "188743731") === "4821" && ok;
+            print(`edit cell attr back=${attrOf(edit.task(2), "188743731")}`);
+
+            const cellPrio = this.Tasks.Emit("CellEdit", "2", atPrio, "600");
+            ok = cellPrio !== false && edit.task(2).Priority === 600 && ok;
+            edit.undo();
+            this.fill(2);
+            print(`edit cell priority=${cellPrio !== false}`);
+
+            /* A summary's name is the user's, in the cell like anywhere. */
+            const cellName = this.Tasks.Emit("CellEdit", "1", 0, "Analizado");
+            ok = cellName !== false && edit.task(1).Name === "Analizado" && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(1).Name === "Analyse II" && ok;
+            print(`edit cell name back=${edit.task(1).Name}`);
+
+            /* **Información de la tarea**: the double click's door -- the
+             * panel's own fields over the window, OK writing them as one
+             * command -- and the summary's derived fields greyed there too. */
+            this.fill(2);
+            const dlg = this.Tasks_Activate();
+            ok = !!dlg && dlg.TxtName.Text === edit.task(2).Name &&
+                 dlg.TxtDuration.Text === durationText(edit.task(2), this.holder.project) &&
+                 dlg.CmbTaskCalendar.Items[0] === Locale.Text("Project default") && ok;
+            const wasDialogName = edit.task(2).Name;
+            const wasDialogDuration = edit.task(2).Duration;
+            dlg.TxtName.Text = "From the dialog";
+            dlg.TxtDuration.Text = "2d";
+            dlg.BtnOk_Click();
+            const twoDays = mspdiDuration(2 * (this.holder.project.MinutesPerDay || 480));
+            ok = edit.task(2).Name === "From the dialog" &&
+                 edit.task(2).Duration === twoDays && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Name === wasDialogName &&
+                 edit.task(2).Duration === wasDialogDuration && ok;
+            print(`edit dialog name=${edit.task(2).Name} duration=${edit.task(2).Duration}`);
+
+            /* The dialog's custom field, through the door and its OK: one
+             * command, the `ValueGUID` pointer included. */
+            const dlAttr = this.Tasks_Activate();
+            dlAttr.TxtAttr.Text = "9001";
+            dlAttr.BtnOk_Click();
+            ok = attrOf(edit.task(2), "188743731") === "9001" && ok;
+            edit.undo();
+            this.fill(2);
+            ok = attrOf(edit.task(2), "188743731") === "4821" && ok;
+            print(`edit dialog attr back=${attrOf(edit.task(2), "188743731")}`);
+
+            /* A summary's dates, duration and completion are greyed in the
+             * dialog, as the panel greys them: only the name is the user's. */
+            this.fill(1);
+            const dlSum = this.Tasks_Activate();
+            ok = !!dlSum && dlSum.TxtName.Enabled && !dlSum.TxtStart.Enabled &&
+                 !dlSum.TxtDuration.Enabled && !dlSum.ChkMilestone.Enabled && ok;
+            dlSum.Close();
+            print(`edit dialog summary name=${dlSum.TxtName.Enabled} ` +
+                  `start=${dlSum.TxtStart.Enabled}`);
+
+            /* **Predecessors as text**: MSPDI's own spelling, parsed whole --
+             * `3FS+2d, 7SS` -- with one command for the list and the engine's
+             * refusals (a task that is not there, itself, a loop) putting the
+             * cell back. */
+            this.setColumns(["duration", "predecessors"]);
+            const atPred = 1 + this.visibleColumns().indexOf("predecessors");
+            this.fill(2);
+            ok = this.Tasks.Row("2")[atPred] === "1" && ok;   // the fixture's link
+            const predDays = this.holder.project.MinutesPerDay || 480;
+            ok = this.Tasks.Emit("CellEdit", "2", atPred, "1SS+2d") !== false &&
+                 edit.task(2).Links.length === 1 &&
+                 edit.task(2).Links[0].Type === 3 &&
+                 edit.task(2).Links[0].LinkLag === 2 * predDays * 10 && ok;
+            this.fill(2);
+            ok = this.Tasks.Row("2")[atPred] === "1SS+2d" && ok;
+            edit.undo();
+            this.fill(2);
+            ok = this.Tasks.Row("2")[atPred] === "1" && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atPred, "9") === false && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atPred, "2FS") === false && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atPred, "x") === false && ok;
+            ok = this.Tasks.Emit("CellEdit", "2", atPred, "") !== false &&
+                 edit.task(2).Links.length === 0 && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Links.length === 1 &&
+                 this.Tasks.Row("2")[atPred] === "1" && ok;
+            print(`edit predecessors text=${this.Tasks.Row("2")[atPred]} ` +
+                  `links=${edit.task(2).Links.length}`);
+
+            /* **The entry bar**: the current cell's whole text, and the same
+             * command typed from there; it follows the row, shows a summary's
+             * derived cell without editing it, and Escape puts the value
+             * back. */
+            this.fill(2);
+            this.Tasks.Emit("CellEditor", "2", atDur);
+            ok = this.LblEntry.Text === Locale.Text("Duration") &&
+                 this.TxtEntry.Text === this.Tasks.Cell("2", atDur) &&
+                 this.TxtEntry.Enabled && ok;
+            this.TxtEntry.Text = "3d";
+            ok = this.TxtEntry_Activate() !== false &&
+                 edit.task(2).Duration === threeDays && ok;
+            edit.undo();
+            this.fill(2);
+            ok = this.TxtEntry.Text === this.Tasks.Cell("2", atDur) && ok;
+            this.fill(1);
+            ok = this.LblEntry.Text === Locale.Text("Duration") &&
+                 !this.TxtEntry.Enabled && ok;
+            this.TxtEntry.Text = "9d";
+            this.TxtEntry_KeyPress("Escape", false, false, false);
+            ok = this.TxtEntry.Text === this.Tasks.Cell("1", atDur) && ok;
+            print(`edit entry bar "${this.LblEntry.Text}"=` +
+                  `"${this.TxtEntry.Text}" enabled=${this.TxtEntry.Enabled}`);
+
+            /* **The bar's switch**: hidden until asked for -- Project 2013's
+             * default -- and remembered. The check reads the setting first so
+             * that toggling here leaves it exactly where it was. */
+            const entryShown = Settings.Get("bintana-project.entrybar", false);
+            this.MnuEntry_Click(true);
+            ok = this.EntryBar.Visible && ok;
+            this.MnuEntry_Click(false);
+            ok = !this.EntryBar.Visible && ok;
+            this.MnuEntry_Click(entryShown);
+            ok = this.EntryBar.Visible === entryShown && ok;
+
             this.showColumns(remembered);
             print(`edit columns=${this.Tasks.Columns.length} ` +
                   `row=${this.Tasks.Row("2").length}`);
@@ -6420,8 +7097,9 @@ export class MainForm extends Form {
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",
                         "ActLevel3",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
+                        "ActTaskInfo",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
-                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",
+                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuEntry", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
                         "MnuColLeft", "MnuColRight",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",
@@ -6435,7 +7113,8 @@ export class MainForm extends Form {
                      "TxtFilter_Change", "CmbStatus_Select", "SldZoom_Change", "Tasks_KeyPress",
                      "TxtFilter_IconClick",
                      "Gantt_MouseDown", "Gantt_MouseMove", "Gantt_MouseLeave", "Gantt_MouseUp", "Gantt_KeyPress",
-                     "Tasks_Activate", "Gantt_DblClick"]);
+                     "Tasks_Activate", "Tasks_CellEdit", "Tasks_CellEditor", "Gantt_DblClick",
+                     "TxtEntry_Activate", "TxtEntry_KeyPress"]);
 
         let ok = true;
         for (const member of wanted) {
@@ -6701,26 +7380,44 @@ class CallLog {
     texts() { return this.calls.filter((c) => c.name === "Text").map((c) => c.args[0]); }
 }
 
+/* Each column names the editor its cells open: a field, a number, a date, a
+ * tick, a list -- or `Custom`, which opens the app's own dialog. **Duration
+ * stays text**: `2d`, `8h` and `3ed` are spellings a `Number` would eat (its
+ * spin reads the digits and drops the unit), and a duration whose unit is gone
+ * is a wrong number. */
 const COLUMNS = [
-    { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right" },
-    { id: "start",      Text: "Start",            Width: 130 },
-    { id: "finish",     Text: "Finish",           Width: 130 },
-    { id: "percent",    Text: "Percent complete", Width: 70,  Alignment: "Right" },
+    { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right",
+      Editor: "Text" },
+    { id: "start",      Text: "Start",            Width: 130, Editor: "Date" },
+    { id: "finish",     Text: "Finish",           Width: 130, Editor: "Date" },
+    { id: "predecessors", Text: "Predecessors",   Width: 130, Editor: "Text" },
+    { id: "percent",    Text: "Percent complete", Width: 70,  Alignment: "Right",
+      Editor: { Kind: "Number", Min: 0, Max: 100, Step: 1 } },
     { id: "critical",   Text: "Critical",         Width: 60,  Alignment: "Center" },
     { id: "slack",      Text: "Slack",            Width: 84,  Alignment: "Right" },
     { id: "variance",  Text: "Variance",        Width: 84,  Alignment: "Right" },
-    { id: "milestone",  Text: "Milestone",        Width: 60,  Alignment: "Center" },
+    { id: "milestone",  Text: "Milestone",        Width: 60,  Alignment: "Center",
+      Editor: { Kind: "Check", ActiveText: "◆", InactiveText: "" } },
     { id: "work",       Text: "Work",             Width: 84,  Alignment: "Right" },
     { id: "cost",       Text: "Cost",             Width: 80,  Alignment: "Right" },
     { id: "wbs",        Text: "WBS",              Width: 80 },
-    { id: "priority",   Text: "Priority",         Width: 60,  Alignment: "Right" },
-    { id: "constraint", Text: "Constraint",       Width: 110 },
-    { id: "deadline",   Text: "Deadline",         Width: 130 },
-    { id: "calendar",   Text: "Calendar",         Width: 100 },
-    { id: "type",       Text: "Task type",        Width: 100 },
-    { id: "notes",      Text: "Notes",            Width: 160 },
+    { id: "priority",   Text: "Priority",         Width: 60,  Alignment: "Right",
+      Editor: { Kind: "Number", Min: 0, Max: 1000, Step: 1 } },
+    { id: "constraint", Text: "Constraint",       Width: 110, Editor: "Custom" },
+    { id: "deadline",   Text: "Deadline",         Width: 130, Editor: "Date" },
+    { id: "calendar",   Text: "Calendar",         Width: 100, Editor: "Combo" },
+    { id: "type",       Text: "Task type",        Width: 100, Editor: "Combo" },
+    { id: "notes",      Text: "Notes",            Width: 160, Editor: "Text" },
     { id: "link",       Text: "Hyperlink",        Width: 160, Link: true },
 ];
+
+/* What a summary takes from its children. Its cells are shut where they are
+ * drawn -- `SetEditable(key, column, false)`, so they read dim and open
+ * nothing -- while the same columns are fields on every other row; and
+ * `cellValues` refuses the same list as a backstop. A summary's calendar is
+ * its own, as the panel has it. */
+const SUMMARY_SHUT = ["duration", "start", "finish", "percent", "milestone",
+                      "constraint", "deadline", "type"];
 
 /* A custom-field column: one per field the plan defines, and its id carries
  * the `FieldID` -- so the choice survives a file swap and a field that is not
@@ -6830,6 +7527,38 @@ function minutesText(minutes, task, project) {
 }
 
 /*
+ * **A task's links as MSPDI spells them**: `3FS+2d, 7SS` -- the predecessor's
+ * UID, the type's two letters when it is not finish-to-start (or when there is
+ * a lag), and the lag with its unit. A plain `3` is the link a reader assumes.
+ */
+function linksText(task, project) {
+    const parts = [];
+
+    for (const link of task.Links) {
+        const kind = linkKind(link);
+        const lag  = linkLagText(link, project);
+        let part   = String(link.PredecessorUID);
+
+        if (kind !== 1 || lag) part += LINK_NAMES[kind];
+        if (lag) part += lag;
+        parts.push(part);
+    }
+    return parts.join(", ");
+}
+
+/* The lag in the link's own unit -- `+2d`, `-4h`, `+30m` -- with the sign in
+ * the reading, as the slack's is. */
+function linkLagText(link, project) {
+    if (!link.LinkLag) return "";
+
+    const format  = durationFormat(link.LagFormat || 7, project);
+    const minutes = link.LinkLag / TENTHS;
+    const n = Math.round(Math.abs(minutes) / format.per * 100) / 100;
+
+    return `${minutes < 0 ? "-" : "+"}${n}${format.elapsed ? "e" : ""}${format.unit}`;
+}
+
+/*
  * The slack, in the task's own unit.
  *
  * **The sentinel is a blank and not a zero.** `NO_MINUTES` means the pass never
@@ -6894,7 +7623,7 @@ export function parseMoment(text, time) {
  * -- what the field itself writes on an estimated duration -- is read and
  * left to the Estimated checkbox, which is the editor for that flag.
  */
-function parseDuration(text, format, unit, project) {
+export function parseDuration(text, format, unit, project) {
     const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*\??\s*$/.exec(String(text || ""));
     if (!m) return null;
 

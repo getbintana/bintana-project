@@ -179,6 +179,14 @@
             "HAlign": "Start",
             "Text": "Hyperlink"
           }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColPredecessors",
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Predecessors"
+          }
         }
       ]
     },

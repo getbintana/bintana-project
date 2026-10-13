@@ -25,9 +25,10 @@ export class Edit {
     at     = 0;
     saved  = 0;
 
-    /* With `auto` on, every accepted command brings the schedule up to date
-     * before the snapshot, so one edit is still one undo. Off by default:
-     * a date typed by hand is the user's until they ask. */
+    /* With `auto` on -- the default, as it is in Project -- every accepted
+     * command brings the schedule up to date before the snapshot, so one edit
+     * is still one undo. Off, a date typed by hand is the user's until they
+     * ask (`recalculate`, F5), which is Project's manual mode. */
     auto = false;
 
     /* **The highest UID each kind ever had while this document was open**,
@@ -470,20 +471,12 @@ export class Edit {
 
     /* The definition a custom field has, or null: what tells a list from a
      * free text, and where the entries are. */
-    fieldDef(fieldID) {
-        for (const def of this.holder.project.FieldDefs)
-            if (def.FieldID === fieldID) return def;
-        return null;
-    }
+    fieldDef(fieldID) { return fieldDefOf(this.holder.project, fieldID); }
 
     /* The ID of the list entry that carries that text, as text, or "" -- the
      * pointer a task value keeps to the entry it came from. */
     entryID(fieldID, value) {
-        const def = this.fieldDef(fieldID);
-        if (!def) return "";
-        for (const entry of def.ValueList || [])
-            if (entry.Value === value) return String(entry.ID);
-        return "";
+        return fieldEntryID(this.holder.project, fieldID, value);
     }
 
     /* A custom-field value on a task: empty takes the record out, since a

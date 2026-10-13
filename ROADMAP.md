@@ -18,6 +18,39 @@ La regla de oro del documento es intocable: `SaveXml` escribe en el árbol que
 recibe y toca solo lo que los shapes modelan. Ningún comando del editor puede
 reescribir lo no modelado.
 
+## Para seguir (2026-10-13)
+
+Lo que queda de la idea inicial, en orden. El estado fino de cada pieza está en
+las notas fechadas de las fases; esto es la lista para retomar.
+
+1. **La pasada de gestos sobre la grilla** — es lo último de la paridad fina y
+   lo más delicado del runtime (pedido explícito: cuidado con performance y
+   memoria). Son gestos de puntero sobre la tabla:
+   - **Navegación**: Enter baja, Tab a la derecha, Ins agrega, Supr borra.
+     Necesita dos cosas del runtime: que `CellEdit` diga **cómo terminó** la
+     edición (Enter, Tab, el foco que se va) y una noción de **celda
+     seleccionada** —hoy el runtime resuelve "la celda" al vuelo para F2;
+     falta que la mantenga, la exponga y la resalte.
+   - **Asa de relleno**: el cuadradito de la celda seleccionada; arrastrar
+     hacia abajo copia el valor a las filas siguientes. Necesita la celda
+     seleccionada y el gesto.
+   - **Arrastrar filas** para mover/reordenar, con el indicador de inserción.
+   - **Copiar/pegar celdas**: hoy se puede a través de los editores y la barra
+     de entrada (copiar del editor abierto o de la barra, pegar en la barra o
+     en otro editor); falta pegarlo sin abrir la celda, que también sale de la
+     celda seleccionada.
+2. **`TaskForm`: pestañas de Vínculos y Recursos** — cuando las tenga, el panel
+   lateral puede retirarse (hoy sigue siendo la vista de detalle).
+3. **La aceptación**: abrir en Project el XML que sale de acá
+   (`ACEPTACION.md`, `tests/aceptacion.sh`): convierte el corpus en dorado y
+   contesta el `EffortDriven` omitido.
+4. **Decisiones abiertas** (sección *Abiertas*): qué hereda una tarea nueva sin
+   fechas; `OutlineNumber`/`WBS` al indentar.
+
+En el runtime no queda nada pendiente de esta ronda: las dos cosas conocidas
+—`Editable: true` como alias de `Editor: "Text"`, y F2 sobre un árbol abriendo
+el primer campo de la fila elegida— están documentadas en su `AGENTS.md`.
+
 ## Fases
 
 ### 0 — Higiene, corpus y harness (hecha)
@@ -86,9 +119,10 @@ necesita asignaciones: queda con recursos.
 aplicada al asignar -- effort-driven conserva el trabajo y acorta al sumar
 unidades, Fixed Duration ignora el flag, el resto conserva la duración y deja
 crecer el trabajo (`assignmentDuration`) -- y la misma identidad aplicada por
-`recalculate` a todo el plan (`workDuration`: la tarea se planifica en
-`trabajo / unidades`, o deriva el trabajo de la duración si es Fixed Duration),
-con ocho aserciones en `check-cpm`. Falta el calendario de recurso.
+`recalculate` a todo el plan (`workDuration`, **cuya dirección cambió el
+2026-10-13: solo Fixed Work deriva la duración del trabajo** -- ver *El
+recálculo* en la fase 3), con ocho aserciones en `check-cpm`. Falta el
+calendario de recurso.
 
 **La numeración de los vínculos** (2026-09-23): el motor leía `Type` 0=SS,
 2=FF, 3=SF; el XSD dice 0=FF, 1=FS, 2=SF, 3=SS, y el corpus sintético lo
@@ -235,6 +269,137 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
   atrasadas, hitos) que compone con el nombre. **Ver →** Expandir/Contraer
   todo y Mostrar nivel 1–3, y Acercar/Alejar/Ajustar (Ctrl +, Ctrl -, Ctrl 0).
   Todo es de la vista o edición estándar: el MSPDI no cambia.
+
+- **La grilla edita** (2026-10-13): la tabla deja de ser de lectura. Las
+  columnas de nombre, duración, inicio, fin, avance, prioridad, fecha límite,
+  notas y cada campo personalizado se declaran `Editable` y un `Tasks_CellEdit`
+  escribe una celda como una sola orden (`setFields`/`setFieldValue`, el mismo
+  camino que el Aplicar del panel): **un cambio es un Deshacer** y la
+  recalcular-automático es la opción que `commit` ya leía. Los valores los leen
+  los parsers del panel (`parseDuration`, `parseMoment`), lo que no se puede
+  escribir se rechaza con el motivo y la celda vuelve a lo que decía -- en un
+  resumen, fechas, duración y avance, que Project deriva de sus hijas; el `◆`
+  del hito se saca del nombre --, y un campo personalizado va por
+  `setFieldValue`, que es quien administra el `ValueGUID`. El doble clic en una
+  celda editable ya no llega a `Activate`: GtkEditableLabel se queda con el
+  gesto, así que el nombre se renombra en la celda.
+  **El runtime pagó dos cosas para que esto sea usable**: una celda editable
+  no dejaba seleccionar la fila -- la etiqueta se queda con
+  el press y la `GtkColumnView` no lo oye, así que el panel y el Gantt seguían
+  mostrando otra tarea -- (ahora un gesto en fase de captura selecciona, sin
+  reclamar la secuencia, y el clic que empieza la edición es también el que
+  elige la fila) y las columnas editables perdían la alineación (ahora
+  `gtk_editable_set_alignment` mantiene la derecha de Duración y Avance).
+  `api.json` regenerado, `tests/widgets` 5015 ok, y el gesto verificado a mano
+  con xdotool sobre Xvfb (una captura muestra el 456 a la derecha mientras se
+  edita). `check-edit` afirma el commit, el Deshacer, el rechazo y el resumen;
+  el golden no se mueve porque todo se deshace antes de guardar.
+  Queda para el runtime lo que pide otro control -- hito, restricción,
+  calendario, tipo de tarea y los campos con lista, que son casilla, combo,
+  fecha y lista, y hoy no pueden ser una celda: `Editable` es un
+  `GtkEditableLabel` --; fue un issue del runtime, ya borrado: las clases
+  llegaron el 2026-10-13 (la nota que sigue).
+
+- **La grilla completa sus editores** (2026-10-13): con las clases nuevas del
+  runtime (`Columns.Editor` con `Number`, `Date`, `Check`, `Combo` y
+  `Custom`), cada columna declara la suya: avance y prioridad son números con
+  tope; inicio, fin y fecha límite son fechas con calendario, y un día suelto
+  toma la hora por defecto del plan; el hito es una casilla (`◆`/`""`);
+  calendario y tipo de tarea son combos cuyos ítems contesta
+  `Tasks_CellEditor` por edición (los calendarios del plan, los tres tipos) --
+  y un campo personalizado con `ValueList` también, con **Ninguno** para
+  vaciarlo--; la restricción es `Custom` y abre `ConstraintForm`, tipo y fecha
+  en un diálogo porque una celda no lleva las dos (los seis tipos con fecha la
+  exigen antes de cerrar). **Un resumen ya no rechaza después del tipeo**:
+  `fill` llama `SetEditable(key, column, false)` sobre sus celdas derivadas
+  --atenuadas y sin abrir, como el panel las deja-- mientras las mismas
+  columnas son campos en las demás filas. `Tasks_CellEdit` devuelve el
+  deletreo canónico (`75%`, `3d?`, `2026-10-01 08:00`) y `momentValues`
+  completa el día suelto con la hora del plan; la duración queda `Text` a
+  propósito, porque un `Number` se come la unidad y `8h` no es `8`. El runtime
+  pagó en esta vuelta dos cosas que salieron de la revisión: **F2 no hacía
+  nada en un árbol** (el camino bajaba desde el foco por primeros hijos y
+  terminaba en la flechita del expander; y tras un commit el foco moría con
+  las filas que el store reconstruye -- ahora sube desde el foco, cae a la
+  primera celda de la fila elegida y reengancha el foco después del reporte) y
+  **un `CellEdit` con `row = -1`** cuando la fila plana se eliminaba con la
+  edición abierta (ya no se levanta). `check-edit` cubre los editores, los
+  candados y el diálogo; el golden no se mueve porque todo se deshace antes de
+  guardar.
+
+- **Información de la tarea** (2026-10-13): el doble clic de Project sobre una
+  tarea —una celda que no es un campo, o su barra en el Gantt— abre
+  `TaskForm`, un diálogo con las dos páginas del panel (Tarea y Avanzado) y
+  Aceptar/Cancelar; también está en el menú Editar y en el clic derecho de la
+  fila. **Los controles llevan los nombres del panel**, así que
+  `fillTaskForm`/`taskFormValues` (en `TaskForm.js`) sirven a los dos y las
+  puertas no pueden divergir en qué significa un campo ni en qué rechaza un
+  valor malo; el resumen queda gris también ahí. Vínculos y asignaciones
+  siguen en el panel, que pasa a ser la vista de detalles. De paso, `Edit.js`
+  delega `fieldDef`/`entryID` en `fieldDefOf`/`fieldEntryID` de `Mspdi.js`,
+  para que el diálogo no dependa de la capa de comandos, y `fillResources`
+  arma los calendarios con `workCalendarNames`, que es la única descripción de
+  esa lista. `check-edit` cubre las dos puertas —incluido el campo
+  personalizado con su `ValueGUID` y el resumen gris— y el gesto real quedó
+  verificado a mano: doble clic en la barra, pestaña Avanzado, y Aceptar
+  escribiendo la duración en la grilla y el panel.
+
+- **Predecesoras como texto** (2026-10-13): la columna **Predecesoras** (nueva
+  en el catálogo, en `Columnas…` y en el checklist) escribe los vínculos como
+  MSPDI los deletrea —`3FS+2d, 7SS`, y un `3` pelado es Fin a inicio— y los
+  parsea al editar: el UID, el tipo en dos letras y el retardo con su unidad
+  (los formatos de duración que ya existían, con días por defecto; un número
+  suelto es días). Todo va en **un comando**: `setLinks`, el mismo que el
+  botón Enlazar del panel y el arrastre del Gantt, así que las tres puertas
+  escriben la misma lista. Lo que el motor rechaza —una tarea que no existe,
+  sí misma, un lazo, un resumen con sus propias tareas— devuelve la celda con
+  el motivo (`linkProblem`), y vaciar la celda quita todos los vínculos.
+  `check-edit` cubre el texto canónico, el commit con el retardo, los rechazos
+  y el vaciado, con el golden intacto; el gesto real quedó verificado a mano
+  (la columna muestra `1SS+2d` y el Gantt redibuja el vínculo SS).
+
+- **La barra de entrada** (2026-10-13): arriba de la hoja, entre la barra de
+  herramientas y el plan, la de Project: el valor **entero** de la celda
+  actual —la última que abrió una edición— con el encabezado de la columna al
+  lado, y escribir ahí es el mismo comando que la celda (un Deshacer; Enter
+  aplica, Escape devuelve lo que la celda dice). **Sigue a la fila**: al mover
+  la selección muestra la misma columna de la tarea nueva, y una celda que no
+  se edita —las derivadas de un resumen— se lee ahí y no se deja escribir. La
+  celda se recuerda por el **id** de la columna y no por su índice, así que
+  ocultar o mover una columna no apunta la barra a otro campo. `Check-edit` la
+  cubre (valor, commit desde la barra, resumen sin editar, Escape) y
+  `check-view` sigue verde: la barra le quitó alto al cuerpo y nada más.
+  **Ver → Mostrar la barra de entrada** la prende y la apaga, y la elección se
+  recuerda (`bintana-project.entrybar`): Project 2013 en adelante la trae
+  oculta por defecto —allá se habilita en Archivo → Opciones → Mostrar— y acá
+  también nace oculta; `check-edit` cubre el interruptor y el README cuenta
+  qué se recuerda (ocho cosas ya). Ojo con el nombre: en Project la **barra de
+  fórmulas** es otra cosa —un comando que abre las Opciones—, no esta barra.
+  **Quedan para la pasada de gestos** —con la navegación— el asa de relleno y
+  arrastrar filas: son gestos de puntero sobre la grilla, la misma familia
+  delicada.
+
+- **El recálculo, como Project** (2026-10-13): el automático pasa a ser el
+  default (`bintana-project.autorecalc` y el tilde de Configuración): cambiar
+  la duración mueve el fin y la cadena, y una edición sigue siendo un Deshacer
+  porque el pase corre dentro de `commit`, antes de la foto. **Una fecha
+  tipeada a mano deja la restricción que Project deja** —Inicio no antes de
+  (4) para un inicio, Fin no antes de (6) para un fin, con la fecha tipeada—
+  en las tres puertas: la celda (`momentPin`), el panel y el diálogo
+  (`taskFormValues`) y el arrastre de barra en modo mover; el selector de
+  restricción manda cuando el comando la nombra. Y **`workDuration` cambia de
+  dirección**: solo Trabajo fijo (2) deriva la duración del trabajo; los otros
+  tipos mantienen la duración y derivan el trabajo, que es como Project edita
+  —antes, una duración tipeada en una tarea con asignaciones la revertía el
+  pase, y lo cazó `check-edit` con el automático encendido. Los checks que
+  usan fechas como fixture (`check-edit`, `check-commands`, `check-drag`) se
+  fijan en manual; `check-edit` suma el bloque del recálculo (duración → fin,
+  los dos pins, el modo manual con F5, y la duración con asignación que no se
+  revierte) y los goldens `edit-01-minimal.*` se actualizaron a propósito: dos
+  elementos, la restricción que el panel deja al tipear el inicio. A mano:
+  `3d` en Build mueve el fin al lunes 07, con el resumen y el Gantt; un inicio
+  tipeado queda (Avanzado muestra "No empezar antes del" y la fecha); dos
+  Ctrl+Z lo devuelven todo.
 
 ### 4 — Gantt interactivo
 
@@ -585,6 +750,10 @@ real). Cada uno con su trigger para reabrir.
 - **Panel de tareas**: lateral dentro de un `Split`, no modal.
 - **Resúmenes**: solo su nombre se edita; fechas, duración y avance son lo que
   Project deriva de los hijos.
+- **Recálculo**: automático por defecto, como Project, y apagable en
+  Configuración (el modo manual: las fechas quedan hasta F5). Una fecha
+  tipeada a mano deja la restricción de Project --Inicio/Fin no antes de, con
+  esa fecha-- y el pase la respeta. Ver *El recálculo* en la fase 3.
 - **Orden y filtro por columnas**: no por ahora. La tabla es el WBS en orden de
   archivo y el Gantt dibuja ese orden; ordenar rompería la adyacencia
   padre-hijo. Si se quiere, será una vista aparte.

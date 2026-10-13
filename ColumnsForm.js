@@ -12,6 +12,7 @@ const COLUMN_CHECKS = {
     duration:   "ChkColDuration",
     start:      "ChkColStart",
     finish:     "ChkColFinish",
+    predecessors: "ChkColPredecessors",
     percent:    "ChkColPercent",
     critical:   "ChkColCritical",
     slack:      "ChkColSlack",

@@ -971,6 +971,24 @@ export function attrOf(task, fieldID) {
     return task.Attributes.length ? task.Attributes[0].Value : "";
 }
 
+/* The definition a custom field has, or null: what tells a list from a free
+ * text, and where the entries are. */
+export function fieldDefOf(project, fieldID) {
+    for (const def of project ? project.FieldDefs : [])
+        if (def.FieldID === fieldID) return def;
+    return null;
+}
+
+/* The ID of the list entry that carries that text, as text, or "" -- the
+ * pointer a task value keeps to the entry it came from. */
+export function fieldEntryID(project, fieldID, value) {
+    const def = fieldDefOf(project, fieldID);
+    if (!def) return "";
+    for (const entry of def.ValueList || [])
+        if (entry.Value === value) return String(entry.ID);
+    return "";
+}
+
 /* One paragraph about a file, for the log and the status line. */
 export function summarize(project) {
     let tasks = 0, milestones = 0, withAttrs = 0, links = 0;

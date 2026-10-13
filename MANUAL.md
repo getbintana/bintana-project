@@ -50,10 +50,10 @@ recurso, o el costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 Las columnas se eligen en **Ver → Columnas…** (o en el menú de la fila,
 **Columnas…**): se agregan y se sacan con un tilde, entre duración, fechas,
-avance, crítica, holgura, desvío, hito, trabajo, costo, EDT, prioridad,
-restricción, fecha límite, calendario, tipo de tarea, notas e hipervínculo. El
-nombre es el árbol y no se va. La elección es una vista, como la escala: se
-recuerda para la próxima ventana y no toca el archivo.
+**predecesoras**, avance, crítica, holgura, desvío, hito, trabajo, costo, EDT,
+prioridad, restricción, fecha límite, calendario, tipo de tarea, notas e
+hipervínculo. El nombre es el árbol y no se va. La elección es una vista, como
+la escala: se recuerda para la próxima ventana y no toca el archivo.
 
 Los **campos personalizados** que el plan define son columnas aparte, una por
 campo y con el nombre que el archivo les da: se tildan —varios a la vez— en
@@ -87,12 +87,13 @@ cambian el orden. El orden se recuerda con las columnas, y el diálogo de
 **Columnas…** lo respeta: lo que tildás de nuevo va al final.
 
 El puntero dice qué se puede hacer donde está: una **mano abierta** sobre una
-barra (se mueve arrastrándola), la **flecha de redimensionar** en su borde
-derecho, una **cruz** si mantenés Ctrl (arrastrando se dibuja una dependencia),
-una **mano** sobre la línea de una dependencia y la mano que **agarra** en los
-puntos de la dependencia elegida. Mientras se arrastra, la mano cerrada o la
-flecha; y al dibujar una dependencia que no se puede hacer, el círculo
-tachado.
+barra (se mueve arrastrándola, y deja la misma restricción que tipear el
+inicio: *No empezar antes del*, con la fecha nueva), la **flecha de
+redimensionar** en su borde derecho, una **cruz** si mantenés Ctrl
+(arrastrando se dibuja una dependencia), una **mano** sobre la línea de una
+dependencia y la mano que **agarra** en los puntos de la dependencia elegida.
+Mientras se arrastra, la mano cerrada o la flecha; y al dibujar una dependencia
+que no se puede hacer, el círculo tachado.
 
 Al parar el puntero sobre una barra, un resumen, un hito o una línea de
 dependencia aparece un cuadro con lo que importa: la tarea y su EDT, las fechas,
@@ -139,26 +140,84 @@ las mismas filas que la tabla, así que con un filtro las barras quedan al lado
 del nombre que les corresponde —no del resto del plan— y la escala de tiempo se
 acorta a lo que se está viendo. **Exportar** sale con las mismas filas.
 
-**Clic derecho** sobre una fila abre el menú de la tarea —agregar, eliminar,
-indentar, quitar nivel, subir y bajar—, y **doble clic** (o Enter) deja el
-cursor en el nombre, listo para renombrar. En el Gantt el clic derecho también
-elige la tarea que está bajo el puntero.
+**Clic derecho** sobre una fila abre el menú de la tarea —Información de la
+tarea, agregar, eliminar, indentar, quitar nivel, subir y bajar—, y **doble
+clic** en una celda editable la deja lista para escribir ahí mismo; **F2**
+abre la primera celda editable de la fila elegida. **Doble clic sobre la
+tarea** —una celda que no es un campo, o su barra en el Gantt— abre
+**Información de la tarea**, como en Project. En el Gantt el clic derecho
+también elige la tarea que está bajo el puntero.
 
 ## Editar una tarea
 
-Seleccioná una fila y usá el panel de la derecha. La pestaña **Tarea** tiene
-lo de todos los días: nombre, inicio, fin, duración (`2d`, `8h`, `30m`, `2ed`
-para elapsed, o un número en la unidad de la tarea), avance, hito, programada
-manualmente y notas. **Avanzado** tiene lo que se toca poco: tipo de tarea,
-calendario, condicionada por esfuerzo, estimada, restricción con su fecha,
-fecha límite, el valor de un campo personalizado del archivo y el
-**hipervínculo** de la tarea —texto, dirección y marcador—, con **Abrir** al
-lado para ir a la dirección (el ticket de GLPI de esa tarea, por ejemplo); en
-la columna **Hipervínculo** de la lista la celda es un enlace de verdad: se ve
-subrayada y se abre con un clic, o con Enter cuando tiene el foco.
-**Los campos personalizados no tienen tipo vínculo**: para una dirección, este
-es el lugar. **Aplicar** está debajo de las pestañas, fuera de lo que se desplaza, y se ve en
-**Tarea** y **Avanzado**: escribe todo junto en un solo Deshacer.
+**La grilla es el editor, y cada celda abre el control de su dato.** Hacé clic
+en una celda y editala: el nombre y las notas se escriben; la **duración**
+(`2d`, `8h`, `30m`, `2ed` para elapsed, o un número en la unidad de la tarea)
+también, porque el texto conserva la unidad; el **inicio**, el **fin** y la
+**fecha límite** abren un campo con un **calendario al lado**, y un día
+elegido toma la hora por defecto del proyecto (la de inicio para el inicio, la
+de fin para el fin y la fecha límite); el **avance** y la **prioridad** son
+números con tope (0–100 y 0–1000); el **hito** es una casilla; el **calendario
+de la tarea** y el **tipo de tarea** son listas —las del plan en el primer
+caso—; la **restricción** abre un diálogo con el tipo y su fecha, porque una
+celda no lleva las dos: los seis tipos que fijan o acotan una fecha la piden,
+y sin ella el diálogo no cierra; y un **campo personalizado con lista de
+valores** es un desplegable con las entradas del archivo más **Ninguno** para
+vaciarlo. Lo tipeado reemplaza lo que la celda decía, **Enter** confirma,
+**Escape** cancela, y salir de la celda también confirma; **F2** abre la
+primera celda editable de la fila elegida. Cada cambio es **un Deshacer**, y
+el clic que empieza una edición también **selecciona la fila**: el panel y el
+Gantt siguen a la tarea que estás editando.
+
+Lo que no se puede escribir se rechaza con el motivo y la celda vuelve a lo
+que decía: una duración que no es una duración, una fecha que no es una fecha,
+un avance fuera de 0 a 100, una prioridad fuera de 0 a 1000, un calendario que
+el plan no tiene. En una tarea con un hito, el `◆` que la fila muestra delante
+del nombre no es parte del nombre: no hace falta sacarlo.
+
+**Lo que Project deriva no se edita en un resumen**: las fechas, la duración,
+el avance, el hito, la restricción, la fecha límite y el tipo de un resumen
+salen de sus hijas, así que sus celdas se ven atenuadas y no abren —igual que
+el panel las deja solo leer—. El nombre, las notas, el calendario y los campos
+personalizados del resumen sí son suyos, y en el panel las fechas y la
+duración de un resumen también quedan de solo lectura.
+
+**Información de la tarea** es la otra puerta, la que Project abre con un
+doble clic: las mismas páginas del panel —**Tarea** y **Avanzado**— en un
+diálogo, con **Aceptar** escribiendo todo junto en un solo Deshacer y
+**Cancelar** sin tocar nada. También está en el menú **Editar** y en el clic
+derecho de la fila. La grilla, el diálogo y el panel escriben lo mismo porque
+leen los mismos campos; los **vínculos** y las **asignaciones** siguen en el
+panel.
+
+**La barra de entrada**, arriba de todo, es la de Project: muestra el valor
+entero de la celda que estás editando —el nombre con todo su texto, la lista
+de predecesoras completa— con el nombre de la columna a la izquierda.
+Escribir ahí y **Enter** es el mismo comando que editar la celda (un Deshacer,
+y lo que se rechaza se dice igual), y **Escape** devuelve lo que la celda dice.
+La barra sigue a la fila elegida: al mover la selección, muestra la misma
+columna de la tarea nueva; una celda que no se edita —las derivadas de un
+resumen— se muestra ahí también, y no se deja escribir. **Arranca oculta**,
+como en Project 2013 y posteriores: se prende en **Ver → Mostrar la barra de
+entrada**, y la elección se recuerda de una ventana a la otra.
+
+El **hipervínculo** se edita en el panel o en el diálogo: su columna en la
+lista no es un campo sino el enlace mismo, que se abre con un clic.
+
+El **panel** de la derecha es la vista de detalles de la fila elegida. La
+pestaña **Tarea** tiene lo de todos los días: nombre, inicio, fin, duración
+(`2d`, `8h`, `30m`, `2ed` para elapsed, o un número en la unidad de la tarea),
+avance, hito, programada manualmente y notas. **Avanzado** tiene lo que se toca
+poco: tipo de tarea, calendario, condicionada por esfuerzo, estimada,
+restricción con su fecha, fecha límite, el valor de un campo personalizado del
+archivo y el **hipervínculo** de la tarea —texto, dirección y marcador—, con
+**Abrir** al lado para ir a la dirección (el ticket de GLPI de esa tarea, por
+ejemplo); en la columna **Hipervínculo** de la lista la celda es un enlace de
+verdad: se ve subrayada y se abre con un clic, o con Enter cuando tiene el
+foco. **Los campos personalizados no tienen tipo vínculo**: para una
+dirección, este es el lugar. **Aplicar** está debajo de las pestañas, fuera de
+lo que se desplaza, y se ve en **Tarea** y **Avanzado**: escribe todo junto en
+un solo Deshacer.
 
 - **Agregar** crea una tarea después de la seleccionada (y de su subárbol);
   **Eliminar** se lleva la tarea y todo lo que cuelga de ella.
@@ -175,6 +234,15 @@ La pestaña **Vínculos** lista los predecesores de la tarea. Elegí tarea, tipo
 (**Fin a inicio**, **Inicio a inicio**, **Fin a fin**, **Inicio a fin**) y
 retardo en minutos; **Enlazar** agrega o actualiza, **Desenlazar** borra la
 fila elegida.
+
+La columna **Predecesoras** —si está a la vista, **Ver → Columnas…**— los
+escribe como en Project: el número de la tarea, el tipo en dos letras cuando no
+es Fin a inicio (o cuando hay retardo) y el retardo con su unidad —
+`3FS+2d, 7SS`, y un `3` pelado es Fin a inicio sin retardo—. Escribir en la
+celda **reemplaza la lista entera** en un solo Deshacer, y lo que el motor no
+acepta —una tarea que no existe, un lazo, un resumen con sus propias
+tareas— se rechaza con el motivo y la celda vuelve a lo que decía; vaciarla
+quita todos los vínculos.
 
 En el Gantt también se dibujan: **Ctrl + arrastrar** desde una barra hasta
 otra crea un vínculo, y **el tipo lo dicen las mitades de las barras**: la
@@ -222,9 +290,16 @@ cuántas restricciones incumplidas.
   (el tilde del panel) no se mueven al recalcular: sus fechas son las que
   tienen, y las sucesoras se enlazan a ellas. Un resumen manual fija además el
   piso de su rama.
-- En Configuración podés pedir que se recalcule solo después de cada cambio.
-  **Recalcular** (F5) sobre un plan que ya está donde el pase lo deja no mueve
-  nada: no ensucia el archivo ni agrega un paso de Deshacer.
+- **El plan se recalcula solo después de cada cambio**, como en Project: la
+  duración que tipeás mueve el fin, y la cadena con él; una edición sigue
+  siendo un solo Deshacer porque el pase corre antes de la foto. Una **fecha
+  tipeada a mano queda**: escribir un inicio deja *No empezar antes del* y un
+  fin *No terminar antes del*, con esa fecha -- en la celda, en el panel, en
+  el diálogo de la tarea o al mover una barra --, así que el pase la respeta
+  en vez de devolverla a sus vínculos. En Configuración se puede apagar --es
+  el modo manual de Project--: ahí las fechas quedan como se tipearon hasta
+  **Recalcular** (F5), que sobre un plan que ya está donde el pase lo deja no
+  mueve nada: no ensucia el archivo ni agrega un paso de Deshacer.
 
 ## Recursos y costos
 
@@ -434,7 +509,9 @@ próxima vez, salvo el título, que es de cada proyecto.
 **Herramientas → Configuración…** edita lo que la app recuerda: carpeta por
 donde abre el diálogo, escala, unidad de una duración sin sufijo, y si
 recalcula solo y si guarda la copia de recuperación. Las **columnas** también
-se recuerdan, pero se eligen en **Ver → Columnas…**.
+se recuerdan, pero se eligen en **Ver → Columnas…**, y la **barra de entrada**
+se prende y se apaga en **Ver → Mostrar la barra de entrada** (nace oculta,
+como en Project 2013 en adelante).
 
 ## Lo que no hace
 

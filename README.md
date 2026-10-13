@@ -85,9 +85,9 @@ chart, which draws summaries as brackets and critical tasks in red.
 
 **View → Columns…** (or the row's context menu) chooses what the table shows
 beside the name, which is the tree and never goes: duration, start, finish,
-percent complete, critical, slack, variance, milestone, work, cost, WBS,
-priority, constraint, deadline, calendar, task type, notes and the file's custom
-field -- added and removed with a tick. The choice is a view setting, like the timescale:
+predecessors, percent complete, critical, slack, variance, milestone, work,
+cost, WBS, priority, constraint, deadline, calendar, task type, notes and the
+file's custom field -- added and removed with a tick. The choice is a view setting, like the timescale:
 it survives the window and never touches the file. **A secondary click on a column
 heading** is the gesture Project has for it, and reaches the same place: hide
 the column under the pointer (the name cannot go), show every column again, or
@@ -231,6 +231,73 @@ one undo; a task with no dates is only reachable from the table.
 
 ## Editing
 
+**The sheet is the editor, and it is where a Project user types.** Every column
+names the editor its values need -- the runtime's own kinds -- and what an edit
+writes is the panel's commands, one field and one undo each:
+
+- the **name**, the **notes**, the **duration** (`2d`, `8h`, `30m`, `2ed`, or a
+  bare number in the task's unit) and a free **custom field** are fields --
+  duration stays *text*, so the unit survives the edit;
+- the **start**, the **finish** and the **deadline** are a `Date`: a field with
+  a calendar beside it, and a bare day takes the plan's own default time for
+  what it is (`DefaultStartTime` / `DefaultFinishTime`);
+- the **percentage** and the **priority** are a `Number`, the ceiling in the
+  declaration (0-100 and 0-1000) instead of a refusal after the typing;
+- the **milestone** is a `Check` holding `◆` or `""`;
+- the **calendar** and the **task type** are a `Combo` whose items
+  `Tasks_CellEditor` answers per edit -- the plan's calendars, the three types
+  -- and so is a custom field whose definition carries a `ValueList`, with
+  `None` to take the value out;
+- the **constraint** is `Custom`: the cell shows `…` and opens
+  `ConstraintForm`, the type and its date in one dialog because one cell cannot
+  hold both, and the six types that fix or bound a date require it before the
+  dialog closes.
+
+**A summary's derived cells are shut, not refused**: `fill` calls
+`SetEditable(key, column, false)` on the dates, duration, percentage,
+milestone, constraint, deadline and type of every summary row, so they read dim
+and open nothing -- the same set the panel greys -- while the same columns are
+fields on every other row; `cellValues` refuses the same list as a backstop.
+The `◆` a milestone wears comes off a name when the name is edited, and a
+custom field goes through `setFieldValue`, which owns its `ValueGUID` pointer.
+
+The gesture is the runtime's: a click or **F2** opens a cell (off a cell, the
+selected row's first field), Enter or the focus leaving commits, Escape gives
+up, and `CellEdit` decides -- `false` puts the cell back, and a string answer is
+the spelling the cell keeps (`75%`, `3d?`, `2026-10-01 08:00`).
+
+**An edit reschedules, the way Project's automatic calculation does**: with the
+setting on -- the default -- every accepted command is followed by the schedule
+pass before the snapshot, so a duration typed by hand moves the finish and the
+chain with it and one edit is still one undo. **A date typed by hand leaves the
+constraint Project leaves**: a start becomes *Start No Earlier Than* and a
+finish *Finish No Earlier Than*, dated at what was typed -- in a cell, in the
+panel's Apply, in the task dialog, and by a bar dragged to a new start -- so
+the pass keeps the task where the hand put it instead of pulling it back to its
+links. Turning the setting off is Project's manual mode: dates stay as typed
+until Recalculate (F5).
+
+**Task information is the other door, the one Project opens with a double
+click**: `TaskForm` puts the panel's Task and Advanced pages in a dialog over
+the window -- OK writes them as one command, Cancel changes nothing -- and it
+is also in the Edit menu and in the row's context menu. **The two carry the
+same control names**, so `fillTaskForm`/`taskFormValues` (TaskForm.js) serve
+both and the doors cannot diverge in what a field means or in what a bad value
+refuses; a summary's derived fields are greyed there exactly as in the panel.
+Links and assignments stay in the panel.
+
+**The entry bar sits above the sheet, where Project's is**: it shows the whole
+value of the current cell -- the last one an edit opened -- with the column's
+heading beside it, and typing there goes through the same one command (`Enter`
+applies, `Escape` puts the cell's value back). It follows the row: moving the
+selection shows the same column of the new task, and a cell that does not edit
+-- a summary's derived ones -- reads there and does not take typing. The cell
+is remembered by the column's **id**, not its index, so hiding or moving a
+column does not point the bar at another field. **It starts hidden, as it does
+in Project 2013 and later** (Project calls it the *entry bar*; its *Formula
+bar* command is a different thing entirely): View → Show entry bar brings it,
+and the choice is remembered.
+
 The panel on the right is a view of the selected row: type a name, a moment
 (`2026-10-01 08:00`), a duration (`2d`, `8h`, `30m`, `2ed` for elapsed, or a
 bare number in the task's own unit), a percentage, the milestone, estimated and
@@ -284,7 +351,13 @@ duration typed by hand stays the user's number.
 **Predecessors** lists the selected task's links: pick a task, a
 type (FS/SS/FF/SF) and a lag in minutes, **Link** adds or updates it, and
 picking a row and **Unlink** takes it out -- which is what Recalculate then
-schedules. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place
+schedules. **The sheet's Predecessors column is the same list as text**, the
+way MSPDI spells it: the predecessor's UID, the type's two letters when it is
+not finish-to-start (or when there is a lag), and the lag with its unit --
+`3FS+2d, 7SS`, a bare `3` being finish-to-start with none. Typing in the cell
+replaces the whole list in one undo, what the engine refuses (a task that is
+not there, a loop, a summary and its own branch) comes back as a sentence with
+the cell put back, and clearing it takes every link out. `Ctrl+Z`/`Ctrl+Shift+Z` walk the history, `Ctrl+S` saves in place
 and `Ctrl+Shift+S` asks where -- the new name becomes the document's only once
 the file is written. Closing with unsaved work asks first, and so does every
 door that replaces the document (`openFile`/`confirmDiscard`); the title
@@ -386,14 +459,16 @@ through XML. The corpus measures the road to it; see `ROADMAP.md`.
 
 ## Settings and translation
 
-Seven things are remembered, all under `bintana-project.*` in `Settings` (the
+Eight things are remembered, all under `bintana-project.*` in `Settings` (the
 per-project file in the config directory, never beside the schedule): the
 folder the last file came from, the timescale, which columns the list shows
 (chosen in View → Columns…, the name always among them -- a custom field's
 column is ticked in Project → Custom fields… and remembered with them), the
-unit a bare duration is read in, the recent list, whether the plan is
-recalculated after each change (off by default: a date typed by hand is the
-user's until they ask), and whether the recovery copy is kept.
+unit a bare duration is read in, the recent list, whether the entry bar is
+shown (off by default, the way Project 2013 and later keep it), whether the
+plan is recalculated after each change (on by default, as in Project: a
+duration typed by hand moves the finish, and a date typed by hand leaves the
+constraint that keeps it), and whether the recovery copy is kept.
 
 **The autosave is a copy, not a save**: while there is unsaved work the app
 writes it every minute to the config directory -- never beside the schedule,

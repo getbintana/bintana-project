@@ -1,0 +1,93 @@
+{
+  "format": "bintana-form/1",
+  "class": "ConstraintForm",
+  "properties": {
+    "Text": "Constraint",
+    "Arrangement": "Vertical",
+    "Spacing": 8,
+    "Padding": "16",
+    "Width": 420,
+    "Height": 156,
+    "Resizable": false
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "name": "Fields",
+      "properties": {
+        "ColumnSpacing": 8,
+        "RowSpacing": 8,
+        "Spacing": 8
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblType",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Type"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbType",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblDate",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Constraint date"
+          }
+        },
+        {
+          "type": "TextBox",
+          "name": "TxtDate",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Placeholder": "YYYY-MM-DD HH:MM"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
+        "Spacing": 8,
+        "VAlign": "End",
+        "Width": 388
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Cancel": true,
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Text": "Cancel"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnOk",
+          "properties": {
+            "Default": true,
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Text": "OK"
+          }
+        }
+      ]
+    }
+  ]
+}

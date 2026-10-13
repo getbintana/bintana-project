@@ -23,7 +23,7 @@ export class SettingsForm extends Form {
         const unit = UNIT_KEYS.indexOf(Settings.Get("bintana-project.unit", ""));
         dlg.CmbUnit.Index = unit >= 0 ? unit : 0;
 
-        dlg.ChkAutorecalc.Active = Settings.Get("bintana-project.autorecalc", false);
+        dlg.ChkAutorecalc.Active = Settings.Get("bintana-project.autorecalc", true);
         dlg.ChkAutosave.Active   = Settings.Get("bintana-project.autosave", true);
 
         dlg.Show();

@@ -179,7 +179,9 @@
       <PercentComplete>75</PercentComplete>
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-02T17:00:00</ActualFinish>
+      <ConstraintType>4</ConstraintType>
       <CalendarUID>1</CalendarUID>
+      <ConstraintDate>2026-09-01T09:00:00</ConstraintDate>
       <Baseline>
         <Number>0</Number>
         <Start>2026-09-01T09:00:00</Start>
