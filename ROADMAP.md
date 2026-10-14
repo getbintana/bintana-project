@@ -36,10 +36,10 @@ las notas fechadas de las fases; esto es la lista para retomar.
      abajo copia el valor a las filas siguientes. Necesita la celda
      seleccionada —que ya está— y el gesto.
    - **Arrastrar filas** para mover/reordenar, con el indicador de inserción.
-   - **Copiar/pegar celdas**: hoy se puede a través de los editores y la barra
-     de entrada (copiar del editor abierto o de la barra, pegar en la barra o
-     en otro editor); falta pegarlo sin abrir la celda, que también sale de la
-     celda seleccionada.
+   - **Copiar/pegar celdas**: **descartado** (2026-10-13): el portapapeles es
+     de la **tarea completa** —la rama con sus enlaces y asignaciones, que ya
+     copian Ctrl+C y el menú—, no de valores sueltos. Ver *Lo que se decide no
+     hacer*.
 2. **`TaskForm`: pestañas de Vínculos y Recursos** — cuando las tenga, el panel
    lateral puede retirarse (hoy sigue siendo la vista de detalle).
 3. **La aceptación**: abrir en Project el XML que sale de acá
@@ -758,7 +758,9 @@ que un compañero sin la app puede abrir.
 `.mpp`, validación XSD, XPath, streaming (heredado de `xml-plan`); nivelación,
 EVM, impresión fiel, múltiples vistas simultáneas y campos personalizados
 arbitrarios en la UI (un campo configurable recién si el corpus muestra uso
-real). Cada uno con su trigger para reabrir.
+real); **copiar/pegar celdas** (el portapapeles es de tareas completas, y una
+celda suelta no es lo que se quiere duplicar). Cada uno con su trigger para
+reabrir.
 
 ## Riesgos
 

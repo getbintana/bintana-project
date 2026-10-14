@@ -1,0 +1,14 @@
+/*
+ * La hoja de la app.
+ *
+ * **La celda actual del plan**, que el control marca con una clase y sin
+ * estilo propio (`TableView.CurrentCell`): un tinte apenas más oscuro que el
+ * fondo de la fila, no un recuadro. El recuadro envolvía al editor cuando la
+ * celda se estaba editando -- la caja de la celda es donde el editor vive -- y
+ * el tinte se ve igual con el editor abierto o cerrado. La `currentColor` es
+ * la tinta del tema, así que el tinte sale claro sobre un fondo claro y oscuro
+ * sobre uno oscuro, sin ningún valor copiado que quede viejo.
+ */
+.bta-cell-current {
+    background-color: alpha(currentColor, 0.08);
+}
