@@ -20,7 +20,9 @@
         "HExpand": true,
         "Tabs": [
           "Task",
-          "Advanced"
+          "Advanced",
+          "Links",
+          "Resources"
         ],
         "VAlign": "Fill",
         "VExpand": true
@@ -468,6 +470,298 @@
                     "Enabled": false,
                     "HAlign": "Start",
                     "Text": "Open"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Panel",
+          "name": "PageLinks",
+          "properties": {
+            "Arrangement": "Vertical",
+            "HAlign": "Fill",
+            "Padding": "8 0 8 0",
+            "Spacing": 8
+          },
+          "children": [
+            {
+              "type": "TableView",
+              "name": "Links",
+              "properties": {
+                "Columns": [
+                  {
+                    "Text": "Task",
+                    "Width": 0
+                  },
+                  {
+                    "Text": "Type",
+                    "Width": 56
+                  },
+                  {
+                    "Text": "Lag",
+                    "Width": 64,
+                    "Alignment": "Right"
+                  }
+                ],
+                "HAlign": "Fill",
+                "Height": 160,
+                "Style": "frame"
+              }
+            },
+            {
+              "type": "Grid",
+              "name": "LinkFields",
+              "properties": {
+                "ColumnSpacing": 8,
+                "RowSpacing": 8,
+                "Spacing": 8
+              },
+              "children": [
+                {
+                  "type": "Label",
+                  "name": "LblPred",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Task"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbPred",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblType",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Type"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbType",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Finish to start",
+                      "Start to start",
+                      "Finish to finish",
+                      "Start to finish"
+                    ],
+                    "Text": "Finish to start"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblLag",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Lag (min)"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpinLag",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Step": 5
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Panel",
+              "name": "LinkButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnLinkAdd",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Icon": "list-add-symbolic",
+                    "Text": "Link"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnLinkDel",
+                  "properties": {
+                    "Enabled": false,
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Icon": "list-remove-symbolic",
+                    "Text": "Unlink"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Panel",
+          "name": "PageResources",
+          "properties": {
+            "Arrangement": "Vertical",
+            "HAlign": "Fill",
+            "Padding": "8 0 8 0",
+            "Spacing": 8
+          },
+          "children": [
+            {
+              "type": "Label",
+              "name": "LblAssigns",
+              "properties": {
+                "HAlign": "Fill",
+                "Style": "heading",
+                "Text": "Assignments"
+              }
+            },
+            {
+              "type": "TableView",
+              "name": "Assignments",
+              "properties": {
+                "Columns": [
+                  {
+                    "Text": "Resource",
+                    "Width": 0
+                  },
+                  {
+                    "Text": "Units",
+                    "Width": 56,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Work",
+                    "Width": 70,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Cost",
+                    "Width": 70,
+                    "Alignment": "Right"
+                  },
+                  {
+                    "Text": "Budget",
+                    "Width": 70,
+                    "Alignment": "Right"
+                  }
+                ],
+                "HAlign": "Fill",
+                "Height": 160,
+                "Style": "frame"
+              }
+            },
+            {
+              "type": "Grid",
+              "name": "AssignFields",
+              "properties": {
+                "ColumnSpacing": 8,
+                "RowSpacing": 8,
+                "Spacing": 8
+              },
+              "children": [
+                {
+                  "type": "Label",
+                  "name": "LblAssignRes",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Resource"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbAssignRes",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblAssignUnits",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Units"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtAssignUnits",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Placeholder": "1"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblAssignBudget",
+                  "properties": {
+                    "HAlign": "End",
+                    "Text": "Budget",
+                    "Tooltip": "What this resource is budgeted to cost on this task; the plan's budget is the sum"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtAssignBudget",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Placeholder": "0"
+                  }
+                }
+              ]
+            },
+            {
+              "type": "Panel",
+              "name": "AssignButtons",
+              "properties": {
+                "Arrangement": "Horizontal",
+                "Homogeneous": true,
+                "Spacing": 6
+              },
+              "children": [
+                {
+                  "type": "Button",
+                  "name": "BtnAssignAdd",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Icon": "list-add-symbolic",
+                    "Text": "Assign"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnAssignApply",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Icon": "document-save-symbolic",
+                    "Text": "Budget"
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnAssignDel",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "HExpand": true,
+                    "Icon": "list-remove-symbolic",
+                    "Text": "Remove"
                   }
                 }
               ]

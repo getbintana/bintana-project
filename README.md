@@ -285,13 +285,18 @@ links. Turning the setting off is Project's manual mode: dates stay as typed
 until Recalculate (F5).
 
 **Task information is the other door, the one Project opens with a double
-click**: `TaskForm` puts the panel's Task and Advanced pages in a dialog over
-the window -- OK writes them as one command, Cancel changes nothing -- and it
-is also in the Edit menu and in the row's context menu. **The two carry the
-same control names**, so `fillTaskForm`/`taskFormValues` (TaskForm.js) serve
-both and the doors cannot diverge in what a field means or in what a bad value
-refuses; a summary's derived fields are greyed there exactly as in the panel.
-Links and assignments stay in the panel.
+click**: `TaskForm` puts the panel's four pages -- Task, Advanced, Links and
+Resources -- in a dialog over the window -- OK writes them as one command,
+Cancel changes nothing -- and it is also in the Edit menu and in the row's
+context menu. **The two carry the same control names**, so
+`fillTaskForm`/`taskFormValues` (TaskForm.js) serve both and the doors cannot
+diverge in what a field means or in what a bad value refuses; a summary's
+derived fields are greyed there exactly as in the panel. **Links and
+assignments are edited over a copy and applied on OK**: Link/Unlink change the
+whole list, and Assign, Remove and Budget are recorded in the order they are
+made, with the table showing the result -- assigning the same resource again
+updates that row, as the file does, one assignment per pair -- so Cancel
+leaves them alone. `Edit.applyTask` writes it all in **one undo**.
 
 **The entry bar sits above the sheet, where Project's is**: it shows the whole
 value of the current cell -- the last one an edit opened -- with the column's

@@ -937,22 +937,16 @@ export class MainForm extends Form {
         this.ActColumns_Execute();
     }
 
-    /* The resources the assignment editor offers. */
+    /* The resources the assignment editor offers: one description of the list
+     * (`resourceNames`), which the dialog's Resources page uses too. */
     fillResources() {
         const project = this.holder ? this.holder.project : null;
         if (!project) return;
 
-        const items = [];
-        this.resChoices = [];
-        for (const resource of project.Resources) {
-            /* UID 0 is Project's "Unassigned": it is not a resource anybody
-             * assigns, so it is not listed. */
-            if (resource.IsNull || resource.UID === 0) continue;
-            this.resChoices.push(resource.UID);
-            items.push(resource.Name);
-        }
-        this.CmbAssignRes.Items = items;
-        this.CmbAssignRes.Index = items.length ? 0 : -1;
+        const res = resourceNames(project);
+        this.resChoices = res.choices;
+        this.CmbAssignRes.Items = res.items;
+        this.CmbAssignRes.Index = res.items.length ? 0 : -1;
 
         /* The calendars a task may name, with the plan's own in
          * front. **The plan's own is chosen in the project dialog** -- it is a
@@ -2828,9 +2822,10 @@ export class MainForm extends Form {
         const task = this.selectedTask();
         if (!task) return null;
 
-        return TaskForm.open(this.holder.project, task, this.unit, (values) => {
-            this.edit.setFields(task.UID, values);
-            this.fill(task.UID);
+        return TaskForm.open(this.holder.project, task, this.unit,
+                             (values, links, ops) => {
+            if (this.edit.applyTask(task.UID, values, links, ops))
+                this.fill(task.UID);
         });
     }
 
@@ -7136,6 +7131,65 @@ export class MainForm extends Form {
             ok = attrOf(edit.task(2), "188743731") === "4821" && ok;
             print(`edit dialog attr back=${attrOf(edit.task(2), "188743731")}`);
 
+            /* **Las pestañas de vínculos y recursos**, que el diálogo edita
+             * sobre copias y el Aceptar escribe con los campos en **un solo
+             * Deshacer**: Cancelar no deja nada, y Link/Unlink y las órdenes
+             * de las asignaciones -- alta, baja, presupuesto -- no tocan el
+             * plan hasta que se acepta. */
+            const linksWas = edit.task(2).Links.length;
+            const asgWas   = edit.holder.project.Assignments
+                                 .filter((a) => a.TaskUID === 2).length;
+            const asgOf    = (resUID) => edit.holder.project.Assignments
+                .find((a) => a.TaskUID === 2 && a.ResourceUID === resUID);
+
+            const dlgC = this.Tasks_Activate();
+            ok = dlgC.Tabs.Tabs.length === 4 &&
+                 dlgC.Links.Count === linksWas &&
+                 dlgC.Assignments.Count === asgWas &&
+                 dlgC.predChoices.indexOf(3) > 0 && ok;
+            dlgC.CmbPred.Index = dlgC.predChoices.indexOf(3);
+            dlgC.CmbType.Index = 1;                    // start to start
+            dlgC.SpinLag.Value = 20;
+            dlgC.BtnLinkAdd.Click();
+            ok = dlgC.Links.Count === linksWas + 1 &&
+                 edit.task(2).Links.length === linksWas && ok;
+            dlgC.CmbAssignRes.Index = dlgC.resChoices.indexOf(2);   // Bruno
+            dlgC.TxtAssignUnits.Text = "2";
+            dlgC.BtnAssignAdd.Click();
+            ok = dlgC.Assignments.Count === asgWas &&
+                 dlgC.assignRows[1].units === 2 && ok;
+            dlgC.BtnCancel.Click();
+            ok = edit.task(2).Links.length === linksWas &&
+                 asgOf(2).Units === 1 && ok;
+            print(`edit dialog tabs cancel links=${edit.task(2).Links.length}`);
+
+            /* El Aceptar los escribe con los campos: un solo Deshacer los
+             * devuelve a los tres -- el vínculo, el presupuesto y el alta. */
+            this.fill(2);
+            const dlgT = this.Tasks_Activate();
+            dlgT.CmbPred.Index = dlgT.predChoices.indexOf(3);
+            dlgT.CmbType.Index = 1;
+            dlgT.SpinLag.Value = 20;
+            dlgT.BtnLinkAdd.Click();
+            dlgT.Assignments.Select(0);                // Ana
+            dlgT.TxtAssignBudget.Text = "60";
+            dlgT.BtnAssignApply.Click();
+            dlgT.CmbAssignRes.Index = dlgT.resChoices.indexOf(2);   // Bruno
+            dlgT.TxtAssignUnits.Text = "2";
+            dlgT.BtnAssignAdd.Click();
+            dlgT.BtnOk.Click();
+            ok = edit.task(2).Links.length === linksWas + 1 &&
+                 edit.task(2).Links.some((l) => l.PredecessorUID === 3 &&
+                                                l.Type === 3 &&
+                                                l.LinkLag === 200) &&
+                 asgOf(1).BudgetCost === 60 && asgOf(2).Units === 2 && ok;
+            edit.undo();
+            this.fill(2);
+            ok = edit.task(2).Links.length === linksWas &&
+                 asgOf(1).BudgetCost === 0 && asgOf(2).Units === 1 && ok;
+            print(`edit dialog tabs ok links=${edit.task(2).Links.length} ` +
+                  `ana=${asgOf(1).BudgetCost} bruno=${asgOf(2).Units}`);
+
             /* A summary's dates, duration and completion are greyed in the
              * dialog, as the panel greys them: only the name is the user's. */
             this.fill(1);
@@ -7628,11 +7682,11 @@ export function isColumnId(id) {
 }
 
 /* The four link types, in MSPDI's own numbering (0 FF, 1 FS, 2 SF, 3 SS) and
- * in the order the panel's combo shows them: FS, SS, FF, SF. */
-const LINK_NAMES = ["FF", "FS", "SF", "SS"];
-const LINK_ORDER = [1, 3, 0, 2];   // combo index -> MSPDI type
-const LINK_INDEX = { 0: 2, 1: 0, 2: 3, 3: 1 };
-
+ * in the order the combos show them -- the panel's and the dialog's: FS, SS,
+ * FF, SF. */
+export const LINK_NAMES = ["FF", "FS", "SF", "SS"];
+export const LINK_ORDER = [1, 3, 0, 2];   // combo index -> MSPDI type
+export const LINK_INDEX = { 0: 2, 1: 0, 2: 3, 3: 1 };
 /* What the timescale control means, by the combo's index (its items are
  * translated, so the text is not a key): pixels a day, and the header step in
  * days -- null/0 is the chart's own choice, which is what Auto is. */

@@ -330,6 +330,13 @@ export class Edit {
      *
      * One undo, like every other field: a budget nobody wrote is not an edit. */
     setAssignmentBudget(uid, cost) {
+        if (!this.#budget(uid, cost)) return false;
+
+        this.commit();
+        return true;
+    }
+
+    #budget(uid, cost) {
         const assignment = this.assignment(uid);
         if (!assignment) return false;
 
@@ -337,11 +344,25 @@ export class Edit {
         if (assignment.BudgetCost === budget) return false;
 
         assignment.BudgetCost = budget;
-        this.commit();
         return true;
     }
 
     addAssignment(taskUID, resourceUID, units) {
+        const assignment = this.#assign(taskUID, resourceUID, units);
+        if (!assignment) return null;
+
+        this.commit();
+        return assignment;
+    }
+
+    /*
+     * **The assignment itself, without a step**: the body of `addAssignment`,
+     * which `applyTask` runs inside the one step its OK is. Everything it
+     * touches -- the task's duration and work, the other assignments' -- is
+     * the assignment's own arithmetic, and it is here rather than written
+     * twice.
+     */
+    #assign(taskUID, resourceUID, units) {
         const project  = this.holder.project;
         const task     = this.task(taskUID);
         const resource = this.resource(resourceUID);
@@ -433,16 +454,66 @@ export class Edit {
         assignment.Start  = task.Start;
         assignment.Finish = task.Finish;
 
-        this.commit();
         return assignment;
     }
 
     removeAssignment(uid) {
+        if (!this.#unassign(uid)) return false;
+
+        this.commit();
+        return true;
+    }
+
+    /* The assignment taken out, without a step: the other half of the pair
+     * `applyTask` needs. */
+    #unassign(uid) {
         const project = this.holder.project;
         const kept = project.Assignments.filter((a) => a.UID !== uid);
         if (kept.length === project.Assignments.length) return false;
 
         project.Assignments = kept;
+        return true;
+    }
+
+    /*
+     * **Everything the task dialog's OK writes, as one step**: the fields, the
+     * whole link list, and what the links and resources pages changed of the
+     * assignments -- each change in the order it was made, applied by the same
+     * bodies the panel's commands use. Answers whether anything changed: an OK
+     * that wrote nothing is not a step.
+     */
+    applyTask(uid, values, links, ops) {
+        const task = this.task(uid);
+        if (!task) return false;
+
+        let changed = false;
+
+        if (values)
+            for (const name in values) {
+                if (task[name] !== values[name]) changed = true;
+                task[name] = values[name];
+            }
+
+        if (links) {
+            const kept = links.map((l) => new MspLink(JSON.parse(JSON.stringify(l))));
+            if (JSON.stringify(task.Links) !== JSON.stringify(kept)) {
+                task.Links = kept;
+                changed = true;
+            }
+        }
+
+        for (const op of ops || []) {
+            if (op.remove !== undefined) {
+                if (this.#unassign(op.remove)) changed = true;
+            } else if (op.add) {
+                if (this.#assign(task.UID, op.add.ResourceUID, op.add.Units))
+                    changed = true;
+            } else if (op.budget) {
+                if (this.#budget(op.budget.UID, op.budget.Cost)) changed = true;
+            }
+        }
+
+        if (!changed) return false;
         this.commit();
         return true;
     }

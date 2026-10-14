@@ -191,12 +191,16 @@ personalizados del resumen sí son suyos, y en el panel las fechas y la
 duración de un resumen también quedan de solo lectura.
 
 **Información de la tarea** es la otra puerta, la que Project abre con un
-doble clic: las mismas páginas del panel —**Tarea** y **Avanzado**— en un
-diálogo, con **Aceptar** escribiendo todo junto en un solo Deshacer y
-**Cancelar** sin tocar nada. También está en el menú **Editar** y en el clic
-derecho de la fila. La grilla, el diálogo y el panel escriben lo mismo porque
-leen los mismos campos; los **vínculos** y las **asignaciones** siguen en el
-panel.
+doble clic: las cuatro páginas del panel —**Tarea**, **Avanzado**,
+**Vínculos** y **Recursos**— en un diálogo, con **Aceptar** escribiendo todo
+junto en un solo Deshacer y **Cancelar** sin tocar nada. También está en el
+menú **Editar** y en el clic derecho de la fila. La grilla, el diálogo y el
+panel escriben lo mismo porque leen los mismos campos. **Los vínculos y las
+asignaciones se editan sobre una copia**: Link y Unlink cambian la lista
+entera, y Asignar, Quitar y Presupuesto se apuntan en el orden en que se
+hacen, con la tabla mostrando el resultado —una asignación del mismo recurso
+se actualiza, como en el panel—; recién el **Aceptar** los escribe, así que
+Cancelar no los toca.
 
 **La barra de entrada**, arriba de todo, es la de Project: muestra el valor
 entero de la celda que estás editando —el nombre con todo su texto, la lista

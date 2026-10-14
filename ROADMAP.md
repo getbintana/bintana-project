@@ -40,8 +40,12 @@ las notas fechadas de las fases; esto es la lista para retomar.
      de la **tarea completa** —la rama con sus enlaces y asignaciones, que ya
      copian Ctrl+C y el menú—, no de valores sueltos. Ver *Lo que se decide no
      hacer*.
-2. **`TaskForm`: pestañas de Vínculos y Recursos** — cuando las tenga, el panel
-   lateral puede retirarse (hoy sigue siendo la vista de detalle).
+2. **`TaskForm`: pestañas de Vínculos y Recursos** — **hecha** (2026-10-13): el
+   diálogo tiene las cuatro páginas del panel y las dos nuevas editan sobre
+   copias que el Aceptar aplica con los campos en un solo Deshacer (ver
+   *Información de la tarea, entera* en la fase 3). El panel lateral sigue
+   como vista de detalles: retirarlo es una decisión de interfaz, no un
+   pendiente de paridad.
 3. **La aceptación**: abrir en Project el XML que sale de acá
    (`ACEPTACION.md`, `tests/aceptacion.sh`): convierte el corpus en dorado y
    contesta el `EffortDriven` omitido.
@@ -344,6 +348,25 @@ directorio de issues de Bintana borra lo que ya se llenó en vez de archivarlo.
   personalizado con su `ValueGUID` y el resumen gris— y el gesto real quedó
   verificado a mano: doble clic en la barra, pestaña Avanzado, y Aceptar
   escribiendo la duración en la grilla y el panel.
+
+- **Información de la tarea, entera** (2026-10-13): el diálogo suma las dos
+  pestañas que le faltaban —**Vínculos** y **Recursos**— y queda con las cuatro
+  del panel. **Las dos editan sobre copias y el Aceptar las escribe con los
+  campos**: los vínculos son la lista de la tarea, que Link y Unlink cambian
+  entera, y las asignaciones son las del plan más una lista de **órdenes en el
+  orden en que se hicieron** —un alta, una baja, un presupuesto— que la tabla
+  muestra ya aplicadas (un alta sobre un recurso que ya está actualiza esa
+  fila, como el archivo: una asignación por par). `Edit.applyTask` escribe todo
+  en **un solo Deshacer**, con los cuerpos de asignación que
+  `addAssignment`/`removeAssignment`/`setAssignmentBudget` usaban, ahora sin
+  commit (`#assign`, `#unassign`, `#budget`), así que el diálogo y el panel no
+  pueden divergir en la aritmética; Cancelar no deja nada, y el panel sigue
+  siendo la vista de detalles. `check-edit` cubre las dos pestañas por los
+  **botones de verdad** (`Button.Click()`, la puerta del runtime), el Cancelar
+  que no deja nada y el Aceptar de un solo Deshacer; el gesto real quedó
+  verificado a mano (el diálogo con sus cuatro pestañas, la tabla de
+  asignaciones, la fila elegida y el presupuesto que la tabla muestra antes del
+  Aceptar).
 
 - **Predecesoras como texto** (2026-10-13): la columna **Predecesoras** (nueva
   en el catálogo, en `Columnas…` y en el checklist) escribe los vínculos como
