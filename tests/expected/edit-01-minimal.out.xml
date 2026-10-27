@@ -203,9 +203,11 @@
     </Task>
     <Task>
       <UID>3</UID>
-      <ID>3</ID>
+      <ID>2</ID>
       <Name>New task</Name>
       <Type>1</Type>
+      <WBS>1.1</WBS>
+      <OutlineNumber>1.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
       <Duration>PT0H0M0S</Duration>
@@ -237,7 +239,7 @@
     </Task>
     <Task>
       <UID>2</UID>
-      <ID>2</ID>
+      <ID>3</ID>
       <Name>Build</Name>
       <Type>0</Type>
       <CreateDate>2026-09-01T08:00:00</CreateDate>

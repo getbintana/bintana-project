@@ -11,8 +11,8 @@
  * The plan is the array of `MspTask` records in file order, and the outline is
  * `OutlineLevel` over it: a task owns the deeper ones that follow until one at
  * its own level or shallower. Indent and Outdent move that level and then
- * recompute which tasks are summaries -- `OutlineNumber`/`WBS` are left to
- * Project, which derives them (ROADMAP's open decision).
+ * recompute which tasks are summaries. `OutlineNumber` and `WBS` are
+ * renumbered on every commit, as Project does live (`#renumber`).
  */
 "use strict";
 
@@ -82,6 +82,7 @@ export class Edit {
      * more** -- the index it had is about to name a different state, and an
      * undo that landed there would read clean without being the file. */
     commit() {
+        this.#renumber();
         if (this.auto) recalculate(this.holder.project);
         if (this.saved > this.at) this.saved = -1;
         this.states.length = this.at + 1;
@@ -934,6 +935,40 @@ export class Edit {
         result.changed = JSON.stringify(this.holder.project) !== before;
         if (result.changed) this.commit();
         return result;
+    }
+
+    /* **The outline numbers, from the order and the levels**: what Project
+     * keeps up to date as a task is added, moved or indented. The project's
+     * summary is "0" and every other task is its parent's number plus its
+     * place among its siblings. A `WBS` that was the outline number follows
+     * it; one that was not is a code the file chose (a WBS mask, or typed by
+     * hand) and stays. `IsNull` rows are not structure, but they are rows:
+     * `ID` is the row number, blanks included, from the project summary's 0
+     * -- what Project shows and what MPXJ sorts by. */
+    #renumber() {
+        const tasks  = this.holder.project.Tasks;
+        const first  = tasks.length && tasks[0].OutlineLevel === 0 ? 0 : 1;
+        const counts = [];   // counts[l]: siblings numbered so far at level l
+        const prefix = [];   // prefix[l]: the number of the open task at level l
+        for (let i = 0; i < tasks.length; i++) {
+            const task = tasks[i];
+            task.ID = i + first;
+            if (task.IsNull) continue;
+            const level = task.OutlineLevel;
+            let number;
+            if (level <= 0) {
+                number = "0";
+                counts.length = prefix.length = 0;
+            } else {
+                counts.length = prefix.length = level + 1;
+                counts[level] = (counts[level] || 0) + 1;
+                const parent = level > 1 ? prefix[level - 1] : null;
+                number = parent ? `${parent}.${counts[level]}` : String(counts[level]);
+            }
+            prefix[level] = number;
+            if (!task.WBS || task.WBS === task.OutlineNumber) task.WBS = number;
+            task.OutlineNumber = number;
+        }
     }
 
     /* A task is a summary when the next one is deeper; Project derives the

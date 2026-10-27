@@ -185,7 +185,25 @@
           "name": "ChkColPredecessors",
           "properties": {
             "HAlign": "Start",
-            "Text": "Predecessors"
+            "Text": "Predecessors",
+            "Tooltip": "The predecessors by ID, the row number"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColWbsPreds",
+          "properties": {
+            "HAlign": "Start",
+            "Text": "WBS predecessors",
+            "Tooltip": "The predecessors by their WBS code"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColId",
+          "properties": {
+            "HAlign": "Start",
+            "Text": "ID"
           }
         }
       ]

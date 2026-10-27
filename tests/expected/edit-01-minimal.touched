@@ -17,12 +17,11 @@ touched: /Project/Tasks[1]/Task[2]/Start[1]: "2026-09-01T08:00:00" -> "2026-09-0
 touched: /Project/Tasks[1]/Task[2]/Duration[1]: "PT8H0M0S" -> "PT16H0M0S"
 touched: /Project/Tasks[1]/Task[2]/PercentComplete[1]: "100" -> "75"
 touched: /Project/Tasks[1]/Task[3]/UID[1]: "2" -> "3"
-touched: /Project/Tasks[1]/Task[3]/ID[1]: "2" -> "3"
 touched: /Project/Tasks[1]/Task[3]/Name[1]: "Build" -> "New task"
 touched: /Project/Tasks[1]/Task[3]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[3]/CreateDate[1]: removed (was "2026-09-01T08:00:00")
-touched: /Project/Tasks[1]/Task[3]/WBS[1]: removed (was "2")
-touched: /Project/Tasks[1]/Task[3]/OutlineNumber[1]: removed (was "2")
+touched: /Project/Tasks[1]/Task[3]/WBS[1]: "2" -> "1.1"
+touched: /Project/Tasks[1]/Task[3]/OutlineNumber[1]: "2" -> "1.1"
 touched: /Project/Tasks[1]/Task[3]/OutlineLevel[1]: "1" -> "2"
 touched: /Project/Tasks[1]/Task[3]/Start[1]: removed (was "2026-09-03T08:00:00")
 touched: /Project/Tasks[1]/Task[3]/Finish[1]: removed (was "2026-09-03T17:00:00")
@@ -85,7 +84,7 @@ touched: /Project/Tasks[1]/Task[3]/Baseline[2]/DurationFormat[1]: added ("7")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/EstimatedDuration[1]: added ("true")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/Work[1]: added ("PT0H0M0S")
 touched: /Project/Tasks[1]/Task[4]/UID[1]: added ("2")
-touched: /Project/Tasks[1]/Task[4]/ID[1]: added ("2")
+touched: /Project/Tasks[1]/Task[4]/ID[1]: added ("3")
 touched: /Project/Tasks[1]/Task[4]/Name[1]: added ("Build")
 touched: /Project/Tasks[1]/Task[4]/Type[1]: added ("0")
 touched: /Project/Tasks[1]/Task[4]/CreateDate[1]: added ("2026-09-01T08:00:00")

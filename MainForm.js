@@ -105,7 +105,7 @@ export class MainForm extends Form {
     format = ganttFormat(null);
     tipText = "";
     cursorName = "Auto";
-    columns = ["duration", "start", "finish", "cost"];
+    columns = ["id", "wbs", "duration", "start", "finish", "cost"];
 
     Form_Open() {
         this.startFoldWatch();
@@ -734,7 +734,9 @@ export class MainForm extends Form {
             return attrOf(task, id.slice(FIELD_COLUMN.length));
         switch (id) {
         case "duration":   return durationText(task, project);
-        case "predecessors": return linksText(task, project);
+        case "predecessors": return linksText(task, project, "ID");
+        case "wbspreds":     return linksText(task, project, "WBS");
+        case "id":           return String(task.ID);
         case "start":      return shortDate(task.Start);
         case "finish":     return shortDate(task.Finish);
         case "percent":    return `${task.PercentComplete || 0}%`;
@@ -1278,7 +1280,7 @@ export class MainForm extends Form {
             for (const other of this.holder.project.Tasks) {
                 if (other.IsNull || other.Summary || other.UID === task.UID) continue;
                 this.predChoices.push(other.UID);
-                items.push(`${other.UID}  ${other.Name}`);
+                items.push(`${other.ID}  ${other.Name}`);
             }
             this.CmbPred.Items = items;
             this.CmbPred.Index = 0;
@@ -2469,7 +2471,9 @@ export class MainForm extends Form {
             return this.momentValues("Deadline", text,
                 this.holder.project.DefaultFinishTime || "17:00:00");
         case "predecessors":
-            return this.linkValues(task, text);
+            return this.linkValues(task, text, "ID");
+        case "wbspreds":
+            return this.linkValues(task, text, "WBS");
         case "percent": {
             const m = /^\s*(\d+(?:[.,]\d+)?)\s*%?\s*$/.exec(String(text || ""));
             const percent = m ? Math.round(Number(m[1].replace(",", "."))) : NaN;
@@ -2559,31 +2563,30 @@ export class MainForm extends Form {
      * task's links in one command. Anything the engine refuses -- a task that
      * is not there, a loop, a summary and its own branch -- refuses the cell
      * with the reason, and the cell goes back to what it said. */
-    linkValues(task, text) {
+    linkValues(task, text, by) {
         const links = [];
 
         for (const part of String(text || "").split(",")) {
             const item = part.trim();
             if (!item) continue;
 
-            const m = /^(\d+)\s*(FS|SS|FF|SF)?\s*(?:([+-])\s*(\d+(?:[.,]\d+)?)\s*(e?mo|e?m|e?h|e?d|e?w)?)?$/i.exec(item);
-            if (!m)
+            const found = this.predecessorIn(item, by);
+            if (found.missing === null)
                 return { refused: Locale.Text('"{0}" is not a predecessor -- try 3FS+2d', item) };
+            if (found.missing !== undefined)
+                return { refused: Locale.Text("There is no task {0}.", found.missing) };
+            const { pred, m } = found;
+            const uid = pred.UID;
 
-            const uid  = Number(m[1]);
-            const pred = taskOf(this.holder.project, uid);
-            if (!pred || pred.IsNull)
-                return { refused: Locale.Text("There is no task {0}.", m[1]) };
-
-            const type = m[2] ? LINK_NAMES.indexOf(m[2].toUpperCase()) : 1;
+            const type = m[1] ? LINK_NAMES.indexOf(m[1].toUpperCase()) : 1;
             const old  = task.Links.find((l) => l.PredecessorUID === uid);
 
             let lag = 0, format = old && old.LagFormat ? old.LagFormat : 7;
-            if (m[4]) {
-                const duration = parseDuration(m[4], format, "", this.holder.project);
+            if (m[3]) {
+                const duration = parseDuration(m[3] + (m[4] || "").toLowerCase(), format, "", this.holder.project);
                 if (duration === null)
-                    return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", m[4]) };
-                lag    = (m[3] === "-" ? -1 : 1) * duration.minutes;
+                    return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", m[3]) };
+                lag    = (m[2] === "-" ? -1 : 1) * duration.minutes;
                 format = duration.format;
             }
 
@@ -2597,6 +2600,36 @@ export class MainForm extends Form {
             if (kept >= 0) links[kept] = link; else links.push(link);
         }
         return { links };
+    }
+
+    /* **One predecessor as typed, named the way the column names it**: by
+     * `ID` (the row, Project's *Predecessors*) or by `WBS` (its *WBS
+     * Predecessors*). A code is not split on its shape -- `B-7` is a code
+     * and `3-1d` a lag -- but looked up: the longest number or code of the
+     * plan the text starts with whose remainder reads as a type and a lag.
+     * Answers `{ pred, m }` (m: type, sign, amount, unit), or `missing` with
+     * what was named, or `missing: null` when it does not read at all. */
+    predecessorIn(item, by) {
+        const keyOf = (t) => (t[by] === undefined || t[by] === null) ? "" : String(t[by]);
+        const candidates = this.holder.project.Tasks
+            .filter((t) => !t.IsNull && keyOf(t) && item.indexOf(keyOf(t)) === 0)
+            .sort((a, b) => keyOf(b).length - keyOf(a).length);
+        for (const pred of candidates) {
+            const m = LINK_REST.exec(item.slice(keyOf(pred).length));
+            if (m) return { pred, m };
+        }
+
+        if (by === "ID") {
+            const m = /^(\d+)(.*)$/.exec(item);
+            return { missing: m && LINK_REST.test(m[2]) ? m[1] : null };
+        }
+        /* An unknown code ends where a type or a lag with its unit begins. */
+        for (let end = 1; end <= item.length; end++) {
+            const rest = item.slice(end);
+            if (LINK_REST.test(rest) && (!rest || /^\s*(FS|SS|FF|SF|[+]|-\s*\d+(?:[.,]\d+)?\s*e?(mo|m|h|d|w)\s*$)/i.test(rest)))
+                return { missing: item.slice(0, end).trim() };
+        }
+        return { missing: null };
     }
 
     /* The cell left its editing state -- Enter, the focus moving away, a day
@@ -4961,6 +4994,58 @@ export class MainForm extends Form {
                         this.edit.removeTask(summary.UID), false) && ok;
                 ok = eq("agregar tras el resumen es nivel 1",
                         this.edit.addTask(summary.UID).OutlineLevel, 1) && ok;
+                this.edit.undo();
+                this.fill();
+            }
+
+            /* **La EDT se renumera con cada edición**, como en Project: una
+             * tarea indentada pasa a ser 1.1, la que sigue corre su número,
+             * y un código que el archivo eligió (no el número de esquema) no
+             * se toca. */
+            {
+                const numbers = () => this.holder.project.Tasks
+                    .map((t) => `${t.OutlineNumber}/${t.WBS}`).join(" ");
+                const build = taskOf(this.holder.project, 2);
+                const added = this.edit.addTask(1);
+                ok = eq("una tarea nueva toma su número", numbers(),
+                        "0/0 1/1 2/2 3/3") && ok;
+                this.edit.indent(added.UID, 1);
+                ok = eq("indentar renumera la EDT", numbers(),
+                        "0/0 1/1 1.1/1.1 2/2") && ok;
+                build.WBS = "B-7";
+                this.edit.indent(build.UID, 1);
+                ok = eq("un código propio queda", numbers(),
+                        "0/0 1/1 1.1/1.1 1.2/B-7") && ok;
+                this.edit.undo(); this.edit.undo(); this.edit.undo();
+                this.fill();
+            }
+
+            /* **Predecesoras por Id y por EDT**, como las dos columnas de
+             * Project: el Id es la fila (no el UID), la EDT es el código, y
+             * un código con guion no se confunde con un retraso. */
+            {
+                const project = this.holder.project;
+                const build = taskOf(project, 2);
+                const added = this.edit.addTask(1);   // fila 2; Build pasa a la 3
+                added.WBS = "B-7";
+                ok = eq("Build es la fila 3", build.ID, 3) && ok;
+                let got = this.linkValues(build, "1, 2FS+4h", "ID");
+                ok = eq("por Id se nombra la fila",
+                        got.links.map((l) => `${l.PredecessorUID}:${l.LinkLag}:${l.LagFormat}`).join(" "),
+                        `1:0:7 ${added.UID}:2400:5`) && ok;
+                build.Links = got.links;
+                ok = eq("el texto por Id", linksText(build, project, "ID"), "1, 2FS+4h") && ok;
+                ok = eq("el texto por EDT", linksText(build, project, "WBS"), "1, B-7FS+4h") && ok;
+                got = this.linkValues(build, "B-7SS-1d", "WBS");
+                ok = eq("un código con guion es el código",
+                        got.links.map((l) => `${l.PredecessorUID}:${l.Type}:${l.LinkLag < 0}`).join(" "),
+                        `${added.UID}:3:true`) && ok;
+                ok = eq("una fila que no está",
+                        this.linkValues(build, "9", "ID").refused,
+                        Locale.Text("There is no task {0}.", "9")) && ok;
+                ok = eq("un código que no está",
+                        this.linkValues(build, "Z-1", "WBS").refused,
+                        Locale.Text("There is no task {0}.", "Z-1")) && ok;
                 this.edit.undo();
                 this.fill();
             }
@@ -7631,11 +7716,13 @@ class CallLog {
  * spin reads the digits and drops the unit), and a duration whose unit is gone
  * is a wrong number. */
 const COLUMNS = [
+    { id: "id",         Text: "ID",               Width: 44,  Alignment: "Right" },
     { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right",
       Editor: "Text" },
     { id: "start",      Text: "Start",            Width: 130, Editor: "Date" },
     { id: "finish",     Text: "Finish",           Width: 130, Editor: "Date" },
     { id: "predecessors", Text: "Predecessors",   Width: 130, Editor: "Text" },
+    { id: "wbspreds",   Text: "WBS predecessors", Width: 130, Editor: "Text" },
     { id: "percent",    Text: "Percent complete", Width: 70,  Alignment: "Right",
       Editor: { Kind: "Number", Min: 0, Max: 100, Step: 1 } },
     { id: "critical",   Text: "Critical",         Width: 60,  Alignment: "Center" },
@@ -7772,17 +7859,24 @@ function minutesText(minutes, task, project) {
 }
 
 /*
- * **A task's links as MSPDI spells them**: `3FS+2d, 7SS` -- the predecessor's
- * UID, the type's two letters when it is not finish-to-start (or when there is
- * a lag), and the lag with its unit. A plain `3` is the link a reader assumes.
+ * **A task's links as Project spells them**: `3FS+2d, 7SS` -- the
+ * predecessor's `ID` (the row; `WBS` for the *WBS Predecessors* column, never
+ * the UID, which is the file's identity and not a reader's), the type's two
+ * letters when it is not finish-to-start (or when there is a lag), and the
+ * lag with its unit. A plain `3` is the link a reader assumes.
  */
-function linksText(task, project) {
+
+/* What follows the predecessor in its text: the type, then the lag. */
+const LINK_REST = /^\s*(FS|SS|FF|SF)?\s*(?:([+-])\s*(\d+(?:[.,]\d+)?)\s*(e?mo|e?m|e?h|e?d|e?w)?)?\s*$/i;
+
+function linksText(task, project, by) {
     const parts = [];
 
     for (const link of task.Links) {
         const kind = linkKind(link);
         const lag  = linkLagText(link, project);
-        let part   = String(link.PredecessorUID);
+        const pred = taskOf(project, link.PredecessorUID);
+        let part   = pred ? String(pred[by]) : `UID ${link.PredecessorUID}`;
 
         if (kind !== 1 || lag) part += LINK_NAMES[kind];
         if (lag) part += lag;

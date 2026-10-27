@@ -381,7 +381,8 @@ The history is a stack of snapshots of the record tree, not a set of inverse
 commands: a deletion that another task linked to comes back whole. Nothing is
 written until Save, and what Save writes is still `SaveXml` into the tree the
 file was read from -- an edit cannot touch what the shapes do not model.
-`OutlineNumber` and `WBS` are left as they were; Project derives them.
+`OutlineNumber` and `WBS` are renumbered on every edit, as Project does; a
+`WBS` that was not the outline number is the file's own code and is kept.
 
 **Recalculate** (`F5`) runs the scheduling pass: every task with no predecessor
 starts at the project start, every other one as soon as its links allow -- FS,

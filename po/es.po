@@ -1514,3 +1514,15 @@ msgstr "Informe guardado en {0}."
 
 msgid "Sent {0} copies of the report to the printer."
 msgstr "Se enviaron {0} copias del informe a la impresora."
+
+msgid "ID"
+msgstr "Id"
+
+msgid "WBS predecessors"
+msgstr "Predecesoras EDT"
+
+msgid "The predecessors by ID, the row number"
+msgstr "Las predecesoras por Id, el número de fila"
+
+msgid "The predecessors by their WBS code"
+msgstr "Las predecesoras por su código EDT"

@@ -13,6 +13,8 @@ const COLUMN_CHECKS = {
     start:      "ChkColStart",
     finish:     "ChkColFinish",
     predecessors: "ChkColPredecessors",
+    wbspreds:   "ChkColWbsPreds",
+    id:         "ChkColId",
     percent:    "ChkColPercent",
     critical:   "ChkColCritical",
     slack:      "ChkColSlack",

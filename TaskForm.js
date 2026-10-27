@@ -206,7 +206,7 @@ export function fillFormLinks(ui, task, project) {
     for (const other of project.Tasks) {
         if (other.IsNull || other.Summary || other.UID === task.UID) continue;
         ui.predChoices.push(other.UID);
-        items.push(`${other.UID}  ${other.Name}`);
+        items.push(`${other.ID}  ${other.Name}`);
     }
     ui.CmbPred.Items = items;
     ui.CmbPred.Index = 0;

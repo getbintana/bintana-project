@@ -49,11 +49,17 @@ suma lo que cuestan las asignaciones de la tarea: unidades por tarifa del
 recurso, o el costo fijo del material; queda vacía si la tarea no cuesta nada.
 
 Las columnas se eligen en **Ver → Columnas…** (o en el menú de la fila,
-**Columnas…**): se agregan y se sacan con un tilde, entre duración, fechas,
-**predecesoras**, avance, crítica, holgura, desvío, hito, trabajo, costo, EDT,
-prioridad, restricción, fecha límite, calendario, tipo de tarea, notas e
-hipervínculo. El nombre es el árbol y no se va. La elección es una vista, como
-la escala: se recuerda para la próxima ventana y no toca el archivo.
+**Columnas…**): se agregan y se sacan con un tilde, entre Id, duración, fechas,
+**predecesoras**, predecesoras EDT, avance, crítica, holgura, desvío, hito,
+trabajo, costo, EDT, prioridad, restricción, fecha límite, calendario, tipo de
+tarea, notas e hipervínculo. El nombre es el árbol y no se va. La elección es
+una vista, como la escala: se recuerda para la próxima ventana y no toca el
+archivo.
+
+Como en Project, el **Id** es el número de fila y la **EDT** el código de
+esquema (`1`, `1.1`, `1.2`…); los dos se renumeran solos al agregar, mover o
+indentar. **Predecesoras** nombra a cada una por su Id (`3FS+2d, 7SS`) y
+**Predecesoras EDT** por su código (`1.2FS+2d`); las dos se escriben igual.
 
 Los **campos personalizados** que el plan define son columnas aparte, una por
 campo y con el nombre que el archivo les da: se tildan —varios a la vez— en

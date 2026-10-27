@@ -50,7 +50,7 @@ las notas fechadas de las fases; esto es la lista para retomar.
    (`ACEPTACION.md`, `tests/aceptacion.sh`): convierte el corpus en dorado y
    contesta el `EffortDriven` omitido.
 4. **Decisiones abiertas** (sección *Abiertas*): qué hereda una tarea nueva sin
-   fechas; `OutlineNumber`/`WBS` al indentar.
+   fechas.
 
 En el runtime no queda nada pendiente de esta ronda: las dos cosas conocidas
 —`Editable: true` como alias de `Editor: "Text"`, y F2 sobre un árbol abriendo
@@ -797,8 +797,11 @@ reabrir.
 
 ## Decisiones tomadas
 
-- **`OutlineNumber`/`WBS` al indentar**: los deriva Project; la app los deja
-  como están y no los inventa (se medirá con el archivo real).
+- **`OutlineNumber`/`WBS` al indentar**: se renumeran en cada edición, como
+  hace Project en vivo (2026-10-27; antes se dejaban a Project y una tarea
+  nueva quedaba sin EDT). Una `WBS` que no era el número de esquema es un
+  código del archivo (máscara o a mano) y no se toca. La columna EDT va
+  visible por defecto.
 - **Undo**: snapshot por comando, no comandos inversos; una baja con links
   vuelve entera (`Edit.js`).
 - **Panel de tareas**: lateral dentro de un `Split`, no modal.
@@ -825,8 +828,6 @@ reabrir.
 
 - Si una tarea nueva sin fechas debe heredar algo del vecino o quedar vacía
   (hoy queda vacía: una fecha inventada es una mentira).
-- Qué hacer con `OutlineNumber`/`WBS` si el archivo real muestra que Project no
-  los recompone al abrir.
 
 ## Pendientes de la auditoría (2026-10-07)
 
@@ -906,11 +907,8 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
   afirma sin el XSD externo (falla sin `Order`). **Si una forma gana un campo
   que el XSD no tiene, el runtime se niega a escribir y lo nombra**: hay que
   agregarlo a su `Order`.
-- **`ID` no se renumera.** `addTask` le da `ID = UID` a la tarea nueva y
-  `moveTask` reordena sin tocar los `ID`: agregar e indentar escribe 0,1,3,2.
-  Quien ordene por `ID` (MPXJ, y por él ProjectLibre) deshace el movimiento
-  o cuelga la subtarea del padre equivocado. Va con la decisión abierta de
-  `OutlineNumber`/`WBS` (ver Abiertas).
+- ~~**`ID` no se renumera.**~~ Resuelto (2026-10-27): el `ID` es el número de
+  fila y se renumera en cada edición junto con `OutlineNumber`/`WBS`.
 - **Reasignar vuelve a costear** (2026-10-07): el `Cost` del archivo es el de
   su trabajo, así que cuando `addAssignment` cambia las unidades o el trabajo
   de una asignación -- la propia o las que el nuevo reparto mueve -- lo borra y
