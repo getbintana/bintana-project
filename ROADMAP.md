@@ -1024,6 +1024,18 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 - Setear `Tasks.Key` o `TxtFilter.Text` ya dispara el evento, y la llamada
   explícita que sigue redibuja una segunda vez. Quedó sin tocar: está en una
   veintena de lugares y en las pruebas, y cuesta un redibujo.
+- **La tabla se reconstruye entera en cada comando** (anotado 2026-10-27,
+  oportunidad de mejora): `fill()` hace `Clear` y vuelve a cargar todas las
+  filas, aunque se haya cambiado una celda. Funciona, pero obliga a restituir a
+  mano lo que se pierde (scroll, selección, celda actual, plegado) y hace que
+  GTK vuelva a medir las columnas: el nombre se achicaba hasta que tuvo un
+  ancho propio (`NAME_WIDTH`, `e25badd`), y el ancho arrastrado tampoco
+  sobrevive a redeclarar las columnas (el runtime no lo informa). La mejora:
+  que `fill()` compare la forma (Id, padre y orden de las filas) con la
+  anterior y, si es la misma, actualice con `SetCell` solo las celdas que
+  cambiaron; si no, que reconstruya como hoy. Los cambios de estructura
+  (agregar, borrar, indentar, mover, pegar) seguirían reconstruyendo, porque
+  el runtime no puede mover un nodo de padre o de lugar, solo agregar y quitar.
 
 ### Empaquetado y pruebas
 
