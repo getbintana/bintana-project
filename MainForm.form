@@ -992,7 +992,7 @@
                                     "Columns": [
                                       {
                                         "Text": "Task",
-                                        "Width": 0
+                                        "Width": 280
                                       },
                                       {
                                         "Text": "Duration",

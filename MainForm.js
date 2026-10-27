@@ -828,7 +828,13 @@ export class MainForm extends Form {
      * field unless the file says the values are a list (`Tasks_CellEditor`
      * answers the combo). */
     applyColumns() {
-        const specs = [{ Text: Locale.Text("Task"), Width: 0, Editor: "Text" }];
+        /* **The name has a width of its own**, not "size yourself": a column
+         * that sizes itself is measured again on every rebuild, and every
+         * command rebuilds the rows -- so it shrank to whatever GTK had bound
+         * at that moment and the names were cut. A width asked for is kept
+         * across rebuilds, and a drag moves it for as long as the columns
+         * are not declared again. */
+        const specs = [{ Text: Locale.Text("Task"), Width: NAME_WIDTH, Editor: "Text" }];
         for (const id of this.visibleColumns()) {
             const column = COLUMNS.find((c) => c.id === id);
             if (column) {
@@ -7892,6 +7898,10 @@ class CallLog {
  * stays text**: `2d`, `8h` and `3ed` are spellings a `Number` would eat (its
  * spin reads the digits and drops the unit), and a duration whose unit is gone
  * is a wrong number. */
+/* The name column's starting width: room for a name of forty-odd characters
+ * three levels deep. */
+const NAME_WIDTH = 280;
+
 const COLUMNS = [
     { id: "id",         Text: "ID",               Width: 44,  Alignment: "Right" },
     { id: "duration",   Text: "Duration",         Width: 84,  Alignment: "Right",
