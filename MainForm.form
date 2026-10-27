@@ -21,7 +21,7 @@
     {
       "name": "ActOpen",
       "text": "Open…",
-      "icon": "document-open-symbolic",
+      "icon": "bp-open-symbolic",
       "shortcut": "<Control>o"
     },
     {
@@ -76,12 +76,12 @@
     {
       "name": "ActAddMilestone",
       "text": "Add Milestone",
-      "icon": "starred-symbolic"
+      "icon": "bp-milestone-symbolic"
     },
     {
       "name": "ActAddSummary",
       "text": "Add Summary Task",
-      "icon": "view-list-symbolic"
+      "icon": "bp-summary-symbolic"
     },
     {
       "name": "ActDelete",
@@ -99,33 +99,38 @@
     {
       "name": "ActUnlink",
       "text": "Unlink Tasks",
-      "icon": "edit-cut-symbolic",
+      "icon": "bp-unlink-symbolic",
       "shortcut": "<Control><Shift>F2",
       "enabled": false
     },
     {
       "name": "ActPct0",
       "text": "0% Complete",
+      "icon": "bp-progress-0-symbolic",
       "enabled": false
     },
     {
       "name": "ActPct25",
       "text": "25% Complete",
+      "icon": "bp-progress-25-symbolic",
       "enabled": false
     },
     {
       "name": "ActPct50",
       "text": "50% Complete",
+      "icon": "bp-progress-50-symbolic",
       "enabled": false
     },
     {
       "name": "ActPct75",
       "text": "75% Complete",
+      "icon": "bp-progress-75-symbolic",
       "enabled": false
     },
     {
       "name": "ActPct100",
       "text": "100% Complete",
+      "icon": "bp-progress-100-symbolic",
       "enabled": false
     },
     {
@@ -212,7 +217,7 @@
     {
       "name": "ActColumns",
       "text": "Columns…",
-      "icon": "view-list-symbolic"
+      "icon": "bp-summary-symbolic"
     },
     {
       "name": "ActFormat",
@@ -676,7 +681,7 @@
                       "properties": {
                         "HAlign": "Start",
                         "Height": 30,
-                        "Icon": "document-open-symbolic",
+                        "Icon": "bp-open-symbolic",
                         "Style": "flat",
                         "Text": "Open the sample"
                       }
@@ -716,7 +721,7 @@
                   "properties": {
                     "Action": "ActOpen",
                     "Height": 30,
-                    "Icon": "document-open-symbolic",
+                    "Icon": "bp-open-symbolic",
                     "Style": "flat",
                     "Tooltip": "Open a Project XML file",
                     "Width": 34
@@ -798,7 +803,7 @@
                   "properties": {
                     "Action": "ActAddMilestone",
                     "Height": 30,
-                    "Icon": "starred-symbolic",
+                    "Icon": "bp-milestone-symbolic",
                     "Style": "flat",
                     "Tooltip": "Add a milestone after the selected task",
                     "Width": 34
@@ -810,7 +815,7 @@
                   "properties": {
                     "Action": "ActAddSummary",
                     "Height": 30,
-                    "Icon": "view-list-bullet-symbolic",
+                    "Icon": "bp-summary-symbolic",
                     "Style": "flat",
                     "Tooltip": "Add a summary task over the selected tasks",
                     "Width": 34
@@ -894,7 +899,7 @@
                   "properties": {
                     "Action": "ActUnlink",
                     "Height": 30,
-                    "Icon": "edit-cut-symbolic",
+                    "Icon": "bp-unlink-symbolic",
                     "Style": "flat",
                     "Tooltip": "Unlink the selected tasks",
                     "Width": 34
@@ -911,10 +916,10 @@
                   "properties": {
                     "Action": "ActPct0",
                     "Height": 30,
+                    "Icon": "bp-progress-0-symbolic",
                     "Style": "flat",
-                    "Text": "0%",
                     "Tooltip": "Mark the selected tasks 0% complete",
-                    "Width": 44
+                    "Width": 34
                   }
                 },
                 {
@@ -923,10 +928,10 @@
                   "properties": {
                     "Action": "ActPct25",
                     "Height": 30,
+                    "Icon": "bp-progress-25-symbolic",
                     "Style": "flat",
-                    "Text": "25%",
                     "Tooltip": "Mark the selected tasks 25% complete",
-                    "Width": 44
+                    "Width": 34
                   }
                 },
                 {
@@ -935,10 +940,10 @@
                   "properties": {
                     "Action": "ActPct50",
                     "Height": 30,
+                    "Icon": "bp-progress-50-symbolic",
                     "Style": "flat",
-                    "Text": "50%",
                     "Tooltip": "Mark the selected tasks 50% complete",
-                    "Width": 44
+                    "Width": 34
                   }
                 },
                 {
@@ -947,10 +952,10 @@
                   "properties": {
                     "Action": "ActPct75",
                     "Height": 30,
+                    "Icon": "bp-progress-75-symbolic",
                     "Style": "flat",
-                    "Text": "75%",
                     "Tooltip": "Mark the selected tasks 75% complete",
-                    "Width": 44
+                    "Width": 34
                   }
                 },
                 {
@@ -959,10 +964,10 @@
                   "properties": {
                     "Action": "ActPct100",
                     "Height": 30,
+                    "Icon": "bp-progress-100-symbolic",
                     "Style": "flat",
-                    "Text": "100%",
                     "Tooltip": "Mark the selected tasks 100% complete",
-                    "Width": 44
+                    "Width": 34
                   }
                 },
                 {
