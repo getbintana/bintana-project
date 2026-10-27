@@ -98,6 +98,10 @@ export class MainForm extends Form {
     attrShown   = "";
     valueItems  = [];
     filter = "";
+    tableShape = null;   // the rows' order, parents and columns, as `fill` last built them
+    rowUri     = {};     // each row's link, as the table was last told it
+    scrollHeld = null;   // the scroll a rebuild is keeping (`holdScroll`)
+    scrollTimer = null;
     zoomSync = false;
     status = 0;      // the status filter's choice, an index into STATUS_FILTERS
     clip   = null;   // what Copy kept: { tasks, assignments, text }
@@ -611,21 +615,11 @@ export class MainForm extends Form {
          * plan, and a plan that changed is one that was filled. */
         this.chartCal = new WorkCalendar(project, -1);
 
-        /* **The scroll is the other half of the selection and is kept with
-         * it.** A rebuild is a redraw of the same view, not a move within it,
-         * and the table does not know that: `Clear` empties it, an empty table
-         * has nowhere to scroll to, and the adjustment is clamped to the top
-         * on the way past -- so the rows go in at the top and the reader is
-         * back at the first task. Every command ends here, so that one clamp
-         * was the first keystroke of every edit throwing the plan away.
-         * Asked for before the rows go, handed back after they are in. */
-        const at = this.Tasks.ScrollY;
         /* The cell the reader was on, kept across the rebuild by the column's
          * id: the table's columns are declared again, so an index would name
          * another field the moment one is hidden or moved. */
         const cur = this.cell;
 
-        this.Tasks.Clear();
         /* La columna del enlace, si está a la vista: la tabla la declara
          * `Link: true` y el destino va por fila -- el texto es la etiqueta (o
          * la dirección) y la dirección es a donde va. `""` deja la celda sin
@@ -633,38 +627,45 @@ export class MainForm extends Form {
         const cols   = this.visibleColumns();
         const linkAt = cols.indexOf("link");
 
-        /* **The cells a summary does not edit**, one past the name (which the
-         * tree does not list among the columns): what Project derives from its
-         * children. Shut where they are drawn rather than refused after the
-         * typing, so a summary's dates read dim and open nothing -- the same
-         * bargain the panel makes greying its controls. */
-        const shut = [];
-        for (const id of SUMMARY_SHUT) {
-            const at = cols.indexOf(id);
-            if (at >= 0) shut.push(at + 1);
-        }
-
-        const stack = [];
+        /* The rows as the tree holds them: each under the nearest task before
+         * it that is one level shallower. */
+        const rows = [], stack = [];
         for (const task of this.visibleTasks(project)) {
             const key = String(task.UID);
             this.byUID[key] = task;
             while (stack.length && stack[stack.length - 1].level >= task.OutlineLevel)
                 stack.pop();
-            const options = { Key: key };
-            if (stack.length) options.Parent = stack[stack.length - 1].key;
-            this.Tasks.Add(this.cells(task), options);
-            if (linkAt >= 0)
-                this.Tasks.SetUri(key, linkAt + 1, task.HyperlinkAddress || "");
-            if (task.Summary)
-                for (const at of shut)
-                    this.Tasks.SetEditable(key, at, false);
+            rows.push({ task, key, parent: stack.length ? stack[stack.length - 1].key : null });
             stack.push({ level: task.OutlineLevel, key: key });
         }
 
-        /* Clamped to what the new plan can show: a filter that leaves three
-         * rows has nothing to scroll to, and where it lands is the end of it. */
-        this.Tasks.ScrollY = Math.min(at, Math.max(this.Tasks.ScrollMaxY, 0));
-
+        /*
+         * **An edit that moved no row is written into the rows the table has.**
+         * Progress, a date, a name, a whole reschedule: the same rows in the
+         * same places, with other text in some cells. `SetCell` changes those
+         * cells and nothing else -- the scroll, the folds and the selection are
+         * the table's and stay -- where `Clear` and the rows again threw the
+         * view back to the top on every keystroke. The shape is the columns,
+         * the order, each row's parent and whether it is a summary (whose
+         * cells are shut); anything else that differs is a cell.
+         */
+        const shape = cols.join(",") + "|" + rows.map((r) =>
+            `${r.key}<${r.parent || ""}${r.task.Summary ? "+" : ""}`).join(",");
+        if (shape === this.tableShape && rows.every((r) => this.Tasks.Exists(r.key))) {
+            for (const r of rows) {
+                const now = this.cells(r.task), was = this.Tasks.Row(r.key) || [];
+                for (let c = 0; c < now.length; c++)
+                    if (was[c] !== now[c]) this.Tasks.SetCell(r.key, c, now[c]);
+                const uri = r.task.HyperlinkAddress || "";
+                if (linkAt >= 0 && this.rowUri[r.key] !== uri) {
+                    this.Tasks.SetUri(r.key, linkAt + 1, uri);
+                    this.rowUri[r.key] = uri;
+                }
+            }
+        } else {
+            this.rebuildRows(rows, cols, linkAt);
+            this.tableShape = shape;
+        }
         const s = summarize(project);
         const problems = this.holder.problems.length;
         /* **One plural to a count**: the line was a single sentence with four
@@ -711,6 +712,65 @@ export class MainForm extends Form {
             this.showTask(null);
         }
         this.updateTitle();
+    }
+
+    /*
+     * The rows again, from nothing: what an edit that moved a row needs -- a
+     * task added, taken out, indented, a filter. **The scroll is the other
+     * half of the selection and is kept with it.** A rebuild is a redraw of
+     * the same view, not a move within it, and the table does not know that:
+     * `Clear` empties it and the rows go in at the top. Handing the number
+     * back once the rows are in is not enough either -- GTK lays the new rows
+     * out on the next frame and puts the list back at its first row as it
+     * does (measured: 200 after `fill`, 0 a frame later) -- so the number is
+     * also *held* for a moment, and `Tasks_Scroll` puts it back when the
+     * layout moves it.
+     */
+    rebuildRows(rows, cols, linkAt) {
+        const at = this.Tasks.ScrollY;
+        this.Tasks.Clear();
+        this.rowUri = {};
+
+        /* **The cells a summary does not edit**, one past the name (which the
+         * tree does not list among the columns): what Project derives from its
+         * children. Shut where they are drawn rather than refused after the
+         * typing, so a summary's dates read dim and open nothing -- the same
+         * bargain the panel makes greying its controls. */
+        const shut = [];
+        for (const id of SUMMARY_SHUT) {
+            const i = cols.indexOf(id);
+            if (i >= 0) shut.push(i + 1);
+        }
+
+        for (const r of rows) {
+            const options = { Key: r.key };
+            if (r.parent) options.Parent = r.parent;
+            this.Tasks.Add(this.cells(r.task), options);
+            if (linkAt >= 0) {
+                this.rowUri[r.key] = r.task.HyperlinkAddress || "";
+                this.Tasks.SetUri(r.key, linkAt + 1, this.rowUri[r.key]);
+            }
+            if (r.task.Summary)
+                for (const i of shut)
+                    this.Tasks.SetEditable(r.key, i, false);
+        }
+
+        /* Clamped to what the new plan can show: a filter that leaves three
+         * rows has nothing to scroll to, and where it lands is the end of it. */
+        this.Tasks.ScrollY = Math.min(at, Math.max(this.Tasks.ScrollMaxY, 0));
+        this.holdScroll(this.Tasks.ScrollY);
+    }
+
+    /* The scroll a rebuild keeps, for as long as the new rows take to be laid
+     * out. Nothing to hold at the top, which is where the layout goes anyway. */
+    holdScroll(y) {
+        if (this.scrollTimer) this.scrollTimer.Stop();
+        this.scrollHeld = y > 0 ? y : null;
+        this.scrollTimer = this.scrollHeld === null ? null
+            : Timer.After(SCROLL_HOLD_MS, () => {
+                this.scrollHeld = null;
+                this.scrollTimer = null;
+            });
     }
 
     /* What the filter lets through: the tasks whose name matches it and the
@@ -2098,6 +2158,13 @@ export class MainForm extends Form {
      * with them.
      */
     Tasks_Scroll(x, y) {
+        /* A rebuild's rows being laid out, not the reader: back where they
+         * were (`rebuildRows`). The assignment raises this again, with the
+         * held number, and that one moves the chart. */
+        if (this.scrollHeld !== null && this.scrollHeld !== undefined && y !== this.scrollHeld) {
+            this.Tasks.ScrollY = this.scrollHeld;
+            if (this.Tasks.ScrollY !== y) return;
+        }
         this.ganttY = y;
         this.redrawChart();
     }
@@ -5847,20 +5914,69 @@ export class MainForm extends Form {
                          this.Log.Text === said) && ok;
                 ok = eq("and leaves the scroll alone", t.ScrollY, kept) && ok;
             }
-            t.ScrollY = 0;
 
-            /* A branch closed is the next frame's arithmetic too, so it is
-             * asked in the next phase. */
-            t.ExpandAll();
+            /* The scroll a frame later is the next phase's question. */
             this.viewRow = rowH;
-            this.viewMax = t.ScrollMaxY;
-            this.viewFilter = this.pickFilter();
-            this.viewFold(eq, yes, ok);
+            this.viewKeep(eq, yes, ok, kept);
         } catch (e) {
             print(`view ERROR ${e.message}`);
             print("CHECK-FAILED");
             Application.Quit(1);
         }
+    }
+
+    /*
+     * **The scroll a frame later**, which is where it was lost: `fill` handed
+     * it back and the assertion right after said so, and GTK laid the new
+     * rows out on the next frame and put the list at its first row. So the
+     * question is asked after the frame, twice: an edit that moves no row
+     * (progress on a row on screen, the way the toolbar sets it), which is
+     * written into the cells, and one that rebuilds the rows, which holds the
+     * scroll against the layout.
+     */
+    viewKeep(eq, yes, ok, kept) {
+        const t = this.Tasks;
+        const plan = this.visibleTasks(this.holder.project);
+        const first = Math.ceil(kept / this.viewRow) + 1;
+        const task = plan.slice(first).find((x) => !x.Summary) || plan[first];
+        const later = (then) => Timer.After(FOLD_POLL_MS * 2, then);
+        const done = () => {
+            t.ScrollY = 0;
+            /* A branch closed is the next frame's arithmetic too, so it is
+             * asked in the next phase. */
+            t.ExpandAll();
+            this.viewMax = t.ScrollMaxY;
+            this.viewFilter = this.pickFilter();
+            this.viewFold(eq, yes, ok);
+        };
+        if (!task) {
+            print("view no row below the scroll to edit: the plan is short");
+            done();
+            return;
+        }
+        const was = task.PercentComplete || 0;
+        this.edit.setFields(task.UID, { PercentComplete: was === 50 ? 60 : 50 });
+        this.fill(task.UID);
+        later(() => {
+            try {
+                ok = eq("an edit keeps the scroll after the layout too", t.ScrollY, kept) && ok;
+                ok = eq("and the row says what was written",
+                        t.Cell(String(task.UID), this.visibleColumns().indexOf("percent") + 1) ===
+                        `${task.PercentComplete}%` || this.visibleColumns().indexOf("percent") < 0,
+                        true) && ok;
+                this.edit.undo();
+                this.tableShape = null;          // as if a row had moved
+                this.fill(task.UID);
+                later(() => {
+                    ok = eq("and so does a rebuild of the rows", t.ScrollY, kept) && ok;
+                    done();
+                });
+            } catch (e) {
+                print(`view ERROR ${e.message}`);
+                print("CHECK-FAILED");
+                Application.Quit(1);
+            }
+        });
     }
 
     /*
@@ -7954,6 +8070,9 @@ const MIN_PLAN_W = 420;
 /* How often the chart asks whether a fold left it drawing the wrong rows:
  * short enough that the bars follow the arrow, long enough to be nothing. */
 const FOLD_POLL_MS = 150;
+/* How long a rebuild holds the scroll against the layout of its new rows,
+ * which is a frame or two away. */
+const SCROLL_HOLD_MS = 300;
 
 /*
  * The columns the plan table can show. The name is not here: it is the tree
