@@ -191,7 +191,8 @@ Gantt siguen a la tarea que estás editando.
 hacé clic en una celda —editable o no— y **Enter** confirma y baja una fila,
 **Tab** confirma y va a la derecha y **Mayús+Tab** a la izquierda; al final de
 una fila la vuelta cae en la primera columna de la siguiente (el nombre).
-**Insert** agrega una tarea después de la elegida y **Supr** la borra con la
+**Insert** agrega una tarea arriba de la elegida, a su nivel, como en
+Project, y **Supr** la borra con la
 pregunta de siempre. Las teclas mueven dentro de la edición y fuera de ella, y
 la barra de entrada sigue a la celda.
 
@@ -201,6 +202,11 @@ elegida— y **Agregar tarea de resumen**, como *Insertar tarea de resumen* de
 Project: el resumen toma el lugar de la tarea elegida y la deja debajo, con
 sus subtareas y sus vínculos; sin tarea elegida, aparece al final con una
 tarea adentro. Cada uno se deshace en un paso.
+
+**Una tarea nueva dura 1 día estimado (`1d?`)**, como en Project, y va arriba
+de la elegida; escribir su duración le saca la marca de estimada. **Cortar**
+(Ctrl+X) y **Pegar** (Ctrl+V) mueven un bloque: lo pegado queda arriba de la
+fila que elijas, con los vínculos que había entre las tareas cortadas.
 
 **Se pueden elegir varias filas**: **Mayús+clic** o **Mayús+↑/↓** toman un
 rango y **Ctrl+clic** suma o saca una. Con varias elegidas, **Indentar** y
@@ -555,7 +561,13 @@ próxima vez, salvo el título, que es de cada proyecto.
 | `Ctrl+O` | Abrir |
 | `Ctrl+S` / `Ctrl+Shift+S` | Guardar / Guardar como |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | Deshacer / Rehacer |
-| `Ctrl+N` | Agregar tarea |
+| `Ctrl+N` / `Insert` | Agregar tarea (arriba de la elegida) |
+| `Supr` | Borrar las tareas elegidas |
+| `Ctrl+X` / `Ctrl+C` / `Ctrl+V` | Cortar / Copiar / Pegar tareas (se pega arriba de la elegida) |
+| `Alt+Shift+→` / `Alt+Shift+←` | Indentar / Quitar nivel |
+| `Alt+Shift+↑` / `Alt+Shift+↓` | Subir / Bajar |
+| `Shift+F2` | Información de la tarea |
+| `Ctrl+F2` / `Ctrl+Shift+F2` | Vincular / Desvincular tareas |
 | `F5` | Recalcular |
 | `Ctrl+Q` | Salir |
 

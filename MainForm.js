@@ -1280,7 +1280,7 @@ export class MainForm extends Form {
         /* The commands the toolbar, the menu and the panel share are one
          * `Enabled`: assigning the button's would be refused, and rightly. */
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
-                           this.ActUp, this.ActDown, this.ActCopy,
+                           this.ActUp, this.ActDown, this.ActCopy, this.ActCut,
                            this.ActTaskInfo, this.ActLink, this.ActUnlink,
                            this.ActPct0, this.ActPct25, this.ActPct50,
                            this.ActPct75, this.ActPct100])
@@ -2305,12 +2305,13 @@ export class MainForm extends Form {
 
     /* --- copy and paste -------------------------------------------------- */
 
-    /* Ctrl+C and Ctrl+V on the list or the chart, which is where the key comes
-     * from: a key typed in a field of the panel is the field's own. */
+    /* Ctrl+C, Ctrl+X and Ctrl+V on the list or the chart, which is where the
+     * key comes from: a key typed in a field of the panel is the field's own. */
     rowKey(key, ctrl) {
         if (!ctrl || !this.holder) return false;
         const k = String(key).toLowerCase();
         if (k === "c") { this.ActCopy_Execute(); return true; }
+        if (k === "x") { this.ActCut_Execute(); return true; }
         if (k === "v") { this.ActPaste_Execute(); return true; }
         return false;
     }
@@ -2320,7 +2321,7 @@ export class MainForm extends Form {
         if (!this.holder || !this.Tasks) return false;
 
         /* **The grid's keys, as Project answers them in the sheet**: Enter
-         * down, Tab right, Shift+Tab left, Insert a task after this one and
+         * down, Tab right, Shift+Tab left, Insert a task above this one and
          * Delete the selected one. The move keys are the same the cell's own
          * commit reports, so the bar and the cell move the same way. */
         const k = String(key);
@@ -2359,7 +2360,24 @@ export class MainForm extends Form {
         this.log(Locale.Text("Copied {0} tasks.", clip.tasks.length));
     }
 
-    /* What is on the clipboard goes in after the selected task: this window's
+    /* **Cut**: the copy, and the tasks gone in the same breath -- one undo,
+     * and Paste puts them back above the row chosen next, which is how a
+     * block is moved in Project. The links between the cut tasks travel
+     * with them; the ones to the rest of the plan go, as a deletion's do. */
+    ActCut_Execute() {
+        const task = this.selectedTask();
+        if (!task || !this.edit) return;
+        /* A copy refused (only the project summary) must not delete what an
+         * older copy named. */
+        this.clip = null;
+        this.ActCopy_Execute();
+        if (!this.clip) return;
+        this.edit.removeTask(this.selectedUIDs());
+        this.fill(null);
+        this.log(Locale.Text("Cut {0} tasks.", this.clip.tasks.length));
+    }
+
+    /* What is on the clipboard goes in above the selected task: this window's
      * own copy when the text is the one it put there, otherwise one task a line
      * -- the name first and, when the list shows a duration column, a duration
      * from the same place. */
@@ -4905,8 +4923,8 @@ export class MainForm extends Form {
              * bajo t1 la lleva a ella un nivel más abajo también, y desindentar
              * la devuelve -- antes t3 quedaba hermana de t2, o a dos niveles. */
             const t1 = doc.addTask(null);
-            const t2 = doc.addTask(t1.UID);
-            const t3 = doc.addTask(t2.UID);
+            const t2 = doc.addTask(null);
+            const t3 = doc.addTask(null);
             doc.indent(t3.UID, 1);
             const lv = () => [t1, t2, t3].map((t) =>
                 taskOf(this.holder.project, t.UID).OutlineLevel - t1.OutlineLevel).join(",");
@@ -5120,7 +5138,7 @@ export class MainForm extends Form {
                 const numbers = () => this.holder.project.Tasks
                     .map((t) => `${t.OutlineNumber}/${t.WBS}`).join(" ");
                 const build = taskOf(this.holder.project, 2);
-                const added = this.edit.addTask(1);
+                const added = this.edit.addTask(2);
                 ok = eq("una tarea nueva toma su número", numbers(),
                         "0/0 1/1 2/2 3/3") && ok;
                 this.edit.indent(added.UID, 1);
@@ -5142,7 +5160,7 @@ export class MainForm extends Form {
                 const shape = () => this.holder.project.Tasks
                     .map((t) => `${t.OutlineNumber}${t.Summary ? "S" : ""}${t.Milestone ? "M" : ""}`)
                     .join(" ");
-                const hito = this.edit.addMilestone(1);
+                const hito = this.edit.addMilestone(2);
                 ok = eq("el hito va tras la tarea, sin duración",
                         `${shape()} ${hito.Duration} ${durationText(hito, this.holder.project)}`,
                         "0S 1 2M 3 PT0H0M0S 0d") && ok;
@@ -5168,7 +5186,7 @@ export class MainForm extends Form {
                 this.edit.addSummary([1, 2]);
                 ok = eq("un resumen sobre dos", shape(), "0S 1S 1.1 1.2") && ok;
                 this.edit.undo();
-                const c = this.edit.addTask(2).UID;     // 3, al final
+                const c = this.edit.addTask(null).UID;  // 3, al final
                 ok = eq("indentar dos de una", this.edit.indent([2, c], 1) &&
                         shape() === "0S 1S 1.1 1.2", true) && ok;
                 this.edit.undo();
@@ -5207,7 +5225,7 @@ export class MainForm extends Form {
                 const order = () => plan().Tasks.map((t) => t.UID).join(",");
                 const links = () => plan().Tasks
                     .flatMap((t) => t.Links.map((l) => `${l.PredecessorUID}>${t.UID}`)).join(" ");
-                const c = this.edit.addTask(2).UID;      // 0,1,2,c
+                const c = this.edit.addTask(null).UID;   // 0,1,2,c
                 this.edit.unlinkTasks([2]);
                 ok = eq("desvincular una le saca todos sus vínculos", links(), "") && ok;
                 ok = eq("vincular tres en cadena", this.edit.linkTasks([1, 2, c]), 2) && ok;
@@ -5234,6 +5252,43 @@ export class MainForm extends Form {
                 ok = eq("borrar varias de una", this.edit.removeTask([1, sumUID]) && order(), "0") && ok;
                 this.edit.undo();
                 ok = eq("y vuelven con un deshacer", order(), `0,1,${sumUID},2,${c}`) && ok;
+                this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
+            }
+
+            /* **Como en Project**: una tarea nueva es `1d?` y va arriba de la
+             * elegida, a su nivel; Cortar es copiar y borrar en un paso, y
+             * pegar la deja arriba de la fila que se elija; y los atajos son
+             * los de Project. */
+            {
+                const plan = () => this.holder.project;
+                const order = () => plan().Tasks.map((t) => t.UID).join(",");
+                const nueva = this.edit.addTask(2);
+                ok = eq("una tarea nueva es 1d?, arriba de la elegida",
+                        `${durationText(nueva, plan())} ${order()}`,
+                        `1d? 0,1,${nueva.UID},2`) && ok;
+                ok = eq("y al final sin elegida", this.edit.addTask(null) &&
+                        order(), `0,1,${nueva.UID},2,${nueva.UID + 1}`) && ok;
+                this.edit.undo(); this.edit.undo();
+                this.fill(1);
+                this.Tasks.Key = "1";
+                this.Tasks_Select();
+                ok = eq("Ctrl+X corta", this.rowKey("x", true) && order(), "0,2") && ok;
+                ok = eq("y el corte sale con un deshacer",
+                        this.edit.undo() && order(), "0,1,2") && ok;
+                this.fill(2);
+                this.Tasks.Key = "1";
+                this.Tasks_Select();
+                this.ActCut.Execute();
+                this.fill(2);
+                this.Tasks.Key = "2";
+                this.Tasks_Select();
+                const back = this.edit.pasteTasks(this.clip, 2);
+                ok = eq("pegar arriba de la elegida", order(), `0,${back.UID},2`) && ok;
+                const keys = {};
+                for (const name of ["ActIndent", "ActOutdent", "ActUp", "ActDown", "ActTaskInfo", "ActCut"])
+                    keys[name] = this[name] ? "ok" : "no";
+                ok = eq("los comandos están", JSON.stringify(keys),
+                        '{"ActIndent":"ok","ActOutdent":"ok","ActUp":"ok","ActDown":"ok","ActTaskInfo":"ok","ActCut":"ok"}') && ok;
                 this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             }
 
@@ -5291,7 +5346,7 @@ export class MainForm extends Form {
             {
                 const project = this.holder.project;
                 const build = taskOf(project, 2);
-                const added = this.edit.addTask(1);   // fila 2; Build pasa a la 3
+                const added = this.edit.addTask(2);   // arriba de Build: fila 2, Build pasa a la 3
                 added.WBS = "B-7";
                 ok = eq("Build es la fila 3", build.ID, 3) && ok;
                 let got = this.linkValues(build, "1, 2FS+4h", "ID");
@@ -5531,7 +5586,7 @@ export class MainForm extends Form {
                 return this.selLink; })(), null) && ok;
 
             /* Moving an end: a third task, dated, to move the link to. */
-            const three = edit.addTask(2);
+            const three = edit.addTask(null);
             edit.setFields(three.UID, { Start: "2026-09-04T08:00:00",
                                         Finish: "2026-09-04T17:00:00" });
             sh = shapeOf();
@@ -5562,7 +5617,7 @@ export class MainForm extends Form {
             /* **A short bar can still be picked up**: two hours is a few pixels
              * wide, and its grip used to be all of it. The middle moves it and
              * only the far end stretches it. */
-            const brief = edit.addTask(2);
+            const brief = edit.addTask(null);
             edit.setFields(brief.UID, { Start: "2026-09-02T08:00:00",
                                         Finish: "2026-09-02T10:00:00" });
             const gb = geo();
@@ -6765,7 +6820,7 @@ export class MainForm extends Form {
             print(`edit recalc again changed=${again.changed} steps=${edit.at}`);
 
             /* A task after it, indented under it: UID 1 becomes a summary. */
-            const added = edit.addTask(1);
+            const added = edit.addTask(2);
             ok = added.UID === 3 && added.OutlineLevel === 1 && ok;
             ok = edit.indent(added.UID, 1) && added.OutlineLevel === 2 && ok;
             ok = edit.task(1).Summary === true && ok;
@@ -7364,7 +7419,7 @@ export class MainForm extends Form {
              * qué terminó (`how`), y el mismo movimiento es el de la tecla
              * suelta; la barra de entrada sigue a la celda. Una tercera fila
              * -- que se deshace al final -- es lo que hay para bajar. */
-            const navTask = edit.addTask(2);
+            const navTask = edit.addTask(null);
             const navKey  = String(navTask.UID);
             this.setColumns(["duration", "start"]);
             this.fill(2);
@@ -7690,7 +7745,7 @@ export class MainForm extends Form {
     checkWiring() {
         const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActAddMilestone", "ActAddSummary", "ActDelete",
-                        "ActLink", "ActUnlink", "ActPct0", "ActPct25", "ActPct50", "ActPct75", "ActPct100",
+                        "ActLink", "ActUnlink", "ActCut", "ActPct0", "ActPct25", "ActPct50", "ActPct75", "ActPct100",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActCopy", "ActPaste", "ActZoomIn", "ActZoomOut", "ActZoomFit",
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",

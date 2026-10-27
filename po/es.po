@@ -166,8 +166,8 @@ msgstr "Acerca de bintana-project"
 msgid "Open a Project XML file"
 msgstr "Abrir un archivo XML de Project"
 
-msgid "Add a task after the selected one"
-msgstr "Agregar una tarea después de la seleccionada"
+msgid "Add a task above the selected one"
+msgstr "Agregar una tarea arriba de la seleccionada"
 
 msgid "Delete the selected task and its subtree"
 msgstr "Eliminar la tarea seleccionada y su subárbol"
@@ -1542,8 +1542,8 @@ msgstr "Nuevo hito"
 msgid "New summary task"
 msgstr "Nueva tarea de resumen"
 
-msgid "Add a milestone after the selected task"
-msgstr "Agregar un hito después de la seleccionada"
+msgid "Add a milestone above the selected task"
+msgstr "Agregar un hito arriba de la seleccionada"
 
 msgid "Add a summary task over the selected tasks"
 msgstr "Agregar una tarea de resumen sobre las seleccionadas"
@@ -1611,3 +1611,9 @@ msgid "{0} link removed."
 msgid_plural "{0} links removed."
 msgstr[0] "{0} vínculo quitado."
 msgstr[1] "{0} vínculos quitados."
+
+msgid "Cut Task"
+msgstr "Cortar tarea"
+
+msgid "Cut {0} tasks."
+msgstr "Se cortaron {0} tareas."

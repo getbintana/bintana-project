@@ -828,20 +828,22 @@ export class Edit {
         return true;
     }
 
-    /* A task after `afterUID`'s whole subtree, a sibling of it; without one,
-     * at the end, level 1. It carries no dates: an invented start would be a
-     * lie, and the form is where they are typed. */
-    addTask(afterUID) {
+    /* A task above `atUID`, a sibling of it, as Project's Insert puts it;
+     * without one, at the end, level 1. **One day, estimated** -- `1d?`,
+     * Project's own new task -- so it is a bar from the start and not a
+     * zero that reads as a milestone. It carries no dates: an invented start
+     * would be a lie, and the schedule (or the form) gives it its own. */
+    addTask(atUID) {
         const project = this.holder.project;
         const tasks   = project.Tasks;
         const uid = this.nextUID("task", tasks);
 
-        const { at, level } = this.#slot(afterUID);
+        const { at, level } = this.#slot(atUID);
 
         const task = new MspTask({
             UID: uid, ID: uid, Name: Locale.Text("New task"),
             OutlineLevel: level, Priority: 500,
-            Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
+            Duration: newTaskDuration(project), DurationFormat: 7, Work: "PT0H0M0S",
             CalendarUID: project.CalendarUID,
         });
         tasks.splice(at, 0, task);
@@ -873,11 +875,11 @@ export class Edit {
 
     /* **A milestone**, Project's *Insert Milestone*: a task of no duration
      * flagged as one, where `addTask` would put it -- one command, one undo. */
-    addMilestone(afterUID) {
+    addMilestone(atUID) {
         const project = this.holder.project;
         const tasks   = project.Tasks;
         const uid = this.nextUID("task", tasks);
-        const { at, level } = this.#slot(afterUID);
+        const { at, level } = this.#slot(atUID);
 
         const task = new MspTask({
             UID: uid, ID: uid, Name: Locale.Text("New milestone"),
@@ -917,7 +919,7 @@ export class Edit {
             const child = new MspTask({
                 UID: this.nextUID("task", tasks), ID: 0, Name: Locale.Text("New task"),
                 OutlineLevel: 2, Priority: 500,
-                Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
+                Duration: newTaskDuration(project), DurationFormat: 7, Work: "PT0H0M0S",
                 CalendarUID: project.CalendarUID,
             });
             tasks.push(summary, child);
@@ -938,18 +940,19 @@ export class Edit {
         return summary;
     }
 
-    /* Where a task added "after" another goes: past the other's subtree, at the
-     * other's level. After the project summary is after everything, at level 1:
-     * there is one level 0 and it is not a sibling of anything. */
-    #slot(afterUID) {
+    /* **Where a new or pasted task goes: above the selected one**, at its
+     * level -- Project's Insert and Paste, which push the row down rather
+     * than land past its subtree. With nothing selected, or the project
+     * summary (there is nothing above the plan, and it is not a sibling of
+     * anything), at the end, level 1. */
+    #slot(atUID) {
         const tasks = this.holder.project.Tasks;
         let at = tasks.length, level = 1;
-        if (afterUID !== null && afterUID !== undefined) {
-            const i = tasks.findIndex((t) => t.UID === afterUID);
-            if (i >= 0) {
-                level = Math.max(tasks[i].OutlineLevel, 1);
-                at = i + 1;
-                while (at < tasks.length && tasks[at].OutlineLevel > level) at++;
+        if (atUID !== null && atUID !== undefined) {
+            const i = tasks.findIndex((t) => t.UID === atUID);
+            if (i >= 0 && tasks[i].OutlineLevel > 0) {
+                level = tasks[i].OutlineLevel;
+                at = i;
             }
         }
         return { at, level };
@@ -979,16 +982,16 @@ export class Edit {
         };
     }
 
-    /* A copy put back after `afterUID`, as one step: every task and assignment
+    /* A copy put back above `atUID`, as one step: every task and assignment
      * under a UID of its own -- never a deleted one's, see `#issued` -- the
      * links between the copied tasks following them to their copies, and a link
      * to a task outside kept only while that task is still in the plan. The
-     * copy's top is put at the level of the task it follows. Answers the first
+     * copy's top is put at the level of the task it goes above. Answers the first
      * new task, or null when there was nothing to put. */
-    pasteTasks(clip, afterUID) {
+    pasteTasks(clip, atUID) {
         if (!clip || !clip.tasks.length) return null;
         const project = this.holder.project;
-        const { at, level } = this.#slot(afterUID);
+        const { at, level } = this.#slot(atUID);
         const shift = level - clip.tasks[0].OutlineLevel;
 
         const made = {};
@@ -1024,17 +1027,17 @@ export class Edit {
     }
 
     /* Lines of text -- from a spreadsheet, say -- as tasks of one level after
-     * `afterUID`, one step. Each item is `{ Name, Duration?, DurationFormat? }`. */
-    pasteLines(items, afterUID) {
+     * above `atUID`, one step. Each item is `{ Name, Duration?, DurationFormat? }`. */
+    pasteLines(items, atUID) {
         if (!items.length) return null;
         const project = this.holder.project;
-        const { at, level } = this.#slot(afterUID);
+        const { at, level } = this.#slot(atUID);
         const made = items.map((item) => {
             const uid = this.nextUID("task", project.Tasks);
             return new MspTask({
                 UID: uid, ID: uid, Name: item.Name,
                 OutlineLevel: level, Priority: 500,
-                Duration: item.Duration || "PT0H0M0S",
+                Duration: item.Duration || newTaskDuration(project),
                 DurationFormat: item.DurationFormat === undefined ? 7 : item.DurationFormat,
                 Estimated: item.Estimated !== false,
                 Work: "PT0H0M0S", CalendarUID: project.CalendarUID,
@@ -1212,4 +1215,10 @@ export function percentValues(task, percent) {
         values.ActualFinish = "";
     }
     return values;
+}
+
+/* A new task's duration: one working day of this plan, which is what
+ * Project's `1d?` is. */
+export function newTaskDuration(project) {
+    return mspdiDuration(project.MinutesPerDay || 480);
 }

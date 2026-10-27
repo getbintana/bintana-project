@@ -65,6 +65,7 @@
       "name": "ActTaskInfo",
       "text": "Task information…",
       "icon": "dialog-information-symbolic",
+      "shortcut": "<Shift>F2",
       "enabled": false
     },
     {
@@ -137,24 +138,28 @@
       "name": "ActIndent",
       "text": "Indent",
       "icon": "format-indent-more-symbolic",
+      "shortcut": "<Alt><Shift>Right",
       "enabled": false
     },
     {
       "name": "ActOutdent",
       "text": "Outdent",
       "icon": "format-indent-less-symbolic",
+      "shortcut": "<Alt><Shift>Left",
       "enabled": false
     },
     {
       "name": "ActUp",
       "text": "Move Up",
       "icon": "go-up-symbolic",
+      "shortcut": "<Alt><Shift>Up",
       "enabled": false
     },
     {
       "name": "ActDown",
       "text": "Move Down",
       "icon": "go-down-symbolic",
+      "shortcut": "<Alt><Shift>Down",
       "enabled": false
     },
     {
@@ -228,6 +233,12 @@
       "name": "ActCopy",
       "text": "Copy Task",
       "icon": "edit-copy-symbolic",
+      "enabled": false
+    },
+    {
+      "name": "ActCut",
+      "text": "Cut Task",
+      "icon": "edit-cut-symbolic",
       "enabled": false
     },
     {
@@ -339,6 +350,9 @@
         },
         {
           "separator": true
+        },
+        {
+          "action": "ActCut"
         },
         {
           "action": "ActCopy"
@@ -793,7 +807,7 @@
                     "Height": 30,
                     "Icon": "list-add-symbolic",
                     "Style": "flat",
-                    "Tooltip": "Add a task after the selected one",
+                    "Tooltip": "Add a task above the selected one",
                     "Width": 34
                   }
                 },
@@ -805,7 +819,7 @@
                     "Height": 30,
                     "Icon": "bp-milestone-symbolic",
                     "Style": "flat",
-                    "Tooltip": "Add a milestone after the selected task",
+                    "Tooltip": "Add a milestone above the selected task",
                     "Width": 34
                   }
                 },

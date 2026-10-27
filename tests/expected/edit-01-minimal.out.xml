@@ -209,7 +209,7 @@
       <OutlineNumber>1.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
-      <Duration>PT0H0M0S</Duration>
+      <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT0H0M0S</Work>
       <ConstraintType>4</ConstraintType>
@@ -223,14 +223,14 @@
       </PredecessorLink>
       <Baseline>
         <Number>0</Number>
-        <Duration>PT0H0M0S</Duration>
+        <Duration>PT8H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
         <EstimatedDuration>true</EstimatedDuration>
         <Work>PT0H0M0S</Work>
       </Baseline>
       <Baseline>
         <Number>1</Number>
-        <Duration>PT0H0M0S</Duration>
+        <Duration>PT8H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
         <EstimatedDuration>true</EstimatedDuration>
         <Work>PT0H0M0S</Work>
