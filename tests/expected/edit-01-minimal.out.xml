@@ -171,6 +171,7 @@
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
+      <Estimated>false</Estimated>
       <Summary>true</Summary>
       <LateStart>2026-09-01T09:00:00</LateStart>
       <LateFinish>2026-09-02T17:00:00</LateFinish>
@@ -188,7 +189,6 @@
         <Finish>2026-09-02T17:00:00</Finish>
         <Duration>PT16H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
         <Work>PT8H0M0S</Work>
       </Baseline>
       <Baseline>
@@ -197,7 +197,6 @@
         <Finish>2026-09-02T17:00:00</Finish>
         <Duration>PT16H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
         <Work>PT8H0M0S</Work>
       </Baseline>
     </Task>
@@ -253,6 +252,7 @@
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
       <EffortDriven>true</EffortDriven>
+      <Estimated>false</Estimated>
       <Critical>true</Critical>
       <LateStart>2026-09-03T08:00:00</LateStart>
       <LateFinish>2026-09-03T17:00:00</LateFinish>
@@ -277,7 +277,6 @@
         <Finish>2026-09-03T12:00:00</Finish>
         <Duration>PT7H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
         <Work>PT8H0M0S</Work>
         <Cost>480</Cost>
       </Baseline>
@@ -287,7 +286,6 @@
         <Finish>2026-09-03T12:00:00</Finish>
         <Duration>PT7H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
         <Work>PT8H0M0S</Work>
         <Cost>480</Cost>
       </Baseline>

@@ -857,6 +857,7 @@ export class Edit {
                 OutlineLevel: level, Priority: 500,
                 Duration: item.Duration || "PT0H0M0S",
                 DurationFormat: item.DurationFormat === undefined ? 7 : item.DurationFormat,
+                Estimated: item.Estimated !== false,
                 Work: "PT0H0M0S", CalendarUID: project.CalendarUID,
             });
         });

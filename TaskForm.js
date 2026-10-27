@@ -337,7 +337,10 @@ export function taskFormValues(ui, task, project, unit) {
         values.Milestone       = ui.ChkMilestone.Active;
         values.Manual          = ui.ChkManual.Active;
         values.EffortDriven    = ui.ChkEffortDriven.Active;
-        values.Estimated       = ui.ChkEstimated.Active;
+        /* Two editors for one flag: the box when it was what changed, and
+         * otherwise the `?` of the duration as typed -- `2d` makes it firm. */
+        values.Estimated       = ui.ChkEstimated.Active !== !!task.Estimated
+                               ? ui.ChkEstimated.Active : duration.estimated;
         values.PercentComplete = Math.round(ui.SpinPercent.Value);
 
         /* A percentage moves the actual dates the way Project reads them:

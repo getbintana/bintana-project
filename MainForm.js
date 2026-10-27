@@ -2329,6 +2329,7 @@ export class MainForm extends Form {
             if (duration) {
                 item.Duration = mspdiDuration(duration.minutes);
                 item.DurationFormat = duration.format;
+                item.Estimated = duration.estimated;
             }
             items.push(item);
         }
@@ -2454,12 +2455,9 @@ export class MainForm extends Form {
             if (duration === null)
                 return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", text) };
             const values = { Duration: mspdiDuration(duration.minutes),
-                             DurationFormat: duration.format };
-            return { values,
-                     answer: durationText({ Duration: values.Duration,
-                                            DurationFormat: values.DurationFormat,
-                                            Estimated: task.Estimated },
-                                          this.holder.project) };
+                             DurationFormat: duration.format,
+                             Estimated: duration.estimated };
+            return { values, answer: durationText(values, this.holder.project) };
         }
         case "start":
             return this.momentPin("Start", CONSTRAINT_SNET, text, task,
@@ -5018,6 +5016,26 @@ export class MainForm extends Form {
                         "0/0 1/1 1.1/1.1 1.2/B-7") && ok;
                 this.edit.undo(); this.edit.undo(); this.edit.undo();
                 this.fill();
+            }
+
+            /* **El `?` es la estimación**, como en Project: `2d` la deja
+             * firme, `2d?` estimada, y un formato estimado del archivo (39)
+             * no le devuelve el `?` a lo que se tipeó sin él. */
+            {
+                const project = this.holder.project;
+                const task = taskOf(project, 1);
+                const typed = (text) => {
+                    const v = this.cellValues(task, "duration", text);
+                    return `${v.values.Estimated} ${v.answer}`;
+                };
+                task.Estimated = true;
+                task.DurationFormat = 39;
+                ok = eq("2d es firme", typed("2d"), "false 2d") && ok;
+                ok = eq("2d? es estimada", typed("2d?"), "true 2d?") && ok;
+                ok = eq("un número solo conserva la unidad", typed("3"), "false 3d") && ok;
+                ok = eq("el formato pierde su variante estimada",
+                        parseDuration("2", 39, "", project).format, 7) && ok;
+                this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             }
 
             /* **Predecesoras por Id y por EDT**, como las dos columnas de
@@ -7958,22 +7976,23 @@ export function parseMoment(text, time) {
  * "2d", "8h", "30m", "1mo", "2ed" -- elapsed -- or a bare number in `unit`
  * (the setting) or in the task's own unit. A unit written wins, then the
  * setting, and the format moves with whichever was said; a bare number with
- * neither keeps the format it had, estimated months included. A trailing `?`
- * -- what the field itself writes on an estimated duration -- is read and
- * left to the Estimated checkbox, which is the editor for that flag.
+ * neither keeps the format it had. **The `?` is the estimate, as in
+ * Project**: `2d?` is estimated and `2d` is not, so `estimated` answers
+ * whether it was typed, and the format comes back without its estimated
+ * variant (35-44) -- the flag carries it, or a `2d` would still read `2d?`.
  */
 export function parseDuration(text, format, unit, project) {
-    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*\??\s*$/.exec(String(text || ""));
+    const m = /^\s*(\d+(?:[.,]\d+)?)\s*(e?)(mo|m|h|d|w)?\s*(\??)\s*$/.exec(String(text || ""));
     if (!m) return null;
 
     const typed = m[3] ? m[2] + m[3] : "";
-    let chosen = format;
+    let chosen = format >= 35 && format <= 44 ? format - 32 : format;
     if (typed)     chosen = formatOfUnit(typed);
     else if (unit) chosen = formatOfUnit(unit);
 
     const minutes = Math.round(Number(m[1].replace(",", ".")) *
                                durationFormat(chosen, project).per);
-    return { minutes, format: (typed || unit) ? chosen : format };
+    return { minutes, format: chosen, estimated: m[4] === "?" };
 }
 
 /*
