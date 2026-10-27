@@ -3318,7 +3318,6 @@ export class MainForm extends Form {
     updateTitle() {
         const dirty = this.edit ? this.edit.dirty : false;
         this.Text = `${File.Name(this.path)}${dirty ? " •" : ""} — bintana-project`;
-        this.LblFile.Text    = this.path;
         this.ActUndo.Enabled = this.edit ? this.edit.canUndo : false;
         this.ActRedo.Enabled = this.edit ? this.edit.canRedo : false;
     }

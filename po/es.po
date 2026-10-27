@@ -175,9 +175,6 @@ msgstr "Eliminar la tarea seleccionada y su subárbol"
 msgid "Recalculate the plan"
 msgstr "Recalcular el plan"
 
-msgid "Export the chart as PNG or PDF"
-msgstr "Exportar el gráfico como PNG o PDF"
-
 msgid "Fit to window"
 msgstr "Ajustar a la ventana"
 

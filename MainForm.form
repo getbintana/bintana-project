@@ -1025,35 +1025,6 @@
                 },
                 {
                   "type": "Separator",
-                  "name": "Sep4",
-                  "properties": {}
-                },
-                {
-                  "type": "Button",
-                  "name": "ToolExport",
-                  "properties": {
-                    "Action": "ActExport",
-                    "Height": 30,
-                    "Icon": "image-x-generic-symbolic",
-                    "Style": "flat",
-                    "Tooltip": "Export the chart as PNG or PDF",
-                    "Width": 34
-                  }
-                },
-                {
-                  "type": "Button",
-                  "name": "ToolSettings",
-                  "properties": {
-                    "Action": "ActSettings",
-                    "Height": 30,
-                    "Icon": "preferences-system-symbolic",
-                    "Style": "flat",
-                    "Tooltip": "Settings",
-                    "Width": 34
-                  }
-                },
-                {
-                  "type": "Separator",
                   "name": "Sep5",
                   "properties": {}
                 },
@@ -1085,21 +1056,13 @@
                   }
                 },
                 {
-                  "type": "Label",
-                  "name": "LblFile",
-                  "properties": {
-                    "Ellipsize": true,
-                    "HAlign": "Fill",
-                    "HExpand": true,
-                    "Style": "dim-label"
-                  }
-                },
-                {
                   "type": "Panel",
                   "name": "viewButtons",
                   "properties": {
                     "Arrangement": "Horizontal",
                     "Anchored": false,
+                    "HAlign": "End",
+                    "HExpand": true,
                     "Height": 36,
                     "Style": "linked",
                     "Width": 114
