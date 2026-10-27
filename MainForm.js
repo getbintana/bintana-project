@@ -5641,6 +5641,9 @@ export class MainForm extends Form {
             ok = eq("a start-to-start one on the left, from the start",
                     ssShape.pts[2] < Math.min(ssShape.x0, ssShape.x1) &&
                     ssShape.ends.from === "start", true) && ok;
+            ok = eq("and it arrives, head first, at the successor's start",
+                    ssShape.pts[ssShape.pts.length - 2] === ssShape.x1 &&
+                    ssShape.pts[ssShape.pts.length - 4] < ssShape.x1, true) && ok;
             edit.undo();
 
             print(ok ? "CHECK-OK" : "CHECK-FAILED");

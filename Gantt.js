@@ -91,6 +91,14 @@ export function ganttRange(rows) {
  */
 export function ganttGeometry(rows, width, height, step, geom) {
     const g = chartGeometry(geom);
+    /* A bar is a fraction of the row rather than a constant: the row is the
+     * theme's and a fixed 12 is a third of one theme's row and half of
+     * another's. A milestone's diamond is sized off the bar. Here and not in
+     * the frame, because a link arrives at a bar's top and a diamond's edge,
+     * and the pointer has to know where those are too. */
+    const size = GANTT_BAR_SIZE[ganttFormat(geom && geom.format).size];
+    const barH = Math.max(6, Math.min(size.max, Math.round(g.rowH * size.share)));
+    const msR  = Math.max(5, Math.round(barH * 0.62));
     const range = geom && geom.range !== undefined ? geom.range
                                                    : ganttRange(rows || []);
     /* The heading is drawn *over* the rows -- it is the table's own, and the
@@ -104,7 +112,7 @@ export function ganttGeometry(rows, width, height, step, geom) {
     if (!rows.length || !range) {
         return { rows, range: null, plotX: g.plotX, plotW: 0, dayW: 0,
                  headH: g.headH, rowH: g.rowH, scrollY: g.scrollY, strip: g.strip,
-                 x: () => 0, msAt: () => 0, rowAt: () => -1 };
+                 barH, msR, x: () => 0, msAt: () => 0, rowAt: () => -1 };
     }
 
     const plotX = g.plotX, plotW = Math.max(width - g.plotX - 8, 50);
@@ -114,6 +122,7 @@ export function ganttGeometry(rows, width, height, step, geom) {
     return {
         rows, range, plotX, plotW, dayW,
         headH: g.headH, rowH: g.rowH, scrollY: g.scrollY, strip: g.strip,
+        barH, msR,
         x: (ms) => plotX + (ms - range.from) / (range.to - range.from) * plotW,
         msAt: (px) => range.from + (px - plotX) / plotW * (range.to - range.from),
         rowAt,
@@ -149,13 +158,39 @@ export function linkEndsOf(type) {
 }
 
 /*
- * **A link as a line**, by its type: out of the end of the predecessor the type
- * names and into the end of the successor it names, with the elbow on the side
- * the line leaves by (right of both when it leaves a finish, left of both when
- * it leaves a start). The drawing and the pointer share this, so a line is
- * exactly where a click thinks it is. `x(ms)` and `cy(row)` are the chart's.
+ * **A link as a line**, by its type, routed the way Project routes it: out of
+ * the end of the predecessor the type names and into the end of the successor
+ * it names, **with an arrow at the successor**, because a line with no head
+ * does not say which way it is read.
+ *
+ * - A finish-to-start link whose successor starts past the predecessor's
+ *   finish **drops onto the successor's bar**: across from the finish, then
+ *   down (or up) onto the top of the bar a few pixels in from its start. Start
+ *   to finish is the same, mirrored.
+ * - When there is no room for that -- the successor starts at the finish or
+ *   before it -- the line steps out, runs along the gap between the rows and
+ *   comes into the successor's start from the side, the way it means.
+ * - Start to start and finish to finish are a bracket: out of both ends on the
+ *   same side, with the elbow past the outer one.
+ *
+ * A milestone has no ends but its points, so a line leaves and arrives at the
+ * diamond's edge -- not its centre, where the diamond hid the last pixels and
+ * the elbow poked out past it on the wrong side.
+ *
+ * The drawing and the pointer share this, so a line is exactly where a click
+ * thinks it is. `g` is the geometry and `cy(row)` the row's middle.
  */
-function linkShape(x, cy, rows, rowOf, i, edge) {
+const LINK_GAP = 6;     // how far a line steps out of a bar before it turns
+
+/* A summary's bracket, measured off the bar it stands in for: the band's
+ * height, the point at each end, and how far below the bar's top the band
+ * starts. The frame draws it from this and a link lands on it from this. */
+function summaryBracket(barH) {
+    const h = Math.max(3, Math.round(barH * 0.42));
+    return { h, pt: Math.max(4, h + 1), off: Math.round((barH - h) / 2) - 1 };
+}
+
+function linkShape(g, cy, rows, rowOf, i, edge) {
     const from = rowOf[edge.PredecessorUID];
     if (from === undefined) return null;
     const pred = rows[from], task = rows[i];
@@ -163,11 +198,53 @@ function linkShape(x, cy, rows, rowOf, i, edge) {
     const a = whenMs(ends.from === "start" ? pred.Start : pred.Finish);
     const b = whenMs(ends.to === "start" ? task.Start : task.Finish);
     if (a === null || b === null) return null;
-    const x0 = x(a), x1 = x(b);
-    const elbow = ends.from === "finish" ? Math.max(x0, x1) + 8
-                                         : Math.min(x0, x1) - 8;
-    return { type, ends, from, to: i, x0, x1,
-             pts: [x0, cy(from), elbow, cy(from), elbow, cy(i), x1, cy(i)] };
+    const x0 = g.x(a), x1 = g.x(b);
+    const out  = ends.from === "finish" ? 1 : -1;   // the way the line leaves
+    const into = ends.to === "start" ? 1 : -1;      // the way it arrives
+    const reach = (t) => t.Milestone ? g.msR : 0;
+    const ax = x0 + out * reach(pred), bx = x1 - into * reach(task);
+    const y0 = cy(from), y1 = cy(i), down = y1 >= y0 ? 1 : -1;
+    let pts;
+    if (out === into) {
+        /* Onto the bar from above (or below), a little in from its end. */
+        const s = whenMs(task.Start), f = whenMs(task.Finish);
+        const wide = s === null || f === null ? 0 : Math.abs(g.x(f) - g.x(s));
+        const dx = task.Milestone ? x1 : x1 + into * Math.min(4, wide / 2);
+        /* Where it lands: the diamond's point, the bar's edge, or a summary's
+         * band -- its top from above, and from below the underside of the
+         * point it has at that end, which is what is there `inset` in. */
+        let land = y1 - down * g.barH / 2;
+        if (task.Milestone) {
+            land = y1 - down * g.msR;
+        } else if (task.Summary) {
+            const sb = summaryBracket(g.barH), top = y1 - g.barH / 2 + sb.off;
+            land = down > 0 ? top
+                 : top + sb.h + Math.max(0, sb.pt - Math.abs(dx - x1));
+        }
+        if ((dx - ax) * out >= LINK_GAP) {
+            pts = [ax, y0, dx, y0, dx, land];
+        } else {
+            const yb = y0 + down * g.rowH / 2;      // the gap under (or over) the row
+            const e0 = ax + out * LINK_GAP, e1 = bx - into * LINK_GAP;
+            pts = [ax, y0, e0, y0, e0, yb, e1, yb, e1, y1, bx, y1];
+        }
+    } else {
+        const elbow = out > 0 ? Math.max(ax, bx) + LINK_GAP
+                              : Math.min(ax, bx) - LINK_GAP;
+        pts = [ax, y0, elbow, y0, elbow, y1, bx, y1];
+    }
+    return { type, ends, from, to: i, x0, x1, pts };
+}
+
+/* The head at the end of a line, pointing the way its last stretch runs. */
+function arrowHead(p, pts, size) {
+    const n = pts.length;
+    const tx = pts[n - 2], ty = pts[n - 1];
+    const dx = Math.sign(tx - pts[n - 4]), dy = Math.sign(ty - pts[n - 3]);
+    const w = size * 0.6;
+    p.Polygon([tx, ty, tx - dx * size - dy * w, ty - dy * size - dx * w,
+               tx - dx * size + dy * w, ty - dy * size + dx * w]);
+    p.Fill();
 }
 
 /* The link under a point, if any: the nearest line within `tol` pixels, and
@@ -181,7 +258,7 @@ export function ganttLinkAt(g, px, py, tol = 4, grab = 9) {
     let best = null;
     for (let i = 0; i < rows.length; i++)
         for (const edge of rows[i].Links) {
-            const shape = linkShape(g.x, cy, rows, rowOf, i, edge);
+            const shape = linkShape(g, cy, rows, rowOf, i, edge);
             if (!shape) continue;
             const pts = shape.pts;
             let d = Infinity;
@@ -210,7 +287,7 @@ export function ganttLinkOf(g, predUID, succUID) {
     const i = rowOf[succUID];
     if (i === undefined) return null;
     const edge = rows[i].Links.find((l) => l.PredecessorUID === predUID);
-    return edge ? linkShape(g.x, cy, rows, rowOf, i, edge) : null;
+    return edge ? linkShape(g, cy, rows, rowOf, i, edge) : null;
 }
 
 /* A colour at an opacity: `#rrggbb`, or `rgb()`/`rgba()` the way the painter
@@ -592,11 +669,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
     const headH = g.headH, rowH = g.rowH;
     const top = (i) => headH + i * rowH - g.scrollY;      // row i's first pixel
     const cy = (i) => top(i) + rowH / 2;
-    /* A bar is a fraction of the row rather than a constant: the row is the
-     * theme's and a fixed 12 is a third of one theme's row and half of
-     * another's. */
-    const size = GANTT_BAR_SIZE[fmt.size];
-    const barH = Math.max(6, Math.min(size.max, Math.round(rowH * size.share)));
+    const barH = g.barH, msR = g.msR;
 
     /* By UID, for the dependency elbows and the selection below. */
     const rowOf = {};
@@ -682,22 +755,24 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
         p.Fill();
     }
 
-    /* Dependencies as elbows: out of the predecessor's end, down/across, into
-     * the successor's start. **Under the bars and not over them** -- an elbow
-     * crossing a bar is the one thing that made a dense plan unreadable, and
-     * Project draws its arrows the same way round. */
+    /* Dependencies as arrows, routed as `linkShape` says. **Under the bars and
+     * not over them** -- an elbow crossing a bar is the one thing that made a
+     * dense plan unreadable, and Project draws its arrows the same way round.
+     * The head ends on the bar's edge, so it is never under one. */
     p.Color = c.link;
     p.LineWidth = 1;
+    const head = Math.max(5, Math.round(barH * 0.6));
     let chosen = null;
     const pick = geom.selLink;
     for (let i = 0; fmt.links && i < rows.length; i++) {
         for (const edge of rows[i].Links) {
-            const shape = linkShape(x, cy, rows, rowOf, i, edge);
+            const shape = linkShape(g, cy, rows, rowOf, i, edge);
             if (!shape) continue;
             if (pick && pick.succ === rows[i].UID && pick.pred === edge.PredecessorUID)
                 chosen = shape;
             p.Polyline(shape.pts);
             p.Stroke();
+            arrowHead(p, shape.pts, head);
         }
     }
     /* **The chosen link, on top of the others and heavier**, with a dot at
@@ -708,6 +783,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
         p.Polyline(chosen.pts);
         p.Stroke();
         p.LineWidth = 1;
+        arrowHead(p, chosen.pts, head + 1);
         const n = chosen.pts.length;
         p.Rectangle(chosen.pts[0] - 3, chosen.pts[1] - 3, 6, 6);
         p.Rectangle(chosen.pts[n - 2] - 3, chosen.pts[n - 1] - 3, 6, 6);
@@ -771,8 +847,8 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             /* A thin solid bar with a point down at each end, as Project draws
              * the summary: in the ink and not the bar's colour, so it reads as
              * the frame the tasks under it sit in -- red when it is critical. */
-            const h = Math.max(3, Math.round(barH * 0.42)), pt = Math.max(4, h + 1);
-            const top0 = y + Math.round((barH - h) / 2) - 1;
+            const { h, pt, off } = summaryBracket(barH);
+            const top0 = y + off;
             p.Color = task.Critical && fmt.critical ? c.late : fade(c.ink, 0.75);
             p.Rectangle(x0, top0, Math.max(x1 - x0, 1), h);
             p.Fill();
@@ -783,7 +859,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             continue;
         }
         if (task.Milestone) {
-            const cx = x(s), midY = cy(i), r = Math.max(5, Math.round(barH * 0.62));
+            const cx = x(s), midY = cy(i), r = msR;
             p.Color = colour;
             p.Polygon([cx, midY - r, cx + r, midY, cx, midY + r, cx - r, midY]);
             p.Fill();
@@ -841,7 +917,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             const text = geom.labelOf(task, fmt.label);
             if (!text) continue;
             const end = x(Math.max(s, f)) +
-                        (task.Milestone ? Math.max(5, Math.round(barH * 0.62)) : 0);
+                        (task.Milestone ? msR : 0);
             const tx = end + 6, th = p.TextHeight(text);
             const ty = first + (rowH - th) / 2;
             /* A task with a link leaving it has a line running through the
@@ -888,9 +964,16 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             if (at !== null) {
                 p.Color = bad ? c.late : c.link;
                 p.LineWidth = 2;
-                p.Polyline([x(at), cy(from), drag.px, cy(from), drag.px, drag.py]);
+                const pts = [x(at), cy(from), drag.px, cy(from), drag.px, drag.py];
+                p.Polyline(pts);
                 p.Stroke();
                 p.LineWidth = 1;
+                /* With its head at the pointer, as the link will have one. A
+                 * pointer still level with the row has no vertical stretch,
+                 * and the head then follows the horizontal one. */
+                if (Math.abs(drag.py - cy(from)) >= 1) arrowHead(p, pts, head + 1);
+                else if (Math.abs(drag.px - x(at)) >= 1)
+                    arrowHead(p, pts.slice(0, 4), head + 1);
                 p.Color = c.ink;
                 p.Rectangle(x(at) - 3, cy(from) - 3, 6, 6);
                 p.Fill();
