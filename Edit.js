@@ -804,12 +804,15 @@ export class Edit {
         return task;
     }
 
-    /* **A summary over a task**, Project's *Insert Summary Task*: it takes
-     * the task's place and level, and the task -- with what hangs from it --
-     * goes one level down, under it. With no task (or the project summary)
-     * there is nothing to put under it, so it comes with a new one, as
-     * Project's does: a summary with nothing under it is not a summary. */
-    addSummary(uid) {
+    /* **A summary over a task or a selection**, Project's *Insert Summary
+     * Task*: it takes the first one's place, and everything from there to the
+     * end of the last one's subtree goes one level down, under it -- the rows
+     * between come too, because the outline is the order and a summary owns
+     * what follows it. Its level is the shallowest of the rows it takes, so
+     * none of them climbs out of it. With no task (or only the project
+     * summary) there is nothing to put under it, so it comes with a new one,
+     * as Project's does: a summary with nothing under it is not a summary. */
+    addSummary(uids) {
         const project = this.holder.project;
         const tasks   = project.Tasks;
         const summary = new MspTask({
@@ -820,8 +823,10 @@ export class Edit {
             CalendarUID: project.CalendarUID,
         });
 
-        const i = tasks.findIndex((t) => t.UID === uid);
-        if (i < 0 || tasks[i].OutlineLevel === 0) {
+        const roots = this.#roots(uids === null || uids === undefined ? [] : uids)
+            .filter((uid) => tasks.find((t) => t.UID === uid).OutlineLevel > 0);
+        const i = roots.length ? tasks.findIndex((t) => t.UID === roots[0]) : -1;
+        if (i < 0) {
             summary.OutlineLevel = 1;
             const child = new MspTask({
                 UID: this.nextUID("task", tasks), ID: 0, Name: Locale.Text("New task"),
@@ -831,10 +836,14 @@ export class Edit {
             });
             tasks.push(summary, child);
         } else {
-            const level = tasks[i].OutlineLevel;
-            let end = i + 1;
-            while (end < tasks.length && tasks[end].OutlineLevel > level) end++;
-            for (let k = i; k < end; k++) tasks[k].OutlineLevel++;
+            const last = tasks.findIndex((t) => t.UID === roots[roots.length - 1]);
+            let end = last + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > tasks[last].OutlineLevel) end++;
+            let level = Infinity;
+            for (let k = i; k < end; k++) {
+                if (!tasks[k].IsNull) level = Math.min(level, tasks[k].OutlineLevel);
+                tasks[k].OutlineLevel++;
+            }
             summary.OutlineLevel = level;
             tasks.splice(i, 0, summary);
         }
@@ -975,35 +984,61 @@ export class Edit {
         return true;
     }
 
-    /* One level down or up. Down is bounded by the task above -- a child has
-     * to have a parent -- and up by level 1; the project summary stays at 0. */
-    indent(uid, delta) {
+    /* One level down or up, for one task or several (an array of UIDs) in
+     * one step. Down is bounded by the task above -- a child has to have a
+     * parent -- and up by level 1; the project summary stays at 0. **Several
+     * go top-down and each takes its subtree**, so a selected task under
+     * another selected one moves once, with its parent, not twice. */
+    indent(uids, delta) {
         const tasks = this.holder.project.Tasks;
-        const i = tasks.findIndex((t) => t.UID === uid);
-        if (i < 0 || tasks[i].OutlineLevel === 0) return false;
+        let changed = false;
+        for (const uid of this.#roots(uids)) {
+            const i = tasks.findIndex((t) => t.UID === uid);
+            if (i < 0 || tasks[i].OutlineLevel === 0) continue;
 
-        const task = tasks[i];
-        let level = task.OutlineLevel + delta;
-        if (delta > 0) {
-            let above = 0;
-            for (let k = i - 1; k >= 0; k--)
-                if (!tasks[k].IsNull) { above = tasks[k].OutlineLevel; break; }
-            level = Math.min(level, above + 1);
+            const task = tasks[i];
+            let level = task.OutlineLevel + delta;
+            if (delta > 0) {
+                let above = 0;
+                for (let k = i - 1; k >= 0; k--)
+                    if (!tasks[k].IsNull) { above = tasks[k].OutlineLevel; break; }
+                level = Math.min(level, above + 1);
+            }
+            level = Math.max(level, 1);
+            if (level === task.OutlineLevel) continue;
+
+            /* **The subtree goes with it**, by the same step, which is what
+             * Project does: moving only the row would turn an indented
+             * summary's children into its siblings, and an outdented one's
+             * into a jump of two levels the outline cannot hold. */
+            let end = i + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > task.OutlineLevel) end++;
+            const step = level - task.OutlineLevel;
+            for (let k = i; k < end; k++) tasks[k].OutlineLevel += step;
+            changed = true;
         }
-        level = Math.max(level, 1);
-        if (level === task.OutlineLevel) return false;
-
-        /* **The subtree goes with it**, by the same step, which is what Project
-         * does: moving only the row would turn an indented summary's children
-         * into its siblings, and an outdented one's into a jump of two levels
-         * the outline cannot hold. */
-        let end = i + 1;
-        while (end < tasks.length && tasks[end].OutlineLevel > task.OutlineLevel) end++;
-        const step = level - task.OutlineLevel;
-        for (let k = i; k < end; k++) tasks[k].OutlineLevel += step;
+        if (!changed) return false;
         this.#recomputeSummary();
         this.commit();
         return true;
+    }
+
+    /* The tasks a command on a selection acts on, in plan order: the ones
+     * named that are not inside another one named -- that one takes them
+     * along. One UID is a selection of one. */
+    #roots(uids) {
+        const named = new Set(Array.isArray(uids) ? uids : [uids]);
+        const out = [];
+        let inside = -1;   // the level of the named task whose subtree we are in
+        for (const task of this.holder.project.Tasks) {
+            if (inside >= 0 && task.OutlineLevel > inside) continue;
+            inside = -1;
+            if (named.has(task.UID)) {
+                out.push(task.UID);
+                inside = task.OutlineLevel;
+            }
+        }
+        return out;
     }
 
     /* The scheduling pass over the plan, as one undo -- and no undo at all

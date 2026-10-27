@@ -196,6 +196,12 @@ Project: el resumen toma el lugar de la tarea elegida y la deja debajo, con
 sus subtareas y sus vínculos; sin tarea elegida, aparece al final con una
 tarea adentro. Cada uno se deshace en un paso.
 
+**Se pueden elegir varias filas**: **Mayús+clic** o **Mayús+↑/↓** toman un
+rango y **Ctrl+clic** suma o saca una. Con varias elegidas, **Indentar** y
+**Quitar nivel** las mueven juntas (cada una con sus subtareas), y **Agregar
+tarea de resumen** pone el resumen sobre todas: de la primera a la última
+quedan debajo de él.
+
 Lo que no se puede escribir se rechaza con el motivo y la celda vuelve a lo
 que decía: una duración que no es una duración, una fecha que no es una fecha,
 un avance fuera de 0 a 100, una prioridad fuera de 0 a 1000, un calendario que

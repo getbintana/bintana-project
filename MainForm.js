@@ -112,6 +112,12 @@ export class MainForm extends Form {
     projectSummary = true;
 
     Form_Open() {
+        /* **Several rows at once**, as Project's sheet takes them: Shift and
+         * Ctrl with the click or the arrows, for the commands that act on a
+         * selection (indent, outdent, the summary over them). A runtime
+         * older than the tree's MultiSelect refuses it, and the list is then
+         * the one-row list it was. */
+        try { this.Tasks.MultiSelect = true; } catch (e) { /* one row at a time */ }
         this.startFoldWatch();
         this.MnuProps.Value = true;
         this.ToolProps.Active = true;
@@ -1228,6 +1234,22 @@ export class MainForm extends Form {
     selectedTask() {
         return this.selectedUID === null ? null
              : (this.byUID[String(this.selectedUID)] || null);
+    }
+
+    /* Every selected task's UID, in the plan's order -- the one the reader
+     * is on when there is only that one. */
+    selectedUIDs() {
+        const keys = this.Tasks.SelectedKeys || [];
+        const uids = keys.filter((k) => this.byUID[k]).map(Number);
+        return uids.length ? uids
+             : (this.selectedUID === null ? [] : [this.selectedUID]);
+    }
+
+    /* After a rebuild, the same rows selected again, with the reader on the
+     * one they were on. */
+    reselect(uids) {
+        const keys = uids.map(String).filter((k) => this.byUID[k]);
+        if (keys.length > 1) this.Tasks.SelectedKeys = keys;
     }
 
     /* The panel is a view of the selected record, not a copy: it is written
@@ -2902,9 +2924,9 @@ export class MainForm extends Form {
         this.fill(added.UID);
     }
 
-    /* The summary goes over the selected task, which ends up under it. */
+    /* The summary goes over the selected tasks, which end up under it. */
     ActAddSummary_Execute() {
-        const added = this.edit.addSummary(this.selectedUID);
+        const added = this.edit.addSummary(this.selectedUIDs());
         this.fill(added.UID);
     }
 
@@ -2930,7 +2952,10 @@ export class MainForm extends Form {
     nudge(delta) {
         const task = this.selectedTask();
         if (!task) return;
-        if (this.edit.indent(task.UID, delta)) this.fill(task.UID);
+        const uids = this.selectedUIDs();
+        if (!this.edit.indent(uids, delta)) return;
+        this.fill(task.UID);
+        this.reselect(uids);
     }
 
     /* Up and Down swap the task with its sibling, subtree and all. */
@@ -5085,6 +5110,41 @@ export class MainForm extends Form {
                 this.edit.addSummary(null);
                 ok = eq("sin tarea, viene con una adentro", shape(), "0S 1 2 3S 3.1") && ok;
                 this.edit.undo();
+
+                /* **Sobre varias**: el resumen toma de la primera a la última
+                 * y las deja debajo; indentar varias es un paso, y una que
+                 * cuelga de otra elegida se mueve una sola vez, con ella. */
+                this.edit.addSummary([1, 2]);
+                ok = eq("un resumen sobre dos", shape(), "0S 1S 1.1 1.2") && ok;
+                this.edit.undo();
+                const c = this.edit.addTask(2).UID;     // 3, al final
+                ok = eq("indentar dos de una", this.edit.indent([2, c], 1) &&
+                        shape() === "0S 1S 1.1 1.2", true) && ok;
+                this.edit.undo();
+                this.edit.indent(c, 1);                 // c bajo 2
+                ok = eq("la que cuelga de otra elegida va con ella",
+                        this.edit.indent([2, c], 1) && shape(), "0S 1S 1.1S 1.1.1") && ok;
+                ok = eq("y sacarlas de a dos también",
+                        this.edit.indent([2, c], -1) && shape(), "0S 1 2S 2.1") && ok;
+                this.edit.undo(); this.edit.undo(); this.edit.undo(); this.edit.undo();
+                ok = eq("cada uno, un deshacer", shape(), "0S 1 2") && ok;
+                this.fill();
+
+                /* Lo mismo desde la tabla: dos filas elegidas, los comandos
+                 * del menú, y la selección sigue siendo las dos. */
+                this.Tasks.Key = "1";
+                this.Tasks_Select();
+                this.Tasks.SelectedKeys = ["1", "2"];
+                ok = eq("la tabla toma dos filas", this.selectedUIDs().join(","), "1,2") && ok;
+                this.ActAddSummary.Execute();
+                ok = eq("el resumen sobre las elegidas", shape(), "0S 1S 1.1 1.2") && ok;
+                this.edit.undo();
+                this.fill(1);
+                this.Tasks.SelectedKeys = ["1", "2"];
+                this.ActIndent.Execute();
+                ok = eq("indentar las elegidas", shape(), "0S 1S 1.1") && ok;
+                ok = eq("y siguen elegidas", this.Tasks.SelectedKeys.join(","), "1,2") && ok;
+                this.edit.undo();
                 this.fill();
             }
 
@@ -5788,6 +5848,7 @@ export class MainForm extends Form {
         let shown = 0, wrong = 0, first = null;
 
         for (let i = 0; i < rows.length; i++) {
+            t.DeselectAll();   // the list takes several: one row at a time here
             if (!t.Select(i) || t.Index !== i) break;
             const uid = this.selectedUID;
             if (uid === null || uid === undefined) break;
