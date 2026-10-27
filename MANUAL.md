@@ -131,6 +131,12 @@ propiedades tiene un ancho propio —es un formulario, no un espacio— y la lis
 conserva el suyo, así que una ventana más ancha compra timescale y no aire. Los
 dos divisores se arrastran a mano y la app no los mueve después.
 
+**El panel de propiedades arranca cerrado**, como en Project: la tarea se edita
+en la grilla o con doble clic en **Información de la tarea**. Se abre con **Ver
+→ Mostrar panel de propiedades** o con su botón, y la app recuerda si lo
+dejaste abierto o cerrado. Ojo: en el panel los cambios se escriben recién con
+**Aplicar**.
+
 **El gráfico se apoya en la misma superficie que la lista**: lleva puesta la
 misma clase que lleva la lista (`view`), que es la que el tema usa para pintar
 una superficie —el tema escribe la lista como `columnview.view`—, así que el

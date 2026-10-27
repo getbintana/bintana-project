@@ -804,7 +804,13 @@ reabrir.
   visible por defecto.
 - **Undo**: snapshot por comando, no comandos inversos; una baja con links
   vuelve entera (`Edit.js`).
-- **Panel de tareas**: lateral dentro de un `Split`, no modal.
+- **Panel de tareas**: lateral dentro de un `Split`, no modal. **Cerrado por
+  defecto** desde 2026-10-27, y recordado (`bintana-project.props`): la grilla
+  edita cada campo y el doble clic abre Información de la tarea entera, así
+  que el panel es un segundo editor, con su propio Aplicar, que le quita ancho
+  al Gantt. Si se extraña ver vínculos y recursos sin abrir el diálogo, el
+  paso siguiente es la vista *Detalles* de Project: abajo del Gantt y sin
+  Aplicar.
 - **Resúmenes**: solo su nombre se edita; fechas, duración y avance son lo que
   Project deriva de los hijos.
 - **Recálculo**: automático por defecto, como Project, y apagable en

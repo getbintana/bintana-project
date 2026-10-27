@@ -266,6 +266,12 @@ export class MainForm extends Form {
         this.EntryBar.Visible = entry;
         this.projectSummary = Settings.Get("bintana-project.projectsummary", false);
         this.MnuSummaryTask.Value = this.projectSummary;
+        /* **The properties panel: closed until asked for**, and then the way
+         * it was left. The grid edits every field in its cell and a double
+         * click opens Task Information whole, as in Project; the panel is a
+         * second editor with its own Apply, and the chart's width is what it
+         * costs. (A headless check keeps it open: it drives the panel.) */
+        this.showProps(Settings.Get("bintana-project.props", false));
         if (this.edit) {
             /* **Project's own default**: the plan is recalculated after every
              * accepted command -- so a duration typed by hand moves the finish
@@ -390,6 +396,7 @@ export class MainForm extends Form {
     }
 
     showProps(on) {
+        if (this.settingsReady) Settings.Set("bintana-project.props", on);
         if (this.PropsCol.Visible === on) return;
         if (!on) this.propsPosition = this.BodySplit.Position;
         this.PropsCol.Visible = on;
