@@ -1553,3 +1553,61 @@ msgstr "Subir la tarea, con sus subtareas"
 
 msgid "Move the task down, with its subtasks"
 msgstr "Bajar la tarea, con sus subtareas"
+
+msgid "Link Tasks"
+msgstr "Vincular tareas"
+
+msgid "Unlink Tasks"
+msgstr "Desvincular tareas"
+
+msgid "Link the selected tasks, finish to start"
+msgstr "Vincular las tareas seleccionadas, fin a comienzo"
+
+msgid "Unlink the selected tasks"
+msgstr "Desvincular las tareas seleccionadas"
+
+msgid "Select two or more tasks to link them."
+msgstr "Seleccioná dos o más tareas para vincularlas."
+
+msgid "Delete the {0} selected tasks?"
+msgstr "¿Borrar las {0} tareas seleccionadas?"
+
+msgid "0% Complete"
+msgstr "0% completado"
+
+msgid "Mark the selected tasks 0% complete"
+msgstr "Marcar las tareas seleccionadas al 0%"
+
+msgid "25% Complete"
+msgstr "25% completado"
+
+msgid "Mark the selected tasks 25% complete"
+msgstr "Marcar las tareas seleccionadas al 25%"
+
+msgid "50% Complete"
+msgstr "50% completado"
+
+msgid "Mark the selected tasks 50% complete"
+msgstr "Marcar las tareas seleccionadas al 50%"
+
+msgid "75% Complete"
+msgstr "75% completado"
+
+msgid "Mark the selected tasks 75% complete"
+msgstr "Marcar las tareas seleccionadas al 75%"
+
+msgid "100% Complete"
+msgstr "100% completado"
+
+msgid "Mark the selected tasks 100% complete"
+msgstr "Marcar las tareas seleccionadas al 100%"
+
+msgid "{0} link drawn."
+msgid_plural "{0} links drawn."
+msgstr[0] "{0} vínculo creado."
+msgstr[1] "{0} vínculos creados."
+
+msgid "{0} link removed."
+msgid_plural "{0} links removed."
+msgstr[0] "{0} vínculo quitado."
+msgstr[1] "{0} vínculos quitados."

@@ -343,19 +343,14 @@ export function taskFormValues(ui, task, project, unit) {
                                ? ui.ChkEstimated.Active : duration.estimated;
         values.PercentComplete = Math.round(ui.SpinPercent.Value);
 
-        /* A percentage moves the actual dates the way Project reads them:
-         * started above zero, finished at a hundred, and back to none. */
-        const start = values.Start || task.Start;
-        if (values.PercentComplete > 0 && task.ActualStart === "")
-            values.ActualStart = start;
-        if (values.PercentComplete >= 100) {
-            if (values.ActualStart === "") values.ActualStart = start;
-            values.ActualFinish = values.Finish || task.Finish;
-        }
-        if (values.PercentComplete === 0) {
-            values.ActualStart  = "";
-            values.ActualFinish = "";
-        }
+        /* A percentage moves the actual dates the way the cell and the
+         * progress buttons move them, on the dates just typed. */
+        const moved = percentValues({ Start: values.Start || task.Start,
+                                      Finish: values.Finish || task.Finish,
+                                      ActualStart: task.ActualStart,
+                                      ActualFinish: task.ActualFinish },
+                                    values.PercentComplete);
+        for (const name in moved) values[name] = moved[name];
 
         /* ASAP and ALAP carry no date; the rest need one. */
         values.ConstraintType = Math.max(ui.CmbConstraint.Index, 0);

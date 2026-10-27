@@ -128,11 +128,29 @@ export class Edit {
     }
 
     /* A task and its subtree, moved past the sibling before or after it: the
-     * outline does not change, only the order within one parent. */
-    moveTask(uid, delta) {
+     * outline does not change, only the order within one parent. **Several
+     * move as a block**: up goes top-down and down bottom-up, so each one
+     * passes the one sibling that is not with it; one that cannot move (the
+     * first under its parent, going up) holds back the selected sibling
+     * behind it, as Project does, rather than letting the block be shuffled. */
+    moveTask(uids, delta) {
+        const roots = this.#roots(uids);
+        if (delta > 0) roots.reverse();
+        const stuck = new Set();
+        let moved = false;
+        for (const uid of roots) {
+            if (this.#moveOne(uid, delta, stuck)) moved = true;
+            else stuck.add(uid);
+        }
+        if (!moved) return false;
+        this.commit();
+        return true;
+    }
+
+    #moveOne(uid, delta, stuck) {
         const tasks = this.holder.project.Tasks;
         const i = tasks.findIndex((t) => t.UID === uid);
-        if (i < 0) return false;
+        if (i < 0 || tasks[i].OutlineLevel === 0) return false;
 
         const level = tasks[i].OutlineLevel;
         let end = i + 1;
@@ -144,6 +162,7 @@ export class Edit {
             let at = i - 1;
             while (at >= 0 && tasks[at].OutlineLevel > level) at--;
             if (at < 0 || tasks[at].OutlineLevel !== level) return false;
+            if (stuck.has(tasks[at].UID)) return false;
             tasks.splice(i, block.length);
             for (let k = 0; k < block.length; k++) tasks.splice(at + k, 0, block[k]);
         } else {
@@ -154,13 +173,13 @@ export class Edit {
              * the loop stopped on the sibling itself and put the task back where
              * it had been, so moving down silently did nothing. */
             if (end >= tasks.length || tasks[end].OutlineLevel !== level) return false;
+            if (stuck.has(tasks[end].UID)) return false;
             let after = end + 1;
             while (after < tasks.length && tasks[after].OutlineLevel > level) after++;
             tasks.splice(i, block.length);
             const at = after - block.length;
             for (let k = 0; k < block.length; k++) tasks.splice(at + k, 0, block[k]);
         }
-        this.commit();
         return true;
     }
 
@@ -241,6 +260,73 @@ export class Edit {
         task.Links = links;
         this.commit();
         return true;
+    }
+
+    /* **Link the tasks, in plan order**, Project's *Link Tasks* (Ctrl+F2):
+     * each one finish-to-start after the one before it. A pair already linked
+     * keeps its link, and a pair the schedule cannot take (a summary and its
+     * own task, a loop) is left out rather than refusing the rest -- the same
+     * reasons `linkProblem` gives. One step; answers how many links it drew. */
+    linkTasks(uids) {
+        const tasks = this.holder.project.Tasks;
+        const named = new Set(uids);
+        const chain = tasks.filter((t) => named.has(t.UID) && !t.IsNull && t.OutlineLevel > 0);
+        let drawn = 0;
+        for (let k = 1; k < chain.length; k++) {
+            const pred = chain[k - 1], succ = chain[k];
+            if (succ.Links.some((l) => l.PredecessorUID === pred.UID)) continue;
+            if (this.linkProblem(pred.UID, succ.UID, 1)) continue;
+            succ.Links = succ.Links.concat([new MspLink({
+                PredecessorUID: pred.UID, Type: 1, LinkLag: 0, LagFormat: 7 })]);
+            drawn++;
+        }
+        if (drawn) this.commit();
+        return drawn;
+    }
+
+    /* **Unlink**, Project's *Unlink Tasks*: with one task, every link it has,
+     * before and after; with several, the links between them. One step;
+     * answers how many it took away. */
+    unlinkTasks(uids) {
+        const tasks = this.holder.project.Tasks;
+        const named = new Set(uids);
+        const one = named.size === 1;
+        let gone = 0;
+        for (const task of tasks) {
+            const kept = task.Links.filter((l) => one
+                ? !named.has(task.UID) && !named.has(l.PredecessorUID)
+                : !(named.has(task.UID) && named.has(l.PredecessorUID)));
+            gone += task.Links.length - kept.length;
+            if (kept.length !== task.Links.length) task.Links = kept;
+        }
+        if (gone) this.commit();
+        return gone;
+    }
+
+    /* **The progress of several tasks at once**, Project's 0%-100% buttons:
+     * the same actual dates a typed percentage moves (`percentValues`). A
+     * summary is what its tasks add up to, so it is not written but its
+     * tasks are -- marking a phase 100% marks every task in it. One step;
+     * answers whether anything changed. */
+    setPercent(uids, percent) {
+        const tasks = this.holder.project.Tasks;
+        const targets = [];
+        for (const uid of this.#roots(uids)) {
+            const i = tasks.findIndex((t) => t.UID === uid);
+            if (i < 0) continue;
+            let end = i + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
+            for (let k = i; k < end; k++)
+                if (!tasks[k].IsNull && !tasks[k].Summary) targets.push(tasks[k]);
+        }
+        let changed = false;
+        for (const task of targets) {
+            const values = percentValues(task, percent);
+            for (const name in values)
+                if (task[name] !== values[name]) { task[name] = values[name]; changed = true; }
+        }
+        if (changed) this.commit();
+        return changed;
     }
 
     /* --- resources and assignments ------------------------------------- */
@@ -872,17 +958,21 @@ export class Edit {
     /* The task and the subtree it owns as plain data -- what Copy keeps -- with
      * the assignments on any of them. Null for the project summary, which is
      * the plan and not a task in it. */
-    copyTasks(uid) {
+    copyTasks(uids) {
         const tasks = this.holder.project.Tasks;
-        const i = tasks.findIndex((t) => t.UID === uid);
-        if (i < 0 || tasks[i].OutlineLevel === 0) return null;
-
-        let end = i + 1;
-        while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
         const own = {};
-        for (let k = i; k < end; k++) own[tasks[k].UID] = true;
+        const kept = [];
+        /* Several are copied in plan order, each with its subtree. */
+        for (const uid of this.#roots(uids)) {
+            const i = tasks.findIndex((t) => t.UID === uid);
+            if (i < 0 || tasks[i].OutlineLevel === 0) continue;
+            let end = i + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
+            for (let k = i; k < end; k++) { own[tasks[k].UID] = true; kept.push(tasks[k]); }
+        }
+        if (!kept.length) return null;
         return {
-            tasks: tasks.slice(i, end).map((t) => JSON.parse(JSON.stringify(t))),
+            tasks: kept.map((t) => JSON.parse(JSON.stringify(t))),
             assignments: this.holder.project.Assignments
                 .filter((a) => own[a.TaskUID])
                 .map((a) => JSON.parse(JSON.stringify(a))),
@@ -961,19 +1051,23 @@ export class Edit {
      * and every assignment on them: work nobody does still costs money in
      * `projectCost`, and it would be written to the file for a task that is
      * not there. */
-    removeTask(uid) {
+    removeTask(uids) {
         const tasks = this.holder.project.Tasks;
-        const i = tasks.findIndex((t) => t.UID === uid);
-        /* The project summary is the plan, not a task in it: its "subtree"
-         * is every task, and Project refuses to delete it too. */
-        if (i < 0 || tasks[i].OutlineLevel === 0) return false;
-
-        let end = i + 1;
-        while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
-
         const gone = {};
-        for (let k = i; k < end; k++) gone[tasks[k].UID] = true;
-        tasks.splice(i, end - i);
+        /* The project summary is the plan, not a task in it: its "subtree"
+         * is every task, and Project refuses to delete it too. Several go
+         * each with its subtree, in one step. */
+        for (const uid of this.#roots(uids)) {
+            const i = tasks.findIndex((t) => t.UID === uid);
+            if (i < 0 || tasks[i].OutlineLevel === 0) continue;
+            let end = i + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > tasks[i].OutlineLevel) end++;
+            for (let k = i; k < end; k++) gone[tasks[k].UID] = true;
+        }
+        if (!tasks.some((t) => gone[t.UID])) return false;
+
+        for (let k = tasks.length - 1; k >= 0; k--)
+            if (gone[tasks[k].UID]) tasks.splice(k, 1);
         for (const task of tasks)
             task.Links = task.Links.filter((link) => !gone[link.PredecessorUID]);
         this.holder.project.Assignments =
@@ -1097,4 +1191,25 @@ export class Edit {
                                i + 1 < tasks.length &&
                                tasks[i + 1].OutlineLevel > tasks[i].OutlineLevel;
     }
+}
+
+/* **What a percentage moves**, wherever it is typed or pressed: the actual
+ * dates the way Project reads them -- started above zero, finished at a
+ * hundred, and back at zero it has neither. A date the task already had is
+ * kept. */
+export function percentValues(task, percent) {
+    const values = { PercentComplete: percent };
+    const start = task.Start || "";
+    if (percent > 0 && task.ActualStart === "") values.ActualStart = start;
+    if (percent >= 100) {
+        if (values.ActualStart === "") values.ActualStart = start;
+        values.ActualFinish = task.Finish || "";
+    } else if (task.ActualFinish) {
+        values.ActualFinish = "";
+    }
+    if (percent === 0) {
+        values.ActualStart  = "";
+        values.ActualFinish = "";
+    }
+    return values;
 }

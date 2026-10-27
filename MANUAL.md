@@ -200,7 +200,19 @@ tarea adentro. Cada uno se deshace en un paso.
 rango y **Ctrl+clic** suma o saca una. Con varias elegidas, **Indentar** y
 **Quitar nivel** las mueven juntas (cada una con sus subtareas), y **Agregar
 tarea de resumen** pone el resumen sobre todas: de la primera a la última
-quedan debajo de él.
+quedan debajo de él. **Borrar**, **Subir**/**Bajar** (en bloque) y **Copiar**
+también toman todas las elegidas.
+
+**Vincular tareas** (**Ctrl+F2**, o el botón del eslabón) encadena las elegidas
+fin a comienzo, en el orden del plan; un par que ya estaba vinculado o que no
+se puede vincular (un resumen con sus propias tareas, un ciclo) se saltea.
+**Desvincular tareas** (**Ctrl+Mayús+F2**) saca, con una tarea elegida, todos
+sus vínculos; con varias, los que hay entre ellas.
+
+Los botones **0% · 25% · 50% · 75% · 100%** (también en **Editar**) marcan el
+avance de las elegidas en un paso; sobre un resumen marcan todas sus tareas.
+Mueven las fechas reales como un porcentaje escrito: arriba de cero hay
+comienzo real, en 100% fin real, y por debajo de 100% el fin real se va.
 
 Lo que no se puede escribir se rechaza con el motivo y la celda vuelve a lo
 que decía: una duración que no es una duración, una fecha que no es una fecha,

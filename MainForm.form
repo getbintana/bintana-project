@@ -90,6 +90,45 @@
       "enabled": false
     },
     {
+      "name": "ActLink",
+      "text": "Link Tasks",
+      "icon": "insert-link-symbolic",
+      "shortcut": "<Control>F2",
+      "enabled": false
+    },
+    {
+      "name": "ActUnlink",
+      "text": "Unlink Tasks",
+      "icon": "edit-cut-symbolic",
+      "shortcut": "<Control><Shift>F2",
+      "enabled": false
+    },
+    {
+      "name": "ActPct0",
+      "text": "0% Complete",
+      "enabled": false
+    },
+    {
+      "name": "ActPct25",
+      "text": "25% Complete",
+      "enabled": false
+    },
+    {
+      "name": "ActPct50",
+      "text": "50% Complete",
+      "enabled": false
+    },
+    {
+      "name": "ActPct75",
+      "text": "75% Complete",
+      "enabled": false
+    },
+    {
+      "name": "ActPct100",
+      "text": "100% Complete",
+      "enabled": false
+    },
+    {
       "name": "ActIndent",
       "text": "Indent",
       "icon": "format-indent-more-symbolic",
@@ -334,6 +373,33 @@
         },
         {
           "action": "ActDown"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActLink"
+        },
+        {
+          "action": "ActUnlink"
+        },
+        {
+          "separator": true
+        },
+        {
+          "action": "ActPct0"
+        },
+        {
+          "action": "ActPct25"
+        },
+        {
+          "action": "ActPct50"
+        },
+        {
+          "action": "ActPct75"
+        },
+        {
+          "action": "ActPct100"
         },
         {
           "separator": true
@@ -811,6 +877,95 @@
                   }
                 },
                 {
+                  "type": "Button",
+                  "name": "ToolLink",
+                  "properties": {
+                    "Action": "ActLink",
+                    "Height": 30,
+                    "Icon": "insert-link-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Link the selected tasks, finish to start",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolUnlink",
+                  "properties": {
+                    "Action": "ActUnlink",
+                    "Height": 30,
+                    "Icon": "edit-cut-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Unlink the selected tasks",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Separator",
+                  "name": "SepProgress",
+                  "properties": {}
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolPct0",
+                  "properties": {
+                    "Action": "ActPct0",
+                    "Height": 30,
+                    "Style": "flat",
+                    "Text": "0%",
+                    "Tooltip": "Mark the selected tasks 0% complete",
+                    "Width": 44
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolPct25",
+                  "properties": {
+                    "Action": "ActPct25",
+                    "Height": 30,
+                    "Style": "flat",
+                    "Text": "25%",
+                    "Tooltip": "Mark the selected tasks 25% complete",
+                    "Width": 44
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolPct50",
+                  "properties": {
+                    "Action": "ActPct50",
+                    "Height": 30,
+                    "Style": "flat",
+                    "Text": "50%",
+                    "Tooltip": "Mark the selected tasks 50% complete",
+                    "Width": 44
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolPct75",
+                  "properties": {
+                    "Action": "ActPct75",
+                    "Height": 30,
+                    "Style": "flat",
+                    "Text": "75%",
+                    "Tooltip": "Mark the selected tasks 75% complete",
+                    "Width": 44
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolPct100",
+                  "properties": {
+                    "Action": "ActPct100",
+                    "Height": 30,
+                    "Style": "flat",
+                    "Text": "100%",
+                    "Tooltip": "Mark the selected tasks 100% complete",
+                    "Width": 44
+                  }
+                },
+                {
                   "type": "Separator",
                   "name": "Sep3",
                   "properties": {}
@@ -1103,6 +1258,15 @@
                                       },
                                       {
                                         "action": "ActDown"
+                                      },
+                                      {
+                                        "separator": true
+                                      },
+                                      {
+                                        "action": "ActLink"
+                                      },
+                                      {
+                                        "action": "ActUnlink"
                                       },
                                       {
                                         "separator": true

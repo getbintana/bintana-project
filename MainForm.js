@@ -230,6 +230,8 @@ export class MainForm extends Form {
         for (const act of [this.ActSave, this.ActSaveAs, this.ActExport,
                            this.ActReport, this.ActUndo, this.ActRedo,
                            this.ActAdd, this.ActAddMilestone, this.ActAddSummary,
+                           this.ActLink, this.ActUnlink, this.ActPct0, this.ActPct25,
+                           this.ActPct50, this.ActPct75, this.ActPct100,
                            this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
                            this.ActPaste, this.ActZoomIn, this.ActZoomOut,
@@ -1272,7 +1274,9 @@ export class MainForm extends Form {
          * `Enabled`: assigning the button's would be refused, and rightly. */
         for (const act of [this.ActDelete, this.ActIndent, this.ActOutdent,
                            this.ActUp, this.ActDown, this.ActCopy,
-                           this.ActTaskInfo])
+                           this.ActTaskInfo, this.ActLink, this.ActUnlink,
+                           this.ActPct0, this.ActPct25, this.ActPct50,
+                           this.ActPct75, this.ActPct100])
             act.Enabled = has;
         for (const w of [this.BtnApply, this.TxtNotes,
                          this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
@@ -2332,7 +2336,7 @@ export class MainForm extends Form {
     ActCopy_Execute() {
         const task = this.selectedTask();
         if (!task || !this.edit) return;
-        const clip = this.edit.copyTasks(task.UID);
+        const clip = this.edit.copyTasks(this.selectedUIDs());
         if (!clip) {
             Message.Warning("The project summary cannot be copied.");
             return;
@@ -2527,21 +2531,9 @@ export class MainForm extends Form {
             if (!m || !(percent >= 0 && percent <= 100))
                 return { refused: Locale.Text("{0} is not a percentage -- 0 to 100", text) };
 
-            /* The percentage moves the actual dates the way the panel's Apply
-             * reads them: started above zero, finished at a hundred, and back
-             * at zero it has neither. */
-            const values = { PercentComplete: percent };
-            const start = task.Start || "";
-            if (percent > 0 && task.ActualStart === "") values.ActualStart = start;
-            if (percent >= 100) {
-                if (values.ActualStart === "") values.ActualStart = start;
-                values.ActualFinish = task.Finish || "";
-            }
-            if (percent === 0) {
-                values.ActualStart  = "";
-                values.ActualFinish = "";
-            }
-            return { values, answer: `${percent}%` };
+            /* The percentage moves the actual dates the way the progress
+             * buttons move them (`percentValues`). */
+            return { values: percentValues(task, percent), answer: `${percent}%` };
         }
         case "priority": {
             const m = /^\s*(\d+)\s*$/.exec(String(text || ""));
@@ -2941,16 +2933,58 @@ export class MainForm extends Form {
         if (!task) return;
         /* The project summary is the whole plan; `removeTask` refuses it,
          * and asking first would promise something it will not do. */
-        if (task.OutlineLevel === 0) {
+        const uids = this.selectedUIDs().filter((uid) => this.byUID[String(uid)].OutlineLevel > 0);
+        if (!uids.length) {
             Message.Warning("The project summary cannot be deleted.");
             return;
         }
-        ConfirmForm.ask(Locale.Text("Delete task"), Locale.Text('Delete "{0}"?', task.Name),
+        const question = uids.length === 1
+            ? Locale.Text('Delete "{0}"?', this.byUID[String(uids[0])].Name)
+            : Locale.Text("Delete the {0} selected tasks?", uids.length);
+        ConfirmForm.ask(Locale.Text("Delete task"), question,
             Locale.Text("Delete"), () => {
-                this.edit.removeTask(task.UID);
+                this.edit.removeTask(uids);
                 this.fill(null);
             });
     }
+
+    /* **Link and Unlink over the selection**, Project's Ctrl+F2 and
+     * Ctrl+Shift+F2: a chain finish-to-start in plan order, and the links
+     * the selection has (or between its tasks, when there are several). */
+    ActLink_Execute() {
+        const uids = this.selectedUIDs();
+        if (uids.length < 2) {
+            Message.Warning("Select two or more tasks to link them.");
+            return;
+        }
+        const drawn = this.edit.linkTasks(uids);
+        this.fill(this.selectedUID);
+        this.reselect(uids);
+        this.log(Locale.Plural("{0} link drawn.", "{0} links drawn.", drawn));
+    }
+
+    ActUnlink_Execute() {
+        const uids = this.selectedUIDs();
+        if (!uids.length) return;
+        const gone = this.edit.unlinkTasks(uids);
+        this.fill(this.selectedUID);
+        this.reselect(uids);
+        this.log(Locale.Plural("{0} link removed.", "{0} links removed.", gone));
+    }
+
+    /* The progress buttons: every selected task (a summary, every task in
+     * it) at that percentage, in one step. */
+    setProgress(percent) {
+        const uids = this.selectedUIDs();
+        if (!uids.length || !this.edit.setPercent(uids, percent)) return;
+        this.fill(this.selectedUID);
+        this.reselect(uids);
+    }
+    ActPct0_Execute()   { this.setProgress(0); }
+    ActPct25_Execute()  { this.setProgress(25); }
+    ActPct50_Execute()  { this.setProgress(50); }
+    ActPct75_Execute()  { this.setProgress(75); }
+    ActPct100_Execute() { this.setProgress(100); }
 
     ActIndent_Execute()  { this.nudge(1); }
     ActOutdent_Execute() { this.nudge(-1); }
@@ -2971,7 +3005,10 @@ export class MainForm extends Form {
     move(delta) {
         const task = this.selectedTask();
         if (!task) return;
-        if (this.edit.moveTask(task.UID, delta)) this.fill(task.UID);
+        const uids = this.selectedUIDs();
+        if (!this.edit.moveTask(uids, delta)) return;
+        this.fill(task.UID);
+        this.reselect(uids);
     }
 
     /* The plan-wide command: place every task from its links. It is one undo
@@ -4701,6 +4738,7 @@ export class MainForm extends Form {
             const level = (uid) => taskOf(this.holder.project, uid).OutlineLevel;
             const pick  = (uid) => {
                 const rows = this.visibleTasks(this.holder.project);
+                this.Tasks.DeselectAll();   // a pick is one row, as a plain click is
                 this.Tasks.Select(rows.findIndex((t) => t.UID === uid));
                 this.Tasks_Select();
             };
@@ -5152,6 +5190,44 @@ export class MainForm extends Form {
                 ok = eq("y siguen elegidas", this.Tasks.SelectedKeys.join(","), "1,2") && ok;
                 this.edit.undo();
                 this.fill();
+            }
+
+            /* **Los comandos sobre la selección**: borrar, mover y copiar
+             * varias en un paso; vincular en cadena y desvincular; y el
+             * avance de varias, que en un resumen marca sus tareas. */
+            {
+                const plan = () => this.holder.project;
+                const order = () => plan().Tasks.map((t) => t.UID).join(",");
+                const links = () => plan().Tasks
+                    .flatMap((t) => t.Links.map((l) => `${l.PredecessorUID}>${t.UID}`)).join(" ");
+                const c = this.edit.addTask(2).UID;      // 0,1,2,c
+                this.edit.unlinkTasks([2]);
+                ok = eq("desvincular una le saca todos sus vínculos", links(), "") && ok;
+                ok = eq("vincular tres en cadena", this.edit.linkTasks([1, 2, c]), 2) && ok;
+                ok = eq("en el orden del plan", links(), `1>2 2>${c}`) && ok;
+                ok = eq("vincular otra vez no repite", this.edit.linkTasks([1, 2]), 0) && ok;
+                ok = eq("desvincular varias saca los de entre ellas",
+                        this.edit.unlinkTasks([2, c]) && links(), "1>2") && ok;
+                ok = eq("bajar dos juntas", this.edit.moveTask([1, 2], 1) && order(),
+                        `0,${c},1,2`) && ok;
+                ok = eq("la primera no sube y retiene a la otra",
+                        this.edit.moveTask([c, 1], -1), false) && ok;
+                ok = eq("subir dos juntas", this.edit.moveTask([1, 2], -1) && order(),
+                        `0,1,2,${c}`) && ok;
+                const clip = this.edit.copyTasks([1, c]);
+                ok = eq("copiar varias", clip.tasks.map((t) => t.UID).join(","), `1,${c}`) && ok;
+                this.edit.addSummary([2, c]);
+                const sumUID = plan().Tasks[2].UID;
+                ok = eq("el avance de un resumen marca sus tareas",
+                        this.edit.setPercent([sumUID], 100) &&
+                        [2, c].map((u) => taskOf(plan(), u).PercentComplete).join(","), "100,100") && ok;
+                ok = eq("y les da fin real", taskOf(plan(), 2).ActualFinish !== "", true) && ok;
+                ok = eq("volver a 50 saca el fin real",
+                        this.edit.setPercent([2], 50) && taskOf(plan(), 2).ActualFinish, "") && ok;
+                ok = eq("borrar varias de una", this.edit.removeTask([1, sumUID]) && order(), "0") && ok;
+                this.edit.undo();
+                ok = eq("y vuelven con un deshacer", order(), `0,1,${sumUID},2,${c}`) && ok;
+                this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             }
 
             /* **La tarea de resumen del proyecto**, como en Project: un plan
@@ -6656,13 +6732,15 @@ export class MainForm extends Form {
                   `start=${task.Start} percent=${task.PercentComplete} ` +
                   `actual=${task.ActualStart}`);
 
-            /* The forward pass as one undo: UID 1 already finished and keeps
-             * its actual dates, and UID 2 is placed after them. Before the
-             * indent, because a summary is not scheduled -- it is the span of
-             * its children. */
+            /* The forward pass as one undo: UID 1 is at 75% -- in progress,
+             * so the actual finish the file gave it at 100% went with the
+             * percentage -- and starts where it actually started, as Project
+             * puts it; UID 2 is placed after it. Before the indent, because a
+             * summary is not scheduled -- it is the span of its children. */
             const recalc = edit.recalculate();
-            ok = recalc.placed === 1 && recalc.skipped === 1 &&
-                 edit.task(1).Start === "2026-09-01T09:00:00" &&
+            ok = recalc.placed === 2 && recalc.skipped === 0 &&
+                 edit.task(1).ActualFinish === "" &&
+                 edit.task(1).Start === "2026-09-01T08:00:00" &&
                  edit.task(1).Finish === "2026-09-02T17:00:00" &&
                  edit.task(2).Start === "2026-09-03T08:00:00" && ok;
             print(`edit recalc placed=${recalc.placed} skipped=${recalc.skipped} ` +
@@ -7605,6 +7683,7 @@ export class MainForm extends Form {
     checkWiring() {
         const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
                         "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActAddMilestone", "ActAddSummary", "ActDelete",
+                        "ActLink", "ActUnlink", "ActPct0", "ActPct25", "ActPct50", "ActPct75", "ActPct100",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActCopy", "ActPaste", "ActZoomIn", "ActZoomOut", "ActZoomFit",
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",
