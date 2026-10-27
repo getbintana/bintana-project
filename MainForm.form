@@ -363,6 +363,11 @@
           "check": true
         },
         {
+          "name": "MnuSummaryTask",
+          "text": "Show project summary task",
+          "check": true
+        },
+        {
           "separator": true
         },
         {

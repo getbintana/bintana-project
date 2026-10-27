@@ -106,6 +106,10 @@ export class MainForm extends Form {
     tipText = "";
     cursorName = "Auto";
     columns = ["id", "wbs", "duration", "start", "finish", "cost"];
+    /* The project summary's row: hidden by default on the window's road, as
+     * Project hides it (`applySettings`); shown here so a headless check sees
+     * the plan whole. */
+    projectSummary = true;
 
     Form_Open() {
         this.startFoldWatch();
@@ -251,6 +255,8 @@ export class MainForm extends Form {
         const entry  = Settings.Get("bintana-project.entrybar", false);
         this.MnuEntry.Value   = entry;
         this.EntryBar.Visible = entry;
+        this.projectSummary = Settings.Get("bintana-project.projectsummary", false);
+        this.MnuSummaryTask.Value = this.projectSummary;
         if (this.edit) {
             /* **Project's own default**: the plan is recalculated after every
              * accepted command -- so a duration typed by hand moves the finish
@@ -322,6 +328,18 @@ export class MainForm extends Form {
     MnuEntry_Click(on) {
         this.EntryBar.Visible = on;
         if (this.settingsReady) Settings.Set("bintana-project.entrybar", on);
+    }
+
+    /* **The project summary task**, Project's Format -> *Project Summary
+     * Task*: a view of the plan's task 0, remembered like the entry bar. A
+     * plan without one -- a file that never had it -- gets it the first time
+     * it is asked for, as one undoable command. */
+    MnuSummaryTask_Click(on) {
+        this.projectSummary = on;
+        if (this.settingsReady) Settings.Set("bintana-project.projectsummary", on);
+        if (!this.edit) return;
+        const made = on ? this.edit.addProjectSummary() : null;
+        this.fill(made ? made.UID : this.selectedUID);
     }
 
     /* The panel of properties, out of the way: the chart gets the room. The
@@ -684,7 +702,9 @@ export class MainForm extends Form {
      * the whole plan. */
     visibleTasks(project) {
         const tasks = [];
-        for (const task of project.Tasks) if (!task.IsNull) tasks.push(task);
+        for (const task of project.Tasks)
+            if (!task.IsNull && (this.projectSummary || task.OutlineLevel > 0))
+                tasks.push(task);
         if (!this.filter && !this.status) return tasks;
 
         const shown = {};
@@ -4455,7 +4475,9 @@ export class MainForm extends Form {
             ok = eq("with the status date reading the same", p.StatusDate,
                     "2026-10-05T08:00:00") && ok;
             ok = eq("and no currency it was never told", p.CurrencyCode, "") && ok;
-            ok = eq("and holds no tasks", p.Tasks.length, 0) && ok;
+            ok = eq("and holds only the project summary",
+                    p.Tasks.map((t) => `${t.UID}:${t.OutlineLevel}:${t.Name}`).join(" "),
+                    "0:0:Bienvenida") && ok;
             ok = eq("with one calendar", p.Calendars.length, 1) && ok;
             ok = eq("named Standard", p.Calendars[0].Name, "Standard") && ok;
             ok = eq("which is the plan's own", p.CalendarUID,
@@ -4548,8 +4570,10 @@ export class MainForm extends Form {
             /* **And it is what the window is opened with**, which is the part
              * that is not a round trip: an empty table, a panel with no task in
              * it, and a chart with no rows and no dates to scale. The last is
-             * the one that used to throw, so what it has no is asserted. */
+             * the one that used to throw, so what it has no is asserted. The
+             * project summary is there and hidden, as a window shows it. */
             this.settingsReady = false;   // a check writes nothing to Settings
+            this.projectSummary = false;
             this.newProject(asked);
             ok = eq("the workspace comes up", this.Pages.Current, PAGE_WORK) && ok;
             ok = eq("on the file the dialog named", this.path,
@@ -4558,6 +4582,10 @@ export class MainForm extends Form {
             ok = eq("and no timescale", this.chartRange(), null) && ok;
             ok = eq("so the ruler has no band to draw", this.drawsEmpty(),
                     false) && ok;
+            this.MnuSummaryTask_Click(true);
+            ok = eq("and the summary task is one tick away", this.Tasks.Count, 1) && ok;
+            ok = eq("with no undo spent on a plan that had it", this.edit.dirty, false) && ok;
+            this.projectSummary = true;
             if (File.Exists(made)) File.Delete(made);
             if (File.Exists(File.Join(Environment.TempDirectory,
                                       "check-welcome-new.xml")))
@@ -5016,6 +5044,34 @@ export class MainForm extends Form {
                         "0/0 1/1 1.1/1.1 1.2/B-7") && ok;
                 this.edit.undo(); this.edit.undo(); this.edit.undo();
                 this.fill();
+            }
+
+            /* **La tarea de resumen del proyecto**, como en Project: un plan
+             * nuevo la trae, la vista la oculta o la muestra sin tocar el
+             * archivo, y un plan sin ella la recibe al pedirla, en un paso
+             * que se deshace. */
+            {
+                const blank = newMspdi({ Name: "Obra", Start: "2026-11-02" }).project;
+                const zero = blank.Tasks[0];
+                ok = eq("un plan nuevo trae la tarea 0",
+                        `${blank.Tasks.length} ${zero.UID} ${zero.OutlineLevel} ${zero.Summary} ${zero.Name}`,
+                        "1 0 0 true Obra") && ok;
+                const project = this.holder.project;
+                const rows = () => this.visibleTasks(project).map((t) => t.UID).join(",");
+                this.projectSummary = false;
+                ok = eq("oculta, la fila 0 no está", rows(), "1,2") && ok;
+                this.projectSummary = true;
+                ok = eq("visible, sí", rows(), "0,1,2") && ok;
+                ok = eq("un plan que ya la tiene no recibe otra",
+                        this.edit.addProjectSummary(), null) && ok;
+                project.Tasks.shift();
+                const made = this.edit.addProjectSummary();
+                ok = eq("un plan sin ella la recibe primera",
+                        `${project.Tasks[0] === made} ${made.UID} ${made.ID} ${made.Summary}`,
+                        "true 0 0 true") && ok;
+                this.edit.addTask(made.UID);
+                ok = eq("y sigue siendo resumen", made.Summary, true) && ok;
+                this.load(this.resolve(File.Join("tests", "corpus", "01-minimal.xml")));
             }
 
             /* **El `?` es la estimación**, como en Project: `2d` la deja
@@ -7447,7 +7503,7 @@ export class MainForm extends Form {
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
                         "ActTaskInfo",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
-                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuEntry", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",
+                        "BtnLinkDel", "MnuRecent", "MnuLog", "MnuEntry", "MnuSummaryTask", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",
                         "MnuColHide", "MnuColShowAll", "MnuColDialog", "MnuColInsert",
                         "MnuColLeft", "MnuColRight",
                         "BtnAssignAdd", "BtnAssignApply", "BtnAssignDel",

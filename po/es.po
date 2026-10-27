@@ -1526,3 +1526,6 @@ msgstr "Las predecesoras por Id, el número de fila"
 
 msgid "The predecessors by their WBS code"
 msgstr "Las predecesoras por su código EDT"
+
+msgid "Show project summary task"
+msgstr "Mostrar tarea de resumen del proyecto"

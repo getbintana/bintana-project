@@ -763,6 +763,28 @@ export class Edit {
         return task;
     }
 
+    /* **The project summary, for a plan that has none**: task 0, level 0,
+     * first, named as the plan -- what Project writes in every file and
+     * shows or hides with *Project Summary Task*. UID 0 when it is free, as
+     * Project's is. Null when there already is one. */
+    addProjectSummary() {
+        const project = this.holder.project;
+        const tasks   = project.Tasks;
+        if (tasks.some((t) => !t.IsNull && t.OutlineLevel === 0)) return null;
+
+        const uid = tasks.some((t) => t.UID === 0) ? this.nextUID("task", tasks) : 0;
+        const task = new MspTask({
+            UID: uid, ID: 0, Name: project.Title || project.Name || Locale.Text("Project"),
+            OutlineLevel: 0, Priority: 500, Summary: true, Estimated: false,
+            Duration: "PT0H0M0S", DurationFormat: 7,
+            Start: project.StartDate || "", Finish: project.FinishDate || project.StartDate || "",
+        });
+        tasks.unshift(task);
+        this.#recomputeSummary();
+        this.commit();
+        return task;
+    }
+
     /* Where a task added "after" another goes: past the other's subtree, at the
      * other's level. After the project summary is after everything, at level 1:
      * there is one level 0 and it is not a sibling of anything. */
@@ -973,11 +995,13 @@ export class Edit {
     }
 
     /* A task is a summary when the next one is deeper; Project derives the
-     * flag the same way. `IsNull` rows are not structure. */
+     * flag the same way. `IsNull` rows are not structure, and the project
+     * summary is one even with nothing under it, as Project writes it. */
     #recomputeSummary() {
         const tasks = this.holder.project.Tasks.filter((t) => !t.IsNull);
         for (let i = 0; i < tasks.length; i++)
-            tasks[i].Summary = i + 1 < tasks.length &&
+            tasks[i].Summary = tasks[i].OutlineLevel === 0 ||
+                               i + 1 < tasks.length &&
                                tasks[i + 1].OutlineLevel > tasks[i].OutlineLevel;
     }
 }

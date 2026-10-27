@@ -1093,6 +1093,15 @@ $WEEKDAYS
       </WeekDays>
     </Calendar>
   </Calendars>
+  <Tasks>
+    <Task>
+      <UID>0</UID><ID>0</ID><Name>$NAME</Name><Type>1</Type><IsNull>false</IsNull>
+      <WBS>0</WBS><OutlineNumber>0</OutlineNumber><OutlineLevel>0</OutlineLevel>
+      <Priority>500</Priority><Start>$START</Start><Finish>$START</Finish>
+      <Duration>PT0H0M0S</Duration><DurationFormat>7</DurationFormat>
+      <Estimated>false</Estimated><Summary>true</Summary>
+    </Task>
+  </Tasks>
 </Project>
 `;
 

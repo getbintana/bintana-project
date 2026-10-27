@@ -61,6 +61,12 @@ esquema (`1`, `1.1`, `1.2`…); los dos se renumeran solos al agregar, mover o
 indentar. **Predecesoras** nombra a cada una por su Id (`3FS+2d, 7SS`) y
 **Predecesoras EDT** por su código (`1.2FS+2d`); las dos se escriben igual.
 
+La **tarea de resumen del proyecto** (la fila 0, que abarca todo el plan) se
+muestra u oculta en **Ver → Mostrar tarea de resumen del proyecto**, como en
+Project (*Formato → Tarea de resumen del proyecto*). Arranca oculta y la
+elección se recuerda. Un plan nuevo ya la trae; un archivo que no la tenía la
+recibe la primera vez que se pide, y eso se deshace con Deshacer.
+
 Los **campos personalizados** que el plan define son columnas aparte, una por
 campo y con el nombre que el archivo les da: se tildan —varios a la vez— en
 **Proyecto → Campos personalizados…** y quedan en la lista como cualquier
