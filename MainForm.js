@@ -239,7 +239,8 @@ export class MainForm extends Form {
                            this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
                            this.ActPaste, this.ActZoomIn, this.ActZoomOut,
-                           this.ActZoomFit, this.ActExpandAll, this.ActCollapseAll,
+                           this.ActZoomFit, this.ActScrollToTask,
+                           this.ActExpandAll, this.ActCollapseAll,
                            this.ActLevel1, this.ActLevel2, this.ActLevel3,
                            this.ActRecalc, this.ActBaseline, this.ActProjData,
                            this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields, this.ActFormat,
@@ -1343,7 +1344,7 @@ export class MainForm extends Form {
                            this.ActUp, this.ActDown, this.ActCopy, this.ActCut,
                            this.ActTaskInfo, this.ActLink, this.ActUnlink,
                            this.ActPct0, this.ActPct25, this.ActPct50,
-                           this.ActPct75, this.ActPct100])
+                           this.ActPct75, this.ActPct100, this.ActScrollToTask])
             act.Enabled = has;
         for (const w of [this.BtnApply, this.TxtNotes,
                          this.TxtLinkText, this.TxtLinkAddress, this.TxtLinkSub,
@@ -2554,6 +2555,30 @@ export class MainForm extends Form {
     ActZoomFit_Execute() {
         this.CmbScale.Index = 0;
         this.CmbScale_Select();
+    }
+
+    /*
+     * **Scroll to Task**, as Project has it (Ctrl+Shift+F5): the chart moves
+     * sideways to where the chosen task starts. Choosing a row does not do it
+     * by itself -- a chart that jumped at every arrow key would take away the
+     * dates the reader was comparing against -- so it is a command, asked for.
+     * The bar lands a little in from the left edge, a day's width at most, so
+     * it is seen to start rather than cut by the edge; a task longer than the
+     * pane shows its start. A task with no dates has nowhere to go to.
+     */
+    ActScrollToTask_Execute() {
+        const task = this.byUID && this.selectedUID !== null
+                   ? this.byUID[String(this.selectedUID)] : null;
+        const start = task ? whenMs(task.Start) : null;
+        if (start === null || !this.GanttScroll) return false;
+        const g = ganttGeometry(this.chartRows(), this.ganttWidth(),
+                                this.ganttHeight(), this.step, this.planGeom());
+        if (!g.range) return false;
+        const view = this.GanttScroll.Bounds().Width || 0;
+        const margin = Math.min(Math.max(g.dayW, 16), 48, view / 3);
+        const left = g.x(start) - (task.Milestone ? g.msR : 0) - margin;
+        this.GanttScroll.ScrollX = Math.max(0, Math.round(left));
+        return true;
     }
 
     /* --- editing ------------------------------------------------------- */
@@ -6522,6 +6547,28 @@ export class MainForm extends Form {
             ok = eq("and travels with the chart's scroll",
                     this.rulerFrame(stripW).shift, this.GanttScroll.ScrollX) && ok;
             this.GanttScroll.ScrollX = 0;
+
+            /* **Scroll to Task**: a task from the middle of the span, past the
+             * pane's right edge and with chart enough after it, chosen; the
+             * command brings its start into the pane -- a little in from the
+             * left edge -- where choosing the row alone moved nothing. */
+            const mid = span ? (span.from + span.to) / 2 : 0;
+            const late = this.chartRows().filter((t) => whenMs(t.Start) !== null)
+                .reduce((a, b) => (Math.abs(whenMs(b.Start) - mid) <
+                                   Math.abs(whenMs(a.Start) - mid) ? b : a));
+            this.Tasks.Key = String(late.UID);
+            this.Tasks_Select();
+            ok = eq("choosing a row does not move the chart", this.GanttScroll.ScrollX, 0) && ok;
+            ok = eq("Scroll to Task is offered for it", this.ActScrollToTask.Enabled, true) && ok;
+            this.ActScrollToTask_Execute();
+            const gs = ganttGeometry(this.chartRows(), this.ganttWidth(), this.ganttHeight(),
+                                     this.step, this.planGeom());
+            const barAt = gs.x(whenMs(late.Start)) - this.GanttScroll.ScrollX;
+            const paneW = this.GanttScroll.Bounds().Width;
+            ok = yes("Scroll to Task brings its start into the pane, near the left",
+                     this.GanttScroll.ScrollX > 0 && barAt > 0 && barAt < paneW / 2,
+                     `start at ${Math.round(barAt)} of ${paneW}, scrolled ${this.GanttScroll.ScrollX}`) && ok;
+            this.GanttScroll.ScrollX = 0;
             this.CmbScale.Index = 0;   // back to Auto
             this.CmbScale_Select();
             ok = eq("moving the divider moves the list with it", g.width(this.Tasks),
@@ -7867,6 +7914,7 @@ export class MainForm extends Form {
                         "ActLink", "ActUnlink", "ActCut", "ActPct0", "ActPct25", "ActPct50", "ActPct75", "ActPct100",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActCopy", "ActPaste", "ActZoomIn", "ActZoomOut", "ActZoomFit",
+                        "ActScrollToTask",
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",
                         "ActLevel3",
                         "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",

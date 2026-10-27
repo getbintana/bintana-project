@@ -150,6 +150,10 @@ y realimentaría cada redimensionamiento— sino un mínimo, y ese mínimo se qu
 dentro del scroller horizontal, que es el que muestra lo que no entra. Con
 **Días** o **Semanas** el gráfico es más ancho que su panel y hay que
 desplazarlo; con **Ajustar a la ventana** es exactamente el ancho del panel.
+**Desplazarse a la tarea** (`Ctrl+Shift+F5`, en **Ver**, en el menú de la fila
+y en la barra) lleva el gráfico hasta donde empieza la tarea elegida, como en
+Project. Elegir una fila no mueve el gráfico por sí solo: así no salta de
+costado mientras se recorre la lista con las flechas.
 
 El campo de la barra superior **filtra por nombre**: quedan las tareas que
 coinciden y los resúmenes que les dan lugar. La lupa limpia el filtro, y
@@ -569,6 +573,7 @@ próxima vez, salvo el título, que es de cada proyecto.
 | `Shift+F2` | Información de la tarea |
 | `Ctrl+F2` / `Ctrl+Shift+F2` | Vincular / Desvincular tareas |
 | `F5` | Recalcular |
+| `Ctrl+Shift+F5` | Desplazarse a la tarea |
 | `Ctrl+Q` | Salir |
 
 ## Configuración

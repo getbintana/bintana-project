@@ -269,6 +269,13 @@
       "enabled": false
     },
     {
+      "name": "ActScrollToTask",
+      "text": "Scroll to Task",
+      "icon": "go-jump-symbolic",
+      "shortcut": "<Control><Shift>F5",
+      "enabled": false
+    },
+    {
       "name": "ActExpandAll",
       "text": "Expand all",
       "icon": "pan-down-symbolic",
@@ -494,6 +501,9 @@
         },
         {
           "action": "ActZoomFit"
+        },
+        {
+          "action": "ActScrollToTask"
         },
         {
           "separator": true
@@ -1002,6 +1012,18 @@
                   }
                 },
                 {
+                  "type": "Button",
+                  "name": "ToolScrollToTask",
+                  "properties": {
+                    "Action": "ActScrollToTask",
+                    "Height": 30,
+                    "Icon": "go-jump-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Scroll the chart to the selected task",
+                    "Width": 34
+                  }
+                },
+                {
                   "type": "Separator",
                   "name": "Sep4",
                   "properties": {}
@@ -1247,6 +1269,9 @@
                                     "Menu": [
                                       {
                                         "action": "ActTaskInfo"
+                                      },
+                                      {
+                                        "action": "ActScrollToTask"
                                       },
                                       {
                                         "separator": true

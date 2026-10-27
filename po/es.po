@@ -181,6 +181,12 @@ msgstr "Exportar el gráfico como PNG o PDF"
 msgid "Fit to window"
 msgstr "Ajustar a la ventana"
 
+msgid "Scroll to Task"
+msgstr "Desplazarse a la tarea"
+
+msgid "Scroll the chart to the selected task"
+msgstr "Desplazar el gráfico hasta la tarea elegida"
+
 msgid "Days"
 msgstr "Días"
 
