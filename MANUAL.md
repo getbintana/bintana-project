@@ -189,6 +189,13 @@ una fila la vuelta cae en la primera columna de la siguiente (el nombre).
 pregunta de siempre. Las teclas mueven dentro de la edición y fuera de ella, y
 la barra de entrada sigue a la celda.
 
+En **Editar** (y en el menú de la fila) están, junto a *Agregar tarea*,
+**Agregar hito** —una tarea sin duración, marcada como hito, después de la
+elegida— y **Agregar tarea de resumen**, como *Insertar tarea de resumen* de
+Project: el resumen toma el lugar de la tarea elegida y la deja debajo, con
+sus subtareas y sus vínculos; sin tarea elegida, aparece al final con una
+tarea adentro. Cada uno se deshace en un paso.
+
 Lo que no se puede escribir se rechaza con el motivo y la celda vuelve a lo
 que decía: una duración que no es una duración, una fecha que no es una fecha,
 un avance fuera de 0 a 100, una prioridad fuera de 0 a 1000, un calendario que

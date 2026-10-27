@@ -74,6 +74,16 @@
       "shortcut": "<Control>n"
     },
     {
+      "name": "ActAddMilestone",
+      "text": "Add Milestone",
+      "icon": "starred-symbolic"
+    },
+    {
+      "name": "ActAddSummary",
+      "text": "Add Summary Task",
+      "icon": "view-list-symbolic"
+    },
+    {
       "name": "ActDelete",
       "text": "Delete Task",
       "icon": "user-trash-symbolic",
@@ -300,6 +310,12 @@
         },
         {
           "action": "ActAdd"
+        },
+        {
+          "action": "ActAddMilestone"
+        },
+        {
+          "action": "ActAddSummary"
         },
         {
           "action": "ActDelete"
@@ -1015,6 +1031,12 @@
                                       },
                                       {
                                         "action": "ActAdd"
+                                      },
+                                      {
+                                        "action": "ActAddMilestone"
+                                      },
+                                      {
+                                        "action": "ActAddSummary"
                                       },
                                       {
                                         "action": "ActDelete"

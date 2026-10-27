@@ -1529,3 +1529,15 @@ msgstr "Las predecesoras por su código EDT"
 
 msgid "Show project summary task"
 msgstr "Mostrar tarea de resumen del proyecto"
+
+msgid "Add Milestone"
+msgstr "Agregar hito"
+
+msgid "Add Summary Task"
+msgstr "Agregar tarea de resumen"
+
+msgid "New milestone"
+msgstr "Nuevo hito"
+
+msgid "New summary task"
+msgstr "Nueva tarea de resumen"

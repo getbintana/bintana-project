@@ -223,7 +223,8 @@ export class MainForm extends Form {
     documentCommands(on) {
         for (const act of [this.ActSave, this.ActSaveAs, this.ActExport,
                            this.ActReport, this.ActUndo, this.ActRedo,
-                           this.ActAdd, this.ActDelete, this.ActIndent,
+                           this.ActAdd, this.ActAddMilestone, this.ActAddSummary,
+                           this.ActDelete, this.ActIndent,
                            this.ActOutdent, this.ActUp, this.ActDown,
                            this.ActPaste, this.ActZoomIn, this.ActZoomOut,
                            this.ActZoomFit, this.ActExpandAll, this.ActCollapseAll,
@@ -2896,6 +2897,17 @@ export class MainForm extends Form {
         this.fill(added.UID);
     }
 
+    ActAddMilestone_Execute() {
+        const added = this.edit.addMilestone(this.selectedUID);
+        this.fill(added.UID);
+    }
+
+    /* The summary goes over the selected task, which ends up under it. */
+    ActAddSummary_Execute() {
+        const added = this.edit.addSummary(this.selectedUID);
+        this.fill(added.UID);
+    }
+
     ActDelete_Execute() {
         const task = this.selectedTask();
         if (!task) return;
@@ -5043,6 +5055,36 @@ export class MainForm extends Form {
                 ok = eq("un código propio queda", numbers(),
                         "0/0 1/1 1.1/1.1 1.2/B-7") && ok;
                 this.edit.undo(); this.edit.undo(); this.edit.undo();
+                this.fill();
+            }
+
+            /* **Hitos y resúmenes en un paso**, como Insertar hito e
+             * Insertar tarea de resumen de Project: el hito no dura y está
+             * marcado; el resumen toma el lugar de la tarea y la deja debajo,
+             * con lo que cuelga de ella; sin tarea, viene con una adentro. */
+            {
+                const shape = () => this.holder.project.Tasks
+                    .map((t) => `${t.OutlineNumber}${t.Summary ? "S" : ""}${t.Milestone ? "M" : ""}`)
+                    .join(" ");
+                const hito = this.edit.addMilestone(1);
+                ok = eq("el hito va tras la tarea, sin duración",
+                        `${shape()} ${hito.Duration} ${durationText(hito, this.holder.project)}`,
+                        "0S 1 2M 3 PT0H0M0S 0d") && ok;
+                this.edit.undo();
+                this.Tasks.Key = "2";
+                this.Tasks_Select();
+                this.ActAddSummary.Execute();
+                const sum = this.selectedTask();
+                ok = eq("el resumen va sobre la tarea seleccionada",
+                        `${shape()} ${sum.Name === Locale.Text("New summary task")}`,
+                        "0S 1 2S 2.1 true") && ok;
+                ok = eq("y la tarea queda debajo con su vínculo",
+                        taskOf(this.holder.project, 2).Links.length, 1) && ok;
+                this.edit.undo();
+                ok = eq("un solo deshacer", shape(), "0S 1 2") && ok;
+                this.edit.addSummary(null);
+                ok = eq("sin tarea, viene con una adentro", shape(), "0S 1 2 3S 3.1") && ok;
+                this.edit.undo();
                 this.fill();
             }
 
@@ -7495,7 +7537,7 @@ export class MainForm extends Form {
      */
     checkWiring() {
         const wanted = ["ActOpen", "ActNew", "ActSave", "ActSaveAs", "ActExport",
-                        "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActDelete",
+                        "ActQuit", "ActUndo", "ActRedo", "ActAdd", "ActAddMilestone", "ActAddSummary", "ActDelete",
                         "ActIndent", "ActOutdent", "ActUp", "ActDown",
                         "ActCopy", "ActPaste", "ActZoomIn", "ActZoomOut", "ActZoomFit",
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",

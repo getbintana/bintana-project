@@ -785,6 +785,64 @@ export class Edit {
         return task;
     }
 
+    /* **A milestone**, Project's *Insert Milestone*: a task of no duration
+     * flagged as one, where `addTask` would put it -- one command, one undo. */
+    addMilestone(afterUID) {
+        const project = this.holder.project;
+        const tasks   = project.Tasks;
+        const uid = this.nextUID("task", tasks);
+        const { at, level } = this.#slot(afterUID);
+
+        const task = new MspTask({
+            UID: uid, ID: uid, Name: Locale.Text("New milestone"),
+            OutlineLevel: level, Priority: 500, Milestone: true, Estimated: false,
+            Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
+            CalendarUID: project.CalendarUID,
+        });
+        tasks.splice(at, 0, task);
+        this.commit();
+        return task;
+    }
+
+    /* **A summary over a task**, Project's *Insert Summary Task*: it takes
+     * the task's place and level, and the task -- with what hangs from it --
+     * goes one level down, under it. With no task (or the project summary)
+     * there is nothing to put under it, so it comes with a new one, as
+     * Project's does: a summary with nothing under it is not a summary. */
+    addSummary(uid) {
+        const project = this.holder.project;
+        const tasks   = project.Tasks;
+        const summary = new MspTask({
+            UID: this.nextUID("task", tasks), ID: 0,
+            Name: Locale.Text("New summary task"),
+            Priority: 500, Summary: true, Estimated: false,
+            Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
+            CalendarUID: project.CalendarUID,
+        });
+
+        const i = tasks.findIndex((t) => t.UID === uid);
+        if (i < 0 || tasks[i].OutlineLevel === 0) {
+            summary.OutlineLevel = 1;
+            const child = new MspTask({
+                UID: this.nextUID("task", tasks), ID: 0, Name: Locale.Text("New task"),
+                OutlineLevel: 2, Priority: 500,
+                Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
+                CalendarUID: project.CalendarUID,
+            });
+            tasks.push(summary, child);
+        } else {
+            const level = tasks[i].OutlineLevel;
+            let end = i + 1;
+            while (end < tasks.length && tasks[end].OutlineLevel > level) end++;
+            for (let k = i; k < end; k++) tasks[k].OutlineLevel++;
+            summary.OutlineLevel = level;
+            tasks.splice(i, 0, summary);
+        }
+        this.#recomputeSummary();
+        this.commit();
+        return summary;
+    }
+
     /* Where a task added "after" another goes: past the other's subtree, at the
      * other's level. After the project summary is after everything, at level 1:
      * there is one level 0 and it is not a sibling of anything. */
