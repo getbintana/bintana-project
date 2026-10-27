@@ -728,6 +728,30 @@
                 },
                 {
                   "type": "Button",
+                  "name": "ToolMilestone",
+                  "properties": {
+                    "Action": "ActAddMilestone",
+                    "Height": 30,
+                    "Icon": "starred-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Add a milestone after the selected task",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolSummary",
+                  "properties": {
+                    "Action": "ActAddSummary",
+                    "Height": 30,
+                    "Icon": "view-list-bullet-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Add a summary task over the selected tasks",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Button",
                   "name": "ToolDelete",
                   "properties": {
                     "Action": "ActDelete",
@@ -759,6 +783,30 @@
                     "Icon": "format-indent-more-symbolic",
                     "Style": "flat",
                     "Tooltip": "Indent",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolUp",
+                  "properties": {
+                    "Action": "ActUp",
+                    "Height": 30,
+                    "Icon": "go-up-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Move the task up, with its subtasks",
+                    "Width": 34
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "ToolDown",
+                  "properties": {
+                    "Action": "ActDown",
+                    "Height": 30,
+                    "Icon": "go-down-symbolic",
+                    "Style": "flat",
+                    "Tooltip": "Move the task down, with its subtasks",
                     "Width": 34
                   }
                 },

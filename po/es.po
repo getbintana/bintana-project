@@ -1541,3 +1541,15 @@ msgstr "Nuevo hito"
 
 msgid "New summary task"
 msgstr "Nueva tarea de resumen"
+
+msgid "Add a milestone after the selected task"
+msgstr "Agregar un hito después de la seleccionada"
+
+msgid "Add a summary task over the selected tasks"
+msgstr "Agregar una tarea de resumen sobre las seleccionadas"
+
+msgid "Move the task up, with its subtasks"
+msgstr "Subir la tarea, con sus subtareas"
+
+msgid "Move the task down, with its subtasks"
+msgstr "Bajar la tarea, con sus subtareas"
