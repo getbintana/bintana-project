@@ -1392,8 +1392,8 @@ export class MainForm extends Form {
                 this.linkRows.push(link);
                 this.Links.Add([
                     pred ? pred.Name : `UID ${link.PredecessorUID}`,
-                    LINK_NAMES[linkKind(link)],
-                    String((link.LinkLag || 0) / 10),
+                    linkName(linkKind(link)),
+                    String(linkLagMinutes(this.holder.project, link)),
                 ]);
             }
             /* A placeholder first, so nothing is chosen until the user says
@@ -1751,9 +1751,11 @@ export class MainForm extends Form {
     linkTip(edge, succ) {
         const project = this.holder.project;
         const pred = this.byUID[String(edge.PredecessorUID)];
-        const kind = LINK_NAMES[linkKind(edge)];
+        const kind = linkName(linkKind(edge));
         const lag = edge.LinkLag ? ` ${edge.LinkLag > 0 ? "+" : "-"}` +
-            `${minutesText(Math.abs(edge.LinkLag) / TENTHS, succ, project)}` : "";
+            (isPercentLagFormat(edge.LagFormat)
+                ? `${Math.abs(edge.LinkLag)}%`
+                : minutesText(Math.abs(edge.LinkLag) / TENTHS, succ, project)) : "";
         return `${pred ? pred.Name : `UID ${edge.PredecessorUID}`} → ${succ.Name}\n${kind}${lag}`;
     }
 
@@ -1940,7 +1942,7 @@ export class MainForm extends Form {
                     ? this.edit.linkProblem(r.pred, drag.to, drag.type)
                     : this.edit.linkProblem(drag.to, r.succ, drag.type);
                 drag.label = drag.problem ? Locale.Text(drag.problem)
-                                          : LINK_NAMES[drag.type];
+                                          : linkName(drag.type);
             } else if (drag.to !== null) {
                 /* The ends it joins: the halves, or the combo's type when it was
                  * forced -- and whether that may be drawn at all. */
@@ -1950,7 +1952,7 @@ export class MainForm extends Form {
                                                  : linkTypeOf(drag.srcEnd, drag.dstEnd);
                 drag.problem = this.edit.linkProblem(drag.uid, drag.to, drag.type);
                 drag.label = drag.problem ? Locale.Text(drag.problem)
-                                          : LINK_NAMES[drag.type];
+                                          : linkName(drag.type);
             }
             this.setCursor(drag.problem ? "NotAllowed" : "Crosshair");
             this.redrawChart();
@@ -2767,11 +2769,18 @@ export class MainForm extends Form {
             const { pred, m } = found;
             const uid = pred.UID;
 
-            const type = m[1] ? LINK_NAMES.indexOf(m[1].toUpperCase()) : 1;
+            const type = m[1] ? linkLetters()[m[1].toUpperCase()] : 1;
             const old  = task.Links.find((l) => l.PredecessorUID === uid);
 
-            let lag = 0, format = old && old.LagFormat ? old.LagFormat : 7;
-            if (m[3]) {
+            let lag = 0, format = old && old.LagFormat && !isPercentLagFormat(old.LagFormat)
+                                ? old.LagFormat : 7;
+            let linkLag = null;
+            if (m[3] && /%$/.test(m[4] || "")) {
+                /* A share of the predecessor, kept as the percentage
+                 * itself -- what Project writes for `+50%`. */
+                linkLag = (m[2] === "-" ? -1 : 1) * Math.round(Number(m[3].replace(",", ".")));
+                format  = /^e/i.test(m[4]) ? 20 : 19;
+            } else if (m[3]) {
                 const duration = parseDuration(m[3] + (m[4] || "").toLowerCase(), format, "", this.holder.project);
                 if (duration === null)
                     return { refused: Locale.Text("{0} is not a duration -- try 2d, 8h or 30m", m[3]) };
@@ -2783,7 +2792,8 @@ export class MainForm extends Form {
             if (problem) return { refused: Locale.Text(problem) };
 
             const link = new MspLink({ PredecessorUID: uid, Type: type,
-                                       LinkLag: Math.round(lag * 10),
+                                       LinkLag: linkLag !== null ? linkLag
+                                                                 : Math.round(lag * 10),
                                        LagFormat: format });
             const kept = links.findIndex((l) => l.PredecessorUID === uid);
             if (kept >= 0) links[kept] = link; else links.push(link);
@@ -2804,18 +2814,19 @@ export class MainForm extends Form {
             .filter((t) => !t.IsNull && keyOf(t) && item.indexOf(keyOf(t)) === 0)
             .sort((a, b) => keyOf(b).length - keyOf(a).length);
         for (const pred of candidates) {
-            const m = LINK_REST.exec(item.slice(keyOf(pred).length));
+            const m = linkRest(item.slice(keyOf(pred).length));
             if (m) return { pred, m };
         }
 
         if (by === "ID") {
             const m = /^(\d+)(.*)$/.exec(item);
-            return { missing: m && LINK_REST.test(m[2]) ? m[1] : null };
+            return { missing: m && linkRest(m[2]) ? m[1] : null };
         }
         /* An unknown code ends where a type or a lag with its unit begins. */
         for (let end = 1; end <= item.length; end++) {
             const rest = item.slice(end);
-            if (LINK_REST.test(rest) && (!rest || /^\s*(FS|SS|FF|SF|[+]|-\s*\d+(?:[.,]\d+)?\s*e?(mo|m|h|d|w)\s*$)/i.test(rest)))
+            const m = linkRest(rest);
+            if (m && (!rest || m[1] || /^\s*([+]|-\s*\d+(?:[.,]\d+)?\s*e?(mo|m|h|d|w|%)\s*$)/i.test(rest)))
                 return { missing: item.slice(0, end).trim() };
         }
         return { missing: null };
@@ -3190,8 +3201,6 @@ export class MainForm extends Form {
                  (over ? `, ${over} over-allocated` : "") +
                  (result.notMet
                     ? `, ${result.notMet} constraints not met` : "") +
-                 (result.percentLags
-                    ? `, ${result.percentLags} lags in percent not applied` : "") +
                  (result.skipped
                     ? `, ${result.skipped} kept (ALAP)`
                     : "") + ".");
@@ -3208,7 +3217,7 @@ export class MainForm extends Form {
          * placeholder, not on the last row's, so Link cannot rewrite that one. */
         this.CmbPred.Index = Math.max(at, 0);
         this.CmbType.Index = LINK_INDEX[linkKind(link)];
-        this.SpinLag.Value = (link.LinkLag || 0) / 10;
+        this.SpinLag.Value = linkLagMinutes(this.holder.project, link);
     }
 
     /* Link adds or updates the chosen predecessor; Unlink takes the selected
@@ -3231,7 +3240,9 @@ export class MainForm extends Form {
      * chart alike. The type is the combo's index, and index 2 is MSPDI's 0
      * (FF) -- so no `|| 1`, which made every FF link an FS. An update keeps
      * the unit the lag was shown in (`LagFormat`): the lag itself is always
-     * tenths of a minute, and a 2-day lag must not come back as "960m". */
+     * tenths of a minute, and a 2-day lag must not come back as "960m". A
+     * lag in percent is not kept as one: the field is minutes, and what it
+     * holds now is the minutes the percentage came to. */
     putLink(task, predUID, index, lag) {
         const old = task.Links.find((l) => l.PredecessorUID === predUID);
         const links = task.Links.filter((l) => l.PredecessorUID !== predUID);
@@ -3239,7 +3250,8 @@ export class MainForm extends Form {
             PredecessorUID: predUID,
             Type: index >= 0 ? LINK_ORDER[index] : 1,
             LinkLag: lag,
-            LagFormat: old && old.LagFormat ? old.LagFormat : 3,
+            LagFormat: old && old.LagFormat && !isPercentLagFormat(old.LagFormat)
+                     ? old.LagFormat : 3,
         }));
         return this.edit.setLinks(task.UID, links);
     }
@@ -3520,11 +3532,11 @@ export class MainForm extends Form {
                      nest.Tasks[3].Critical, nest.Tasks[4].Critical].join(" "),
                     "2026-09-11T17:00:00 true false true") && ok;
 
-            /* **Nobody moves a manual or a finished task**, so a link into one
-             * pulls no predecessor's total slack back -- A has the room to the
-             * plan's Friday -- while its free slack still stops at the manual
-             * task's dates. A finished task is history: late dates are the
-             * ones it had, no slack, never critical. */
+            /* **A manual successor bounds the total slack like any other**
+             * -- measured in Project: M's late start is the plan's Friday, so
+             * A has until Thursday -- and the free slack stops at M's own
+             * dates. A finished task is history: late dates are the ones it
+             * had, no slack, never critical. */
             const fixed = projectOf([
                 task(1, "PT8H0M0S"),                                   // A, Mon
                 task(2, "PT8H0M0S", [link(1, 1)],                      // M, Thu
@@ -3537,26 +3549,66 @@ export class MainForm extends Form {
                      ActualFinish: "2026-09-07T17:00:00" }),
             ]);
             recalculate(fixed);
-            ok = eq("a manual successor does not bound the total slack",
+            ok = eq("a manual successor bounds the total slack",
                     [fixed.Tasks[0].TotalSlack, fixed.Tasks[0].FreeSlack].join("/"),
-                    "14400/4800") && ok;
+                    "9600/4800") && ok;
+
+            /* **No late finish after the plan's**, also for a task whose
+             * only successor holds its start (SS): Project caps it there. */
+            const capped = projectOf([
+                task(1, "PT16H0M0S"),                                  // A, 2d
+                task(2, "PT8H0M0S", [link(1, 3)]),                     // B SS A
+            ]);
+            recalculate(capped);
+            ok = eq("an SS predecessor ends no later than the plan",
+                    `${capped.Tasks[0].TotalSlack} ${capped.Tasks[0].LateFinish}`,
+                    "0 2026-09-09T17:00:00") && ok;
+
+            /* **A date that beats a link is negative slack**: B must start
+             * the plan's first day, A takes two working days -- Project
+             * shows -2d on both (measured, with "Continue" on the
+             * conflict). */
+            const clash = projectOf([
+                task(1, "PT16H0M0S"),
+                task(2, "PT8H0M0S", [link(1, 1)], { ConstraintType: CONSTRAINT_MSO,
+                     ConstraintDate: "2026-09-07T08:00:00" }),
+            ]);
+            recalculate(clash);
+            ok = eq("an MSO before its predecessor ends: -2d on both",
+                    `${clash.Tasks[1].Start} ${clash.Tasks[0].TotalSlack} ` +
+                    `${clash.Tasks[1].TotalSlack}`,
+                    "2026-09-07T08:00:00 -9600 -9600") && ok;
+
+            /* **A summary's duration and slack are its branch's**: 2d of
+             * span, and the least slack of its leaves. */
+            const branch = projectOf([
+                level(task(1, "PT0S"), 1, true),
+                level(task(2, "PT8H0M0S"), 2),
+                level(task(3, "PT16H0M0S"), 2),
+                level(task(4, "PT24H0M0S"), 1),
+            ]);
+            recalculate(branch);
+            ok = eq("a summary's duration and slack",
+                    `${branch.Tasks[0].Duration} ${branch.Tasks[0].TotalSlack} ` +
+                    `${branch.Tasks[2].TotalSlack}`,
+                    "PT16H0M0S 4800 4800") && ok;
             ok = eq("a finished task: no slack, not critical",
                     [fixed.Tasks[3].TotalSlack, fixed.Tasks[3].FreeSlack,
                      fixed.Tasks[3].Critical, fixed.Tasks[3].LateFinish].join(" "),
                     "0 0 false 2026-09-07T17:00:00") && ok;
 
-            /* **A lag in percent is not read as minutes.** Its unit is not
-             * documented and nothing here measures it, so it is not applied --
-             * and counted, which is what the log says. */
+            /* **A lag in percent is a share of the predecessor**, and its
+             * `LinkLag` is the percentage: Project saved `FC+50%` after a 2d
+             * task as 50, format 19, and put the successor a day later. */
             const pct = projectOf([
-                task(1, "PT8H0M0S"),
+                task(1, "PT16H0M0S"),
                 task(2, "PT8H0M0S", [new MspLink({ PredecessorUID: 1, Type: 1,
-                                                   LinkLag: 500, LagFormat: 19 })]),
+                                                   LinkLag: 50, LagFormat: 19 })]),
             ]);
-            const pctRun = recalculate(pct);
-            ok = eq("a percent lag is not applied as minutes",
-                    `${pct.Tasks[1].Start} ${pctRun.percentLags}`,
-                    "2026-09-09T08:00:00 1") && ok;
+            recalculate(pct);
+            ok = eq("a 50% lag after 2d is a day",
+                    `${pct.Tasks[0].Finish} ${pct.Tasks[1].Start}`,
+                    "2026-09-09T17:00:00 2026-09-11T08:00:00") && ok;
 
             /* **An FF does not start a task before the plan.** A is a day
              * long on the project's first day; B (3 days) finishes with A, so
@@ -7196,6 +7248,27 @@ export class MainForm extends Form {
                   `${shortDate(edit.task(sunday).Finish)} ` +
                   `pin=${shortDate(edit.task(sunday).ConstraintDate)}`);
             for (let k = 0; k < 3; k++) edit.undo();
+
+            /* **Una demora en porcentaje, tipeada**: se guarda como Project la
+             * escribe -- 50, formato 19 -- se muestra igual y corre a la
+             * sucesora la mitad de la predecesora. */
+            const stepWas = edit.at;
+            const whole = typedOn({ Duration: "PT16H0M0S" });
+            const half  = typedOn({ Duration: "PT8H0M0S" });
+            const wholeID = edit.task(whole).ID;
+            const halfLinks = this.linkValues(edit.task(half), `${wholeID}FS+50%`, "ID");
+            ok = !!halfLinks.links && halfLinks.links.length === 1 &&
+                 halfLinks.links[0].LinkLag === 50 &&
+                 halfLinks.links[0].LagFormat === 19 && ok;
+            edit.setLinks(half, halfLinks.links || []);
+            const halfText = linksText(edit.task(half), this.holder.project, "ID");
+            ok = halfText === `${wholeID}FS+50%` &&
+                 edit.task(whole).Finish === "2026-09-02T17:00:00" &&
+                 edit.task(half).Start === "2026-09-04T08:00:00" && ok;
+            print(`edit typed percent lag ${halfText} ` +
+                  `lag=${halfLinks.links ? halfLinks.links[0].LinkLag : "-"} ` +
+                  `start=${shortDate(edit.task(half).Start)}`);
+            while (edit.at > stepWas) edit.undo();
             edit.auto = autoWasT;
             this.setColumns(colsWereT);
             this.fill(null);
@@ -8506,8 +8579,30 @@ function minutesText(minutes, task, project) {
  * lag with its unit. A plain `3` is the link a reader assumes.
  */
 
-/* What follows the predecessor in its text: the type, then the lag. */
-const LINK_REST = /^\s*(FS|SS|FF|SF)?\s*(?:([+-])\s*(\d+(?:[.,]\d+)?)\s*(e?mo|e?m|e?h|e?d|e?w)?)?\s*$/i;
+/* **A link type's letters**, by the kind they name: Project's English ones
+ * -- what a file pasted from anywhere carries -- and the ones the app's
+ * language gives them, FC/CC/FF/CF in Spanish, which is what is shown. */
+export function linkName(kind) { return Locale.Text(LINK_NAMES[kind]); }
+
+function linkLetters() {
+    const letters = {};
+    LINK_NAMES.forEach((name, kind) => {
+        letters[name] = kind;
+        letters[linkName(kind).toUpperCase()] = kind;
+    });
+    return letters;
+}
+
+/* What follows the predecessor in its text: the type, then the lag -- in a
+ * unit of time, or in percent of the predecessor (`+50%`, `+50e%`). Any two
+ * letters read as a type here, and `linkRest` keeps only the ones that name
+ * one. */
+const LINK_REST = /^\s*([A-Za-z]{2})?\s*(?:([+-])\s*(\d+(?:[.,]\d+)?)\s*(e?mo|e?m|e?h|e?d|e?w|e?%)?)?\s*$/i;
+
+function linkRest(text) {
+    const m = LINK_REST.exec(text);
+    return m && (!m[1] || m[1].toUpperCase() in linkLetters()) ? m : null;
+}
 
 function linksText(task, project, by) {
     const parts = [];
@@ -8518,7 +8613,7 @@ function linksText(task, project, by) {
         const pred = taskOf(project, link.PredecessorUID);
         let part   = pred ? String(pred[by]) : `UID ${link.PredecessorUID}`;
 
-        if (kind !== 1 || lag) part += LINK_NAMES[kind];
+        if (kind !== 1 || lag) part += linkName(kind);
         if (lag) part += lag;
         parts.push(part);
     }
@@ -8529,6 +8624,9 @@ function linksText(task, project, by) {
  * the reading, as the slack's is. */
 function linkLagText(link, project) {
     if (!link.LinkLag) return "";
+    if (isPercentLagFormat(link.LagFormat))
+        return `${link.LinkLag < 0 ? "-" : "+"}${Math.abs(link.LinkLag)}` +
+               `${link.LagFormat === 20 || link.LagFormat === 52 ? "e" : ""}%`;
 
     const format  = durationFormat(link.LagFormat || 7, project);
     const minutes = link.LinkLag / TENTHS;

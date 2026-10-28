@@ -343,23 +343,40 @@ export class WorkCalendar {
  * calendar or clock time (an elapsed format, "2ed"), which goes through
  * nights and weekends alike.
  */
-/* A lag in percent (19, 20, 51, 52) is a share of the predecessor's
- * duration, and what `LinkLag` holds for one is not documented -- the schema
- * says tenths of a minute for every format, which cannot be right for a
- * percentage -- and there is no file here with one to measure. It is **not
- * applied** (a lag of zero) instead of read as minutes, which would be a wrong
- * schedule that looks right; `recalculate` counts them so the log says so. */
+/* **A lag in percent** (19, and 20 elapsed; 51 and 52 their estimated
+ * spellings) is a share of the predecessor's duration, and for one of them
+ * `LinkLag` is the percentage itself, not tenths of a minute: Project writes
+ * `FC+50%` as 50 with format 19, measured on a file it saved. 50% of a 2d
+ * predecessor is a day. */
 const PERCENT_LAGS = [19, 20, 51, 52];
-const isPercentLag = (link) => PERCENT_LAGS.includes(link.LagFormat) && !!link.LinkLag;
+const isPercentLag = (link) => PERCENT_LAGS.includes(link.LagFormat);
 
-function lagAfter(work, t, link) {
-    const lag = isPercentLag(link) ? 0 : (link.LinkLag || 0) / 10;
-    return isElapsed(link.LagFormat) ? t + lag * MIN_MS : work.add(t, lag);
+/* The lag in minutes, and whether those minutes are clock time. */
+function lagOf(link, predMinutes) {
+    if (!isPercentLag(link))
+        return { minutes: (link.LinkLag || 0) / 10, elapsed: isElapsed(link.LagFormat) };
+    return { minutes: (predMinutes || 0) * (link.LinkLag || 0) / 100,
+             elapsed: link.LagFormat === 20 || link.LagFormat === 52 };
 }
 
-function lagBefore(work, t, link) {
-    const lag = isPercentLag(link) ? 0 : (link.LinkLag || 0) / 10;
-    return isElapsed(link.LagFormat) ? t - lag * MIN_MS : work.subtract(t, lag);
+/* The lag in minutes as a reader sees it, a percentage read against its
+ * predecessor -- what the panel's minutes field and the chart's tip show. */
+export function linkLagMinutes(project, link) {
+    if (!isPercentLag(link)) return (link.LinkLag || 0) / 10;
+    const pred = project.Tasks.find((t) => t.UID === link.PredecessorUID);
+    return lagOf(link, pred ? mspdiMinutes(pred.Duration) : 0).minutes;
+}
+
+export function isPercentLagFormat(format) { return PERCENT_LAGS.includes(format); }
+
+function lagAfter(work, t, link, predMinutes) {
+    const lag = lagOf(link, predMinutes);
+    return lag.elapsed ? t + lag.minutes * MIN_MS : work.add(t, lag.minutes);
+}
+
+function lagBefore(work, t, link, predMinutes) {
+    const lag = lagOf(link, predMinutes);
+    return lag.elapsed ? t - lag.minutes * MIN_MS : work.subtract(t, lag.minutes);
 }
 
 /*
@@ -523,7 +540,8 @@ function freeSlack(task, links, work) {
                                                : whenMs(succ.Start);
         const ours  = kind === 2 || kind === 3 ? es : ef;
         if (until === null || ours === null) continue;
-        const room = work.between(ours, lagBefore(work, until, link));
+        const room = work.between(ours, lagBefore(work, until, link,
+                                                  mspdiMinutes(task.Duration)));
         if (least === null || room < least) least = room;
     }
     /* Tenths, the file's unit; the total is in them already. */
@@ -665,12 +683,17 @@ export function recalculate(project) {
         if (from !== null) {
             tasks[i].Start  = isoLocal(from);
             tasks[i].Finish = isoLocal(to);
+            /* Its duration is the working time of the span, on the plan's
+             * calendar -- what Project writes for one (a 2d branch is 2d). */
+            tasks[i].Duration = mspdiDuration(workOf(-1).between(from, to));
         }
     };
 
     const finished = (task) => whenMs(task.ActualFinish) !== null;
 
     const done = {};
+    /* An MSO that beat its links: where the links would have started it. */
+    const pushedFrom = {};
     let placed = 0, skipped = 0, notMet = 0, guard = 0;
     while (guard++ <= tasks.length + 1) {
         let moved = false;
@@ -749,10 +772,12 @@ export function recalculate(project) {
                 const kind = linkKind(link);
                 if (kind === 2) startsEarly = true;
                 if (kind === 0 || kind === 2) {
-                    const target = lagAfter(work, kind === 0 ? pf : ps, link);
+                    const target = lagAfter(work, kind === 0 ? pf : ps, link,
+                                            mspdiMinutes(pred.Duration));
                     if (finishFloor === null || target > finishFloor) finishFloor = target;
                 } else {
-                    const base = lagAfter(work, kind === 1 ? pf : ps, link);
+                    const base = lagAfter(work, kind === 1 ? pf : ps, link,
+                                          mspdiMinutes(pred.Duration));
                     const candidate = duration > 0 ? work.startAfter(base) : base;
                     if (startFloor === null || candidate > startFloor) startFloor = candidate;
                 }
@@ -768,6 +793,10 @@ export function recalculate(project) {
                 const at = work.add(when, 0);
                 atConstraint = at;
                 if (type === CONSTRAINT_MSO) {
+                    /* The date wins, as Project's "Continue" lets it; where
+                     * the links wanted later is kept for the slack, which
+                     * goes negative by the difference. */
+                    if (startFloor !== null && startFloor > at) pushedFrom[task.UID] = startFloor;
                     startFloor = at;
                 } else if (type === CONSTRAINT_MFO) {
                     if (finishFloor === null || at > finishFloor) finishFloor = at;
@@ -882,14 +911,16 @@ export function recalculate(project) {
         for (const succ of scheduled)
             for (const { link, pred } of incoming[succ.UID] || []) {
                 if (!done[pred.UID]) continue;
-                /* **A task nobody moves bounds nobody's total slack**: a
-                 * manual one keeps its dates and a finished one is history,
-                 * so a link into either pulls no predecessor's late dates
-                 * back -- measured against Project's own file, a predecessor
-                 * of a manual task has all the room to the plan's finish.
-                 * The *free* slack does count them: it is the room before
-                 * the successor's dates, and those are fixed. */
-                const fixed = succ.Manual || finished(succ);
+                /* **A finished task bounds nobody's total slack**: it is
+                 * history, so a link into it pulls no predecessor's late
+                 * dates back. **A manual one does**: Project works out its
+                 * late dates like any other's and its predecessors' from
+                 * them -- a 1d manual successor took a day off the room of
+                 * the task before it, measured in Project. (A manual
+                 * milestone at the end takes nothing, which is what the real
+                 * plan showed.) The *free* slack counts both: it is the room
+                 * before the successor's dates. */
+                const fixed = finished(succ);
                 /* A summary as predecessor stands for its leaves: all of them
                  * cap their late dates for a finish-bound link, the ones that
                  * open the branch for a start-bound one. Only the leaf that
@@ -963,22 +994,36 @@ export function recalculate(project) {
                         const kind = linkKind(link);
                         let v;
                         if (kind === 1) {               // FS bounds the finish
-                            v = lagBefore(work, L.ls, link);
+                            v = lagBefore(work, L.ls, link, duration);
                             if (lf === null || v < lf) lf = v;
                         } else if (kind === 3) {        // SS bounds the start
-                            v = lagBefore(work, L.ls, link);
+                            v = lagBefore(work, L.ls, link, duration);
                             if (ls === null || v < ls) ls = v;
                         } else if (kind === 0) {        // FF bounds the finish
-                            v = lagBefore(work, L.lf, link);
+                            v = lagBefore(work, L.lf, link, duration);
                             if (lf === null || v < lf) lf = v;
                         } else {                        // SF bounds the start
-                            v = lagBefore(work, L.lf, link);
+                            v = lagBefore(work, L.lf, link, duration);
                             if (ls === null || v < ls) ls = v;
                         }
                     }
                 }
                 if (lf === null && ls === null) lf = finish;
                 if (lf === null) lf = after(ls);
+                /* **No task finishes later than the plan**: Project caps
+                 * every late finish there, also one whose successors only
+                 * hold its start (SS, SF) -- measured in Project. */
+                if (lf > finish) lf = finish;
+                /* A date the task must keep caps its late dates too: MSO and
+                 * SNLT the start, MFO and FNLT the finish. */
+                const pin = whenMs(task.ConstraintDate);
+                const pinType = task.ConstraintType || 0;
+                if (pin !== null) {
+                    if ((pinType === CONSTRAINT_MSO || pinType === CONSTRAINT_SNLT) &&
+                        (ls === null || pin < ls)) ls = work.add(pin, 0);
+                    if ((pinType === CONSTRAINT_MFO || pinType === CONSTRAINT_FNLT) &&
+                        pin < lf) lf = pin;
+                }
                 if (ls === null) ls = before(lf);
 
                 /* **Both ends bound the task at once**: an FS successor caps
@@ -1015,7 +1060,20 @@ export function recalculate(project) {
              * same moment of work: `finishAt` steps back off a span's start
              * onto the previous end. */
             task.LateFinish   = isoLocal(finished(task) ? L.lf : work.finishAt(L.lf));
-            const total       = work.between(ef, L.lf);
+            /* **Signed**: a task whose late finish is before its early one
+             * -- a date it must keep that its links do not let it -- has
+             * negative slack, as Project shows it (-2d for an MSO two days
+             * before its predecessor ends). An MSO that beat its links is
+             * measured from where they would have finished it. */
+            let early = ef;
+            if (pushedFrom[task.UID] !== undefined) {
+                const by = work.startAfter(pushedFrom[task.UID]);
+                const duration = mspdiMinutes(task.Duration) || 0;
+                early = isElapsed(task.DurationFormat) ? by + duration * MIN_MS
+                                                       : work.add(by, duration);
+            }
+            const total       = L.lf >= early ? work.between(early, L.lf)
+                                              : -work.between(L.lf, early);
             task.TotalSlack   = total * TENTHS;
             task.Critical     = total <= 0 && !finished(task);
             /* Free slack counts the successors that still have dates to meet:
@@ -1024,6 +1082,29 @@ export function recalculate(project) {
             task.FreeSlack    = finished(task) ? 0
                 : freeSlack(task, (successors[task.UID] || []).filter(
                       (e) => !e.weak && !finished(e.succ)), work);
+        }
+
+        /* **A summary's late dates are its leaves'**: the earliest late
+         * start and the latest late finish, and its slack the room from its
+         * own finish to that -- the least of its leaves', as Project writes
+         * it. A manual summary is the user's span and keeps what it had. */
+        for (let i = 0; i < tasks.length; i++) {
+            const summary = tasks[i];
+            if (!summary.Summary || summary.Manual) continue;
+            let ls = null, lf = null;
+            for (let k = i + 1; k < endOf[i]; k++) {
+                const L = late[tasks[k].UID];
+                if (!L) continue;
+                if (ls === null || L.ls < ls) ls = L.ls;
+                if (lf === null || L.lf > lf) lf = L.lf;
+            }
+            const ef = whenMs(summary.Finish);
+            if (lf === null || ef === null) continue;
+            const work = workOf(-1);
+            summary.LateStart  = isoLocal(ls);
+            summary.LateFinish = isoLocal(work.finishAt(lf));
+            const total = lf >= ef ? work.between(ef, lf) : -work.between(lf, ef);
+            summary.TotalSlack = total * TENTHS;
         }
     }
 
@@ -1072,8 +1153,5 @@ export function recalculate(project) {
         assignment.StartVariance  = varianceOf(work, base.Start,  assignment.Start);
         assignment.FinishVariance = varianceOf(work, base.Finish, assignment.Finish);
     }
-    let percentLags = 0;
-    for (const task of tasks)
-        for (const link of task.Links) if (isPercentLag(link)) percentLags++;
-    return { placed, skipped, notMet, percentLags };
+    return { placed, skipped, notMet };
 }

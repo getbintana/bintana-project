@@ -752,7 +752,21 @@ msgid "Predecessors"
 msgstr "Predecesoras"
 
 msgid "\"{0}\" is not a predecessor -- try 3FS+2d"
-msgstr "\"{0}\" no es una predecesora -- probá 3FS+2d"
+msgstr "\"{0}\" no es una predecesora -- probá 3FC+2d"
+
+# Link types as Project's Spanish edition spells them: Fin-Comienzo,
+# Comienzo-Comienzo, Fin-Fin, Comienzo-Fin. The English letters are read too.
+msgid "FS"
+msgstr "FC"
+
+msgid "SS"
+msgstr "CC"
+
+msgid "FF"
+msgstr "FF"
+
+msgid "SF"
+msgstr "CF"
 
 msgid "There is no task {0}."
 msgstr "No hay una tarea {0}."

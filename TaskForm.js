@@ -197,8 +197,8 @@ export function fillFormLinks(ui, task, project) {
         ui.linkRows.push(link);
         ui.Links.Add([
             pred ? pred.Name : `UID ${link.PredecessorUID}`,
-            LINK_NAMES[linkKind(link)],
-            String((link.LinkLag || 0) / 10),
+            linkName(linkKind(link)),
+            String(linkLagMinutes(project, link)),
         ]);
     }
 
@@ -471,7 +471,7 @@ export class TaskForm extends Form {
         const at = this.predChoices.indexOf(link.PredecessorUID);
         this.CmbPred.Index = Math.max(at, 0);
         this.CmbType.Index = LINK_INDEX[linkKind(link)];
-        this.SpinLag.Value = (link.LinkLag || 0) / 10;
+        this.SpinLag.Value = linkLagMinutes(this.project, link);
     }
 
     /* Link agrega o actualiza la predecesora elegida -- una por par, como el
@@ -489,7 +489,8 @@ export class TaskForm extends Form {
             PredecessorUID: predUID,
             Type: this.CmbType.Index >= 0 ? LINK_ORDER[this.CmbType.Index] : 1,
             LinkLag: Math.round(this.SpinLag.Value * 10),
-            LagFormat: old && old.LagFormat ? old.LagFormat : 3,
+            LagFormat: old && old.LagFormat && !isPercentLagFormat(old.LagFormat)
+                     ? old.LagFormat : 3,
         }));
         fillFormLinks(this, this.task, this.project);
     }
