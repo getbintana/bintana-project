@@ -16,7 +16,7 @@
       "name": "Fields",
       "properties": {
         "ColumnSpacing": 8,
-        "Height": 186,
+        "Height": 214,
         "RowSpacing": 8,
         "Spacing": 8,
         "Width": 428
@@ -96,6 +96,15 @@
             "ColumnSpan": 2,
             "HAlign": "Start",
             "Text": "Recalculate after each change"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkNewManual",
+          "properties": {
+            "ColumnSpan": 2,
+            "HAlign": "Start",
+            "Text": "New tasks manually scheduled"
           }
         },
         {

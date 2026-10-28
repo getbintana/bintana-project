@@ -31,6 +31,12 @@ export class Edit {
      * ask (`recalculate`, F5), which is Project's manual mode. */
     auto = false;
 
+    /* **New tasks manually scheduled**, Project's *New tasks: Manually
+     * Scheduled* -- a preference of the app here, not of the file: `addTask`,
+     * `addMilestone` and `pasteLines` mark what they make, and the task's own
+     * `Manual` is what the file keeps. */
+    newManual = false;
+
     /* **The highest UID each kind ever had while this document was open**,
      * outside the snapshots on purpose. A UID is identity in the file:
      * `SaveXml` matches a record to its element by it, so a new task that took
@@ -846,8 +852,26 @@ export class Edit {
             Duration: newTaskDuration(project), DurationFormat: 7, Work: "PT0H0M0S",
             CalendarUID: project.CalendarUID,
         });
+        this.#manual(task);
         tasks.splice(at, 0, task);
         this.commit();
+        return task;
+    }
+
+    /* **A new task, manual when the preference says so.** The pass leaves a
+     * manual task's dates alone, so it would never get any: it is dated where
+     * the pass puts an unlinked one -- the plan's start, at a working moment --
+     * and its finish is its duration from there, so the three agree. */
+    #manual(task) {
+        if (!this.newManual) return task;
+        task.Manual = true;
+        const from = whenMs(this.holder.project.StartDate);
+        if (from === null) return task;
+        const work = new WorkCalendar(this.holder.project, task.CalendarUID);
+        const minutes = mspdiMinutes(task.Duration) || 0;
+        const start = minutes > 0 ? work.startAfter(from) : work.add(from, 0);
+        task.Start  = isoLocal(start);
+        task.Finish = isoLocal(minutes > 0 ? work.add(start, minutes) : start);
         return task;
     }
 
@@ -887,6 +911,7 @@ export class Edit {
             Duration: "PT0H0M0S", DurationFormat: 7, Work: "PT0H0M0S",
             CalendarUID: project.CalendarUID,
         });
+        this.#manual(task);
         tasks.splice(at, 0, task);
         this.commit();
         return task;
@@ -922,6 +947,7 @@ export class Edit {
                 Duration: newTaskDuration(project), DurationFormat: 7, Work: "PT0H0M0S",
                 CalendarUID: project.CalendarUID,
             });
+            this.#manual(child);
             tasks.push(summary, child);
         } else {
             const last = tasks.findIndex((t) => t.UID === roots[roots.length - 1]);
@@ -1034,14 +1060,14 @@ export class Edit {
         const { at, level } = this.#slot(atUID);
         const made = items.map((item) => {
             const uid = this.nextUID("task", project.Tasks);
-            return new MspTask({
+            return this.#manual(new MspTask({
                 UID: uid, ID: uid, Name: item.Name,
                 OutlineLevel: level, Priority: 500,
                 Duration: item.Duration || newTaskDuration(project),
                 DurationFormat: item.DurationFormat === undefined ? 7 : item.DurationFormat,
                 Estimated: item.Estimated !== false,
                 Work: "PT0H0M0S", CalendarUID: project.CalendarUID,
-            });
+            }));
         });
         project.Tasks.splice(at, 0, ...made);
         this.#recomputeSummary();

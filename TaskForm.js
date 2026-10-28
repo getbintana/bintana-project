@@ -343,6 +343,43 @@ export function taskFormValues(ui, task, project, unit) {
                                ? ui.ChkEstimated.Active : duration.estimated;
         values.PercentComplete = Math.round(ui.SpinPercent.Value);
 
+        /* **The three agree when Apply is done**, as a cell leaves them
+         * (`typedDates`): a new start carries the finish, a new finish the
+         * start -- or the duration, on a manual or a started task -- and a
+         * new duration the finish from the start. The start goes first when
+         * both dates moved, as the constraint below reads them, and the
+         * constraint is dated at what was typed (`pinAt`). */
+        const typed = (name) => values[name] !== task[name] && values[name] !== "";
+        const startTyped = typed("Start"), finishTyped = typed("Finish");
+        let dates = null;
+        if (startTyped)
+            dates = typedDates(project, task, "Start", values.Start,
+                               duration.minutes, duration.format, values.Manual);
+        else if (finishTyped)
+            dates = typedDates(project, task, "Finish", values.Finish,
+                               duration.minutes, duration.format, values.Manual);
+        else if (values.Duration !== task.Duration && values.Start !== "")
+            dates = typedDates(project, task, "Start", values.Start,
+                               duration.minutes, duration.format, values.Manual);
+        if (dates && dates.refused) {
+            Message.Error(dates.refused);
+            return null;
+        }
+        if (dates) {
+            values.Start  = dates.Start;
+            values.Finish = dates.Finish;
+            values.Duration = mspdiDuration(dates.minutes);
+            if (dates.ActualStart !== undefined) values.ActualStart = dates.ActualStart;
+            /* Firm unless the box was what changed. */
+            if (dates.firm && ui.ChkEstimated.Active === !!task.Estimated)
+                values.Estimated = false;
+            /* The percentage the stretch keeps the work done at -- unless
+             * the spin was what changed. */
+            if (dates.percent !== undefined &&
+                values.PercentComplete === (task.PercentComplete || 0))
+                values.PercentComplete = dates.percent;
+        }
+
         /* A percentage moves the actual dates the way the cell and the
          * progress buttons move them, on the dates just typed. */
         const moved = percentValues({ Start: values.Start || task.Start,
@@ -360,15 +397,16 @@ export function taskFormValues(ui, task, project, unit) {
         /* **A date changed here is a constraint**, the same as one typed into
          * a cell: with the picker untouched, a new start leaves a Start No
          * Earlier Than and a new finish a Finish No Earlier Than, so the pass
-         * does not undo what the hand wrote. A type picked in the command --
+         * does not undo what the hand wrote -- on an automatic task only. A type picked in the command --
          * even back to ASAP -- is the user's own answer and is left alone. */
-        if (values.ConstraintType === (task.ConstraintType || 0)) {
-            if (values.Start !== task.Start && values.Start !== "") {
+        if (values.ConstraintType === (task.ConstraintType || 0) &&
+            dates && dates.pin) {
+            if (startTyped) {
                 values.ConstraintType = CONSTRAINT_SNET;
-                values.ConstraintDate = values.Start;
-            } else if (values.Finish !== task.Finish && values.Finish !== "") {
+                values.ConstraintDate = dates.pinAt;
+            } else if (finishTyped) {
                 values.ConstraintType = CONSTRAINT_FNET;
-                values.ConstraintDate = values.Finish;
+                values.ConstraintDate = dates.pinAt;
             }
         }
         values.Deadline       = parseMoment(ui.TxtDeadline.Text);

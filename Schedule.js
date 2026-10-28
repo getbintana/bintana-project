@@ -416,6 +416,84 @@ export function workDuration(project, task, minutes, mine) {
 }
 
 /*
+ * **A date typed by hand, and what follows it** -- what Project does, as it
+ * was tried there. Without this the three only agreed after a pass, and with
+ * the recalculation off a start typed after the finish stayed that way.
+ *
+ *  - **A start** carries the finish after it: the duration stays and the
+ *    task slides, manual or not. On a task that has started it is the
+ *    actual start that moves (`ActualStart`), the percentage stays, and
+ *    nothing is pinned -- the actual start is what holds it.
+ *  - **A finish**, on an automatic task that has not started, carries the
+ *    start before it: it slides too.
+ *  - **A finish on a manual task, or on one that has started**, stretches
+ *    it instead: the start stays -- the user's, or the actual one -- and the
+ *    duration is the working time up to the finish. A started task keeps
+ *    the work already done, so its percentage is that work over the new
+ *    duration: 50% of 3d typed out to 6d is 25%. **On a manual task the
+ *    duration is then the user's and stops being an estimate** (`firm`):
+ *    `2d?` typed out is `4d`; a started one keeps its `?`, `6d?`.
+ *
+ * Only an automatic task is pinned (`pin`): the constraint the caller leaves
+ * is what keeps the pass from undoing the hand, and a manual task has no pass
+ * to keep it from, dated at `pinAt`. The end typed is moved to a working
+ * moment: a start to where work begins, and **a finish on a day off back to
+ * the last working moment before it** -- Project's default when it asks,
+ * Sunday the 20th is Friday the 18th at 17:00, and the Finish No Earlier Than
+ * is dated there too. A milestone is the instant as typed.
+ *
+ * Answers `{ Start, Finish, minutes, percent?, ActualStart?, firm?, pin,
+ * pinAt }`, `{ refused }` for a
+ * finish that would end the task before it starts, or null for a date that
+ * is not one.
+ */
+export function typedDates(project, task, field, moment, minutes, format,
+                           manual = !!task.Manual) {
+    const at = whenMs(moment);
+    if (at === null) return null;
+    const work = new WorkCalendar(project, task.CalendarUID);
+    const elapsed = isElapsed(format);
+    const span = minutes * MIN_MS;
+    const begun = whenMs(task.ActualStart) !== null && whenMs(task.ActualFinish) === null;
+    const pin = !manual && !(begun && field === "Start");
+
+    const anchored = whenMs(task.Start);
+    if (field === "Finish" && (manual || begun) && anchored !== null && minutes > 0) {
+        const from = anchored;
+        const to   = elapsed ? at : work.finishAt(at);
+        if (to <= from)
+            return { refused: "The finish is before the start." };
+        const stretched = elapsed ? Math.round((to - from) / MIN_MS)
+                                  : work.between(from, to);
+        const answer = { Start: task.Start, Finish: isoLocal(to),
+                         minutes: stretched, pin, pinAt: isoLocal(to),
+                         firm: manual };
+        if (begun && task.PercentComplete > 0)
+            answer.percent = Math.min(100,
+                Math.round(task.PercentComplete * minutes / stretched));
+        return answer;
+    }
+
+    let from, to;
+    if (minutes <= 0) {
+        from = to = at;
+    } else if (elapsed) {
+        from = field === "Start" ? at : at - span;
+        to   = from + span;
+    } else if (field === "Start") {
+        from = work.startAfter(at);
+        to   = work.add(from, minutes);
+    } else {
+        to   = work.finishAt(at);
+        from = work.subtract(to, minutes);
+    }
+    const answer = { Start: isoLocal(from), Finish: isoLocal(to), minutes, pin,
+                     pinAt: field === "Finish" ? isoLocal(to) : moment };
+    if (begun && field === "Start") answer.ActualStart = answer.Start;
+    return answer;
+}
+
+/*
  * **Free slack**: how long this task can slip before it moves something that
  * depends on it, where the total slack is how long it can slip before it moves
  * the plan's finish. Each successor bounds it and the least of those is the
@@ -698,7 +776,15 @@ export function recalculate(project) {
                 } else if (type === CONSTRAINT_SNET) {
                     if (startFloor === null || at > startFloor) startFloor = at;
                 } else if (type === CONSTRAINT_FNET) {
-                    if (finishFloor === null || at > finishFloor) finishFloor = at;
+                    /* **A finish no earlier than a moment with no work before
+                     * it** -- a Sunday, a holiday -- cannot be met by ending
+                     * there: it is met by starting at the next working moment.
+                     * As a finish floor it stretched the finish past the
+                     * duration, Friday 08:00 to Monday 08:00 for a day. */
+                    if (duration > 0 && !elapsed && work.finishAt(when) !== when) {
+                        const after = work.startAfter(when);
+                        if (startFloor === null || after > startFloor) startFloor = after;
+                    } else if (finishFloor === null || at > finishFloor) finishFloor = at;
                 }
             }
 

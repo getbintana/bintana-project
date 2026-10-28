@@ -247,7 +247,7 @@
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
       <Start>2026-09-03T08:00:00</Start>
-      <Finish>2026-09-03T12:00:00</Finish>
+      <Finish>2026-09-03T16:00:00</Finish>
       <Duration>PT7H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
@@ -260,7 +260,7 @@
       <TotalSlack>0</TotalSlack>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-03T08:00:00</ActualStart>
-      <ActualFinish>2026-09-03T12:00:00</ActualFinish>
+      <ActualFinish>2026-09-03T16:00:00</ActualFinish>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>
@@ -274,7 +274,7 @@
       <Baseline>
         <Number>0</Number>
         <Start>2026-09-03T08:00:00</Start>
-        <Finish>2026-09-03T12:00:00</Finish>
+        <Finish>2026-09-03T16:00:00</Finish>
         <Duration>PT7H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
         <Work>PT8H0M0S</Work>
@@ -283,7 +283,7 @@
       <Baseline>
         <Number>1</Number>
         <Start>2026-09-03T08:00:00</Start>
-        <Finish>2026-09-03T12:00:00</Finish>
+        <Finish>2026-09-03T16:00:00</Finish>
         <Duration>PT7H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
         <Work>PT8H0M0S</Work>

@@ -284,6 +284,7 @@ export class MainForm extends Form {
              * constraint that keeps it. Turning it off in Settings leaves the
              * dates as typed until F5 asks, which is Project's manual mode. */
             this.edit.auto = Settings.Get("bintana-project.autorecalc", true);
+            this.edit.newManual = Settings.Get("bintana-project.newmanual", false);
         }
         if (this.CmbScale.Index !== scale) {
             this.CmbScale.Index = scale;
@@ -512,6 +513,7 @@ export class MainForm extends Form {
         this.path   = keepPath || path;
         this.edit   = new Edit(this.holder);
         this.edit.auto = Settings.Get("bintana-project.autorecalc", true);
+        this.edit.newManual = Settings.Get("bintana-project.newmanual", false);
         this.forceClose = false;
         this.documentCommands(true);
         this.fill();
@@ -2627,6 +2629,10 @@ export class MainForm extends Form {
             const values = { Duration: mspdiDuration(duration.minutes),
                              DurationFormat: duration.format,
                              Estimated: duration.estimated };
+            /* The finish follows from the start, as a pass would put it. */
+            const slid = task.Start ? typedDates(this.holder.project, task, "Start",
+                task.Start, duration.minutes, duration.format) : null;
+            if (slid) values.Finish = slid.Finish;
             return { values, answer: durationText(values, this.holder.project) };
         }
         case "start":
@@ -2700,17 +2706,44 @@ export class MainForm extends Form {
 
     /* **A date typed by hand is a constraint**, as it is in Project: writing a
      * start leaves a Start No Earlier Than and writing a finish a Finish No
-     * Earlier Than, dated at what was typed -- so the pass puts the task where
-     * the hand did and not back where its links had it. A value the task
-     * already had pins nothing, and clearing a date is not a date to pin. */
+     * Earlier Than, dated at what was typed (a finish on a day off, at the
+     * working day before it) -- so the pass puts the task where the hand did
+     * and not back where its links had it. A manual task is not
+     * pinned: no pass moves it. **What follows is `typedDates`'s**: the other
+     * end, or the duration and the percentage, so the three agree whether or
+     * not a pass runs after. A value the task already had pins nothing, and
+     * clearing a date is not a date to pin. */
     momentPin(field, type, text, task, time) {
         const written = this.momentValues(field, text, time);
-        if (written.values && written.values[field] !== task[field] &&
-            written.values[field] !== "") {
-            written.values.ConstraintType = type;
-            written.values.ConstraintDate = written.values[field];
+        if (!written.values || written.values[field] === task[field] ||
+            written.values[field] === "")
+            return written;
+
+        const minutes = mspdiMinutes(task.Duration) || 0;
+        const dates = typedDates(this.holder.project, task, field,
+                                 written.values[field], minutes,
+                                 task.DurationFormat);
+        if (!dates) return written;
+        if (dates.refused) return { refused: Locale.Text(dates.refused) };
+
+        const values = written.values;
+        if (dates.pin) {
+            values.ConstraintType = type;
+            values.ConstraintDate = dates.pinAt;
         }
-        return written;
+        values.Start  = dates.Start;
+        values.Finish = dates.Finish;
+        if (dates.minutes !== minutes) values.Duration = mspdiDuration(dates.minutes);
+        if (dates.ActualStart !== undefined) values.ActualStart = dates.ActualStart;
+        if (dates.firm) values.Estimated = false;
+        if (dates.percent !== undefined) {
+            const moved = percentValues({ Start: dates.Start, Finish: dates.Finish,
+                                          ActualStart: task.ActualStart,
+                                          ActualFinish: task.ActualFinish },
+                                        dates.percent);
+            for (const name in moved) values[name] = moved[name];
+        }
+        return { values, answer: shortDate(dates[field]) };
     }
 
     /* **The Predecessors cell, parsed whole**: `UID[TYPE][+/-lag]`, several
@@ -6843,15 +6876,15 @@ export class MainForm extends Form {
             edit.undo();
             this.fill(2);
 
-            /* Apagado -- el modo manual -- la duración queda como se tipeó y F5
-             * la lleva. */
+            /* Apagado -- el modo manual -- la tarea misma queda coherente: la
+             * duración tipeada lleva su fin, y F5 es lo que mueve a las
+             * demás. */
             edit.auto = false;
             ok = this.Tasks.Emit("CellEdit", "2", atDurR, "5d") !== false &&
                  edit.task(2).Duration === "PT40H0M0S" &&
-                 edit.task(2).Finish === buildWas.Finish && ok;
-            const recalcRun = edit.recalculate();
-            ok = recalcRun.changed &&
                  edit.task(2).Finish === "2026-09-09T17:00:00" && ok;
+            const recalcRun = edit.recalculate();
+            ok = edit.task(2).Finish === "2026-09-09T17:00:00" && ok;
             print(`edit manual recalc changed=${recalcRun.changed} ` +
                   `finish=${shortDate(edit.task(2).Finish)}`);
             edit.undo();
@@ -7057,6 +7090,116 @@ export class MainForm extends Form {
             edit.undo();
             ok = order() === was && ok;
             print(`edit reorder ${was} -> ${order()}`);
+
+            /* Nuevas tareas manuales, la preferencia: la tarea nace manual y
+             * fechada en el comienzo del plan, con el fin a su duración --
+             * el pase no la va a fechar. Apagada, nace automática y sin
+             * fechas, como siempre. */
+            edit.newManual = true;
+            const manual = edit.addTask(null);
+            ok = manual.Manual === true &&
+                 manual.Start === "2026-09-01T08:00:00" &&
+                 manual.Finish === "2026-09-01T17:00:00" && ok;
+            print(`edit new manual start=${manual.Start} finish=${manual.Finish}`);
+            edit.undo();
+            edit.newManual = false;
+            const automatic = edit.addTask(null);
+            ok = automatic.Manual === false && automatic.Start === "" && ok;
+            print(`edit new automatic manual=${automatic.Manual}`);
+            edit.undo();
+            ok = order() === was && ok;
+
+            /* **Una fecha tipeada, como se probó en Project.** Manual: el fin
+             * estira la duración, que deja de ser estimada (`2d?` a `4d`), y
+             * el comienzo desliza la tarea, sin restricción. Iniciada al 50%:
+             * el fin estira la duración y conserva el `?`, deja la
+             * restricción y el porcentaje guarda lo hecho -- 3d a 6d es
+             * 25%. */
+            const colsWereT = this.columns.slice();
+            this.setColumns(["duration", "start", "finish"]);
+            const atStartT  = 1 + this.visibleColumns().indexOf("start");
+            const atFinishT = 1 + this.visibleColumns().indexOf("finish");
+            const typedOn = (values) => {
+                const t = edit.addTask(null);
+                edit.setFields(t.UID, values);
+                this.fill(t.UID);
+                return t.UID;
+            };
+            const hand = typedOn({ Manual: true, Start: "2026-09-07T08:00:00",
+                                   Finish: "2026-09-08T17:00:00",
+                                   Duration: "PT16H0M0S", Estimated: true });
+            ok = this.Tasks.Emit("CellEdit", String(hand), atFinishT, "2026-09-10") !== false &&
+                 edit.task(hand).Duration === "PT32H0M0S" &&
+                 edit.task(hand).Start === "2026-09-07T08:00:00" &&
+                 edit.task(hand).Finish === "2026-09-10T17:00:00" &&
+                 edit.task(hand).Estimated === false &&
+                 (edit.task(hand).ConstraintType || 0) === 0 && ok;
+            print(`edit typed manual finish duration=${edit.task(hand).Duration} ` +
+                  `start=${shortDate(edit.task(hand).Start)} ` +
+                  `constraint=${edit.task(hand).ConstraintType || 0}`);
+            ok = this.Tasks.Emit("CellEdit", String(hand), atStartT, "2026-09-14") !== false &&
+                 edit.task(hand).Duration === "PT32H0M0S" &&
+                 edit.task(hand).Finish === "2026-09-17T17:00:00" &&
+                 (edit.task(hand).ConstraintType || 0) === 0 && ok;
+            print(`edit typed manual start finish=${shortDate(edit.task(hand).Finish)}`);
+            ok = this.Tasks.Emit("CellEdit", String(hand), atFinishT, "2026-09-11") === false &&
+                 edit.task(hand).Finish === "2026-09-17T17:00:00" && ok;
+            for (let k = 0; k < 4; k++) edit.undo();
+
+            const autoWasT = edit.auto;
+            edit.auto = true;
+            const begun = typedOn({ Start: "2026-09-01T08:00:00",
+                                    Finish: "2026-09-03T17:00:00",
+                                    Duration: "PT24H0M0S", PercentComplete: 50,
+                                    ActualStart: "2026-09-01T08:00:00",
+                                    Estimated: true });
+            ok = this.Tasks.Emit("CellEdit", String(begun), atFinishT, "2026-09-08") !== false &&
+                 edit.task(begun).Duration === "PT48H0M0S" &&
+                 edit.task(begun).Start === "2026-09-01T08:00:00" &&
+                 edit.task(begun).Finish === "2026-09-08T17:00:00" &&
+                 edit.task(begun).PercentComplete === 25 &&
+                 edit.task(begun).Estimated === true &&
+                 edit.task(begun).ConstraintType === 6 &&
+                 edit.task(begun).ConstraintDate === "2026-09-08T17:00:00" && ok;
+            print(`edit typed begun finish duration=${edit.task(begun).Duration} ` +
+                  `percent=${edit.task(begun).PercentComplete} ` +
+                  `constraint=${edit.task(begun).ConstraintType}`);
+            for (let k = 0; k < 3; k++) edit.undo();
+
+            /* Iniciada, el comienzo tipeado mueve el comienzo real: la tarea
+             * entera se corre, duración y porcentaje quedan, sin restricción. */
+            const moving = typedOn({ Start: "2026-09-01T08:00:00",
+                                     Finish: "2026-09-03T17:00:00",
+                                     Duration: "PT24H0M0S", PercentComplete: 50,
+                                     ActualStart: "2026-09-01T08:00:00" });
+            ok = this.Tasks.Emit("CellEdit", String(moving), atStartT, "2026-09-07") !== false &&
+                 edit.task(moving).Start === "2026-09-07T08:00:00" &&
+                 edit.task(moving).ActualStart === "2026-09-07T08:00:00" &&
+                 edit.task(moving).Finish === "2026-09-09T17:00:00" &&
+                 edit.task(moving).Duration === "PT24H0M0S" &&
+                 edit.task(moving).PercentComplete === 50 &&
+                 (edit.task(moving).ConstraintType || 0) === 0 && ok;
+            print(`edit typed begun start ${shortDate(edit.task(moving).Start)}..` +
+                  `${shortDate(edit.task(moving).Finish)} ` +
+                  `actual=${shortDate(edit.task(moving).ActualStart)}`);
+            for (let k = 0; k < 3; k++) edit.undo();
+
+            /* Un fin en domingo va al día laborable anterior, como Project
+             * propone por defecto, y la restricción lleva esa fecha. */
+            const sunday = typedOn({ Duration: "PT16H0M0S" });
+            ok = this.Tasks.Emit("CellEdit", String(sunday), atFinishT, "2026-09-20") !== false &&
+                 edit.task(sunday).Start === "2026-09-17T08:00:00" &&
+                 edit.task(sunday).Finish === "2026-09-18T17:00:00" &&
+                 edit.task(sunday).ConstraintType === 6 &&
+                 edit.task(sunday).ConstraintDate === "2026-09-18T17:00:00" && ok;
+            print(`edit typed sunday finish ${shortDate(edit.task(sunday).Start)}..` +
+                  `${shortDate(edit.task(sunday).Finish)} ` +
+                  `pin=${shortDate(edit.task(sunday).ConstraintDate)}`);
+            for (let k = 0; k < 3; k++) edit.undo();
+            edit.auto = autoWasT;
+            this.setColumns(colsWereT);
+            this.fill(null);
+            ok = order() === was && ok;
 
             /* Resources and assignments through the commands the panel calls:
              * a new resource, a task assigned to it, and the work and cost

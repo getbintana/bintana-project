@@ -532,6 +532,9 @@ msgstr "Base"
 msgid "Recalculate after each change"
 msgstr "Recalcular después de cada cambio"
 
+msgid "New tasks manually scheduled"
+msgstr "Nuevas tareas programadas manualmente"
+
 msgid "Autosave every minute"
 msgstr "Guardar copia cada minuto"
 
@@ -759,6 +762,9 @@ msgstr "Una restricción de ese tipo necesita una fecha."
 
 msgid "A summary takes its dates, duration and completion from its children."
 msgstr "Un resumen toma sus fechas, su duración y su avance de sus hijas."
+
+msgid "The finish is before the start."
+msgstr "El fin es anterior al comienzo."
 
 msgid "Cannot apply: {0}"
 msgstr "No se puede aplicar: {0}"
