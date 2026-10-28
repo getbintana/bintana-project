@@ -18,7 +18,7 @@
   </categories>
   <content_rating type="oars-1.1"/>
   <releases>
-    <release version="0.1.0" date="2026-09-24">
+    <release version="0.2.0rc1" date="2026-10-27" type="development">
       <description>
         <p>First release: opens, edits and writes back MS Project (MSPDI) files, with a task tree beside an interactive Gantt chart.</p>
         <p xml:lang="es">Primera versión: abre, edita y vuelve a escribir archivos de MS Project (MSPDI), con el árbol de tareas junto a un Gantt interactivo.</p>
