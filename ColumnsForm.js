@@ -1,6 +1,7 @@
 /*
  * The columns the plan table shows, and nothing else: the name is the tree
- * and never goes, so the checklist covers the rest. Adding and removing is
+ * and never goes, so the checklist covers the rest -- and the name keeps
+ * its place among them. Adding and removing is
  * what this is for; the order is kept, and moving a column is the heading's
  * menu. The choice is a view setting, like the timescale: it survives the window and
  * does not touch the file.
@@ -30,6 +31,7 @@ const COLUMN_CHECKS = {
     type:       "ChkColType",
     notes:      "ChkColNotes",
     link:       "ChkColLink",
+    resources:  "ChkColResources",
 };
 
 export class ColumnsForm extends Form {
@@ -57,7 +59,7 @@ export class ColumnsForm extends Form {
          * just ticked come after, in the catalog's order. */
         const ticked = new Set(this.available
             .filter((c) => this[COLUMN_CHECKS[c.id]].Active).map((c) => c.id));
-        const chosen = this.current.filter((id) => ticked.has(id));
+        const chosen = this.current.filter((id) => ticked.has(id) || id === "name");
         for (const column of this.available)
             if (ticked.has(column.id) && chosen.indexOf(column.id) < 0)
                 chosen.push(column.id);
@@ -66,7 +68,8 @@ export class ColumnsForm extends Form {
          * ticked where the fields are administered -- so they stay where they
          * were instead of being dropped by a dialog that never showed them. */
         for (const id of this.current)
-            if (isColumnId(id) && !this.available.some((c) => c.id === id))
+            if (isColumnId(id) && chosen.indexOf(id) < 0 &&
+                !this.available.some((c) => c.id === id))
                 chosen.push(id);
 
         this.Close();

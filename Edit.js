@@ -352,6 +352,14 @@ export class Edit {
     /* A resource the program chooses the UID for: the file's own numbering is
      * Project's, and a new one goes after the last. */
     addResource(values) {
+        const resource = this.#newResource(values);
+        this.commit();
+        return resource;
+    }
+
+    /* The resource itself, without a step: what `setTaskResources` needs to
+     * make one inside the step its cell is. */
+    #newResource(values) {
         const project = this.holder.project;
         const uid = this.nextUID("resource", project.Resources);
 
@@ -359,7 +367,6 @@ export class Edit {
         resource.UID = uid;
         resource.ID = uid;
         project.Resources.push(resource);
-        this.commit();
         return resource;
     }
 
@@ -553,6 +560,63 @@ export class Edit {
     removeAssignment(uid) {
         if (!this.#unassign(uid)) return false;
 
+        this.commit();
+        return true;
+    }
+
+    /*
+     * **The task's resources as a list of names**, which is what Project's
+     * *Resource Names* cell is: `wanted` is `[{ Name, Amount }]`, and the task
+     * ends up assigned to exactly those -- the ones that are not named any
+     * more come off, the new ones go on, and one whose units changed is
+     * updated in place (`#assign` keeps its UID and its actuals). A name is
+     * matched to the plan's resources ignoring case and the spaces around it,
+     * so "ana" is Ana and not a second Ana; **a name the plan does not have
+     * becomes a work resource**, as Project's *Automatically add new
+     * resources* does. `Amount` is the number as typed: a percentage for a
+     * work resource, the quantity for a material one, nothing for a cost
+     * one; absent, it keeps what an assignment already had, and is one unit
+     * for a new one. Everything is one step, the resources made
+     * included, so one undo takes it all back. Answers whether anything
+     * changed.
+     */
+    setTaskResources(taskUID, wanted) {
+        const project = this.holder.project;
+        if (!this.task(taskUID)) return false;
+
+        const fold = (name) => String(name || "").trim().toLocaleLowerCase();
+        const find = (name) =>
+            project.Resources.find((r) => !r.IsNull && r.Name === name) ||
+            project.Resources.find((r) => !r.IsNull && fold(r.Name) === fold(name));
+
+        let changed = false;
+        const units = new Map();          // resource UID -> units, or null
+        for (const entry of wanted) {
+            let resource = find(String(entry.Name).trim());
+            if (!resource) {
+                resource = this.#newResource({ Name: String(entry.Name).trim(),
+                                               Type: 1, CalendarUID: -1 });
+                changed = true;
+            }
+            const amount = entry.Amount === undefined || resource.Type === 2
+                         ? null : entry.Amount;
+            units.set(resource.UID, amount === null ? null
+                                  : resource.Type === 1 ? amount / 100 : amount);
+        }
+
+        for (const assignment of project.Assignments.slice())
+            if (assignment.TaskUID === taskUID && !units.has(assignment.ResourceUID))
+                if (this.#unassign(assignment.UID)) changed = true;
+
+        for (const [resourceUID, want] of units) {
+            const had = project.Assignments.find(
+                (a) => a.TaskUID === taskUID && a.ResourceUID === resourceUID);
+            const to = want !== null ? want : had ? had.Units : 1;
+            if (had && had.Units === to) continue;
+            if (this.#assign(taskUID, resourceUID, to)) changed = true;
+        }
+
+        if (!changed) return false;
         this.commit();
         return true;
     }

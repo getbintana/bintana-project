@@ -1640,3 +1640,9 @@ msgstr "Cortar tarea"
 
 msgid "Cut {0} tasks."
 msgstr "Se cortaron {0} tareas."
+
+msgid "Resource names"
+msgstr "Nombres de los recursos"
+
+msgid "{0} is not a resource -- try Ana; Bruno[50%]"
+msgstr "{0} no es un recurso -- probá Ana; Bruno[50%]"

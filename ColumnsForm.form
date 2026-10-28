@@ -205,6 +205,14 @@
             "HAlign": "Start",
             "Text": "ID"
           }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkColResources",
+          "properties": {
+            "HAlign": "Start",
+            "Text": "Resource names"
+          }
         }
       ]
     },

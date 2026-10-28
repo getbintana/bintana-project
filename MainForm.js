@@ -109,7 +109,8 @@ export class MainForm extends Form {
     format = ganttFormat(null);
     tipText = "";
     cursorName = "Auto";
-    columns = ["id", "wbs", "duration", "start", "finish", "cost"];
+    columns = ["id", "name", "duration", "start", "finish", "predecessors",
+               "resources"];
     /* The project summary's row: hidden by default on the window's road, as
      * Project hides it (`applySettings`); shown here so a headless check sees
      * the plan whole. */
@@ -122,6 +123,9 @@ export class MainForm extends Form {
          * older than the tree's MultiSelect refuses it, and the list is then
          * the one-row list it was. */
         try { this.Tasks.MultiSelect = true; } catch (e) { /* one row at a time */ }
+        /* **A heading dragged elsewhere**, as in Project; a runtime without
+         * it leaves the heading's menu to move them. */
+        try { this.Tasks.Reorderable = true; } catch (e) { /* the menu moves them */ }
         this.startFoldWatch();
         this.MnuProps.Value = true;
         this.ToolProps.Active = true;
@@ -259,8 +263,11 @@ export class MainForm extends Form {
          * saved" -- so the usual ones came back at the next start. Only a list
          * that was never written (`null`) leaves the defaults. */
         const stored = Settings.Get("bintana-project.columns", null);
-        if (Array.isArray(stored))
-            this.setColumns(stored.filter((id) => isColumnId(id)));
+        /* **The defaults are declared too**: the form's own headings are a
+         * sketch for the designer, and a first start that kept them showed
+         * the cells of `columns` under headings that were not theirs. */
+        this.setColumns(Array.isArray(stored)
+                        ? stored.filter((id) => isColumnId(id)) : this.columns);
         this.format  = loadFormat();
         this.unit    = Settings.Get("bintana-project.unit", "");
         /* **The entry bar: hidden until asked for, like Project 2013's**, and
@@ -627,7 +634,7 @@ export class MainForm extends Form {
          * `Link: true` y el destino va por fila -- el texto es la etiqueta (o
          * la dirección) y la dirección es a donde va. `""` deja la celda sin
          * link, que es una tarea con etiqueta y sin dirección. */
-        const cols   = this.visibleColumns();
+        const cols   = this.tableColumns();
         const linkAt = cols.indexOf("link");
 
         /* The rows as the tree holds them: each under the nearest task before
@@ -661,7 +668,7 @@ export class MainForm extends Form {
                     if (was[c] !== now[c]) this.Tasks.SetCell(r.key, c, now[c]);
                 const uri = r.task.HyperlinkAddress || "";
                 if (linkAt >= 0 && this.rowUri[r.key] !== uri) {
-                    this.Tasks.SetUri(r.key, linkAt + 1, uri);
+                    this.Tasks.SetUri(r.key, linkAt, uri);
                     this.rowUri[r.key] = uri;
                 }
             }
@@ -734,15 +741,14 @@ export class MainForm extends Form {
         this.Tasks.Clear();
         this.rowUri = {};
 
-        /* **The cells a summary does not edit**, one past the name (which the
-         * tree does not list among the columns): what Project derives from its
+        /* **The cells a summary does not edit**: what Project derives from its
          * children. Shut where they are drawn rather than refused after the
          * typing, so a summary's dates read dim and open nothing -- the same
          * bargain the panel makes greying its controls. */
         const shut = [];
         for (const id of SUMMARY_SHUT) {
             const i = cols.indexOf(id);
-            if (i >= 0) shut.push(i + 1);
+            if (i >= 0) shut.push(i);
         }
 
         for (const r of rows) {
@@ -751,7 +757,7 @@ export class MainForm extends Form {
             this.Tasks.Add(this.cells(r.task), options);
             if (linkAt >= 0) {
                 this.rowUri[r.key] = r.task.HyperlinkAddress || "";
-                this.Tasks.SetUri(r.key, linkAt + 1, this.rowUri[r.key]);
+                this.Tasks.SetUri(r.key, linkAt, this.rowUri[r.key]);
             }
             if (r.task.Summary)
                 for (const i of shut)
@@ -818,13 +824,12 @@ export class MainForm extends Form {
         this.TxtFilter_Change();
     }
 
-    /* One value per visible column, in the order `columns` says: the name
-     * first, which is the tree and never goes. */
+    /* One value per column of the table, in the order `columns` says: the
+     * name among them, wherever it was put. */
     cells(task) {
-        const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-        const row  = [name];
-        for (const id of this.visibleColumns()) row.push(this.columnValue(id, task));
-        return row;
+        return this.tableColumns().map((id) => id !== "name"
+            ? this.columnValue(id, task)
+            : task.Milestone ? `◆ ${task.Name}` : task.Name);
     }
 
     columnValue(id, task) {
@@ -835,6 +840,7 @@ export class MainForm extends Form {
         case "duration":   return durationText(task, project);
         case "predecessors": return linksText(task, project, "ID");
         case "wbspreds":     return linksText(task, project, "WBS");
+        case "resources":    return resourcesText(task, project);
         case "id":           return String(task.ID);
         case "start":      return shortDate(task.Start);
         case "finish":     return shortDate(task.Finish);
@@ -873,12 +879,23 @@ export class MainForm extends Form {
         return null;
     }
 
-    /* What the table is showing: the chosen columns the plan can put up, in
-     * the order `columns` says. The table's headings, its cells and the
-     * heading's menu all walk this one list, so they cannot disagree. */
-    visibleColumns() {
-        return this.columns.filter((id) =>
+    /* **What the table is showing, the name included**: the chosen columns
+     * the plan can put up, in the order `columns` says. The name is a column
+     * like the rest -- it can go after the Id, as Project has it -- but it is
+     * the tree and never goes, so a list without it (a view saved before it
+     * could move) shows it first. The table's headings, its cells and the
+     * heading's menu all walk this one list, and an index into the table is
+     * an index into it, so they cannot disagree. */
+    tableColumns() {
+        const ids = this.columns.filter((id) => id === "name" ||
             COLUMNS.some((c) => c.id === id) || this.columnField(id));
+        if (ids.indexOf("name") < 0) ids.unshift("name");
+        return ids;
+    }
+
+    /* The table's columns but the name: the data ones. */
+    visibleColumns() {
+        return this.tableColumns().filter((id) => id !== "name");
     }
 
     /* Everything the table could show -- the catalog's columns and one per
@@ -906,8 +923,15 @@ export class MainForm extends Form {
          * at that moment and the names were cut. A width asked for is kept
          * across rebuilds, and a drag moves it for as long as the columns
          * are not declared again. */
-        const specs = [{ Text: Locale.Text("Task"), Width: NAME_WIDTH, Editor: "Text" }];
-        for (const id of this.visibleColumns()) {
+        const specs = [];
+        for (const id of this.tableColumns()) {
+            /* **The name carries the outline** -- the arrow and the indent --
+             * wherever it stands: `Tree` says which column that is. */
+            if (id === "name") {
+                specs.push({ Text: Locale.Text("Task"), Width: NAME_WIDTH,
+                             Editor: "Text", Tree: true });
+                continue;
+            }
             const column = COLUMNS.find((c) => c.id === id);
             if (column) {
                 const spec = { Text: Locale.Text(column.Text), Width: column.Width };
@@ -956,26 +980,28 @@ export class MainForm extends Form {
 
     /* The gesture of Project: the secondary click on a heading, and the menu
      * it opens is built for that click -- the name is the tree and cannot go,
-     * so its item is greyed rather than missing, and *Show every column* only
-     * means something while one is hidden. The runtime builds the array and
-     * tells each handler which column the click was over. */
+     * so its item is greyed rather than missing, though it moves like any
+     * other; and *Show every column* only means something while one is
+     * hidden. The runtime builds the array and tells each handler which
+     * column the click was over. */
     Tasks_HeaderClick(column, button, ctrl, shift) {
         if (button !== 3) return;
 
-        const visible = this.visibleColumns();
+        const shown = this.tableColumns();
         return [
             { name: "MnuColInsert", text: Locale.Text("Insert column…"),
               enabled: this.missingColumns().length > 0 },
             { name: "MnuColHide", text: Locale.Text("Hide this column"),
-              enabled: column > 0 },
+              enabled: column >= 0 && column < shown.length &&
+                       shown[column] !== "name" },
             { separator: true },
             { name: "MnuColLeft", text: Locale.Text("Move left"),
-              enabled: column > 1 },
+              enabled: column > 0 && column < shown.length },
             { name: "MnuColRight", text: Locale.Text("Move right"),
-              enabled: column > 0 && column < visible.length },
+              enabled: column >= 0 && column < shown.length - 1 },
             { separator: true },
             { name: "MnuColShowAll", text: Locale.Text("Show every column"),
-              enabled: visible.length < this.allColumnIds().length },
+              enabled: this.missingColumns().length > 0 },
             { name: "MnuColDialog", text: Locale.Text("Columns…") },
         ];
     }
@@ -993,51 +1019,64 @@ export class MainForm extends Form {
             });
     }
 
-    /* The shown columns in a new order. The ones the plan cannot show (a
-     * field it no longer defines) are not in the table but are in the choice,
-     * and they stay where they are -- after the rest -- rather than vanish. */
+    /* The table's columns in a new order, the name among them. The ones the
+     * plan cannot show (a field it no longer defines) are not in the table but
+     * are in the choice, and they stay where they are -- after the rest --
+     * rather than vanish. */
     arrangeColumns(visible) {
         const kept = this.columns.filter((id) => visible.indexOf(id) < 0);
         this.showColumns(visible.concat(kept));
     }
 
-    /* Left of the heading that was clicked, like Project: heading 0 is the
-     * name, so a column put there goes first of the data ones. */
+    /* Left of the heading that was clicked, like Project -- the name's
+     * included. */
     MnuColInsert_Click(column) {
         const choices = this.missingColumns();
         if (!choices.length) return null;
         return InsertColumnForm.open(choices, (id) => {
-            const visible = this.visibleColumns();
-            visible.splice(Math.max(column - 1, 0), 0, id);
-            this.arrangeColumns(visible);
+            const shown = this.tableColumns();
+            shown.splice(Math.min(Math.max(column, 0), shown.length), 0, id);
+            this.arrangeColumns(shown);
         });
+    }
+
+    /* **A heading dropped somewhere else** is the same choice as the menu's
+     * Move: the order is kept and remembered, and the columns are declared
+     * again in it -- so the table's index and its place are one number once
+     * more, which is what every other road here reads. */
+    Tasks_ColumnMove(column, position) {
+        const shown = this.tableColumns();
+        if (column < 0 || column >= shown.length) return;
+        const [id] = shown.splice(column, 1);
+        shown.splice(Math.min(Math.max(position, 0), shown.length), 0, id);
+        this.arrangeColumns(shown);
     }
 
     MnuColLeft_Click(column) { this.moveColumn(column, -1); }
     MnuColRight_Click(column) { this.moveColumn(column, 1); }
 
     moveColumn(column, by) {
-        const visible = this.visibleColumns();
-        const at = column - 1;
-        const to = at + by;
-        if (at < 0 || at >= visible.length || to < 0 || to >= visible.length) return;
-        [visible[at], visible[to]] = [visible[to], visible[at]];
-        this.arrangeColumns(visible);
+        const shown = this.tableColumns();
+        const to = column + by;
+        if (column < 0 || column >= shown.length || to < 0 || to >= shown.length) return;
+        [shown[column], shown[to]] = [shown[to], shown[column]];
+        this.arrangeColumns(shown);
     }
 
-    /* The heading's own index: zero is the name, so the first real column is
-     * one further along what the table is showing. The item was greyed; this
-     * is the guard. */
+    /* The heading's own index into what the table is showing. The name's
+     * item was greyed; this is the guard. */
     MnuColHide_Click(column) {
-        const visible = this.visibleColumns();
-        const at = column - 1;
-        if (at < 0 || at >= visible.length) return;
-        const gone = visible[at];
+        const gone = this.tableColumns()[column];
+        if (!gone || gone === "name") return;
         this.showColumns(this.columns.filter((id) => id !== gone));
     }
 
+    /* The hidden ones after the ones shown, which keep their order -- the
+     * name's place included. */
     MnuColShowAll_Click() {
-        this.showColumns(this.allColumnIds());
+        const shown = this.tableColumns();
+        this.showColumns(shown.concat(
+            this.allColumnIds().filter((id) => shown.indexOf(id) < 0)));
     }
 
     MnuColDialog_Click() {
@@ -2466,14 +2505,19 @@ export class MainForm extends Form {
     }
 
     linesOf(text) {
-        const at = this.visibleColumns().indexOf("duration");
+        const cols   = this.tableColumns();
+        const nameAt = cols.indexOf("name");
+        const at     = cols.indexOf("duration");
         const items = [];
         for (const line of String(text).split(/\r?\n/)) {
             const cells = line.split("\t");
-            const name = cells[0].trim();
+            /* A whole row of the table is read in its order; a shorter line
+             * -- typed, or from a sheet -- starts at the name. */
+            const from = cells.length >= cols.length ? 0 : nameAt;
+            const name = (cells[nameAt - from] || "").trim();
             if (!name) continue;
             const item = { Name: name };
-            const typed = at >= 0 ? (cells[at + 1] || "").trim() : "";
+            const typed = at - from >= 0 ? (cells[at - from] || "").trim() : "";
             const duration = typed
                 ? parseDuration(typed, 7, this.unit, this.holder.project) : null;
             if (duration) {
@@ -2650,6 +2694,13 @@ export class MainForm extends Form {
             return this.linkValues(task, text, "ID");
         case "wbspreds":
             return this.linkValues(task, text, "WBS");
+        case "resources": {
+            const parsed = parseResourceNames(text);
+            if (parsed.refused)
+                return { refused: Locale.Text("{0} is not a resource -- try Ana; Bruno[50%]",
+                                              parsed.refused) };
+            return { resources: parsed.resources };
+        }
         case "percent": {
             const m = /^\s*(\d+(?:[.,]\d+)?)\s*%?\s*$/.exec(String(text || ""));
             const percent = m ? Math.round(Number(m[1].replace(",", "."))) : NaN;
@@ -2861,7 +2912,7 @@ export class MainForm extends Form {
         const task = this.byUID ? this.byUID[key] : null;
         if (!task || !this.edit) return false;
 
-        const id = column === 0 ? "name" : this.visibleColumns()[column - 1];
+        const id = this.tableColumns()[column];
         const written = id ? this.cellValues(task, id, text) : null;
         if (!written) return false;
 
@@ -2874,6 +2925,14 @@ export class MainForm extends Form {
          * panel's Link button and the chart's drag call. */
         if (written.links !== undefined) {
             if (this.edit.setLinks(task.UID, written.links))
+                this.fill(task.UID);
+            return true;
+        }
+
+        /* So is the list of resources: `setTaskResources` makes the ones the
+         * plan does not have and assigns the rest, as one step. */
+        if (written.resources !== undefined) {
+            if (this.edit.setTaskResources(task.UID, written.resources))
                 this.fill(task.UID);
             return true;
         }
@@ -2904,7 +2963,7 @@ export class MainForm extends Form {
      * column's **id**, which survives a column being hidden or moved -- an
      * index would name another column the moment the view changes. */
     rememberCell(key, column) {
-        const id = column === 0 ? "name" : this.visibleColumns()[column - 1];
+        const id = this.tableColumns()[column];
 
         if (id && this.byUID && this.byUID[String(key)])
             this.cell = { key: String(key), id };
@@ -2914,9 +2973,7 @@ export class MainForm extends Form {
     /* Where the bar's column is in the table *now*: -1 when it is not shown,
      * which is a cell there is nothing to edit. */
     entryColumn(id) {
-        if (id === "name") return 0;
-        const at = this.visibleColumns().indexOf(id);
-        return at < 0 ? -1 : at + 1;
+        return this.tableColumns().indexOf(id);
     }
 
     /* **The cell's value in the bar Project keeps above the sheet**: the whole
@@ -2968,7 +3025,7 @@ export class MainForm extends Form {
      * since the table was drawn is in the combo. */
     Tasks_CellEditor(key, column) {
         const task = this.byUID ? this.byUID[String(key)] : null;
-        const id   = column === 0 ? "name" : this.visibleColumns()[column - 1];
+        const id   = this.tableColumns()[column];
         if (!task || !id) return false;
 
         /* An edit is about to begin: this is the cell the bar shows. */
@@ -5546,6 +5603,69 @@ export class MainForm extends Form {
                 this.fill();
             }
 
+            /* **Los recursos se escriben en la celda**, como en la columna
+             * Nombres de los recursos de Project: un nombre que el plan no
+             * tiene se crea, otro escrito con otras mayúsculas es el mismo, las
+             * unidades van entre corchetes y todo es un solo paso. */
+            {
+                const project = () => this.holder.project;
+                const colsWere = this.columns.slice();
+                this.setColumns(["resources"]);
+                const atRes = this.tableColumns().indexOf("resources");
+                const build = () => taskOf(project(), 2);
+                const units = (name) => {
+                    const r = project().Resources.find((x) => x.Name === name);
+                    const a = r && project().Assignments.find(
+                        (x) => x.TaskUID === 2 && x.ResourceUID === r.UID);
+                    return a ? a.Units : null;
+                };
+                const stepWas = this.edit.at;
+                const resWas  = project().Resources.length;
+
+                ok = eq("dos nombres en la celda",
+                        this.Tasks.Emit("CellEdit", "2", atRes, "Ana; Bruno[50%]") !== false,
+                        true) && ok;
+                ok = eq("crean los dos recursos", project().Resources.length, resWas + 2) && ok;
+                ok = eq("y los asignan", `${units("Ana")} ${units("Bruno")}`, "1 0.5") && ok;
+                ok = eq("en un solo paso", this.edit.at, stepWas + 1) && ok;
+                ok = eq("la celda los nombra",
+                        resourcesText(build(), project()), "Ana; Bruno[50%]") && ok;
+
+                ok = eq("lo mismo otra vez no es un paso",
+                        this.Tasks.Emit("CellEdit", "2", atRes, "Ana; Bruno[50]") !== false &&
+                        this.edit.at, stepWas + 1) && ok;
+
+                this.Tasks.Emit("CellEdit", "2", atRes, " ana [25%] ");
+                ok = eq("otras mayúsculas son el mismo recurso",
+                        project().Resources.length, resWas + 2) && ok;
+                ok = eq("las unidades cambian y el que falta se va",
+                        `${units("Ana")} ${units("Bruno")}`, "0.25 null") && ok;
+
+                ok = eq("un corchete que no es un número se rechaza",
+                        this.Tasks.Emit("CellEdit", "2", atRes, "Ana[mucho]"), false) && ok;
+                ok = eq("y unas unidades sin nombre",
+                        this.Tasks.Emit("CellEdit", "2", atRes, "[50%]"), false) && ok;
+                ok = eq("la coma decimal dentro del corchete",
+                        JSON.stringify(parseResourceNames("A[12,5%], B").resources),
+                        '[{"Name":"A","Amount":12.5},{"Name":"B"}]') && ok;
+
+                this.Tasks.Emit("CellEdit", "2", atRes, "");
+                ok = eq("vaciarla desasigna", units("Ana"), null) && ok;
+
+                /* Un material lleva su cantidad, no un porcentaje. */
+                this.edit.addResource({ Name: "Cemento", Type: 0, MaterialLabel: "bolsas" });
+                this.Tasks.Emit("CellEdit", "2", atRes, "Cemento[10]");
+                ok = eq("un material lleva cantidad", units("Cemento"), 10) && ok;
+                ok = eq("y su etiqueta",
+                        resourcesText(build(), project()), "Cemento[10 bolsas]") && ok;
+
+                while (this.edit.at > stepWas) this.edit.undo();
+                this.fill();
+                ok = eq("deshacer se lleva los recursos creados",
+                        `${project().Resources.length} ${units("Ana")}`, `${resWas} null`) && ok;
+                this.setColumns(colsWere);
+            }
+
             /* Lo que el modelo escribe tiene que poder leerse: un minuto
              * partido va a los segundos, la medianoche es 00:00 y un nombre
              * con `$` es ese nombre. */
@@ -6070,7 +6190,7 @@ export class MainForm extends Form {
             try {
                 ok = eq("an edit keeps the scroll after the layout too", t.ScrollY, kept) && ok;
                 ok = eq("and the row says what was written",
-                        t.Cell(String(task.UID), this.visibleColumns().indexOf("percent") + 1) ===
+                        t.Cell(String(task.UID), this.tableColumns().indexOf("percent")) ===
                         `${task.PercentComplete}%` || this.visibleColumns().indexOf("percent") < 0,
                         true) && ok;
                 this.edit.undo();
@@ -6894,9 +7014,9 @@ export class MainForm extends Form {
                                 ConstraintType: edit.task(2).ConstraintType || 0,
                                 ConstraintDate: edit.task(2).ConstraintDate || "" };
             this.setColumns(["duration", "start", "finish"]);
-            const atDurR    = 1 + this.visibleColumns().indexOf("duration");
-            const atStartR  = 1 + this.visibleColumns().indexOf("start");
-            const atFinishR = 1 + this.visibleColumns().indexOf("finish");
+            const atDurR    = this.tableColumns().indexOf("duration");
+            const atStartR  = this.tableColumns().indexOf("start");
+            const atFinishR = this.tableColumns().indexOf("finish");
             edit.auto = true;
 
             /* La duración por la puerta de la celda: Build espera a Analyse, el
@@ -7169,8 +7289,8 @@ export class MainForm extends Form {
              * 25%. */
             const colsWereT = this.columns.slice();
             this.setColumns(["duration", "start", "finish"]);
-            const atStartT  = 1 + this.visibleColumns().indexOf("start");
-            const atFinishT = 1 + this.visibleColumns().indexOf("finish");
+            const atStartT  = this.tableColumns().indexOf("start");
+            const atFinishT = this.tableColumns().indexOf("finish");
             const typedOn = (values) => {
                 const t = edit.addTask(null);
                 edit.setFields(t.UID, values);
@@ -7591,29 +7711,59 @@ export class MainForm extends Form {
                  ok;
             this.MnuColHide_Click(2);
             ok = this.columns.indexOf("start") < 0 &&
-                 this.columns.length === 4 &&
+                 this.visibleColumns().length === 4 &&
                  this.Tasks.Columns.length === 5 &&
                  this.Tasks.Row("2").length === 5 && ok;
             print(`edit headermenu=${menu.length} ` +
                   `hidden=${this.columns.length}`);
             /* Moving and inserting, through the heading's menu: Finish goes
-             * ahead of Duration, the first column cannot go further left, and
-             * the hidden Start comes back where it was asked for -- left of the
-             * third heading -- through its dialog. */
+             * ahead of Duration, the first column cannot go further left nor
+             * the last further right, and the hidden Start comes back where it
+             * was asked for -- left of the fourth heading -- through its
+             * dialog. */
             this.MnuColLeft_Click(2);
-            ok = this.columns.slice(0, 2).join() === "finish,duration" &&
-                 !item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColLeft").enabled &&
+            ok = this.tableColumns().slice(0, 3).join() === "name,finish,duration" &&
+                 !item(this.Tasks_HeaderClick(0, 3, false, false), "MnuColLeft").enabled &&
                  !item(this.Tasks_HeaderClick(4, 3, false, false), "MnuColRight").enabled &&
-                 item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColRight").enabled && ok;
+                 item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColLeft").enabled && ok;
             const insdlg = this.MnuColInsert_Click(3);
             const startAt = insdlg.choices.findIndex((c) => c.id === "start");
             insdlg.CmbColumn.Index = startAt;
             insdlg.BtnOk_Click();
-            ok = startAt >= 0 && this.columns.slice(0, 3).join() === "finish,duration,start" &&
-                 this.columns.length === 5 && ok;
-            print(`edit column order=${this.columns.slice(0, 3).join()}`);
+            ok = startAt >= 0 &&
+                 this.tableColumns().slice(0, 4).join() === "name,finish,duration,start" &&
+                 this.visibleColumns().length === 5 && ok;
+            print(`edit column order=${this.tableColumns().slice(0, 4).join()}`);
+
+            /* **The name moves like any other** -- the Id ahead of it is
+             * Project's own sheet -- and the outline goes with it: the
+             * heading that carries the arrow is the name's wherever it is. */
+            this.MnuColRight_Click(0);
+            ok = this.tableColumns().slice(0, 2).join() === "finish,name" &&
+                 this.Tasks.Columns[1].Tree === true &&
+                 !this.Tasks.Columns[0].Tree &&
+                 this.Tasks.Row("2")[1] === edit.task(2).Name &&
+                 !item(this.Tasks_HeaderClick(1, 3, false, false), "MnuColHide").enabled && ok;
+            this.MnuColHide_Click(1);
+            ok = this.tableColumns().indexOf("name") === 1 && ok;
+            this.MnuColLeft_Click(1);
+            print(`edit name moves, tree=${this.Tasks.Columns.findIndex((c) => c.Tree)}`);
+
+            /* A heading dragged: the runtime moves it and says where, and the
+             * order is the app's again -- declared in it, with the outline on
+             * the name. */
+            this.Tasks.MoveColumn(0, 2);
+            this.Tasks_ColumnMove(0, 2);
+            ok = this.tableColumns().slice(0, 3).join() === "finish,duration,name" &&
+                 this.Tasks.ColumnOrder.join() === this.Tasks.Columns.map((c, i) => i).join() &&
+                 this.Tasks.Columns[2].Tree === true &&
+                 this.Tasks.Row("2")[2] === edit.task(2).Name && ok;
+            this.Tasks_ColumnMove(2, 0);
+            ok = this.tableColumns()[0] === "name" && ok;
+            print(`edit heading dragged, order=${this.Tasks.ColumnOrder.join()}`);
+
             this.MnuColShowAll_Click();
-            ok = this.columns.length === COLUMNS.length + 1 &&
+            ok = this.visibleColumns().length === COLUMNS.length + 1 &&
                  this.Tasks.Columns.length === COLUMNS.length + 2 &&
                  !item(this.Tasks_HeaderClick(2, 3, false, false),
                        "MnuColShowAll").enabled && ok;
@@ -7628,16 +7778,16 @@ export class MainForm extends Form {
             this.setColumns(["duration", "start", "percent", "milestone",
                              "priority", "calendar", "type", "constraint",
                              "notes", fieldColumnID("188743731")]);
-            const atDur   = 1 + this.visibleColumns().indexOf("duration");
-            const atStart = 1 + this.visibleColumns().indexOf("start");
-            const atPct   = 1 + this.visibleColumns().indexOf("percent");
-            const atMile  = 1 + this.visibleColumns().indexOf("milestone");
-            const atPrio  = 1 + this.visibleColumns().indexOf("priority");
-            const atCal   = 1 + this.visibleColumns().indexOf("calendar");
-            const atType  = 1 + this.visibleColumns().indexOf("type");
-            const atCon   = 1 + this.visibleColumns().indexOf("constraint");
-            const atNotes = 1 + this.visibleColumns().indexOf("notes");
-            const atField = 1 + this.visibleColumns().indexOf(fieldColumnID("188743731"));
+            const atDur   = this.tableColumns().indexOf("duration");
+            const atStart = this.tableColumns().indexOf("start");
+            const atPct   = this.tableColumns().indexOf("percent");
+            const atMile  = this.tableColumns().indexOf("milestone");
+            const atPrio  = this.tableColumns().indexOf("priority");
+            const atCal   = this.tableColumns().indexOf("calendar");
+            const atType  = this.tableColumns().indexOf("type");
+            const atCon   = this.tableColumns().indexOf("constraint");
+            const atNotes = this.tableColumns().indexOf("notes");
+            const atField = this.tableColumns().indexOf(fieldColumnID("188743731"));
             const specOf  = (at) => this.Tasks.Columns[at].Editor;
             this.fill(2);
 
@@ -7804,8 +7954,8 @@ export class MainForm extends Form {
             const navKey  = String(navTask.UID);
             this.setColumns(["duration", "start"]);
             this.fill(2);
-            const atDur2   = 1 + this.visibleColumns().indexOf("duration");
-            const atStart2 = 1 + this.visibleColumns().indexOf("start");
+            const atDur2   = this.tableColumns().indexOf("duration");
+            const atStart2 = this.tableColumns().indexOf("start");
 
             this.Tasks.CurrentCell = { Row: "2", Column: atDur2 };
             ok = JSON.stringify(this.Tasks.CurrentCell) ===
@@ -7994,7 +8144,7 @@ export class MainForm extends Form {
              * refusals (a task that is not there, itself, a loop) putting the
              * cell back. */
             this.setColumns(["duration", "predecessors"]);
-            const atPred = 1 + this.visibleColumns().indexOf("predecessors");
+            const atPred = this.tableColumns().indexOf("predecessors");
             this.fill(2);
             ok = this.Tasks.Row("2")[atPred] === "1" && ok;   // the fixture's link
             const predDays = this.holder.project.MinutesPerDay || 480;
@@ -8142,7 +8292,7 @@ export class MainForm extends Form {
                         "ActProjData", "ActProjOptions", "ActCalendar", "ActResources", "ActFields"]
             /* A command raises `Execute`; a button and a menu item, `Click`. */
             .map((name) => name.startsWith("Act") ? `${name}_Execute` : `${name}_Click`)
-            .concat(["Tasks_Select", "Tasks_HeaderClick", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
+            .concat(["Tasks_Select", "Tasks_HeaderClick", "Tasks_ColumnMove", "Gantt_Draw", "Header_Draw", "GanttScroll_Scroll",
                      "CmbScale_Select",
                      "Links_Select", "Assignments_Select", "PropsTabs_Switch",
                      "CmbAttr_Select", "CmbAttrValue_Select", "TxtLinkAddress_Change",
@@ -8180,8 +8330,8 @@ export class MainForm extends Form {
             if (!this.Tasks.Exists(key)) { ok = false; continue; }
             const row  = this.Tasks.Row(key);
             const name = task.Milestone ? `◆ ${task.Name}` : task.Name;
-            const at   = 1 + this.visibleColumns().indexOf("duration");
-            if (row[0] !== name ||
+            const at   = this.tableColumns().indexOf("duration");
+            if (row[this.tableColumns().indexOf("name")] !== name ||
                 (at > 0 && row[at] !== durationText(task, this.holder.project)))
                 ok = false;
         }
@@ -8445,6 +8595,7 @@ const COLUMNS = [
       Editor: { Kind: "Check", ActiveText: "◆", InactiveText: "" } },
     { id: "work",       Text: "Work",             Width: 84,  Alignment: "Right" },
     { id: "cost",       Text: "Cost",             Width: 80,  Alignment: "Right" },
+    { id: "resources",  Text: "Resource names",   Width: 160, Editor: "Text" },
     { id: "wbs",        Text: "WBS",              Width: 80 },
     { id: "priority",   Text: "Priority",         Width: 60,  Alignment: "Right",
       Editor: { Kind: "Number", Min: 0, Max: 1000, Step: 1 } },
@@ -8474,9 +8625,10 @@ function fieldColumnID(fieldID) { return FIELD_COLUMN + fieldID; }
 
 export function fieldLabel(def) { return def.Alias || def.FieldName || def.FieldID; }
 
-/* What a stored column list may carry: a catalog id, or a custom field's. */
+/* What a stored column list may carry: the name's place, a catalog id, or a
+ * custom field's. */
 export function isColumnId(id) {
-    return COLUMNS.some((c) => c.id === id) ||
+    return id === "name" || COLUMNS.some((c) => c.id === id) ||
            (id.slice(0, FIELD_COLUMN.length) === FIELD_COLUMN &&
             id.length > FIELD_COLUMN.length);
 }
@@ -8618,6 +8770,69 @@ function linksText(task, project, by) {
         parts.push(part);
     }
     return parts.join(", ");
+}
+
+/* **The Resource Names cell**, as Project writes it: the task's resources in
+ * the plan's order, separated by semicolons, each with its units in brackets
+ * when they are not one -- a percentage for a work resource (`Bruno[50%]`), the
+ * quantity for a material one, with its label when it has one (`Cemento[10
+ * bolsas]`). A cost resource has no units to show. */
+function resourcesText(task, project) {
+    const parts = [];
+
+    for (const a of project.Assignments) {
+        if (a.TaskUID !== task.UID) continue;
+        const r = resourceOf(project, a.ResourceUID);
+        let part = r ? r.Name : `UID ${a.ResourceUID}`;
+        const units = a.Units === undefined || a.Units === null ? 1 : a.Units;
+        if (r && r.Type === 1 && units !== 1)
+            part += `[${Locale.Number(Math.round(units * 10000) / 100)}%]`;
+        else if (r && r.Type === 0 && (units !== 1 || r.MaterialLabel))
+            part += `[${Locale.Number(units)}${r.MaterialLabel ? " " + r.MaterialLabel : ""}]`;
+        parts.push(part);
+    }
+    return parts.join("; ");
+}
+
+/* **The cell read back**: names separated by semicolons -- or commas, which
+ * a keyboard reaches first -- each with optional units in brackets, `[50%]`
+ * or `[50]` (both half a unit of a work resource; for a material one the
+ * number is the quantity and the label after it is ignored). A comma inside
+ * the brackets is a decimal, not a separator. The number is kept as typed,
+ * `{ Name, Amount }`, because only `setTaskResources` knows which kind of
+ * resource a name turns out to be; no `Amount` keeps what the assignment
+ * had. A name typed twice is the last one. Answers `{ resources }`, or
+ * `{ refused }` with the piece that does not read. */
+export function parseResourceNames(text) {
+    const pieces = [];
+    let depth = 0, from = 0;
+    const s = String(text || "");
+    for (let i = 0; i <= s.length; i++) {
+        const c = s[i];
+        if (c === "[") depth++;
+        else if (c === "]") depth = Math.max(depth - 1, 0);
+        else if (i === s.length || (depth === 0 && (c === ";" || c === ","))) {
+            pieces.push(s.slice(from, i).trim());
+            from = i + 1;
+        }
+    }
+
+    const resources = [];
+    for (const piece of pieces) {
+        if (!piece) continue;
+        const m = /^(.*?)\s*(?:\[\s*(\d+(?:[.,]\d+)?)\s*%?[^\]]*\])?$/.exec(piece);
+        const name = m ? m[1].trim() : "";
+        if (!m || !name || /[\[\]]/.test(name)) return { refused: piece };
+        const entry = { Name: name };
+        if (m[2] !== undefined) {
+            entry.Amount = Number(m[2].replace(",", "."));
+            if (!(entry.Amount > 0)) return { refused: piece };
+        }
+        const same = resources.findIndex((r) => r.Name.toLocaleLowerCase() ===
+                                                name.toLocaleLowerCase());
+        if (same >= 0) resources[same] = entry; else resources.push(entry);
+    }
+    return { resources };
 }
 
 /* The lag in the link's own unit -- `+2d`, `-4h`, `+30m` -- with the sign in
