@@ -19,11 +19,13 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <Calendars>
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
   </Calendars>
   <Tasks>
@@ -85,6 +87,7 @@
       <UID>3</UID>
       <ID>3</ID>
       <Name>Bricks</Name>
+      <Type>0</Type>
       <MaterialLabel>pallets</MaterialLabel>
       <StandardRate>120</StandardRate>
     </Resource>

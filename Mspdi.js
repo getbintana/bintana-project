@@ -8,6 +8,9 @@
  * lenient: what the shape does not model lands on `Problems`, never in the
  * bin. `SaveXml` writes back into the tree it was handed and touches only
  * what the shape models -- which is what an interchange round trip needs.
+ * **Every shape spells its booleans `1`/`0`** (`Booleans: "digits"`), as
+ * Project writes them: Project 2108 read `<IsNull>false</IsNull>` as a blank
+ * row and a calendar's `DayWorking` in words as no working time.
  *
  * What is deliberately **not** modelled yet: timephased data, work contours
  * and overtime, among others.
@@ -47,6 +50,7 @@ export const TENTHS     = 10;   // file units per minute, for the four fields ab
 export class MspLink extends Record {
     static Xml = {
         Root: "PredecessorLink",
+        Booleans: "digits",
         Order: [
             "PredecessorUID", "Type", "CrossProject", "CrossProjectName",
             "LinkLag", "LagFormat"
@@ -63,7 +67,7 @@ export class MspLink extends Record {
 /* One baseline: the plan as it was when it was saved. `Number` says which
  * baseline it is; 0 is the one Project's "Set Baseline" writes. */
 export class MspBaseline extends Record {
-    static Xml = { Root: "Baseline" };
+    static Xml = { Root: "Baseline", Booleans: "digits" };
     static Fields = {
         Number:            Field.Int({ key: true }),
         Start:             Field.DateTime(),
@@ -94,6 +98,7 @@ export class MspBaseline extends Record {
 export class MspFieldValue extends Record {
     static Xml = {
         Root: "ExtendedAttribute",
+        Booleans: "digits",
         Order: ["FieldID", "Value", "ValueGUID", "DurationFormat"],
     };
     static Fields = {
@@ -107,7 +112,7 @@ export class MspFieldValue extends Record {
  * points at (unique across the project's lists), the text a person reads and
  * the description. */
 export class MspValueEntry extends Record {
-    static Xml = { Root: "Value" };
+    static Xml = { Root: "Value", Booleans: "digits" };
     static Fields = {
         ID:          Field.Int({ key: true }),
         Value:       Field.Text(),
@@ -124,6 +129,7 @@ export class MspValueEntry extends Record {
 export class MspFieldDef extends Record {
     static Xml = {
         Root: "ExtendedAttribute",
+        Booleans: "digits",
         Order: [
             "FieldID", "FieldName", "CFType", "Guid", "ElemType",
             "MaxMultiValues", "UserDef", "Alias", "SecondaryPID",
@@ -143,6 +149,7 @@ export class MspFieldDef extends Record {
 export class MspTask extends Record {
     static Xml = {
         Root: "Task",
+        Booleans: "digits",
         Order: [
             "UID", "ID", "Name", "Manual", "Type", "IsNull", "CreateDate",
             "Contact", "WBS", "WBSLevel", "OutlineNumber", "OutlineLevel",
@@ -267,6 +274,7 @@ export class MspTask extends Record {
 export class MspRate extends Record {
     static Xml = {
         Root: "Rate",
+        Booleans: "digits",
         Order: [
             "RatesFrom", "RatesTo", "RateTable", "StandardRate",
             "StandardRateFormat", "OvertimeRate", "OvertimeRateFormat",
@@ -288,6 +296,7 @@ export class MspRate extends Record {
 export class MspResource extends Record {
     static Xml = {
         Root: "Resource",
+        Booleans: "digits",
         Order: [
             "UID", "ID", "Name", "Type", "IsNull", "Initials", "Phonetics",
             "NTAccount", "MaterialLabel", "Code", "Group", "WorkGroup",
@@ -313,7 +322,12 @@ export class MspResource extends Record {
         UID:                Field.Int({ key: true }),
         ID:                 Field.Int(),
         Name:               Field.Text(),
-        Type:               Field.Int(),
+        /* 0 Material, 1 Work, 2 Cost -- and **an absent one is Work**, which
+         * is how Project reads it: a material resource written without its
+         * `<Type>0</Type>` came back a work resource with a `MaterialLabel`,
+         * and Project refused the file. So it reads as Work when absent and
+         * is written always, as Project writes it. */
+        Type:               Field.Int({ def: 1, always: true }),
         IsNull:             Field.Bool(),
         Initials:           Field.Text(),
         MaterialLabel:      Field.Text(),
@@ -342,6 +356,7 @@ export class MspResource extends Record {
 export class MspAssignment extends Record {
     static Xml = {
         Root: "Assignment",
+        Booleans: "digits",
         Order: [
             "UID", "TaskUID", "ResourceUID", "PercentWorkComplete",
             "ActualCost", "ActualFinish", "ActualOvertimeCost",
@@ -461,7 +476,7 @@ export class MspAssignment extends Record {
 
 /* <WorkingTime>: a span of the day that is worked, `HH:MM[:SS]`. */
 export class MspWorkingTime extends Record {
-    static Xml = { Root: "WorkingTime" };
+    static Xml = { Root: "WorkingTime", Booleans: "digits" };
     static Fields = {
         FromTime: Field.Time(),
         ToTime:   Field.Time(),
@@ -472,6 +487,7 @@ export class MspWorkingTime extends Record {
 export class MspWeekDay extends Record {
     static Xml = {
         Root: "WeekDay",
+        Booleans: "digits",
         Order: [
             "DayType", "DayWorking", "TimePeriod", "WorkingTimes"
         ],
@@ -485,7 +501,7 @@ export class MspWeekDay extends Record {
 
 /* The dates an exception covers, inclusive. */
 export class MspTimePeriod extends Record {
-    static Xml = { Root: "TimePeriod" };
+    static Xml = { Root: "TimePeriod", Booleans: "digits" };
     static Fields = {
         FromDate: Field.DateTime(),
         ToDate:   Field.DateTime(),
@@ -508,6 +524,7 @@ export class MspTimePeriod extends Record {
 export class MspException extends Record {
     static Xml = {
         Root: "Exception",
+        Booleans: "digits",
         Order: [
             "EnteredByOccurrences", "TimePeriod", "Occurrences", "Name",
             "Type", "Period", "DaysOfWeek", "MonthItem", "MonthPosition",
@@ -534,6 +551,7 @@ export class MspException extends Record {
 export class MspCalendar extends Record {
     static Xml = {
         Root: "Calendar",
+        Booleans: "digits",
         Order: [
             "UID", "Name", "IsBaseCalendar", "BaseCalendarUID", "WeekDays",
             "Exceptions", "WorkWeeks"
@@ -552,7 +570,7 @@ export class MspCalendar extends Record {
 export class MspProject extends Record {
     /* Declaration order is write order, so SaveVersion -- required by the
      * schema and first in it -- is declared first. */
-    static Xml = { Root: "Project",
+    static Xml = { Root: "Project", Booleans: "digits",
                    Namespace: ["http://schemas.microsoft.com/project",
                                "http://schemas.microsoft.com/project/2007"],
                    Order: [
@@ -653,10 +671,13 @@ export class MspProject extends Record {
         StatusDate:        Field.DateTime(),
         CurrentDate:       Field.DateTime(),
         MicrosoftProjectServerURL: Field.Bool(),
-        Autolink:          Field.Bool(),
+        /* **Project refuses a file without these two** ("check row 9,
+         * column 5"), measured on Project 2108 one element at a time: false
+         * is their default and the element left out was the error. */
+        Autolink:          Field.Bool(false, { always: true }),
         NewTaskStartDate:  Field.Int(),
         DefaultTaskEVMethod: Field.Int(),
-        ProjectExternallyEdited: Field.Bool(),
+        ProjectExternallyEdited: Field.Bool(false, { always: true }),
         ExtendedCreationDate: Field.DateTime(),
         ActualsInSync:     Field.Bool(),
         RemoveFileProperties: Field.Bool(),

@@ -2,13 +2,20 @@ touched: /Project/ScheduleFromStart[1]: removed (was "true")
 touched: /Project/CriticalSlackLimit[1]: removed (was "0")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/DefaultTaskType[1]: removed (was "1")
+touched: /Project/Calendars[1]/Calendar[1]/IsBaseCalendar[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[1]/ID[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/OutlineLevel[1]: removed (was "0")
+touched: /Project/Tasks[1]/Task[1]/Summary[1]: "true" -> "1"
+touched: /Project/Tasks[1]/Task[1]/Critical[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[2]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[3]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[4]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[4]/Estimated[1]: removed (was "true")
 touched: /Project/Tasks[1]/Task[5]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[5]/Milestone[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[5]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[6]/Name[1]: removed (was "")
+touched: /Project/Tasks[1]/Task[6]/IsNull[1]: "true" -> "1"
+touched: /Project/Autolink[1]: added ("0")
+touched: /Project/ProjectExternallyEdited[1]: added ("0")

@@ -71,6 +71,25 @@ XSD, ya no se omite nunca: un 0 es FF en un vínculo y Fixed Units en una tarea,
 y borrarlo cambiaba el plan. `09-defaults` cubre ese lado: `false`, `0` y la
 ausencia de `MaxUnits` sobreviven la vuelta.
 
+El `Type` del **recurso** es el caso inverso: ausente, Project lo lee como
+Trabajo (1), y el default del entero era 0 (Material). Un recurso de material
+perdía su `<Type>0</Type>` en la vuelta -- el golden de `03-resources` lo
+registraba como `Resource[3]/Type[1]: removed (was "0")` -- y Project 2108
+rechazaba el archivo por un `MaterialLabel` en un recurso de trabajo. Ahora se
+declara `def: 1, always: true` (opción del runtime): se lee Trabajo si falta y se
+escribe siempre, como lo escribe Project.
+
+`Autolink` y `ProjectExternallyEdited` también se escriben siempre: sin
+cualquiera de los dos, Project 2108 rechaza el archivo ("compruebe la fila 9 y la
+columna 5"), medido quitándolos de a uno de un archivo que abría.
+
+**Los booleanos se escriben `1`/`0`** (`Booleans: "digits"` en cada shape), como
+los escribe Project, y no `true`/`false`, que el esquema admite: Project 2108
+leía `<IsNull>false</IsNull>` como una fila en blanco y un calendario con
+`DayWorking` en palabras sin tiempo laborable. Se leen las dos formas; un `0`
+del archivo queda como estaba, y uno en palabras pasa a dígito (el `touched` lo
+muestra como `"true" -> "1"`).
+
 El resto de la lista son ceros y falses que el esquema tampoco declara pero que
 la ausencia lee igual: `IsNull=false`, `LinkLag=0`, `OutlineLevel=0`,
 `PercentComplete=0`, `<Name></Name>` vacío, `ID` 0 de la tarea resumen,

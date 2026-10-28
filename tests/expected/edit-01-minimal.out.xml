@@ -21,6 +21,8 @@
   <WeekStartDay>1</WeekStartDay>
   <StatusDate>2026-09-01T08:00:00</StatusDate>
   <CurrentDate>2026-09-22T08:00:00</CurrentDate>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <ExtendedAttributes>
     <ExtendedAttribute>
       <FieldID>188743731</FieldID>
@@ -32,11 +34,11 @@
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -46,7 +48,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -60,7 +62,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>3</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -74,7 +76,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>4</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -88,7 +90,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>5</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -102,7 +104,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>6</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -134,8 +136,8 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT16H0M0S</Work>
-      <Summary>true</Summary>
-      <Critical>true</Critical>
+      <Summary>1</Summary>
+      <Critical>1</Critical>
       <LateStart>2026-09-01T08:00:00</LateStart>
       <LateFinish>2026-09-03T17:00:00</LateFinish>
       <TotalSlack>0</TotalSlack>
@@ -146,7 +148,7 @@
         <Finish>2026-09-03T17:00:00</Finish>
         <Duration>PT24H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
+        <EstimatedDuration>1</EstimatedDuration>
         <Work>PT16H0M0S</Work>
       </Baseline>
       <Baseline>
@@ -155,7 +157,7 @@
         <Finish>2026-09-03T17:00:00</Finish>
         <Duration>PT24H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
+        <EstimatedDuration>1</EstimatedDuration>
         <Work>PT16H0M0S</Work>
       </Baseline>
     </Task>
@@ -174,9 +176,9 @@
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
-      <Critical>true</Critical>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
+      <Critical>1</Critical>
       <LateStart>2026-09-01T08:00:00</LateStart>
       <LateFinish>2026-09-02T17:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>
@@ -228,14 +230,14 @@
         <Number>0</Number>
         <Duration>PT8H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
+        <EstimatedDuration>1</EstimatedDuration>
         <Work>PT0H0M0S</Work>
       </Baseline>
       <Baseline>
         <Number>1</Number>
         <Duration>PT8H0M0S</Duration>
         <DurationFormat>7</DurationFormat>
-        <EstimatedDuration>true</EstimatedDuration>
+        <EstimatedDuration>1</EstimatedDuration>
         <Work>PT0H0M0S</Work>
       </Baseline>
     </Task>
@@ -254,9 +256,9 @@
       <Duration>PT7H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT8H0M0S</Work>
-      <EffortDriven>true</EffortDriven>
-      <Estimated>false</Estimated>
-      <Critical>true</Critical>
+      <EffortDriven>1</EffortDriven>
+      <Estimated>0</Estimated>
+      <Critical>1</Critical>
       <LateStart>2026-09-03T08:00:00</LateStart>
       <LateFinish>2026-09-03T17:00:00</LateFinish>
       <FreeSlack>0</FreeSlack>

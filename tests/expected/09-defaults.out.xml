@@ -5,7 +5,7 @@
 <Project xmlns="http://schemas.microsoft.com/project">
   <SaveVersion>14</SaveVersion>
   <Name>Defaults</Name>
-  <ScheduleFromStart>false</ScheduleFromStart>
+  <ScheduleFromStart>0</ScheduleFromStart>
   <StartDate>2026-09-01T08:00:00</StartDate>
   <FinishDate>2026-09-02T17:00:00</FinishDate>
   <CurrencyDigits>2</CurrencyDigits>
@@ -21,11 +21,13 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <Calendars>
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
   </Calendars>
   <Tasks>

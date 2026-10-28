@@ -4,12 +4,20 @@ touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/MinutesPerDay[1]: "480" -> "420"
 touched: /Project/MinutesPerWeek[1]: "2400" -> "2100"
 touched: /Project/DefaultTaskType[1]: removed (was "1")
-touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: "false" -> "true"
+touched: /Project/Calendars[1]/Calendar[1]/IsBaseCalendar[1]: "true" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: "false" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[2]/DayWorking[1]: "true" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[3]/DayWorking[1]: "true" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[4]/DayWorking[1]: "true" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[5]/DayWorking[1]: "true" -> "1"
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[6]/DayWorking[1]: "true" -> "1"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[7]/DayWorking[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/ID[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/OutlineLevel[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/Duration[1]: "PT16H0M0S" -> "PT24H0M0S"
+touched: /Project/Tasks[1]/Task[1]/Summary[1]: "true" -> "1"
+touched: /Project/Tasks[1]/Task[1]/Critical[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[1]/PercentComplete[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[2]/Name[1]: "Analyse" -> "Analyse II"
 touched: /Project/Tasks[1]/Task[2]/IsNull[1]: removed (was "false")
@@ -29,6 +37,8 @@ touched: /Project/Tasks[1]/Task[3]/Work[1]: "PT8H0M0S" -> "PT0H0M0S"
 touched: /Project/Tasks[1]/Task[3]/PercentComplete[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/PredecessorUID[1]: "1" -> "2"
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
+touched: /Project/Autolink[1]: added ("0")
+touched: /Project/ProjectExternallyEdited[1]: added ("0")
 touched: /Project/ExtendedAttributes[1]/ExtendedAttribute[1]/FieldID[1]: added ("188743731")
 touched: /Project/ExtendedAttributes[1]/ExtendedAttribute[1]/FieldName[1]: added ("Text1")
 touched: /Project/ExtendedAttributes[1]/ExtendedAttribute[1]/Alias[1]: added ("External_ID")
@@ -42,18 +52,18 @@ touched: /Project/Tasks[1]/Task[1]/Baseline[1]/Start[1]: added ("2026-09-01T08:0
 touched: /Project/Tasks[1]/Task[1]/Baseline[1]/Finish[1]: added ("2026-09-03T17:00:00")
 touched: /Project/Tasks[1]/Task[1]/Baseline[1]/Duration[1]: added ("PT24H0M0S")
 touched: /Project/Tasks[1]/Task[1]/Baseline[1]/DurationFormat[1]: added ("7")
-touched: /Project/Tasks[1]/Task[1]/Baseline[1]/EstimatedDuration[1]: added ("true")
+touched: /Project/Tasks[1]/Task[1]/Baseline[1]/EstimatedDuration[1]: added ("1")
 touched: /Project/Tasks[1]/Task[1]/Baseline[1]/Work[1]: added ("PT16H0M0S")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/Number[1]: added ("1")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/Start[1]: added ("2026-09-01T08:00:00")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/Finish[1]: added ("2026-09-03T17:00:00")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/Duration[1]: added ("PT24H0M0S")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/DurationFormat[1]: added ("7")
-touched: /Project/Tasks[1]/Task[1]/Baseline[2]/EstimatedDuration[1]: added ("true")
+touched: /Project/Tasks[1]/Task[1]/Baseline[2]/EstimatedDuration[1]: added ("1")
 touched: /Project/Tasks[1]/Task[1]/Baseline[2]/Work[1]: added ("PT16H0M0S")
-touched: /Project/Tasks[1]/Task[2]/Estimated[1]: added ("false")
-touched: /Project/Tasks[1]/Task[2]/Summary[1]: added ("true")
-touched: /Project/Tasks[1]/Task[2]/Critical[1]: added ("true")
+touched: /Project/Tasks[1]/Task[2]/Estimated[1]: added ("0")
+touched: /Project/Tasks[1]/Task[2]/Summary[1]: added ("1")
+touched: /Project/Tasks[1]/Task[2]/Critical[1]: added ("1")
 touched: /Project/Tasks[1]/Task[2]/LateStart[1]: added ("2026-09-01T08:00:00")
 touched: /Project/Tasks[1]/Task[2]/LateFinish[1]: added ("2026-09-02T17:00:00")
 touched: /Project/Tasks[1]/Task[2]/FreeSlack[1]: added ("0")
@@ -78,12 +88,12 @@ touched: /Project/Tasks[1]/Task[3]/Notes[1]: added ("Edited in the harness")
 touched: /Project/Tasks[1]/Task[3]/Baseline[1]/Number[1]: added ("0")
 touched: /Project/Tasks[1]/Task[3]/Baseline[1]/Duration[1]: added ("PT8H0M0S")
 touched: /Project/Tasks[1]/Task[3]/Baseline[1]/DurationFormat[1]: added ("7")
-touched: /Project/Tasks[1]/Task[3]/Baseline[1]/EstimatedDuration[1]: added ("true")
+touched: /Project/Tasks[1]/Task[3]/Baseline[1]/EstimatedDuration[1]: added ("1")
 touched: /Project/Tasks[1]/Task[3]/Baseline[1]/Work[1]: added ("PT0H0M0S")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/Number[1]: added ("1")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/Duration[1]: added ("PT8H0M0S")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/DurationFormat[1]: added ("7")
-touched: /Project/Tasks[1]/Task[3]/Baseline[2]/EstimatedDuration[1]: added ("true")
+touched: /Project/Tasks[1]/Task[3]/Baseline[2]/EstimatedDuration[1]: added ("1")
 touched: /Project/Tasks[1]/Task[3]/Baseline[2]/Work[1]: added ("PT0H0M0S")
 touched: /Project/Tasks[1]/Task[4]/UID[1]: added ("2")
 touched: /Project/Tasks[1]/Task[4]/ID[1]: added ("3")
@@ -99,9 +109,9 @@ touched: /Project/Tasks[1]/Task[4]/Finish[1]: added ("2026-09-03T16:00:00")
 touched: /Project/Tasks[1]/Task[4]/Duration[1]: added ("PT7H0M0S")
 touched: /Project/Tasks[1]/Task[4]/DurationFormat[1]: added ("7")
 touched: /Project/Tasks[1]/Task[4]/Work[1]: added ("PT8H0M0S")
-touched: /Project/Tasks[1]/Task[4]/EffortDriven[1]: added ("true")
-touched: /Project/Tasks[1]/Task[4]/Estimated[1]: added ("false")
-touched: /Project/Tasks[1]/Task[4]/Critical[1]: added ("true")
+touched: /Project/Tasks[1]/Task[4]/EffortDriven[1]: added ("1")
+touched: /Project/Tasks[1]/Task[4]/Estimated[1]: added ("0")
+touched: /Project/Tasks[1]/Task[4]/Critical[1]: added ("1")
 touched: /Project/Tasks[1]/Task[4]/LateStart[1]: added ("2026-09-03T08:00:00")
 touched: /Project/Tasks[1]/Task[4]/LateFinish[1]: added ("2026-09-03T17:00:00")
 touched: /Project/Tasks[1]/Task[4]/FreeSlack[1]: added ("0")

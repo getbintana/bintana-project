@@ -16,18 +16,20 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <Calendars>
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -37,7 +39,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>3</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -47,7 +49,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>4</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -57,7 +59,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>5</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -67,7 +69,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>6</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -97,7 +99,7 @@
       <WeekDays>
         <WeekDay>
           <DayType>2</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>22:00:00</FromTime>
@@ -107,7 +109,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>3</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>00:00:00</FromTime>

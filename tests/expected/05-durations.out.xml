@@ -16,11 +16,13 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <Calendars>
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
   </Calendars>
   <Tasks>
@@ -33,8 +35,8 @@
       <Finish>2026-11-30T17:00:00</Finish>
       <Duration>PT480H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Summary>true</Summary>
-      <Critical>true</Critical>
+      <Summary>1</Summary>
+      <Critical>1</Critical>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -87,7 +89,7 @@
       <Finish>2026-11-30T17:00:00</Finish>
       <Duration>PT0H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Milestone>true</Milestone>
+      <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>3</PredecessorUID>
@@ -99,7 +101,7 @@
       <UID>5</UID>
       <ID>5</ID>
       <Type>1</Type>
-      <IsNull>true</IsNull>
+      <IsNull>1</IsNull>
       <OutlineLevel>1</OutlineLevel>
     </Task>
   </Tasks>

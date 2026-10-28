@@ -21,6 +21,8 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <ExtendedAttributes>
     <ExtendedAttribute>
       <FieldID>188743731</FieldID>
@@ -32,7 +34,7 @@
     <Calendar>
       <UID>1</UID>
       <Name>Standard</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
   </Calendars>
   <Tasks>
@@ -48,8 +50,8 @@
       <Duration>PT32H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT0H0M0S</Work>
-      <Summary>true</Summary>
-      <Critical>true</Critical>
+      <Summary>1</Summary>
+      <Critical>1</Critical>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -66,7 +68,7 @@
       <Duration>PT0H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT0H0M0S</Work>
-      <Milestone>true</Milestone>
+      <Milestone>1</Milestone>
       <PercentComplete>100</PercentComplete>
       <CalendarUID>1</CalendarUID>
       <Hyperlink>true</Hyperlink>
@@ -90,7 +92,7 @@
       <Duration>PT0H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT0H0M0S</Work>
-      <Milestone>true</Milestone>
+      <Milestone>1</Milestone>
       <PercentComplete>50</PercentComplete>
       <CalendarUID>1</CalendarUID>
       <Hyperlink>true</Hyperlink>

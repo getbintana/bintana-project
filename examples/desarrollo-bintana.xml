@@ -6,7 +6,6 @@
   <StartDate>2026-08-24T08:00:00</StartDate>
   <FinishDate>2026-11-12T17:00:00</FinishDate>
   <FYStartDate>1</FYStartDate>
-  <CriticalSlackLimit>0</CriticalSlackLimit>
   <CurrencyDigits>2</CurrencyDigits>
   <CurrencySymbol>$</CurrencySymbol>
   <CurrencyCode>ARS</CurrencyCode>
@@ -20,6 +19,8 @@
   <DurationFormat>7</DurationFormat>
   <WorkFormat>2</WorkFormat>
   <WeekStartDay>1</WeekStartDay>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <ExtendedAttributes>
     <ExtendedAttribute>
       <FieldID>188743731</FieldID>
@@ -31,14 +32,14 @@
     <Calendar>
       <UID>1</UID>
       <Name>Estándar</Name>
-      <IsBaseCalendar>true</IsBaseCalendar>
+      <IsBaseCalendar>1</IsBaseCalendar>
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -52,7 +53,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>3</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -66,7 +67,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>4</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -80,7 +81,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>5</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -94,7 +95,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>6</DayType>
-          <DayWorking>true</DayWorking>
+          <DayWorking>1</DayWorking>
           <WorkingTimes>
             <WorkingTime>
               <FromTime>08:00:00</FromTime>
@@ -124,8 +125,8 @@
       <WBS>0</WBS>
       <OutlineNumber>0</OutlineNumber>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -141,8 +142,8 @@
       <OutlineNumber>1</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -158,7 +159,7 @@
       <Finish>2026-08-26T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-08-24T08:00:00</ActualStart>
       <ActualFinish>2026-08-26T17:00:00</ActualFinish>
@@ -177,7 +178,7 @@
       <Finish>2026-08-28T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-08-27T08:00:00</ActualStart>
       <ActualFinish>2026-08-28T17:00:00</ActualFinish>
@@ -201,7 +202,7 @@
       <Finish>2026-08-31T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-08-31T08:00:00</ActualStart>
       <ActualFinish>2026-08-31T17:00:00</ActualFinish>
@@ -223,8 +224,8 @@
       <Priority>500</Priority>
       <Start>2026-08-31T17:00:00</Start>
       <Finish>2026-08-31T17:00:00</Finish>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-08-31T17:00:00</ActualStart>
       <ActualFinish>2026-08-31T17:00:00</ActualFinish>
@@ -248,8 +249,8 @@
       <OutlineNumber>2</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -265,7 +266,7 @@
       <Finish>2026-09-03T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-03T17:00:00</ActualFinish>
@@ -289,7 +290,7 @@
       <Finish>2026-09-08T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-04T08:00:00</ActualStart>
       <ActualFinish>2026-09-08T17:00:00</ActualFinish>
@@ -313,7 +314,7 @@
       <Finish>2026-09-10T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-09T08:00:00</ActualStart>
       <ActualFinish>2026-09-10T17:00:00</ActualFinish>
@@ -335,8 +336,8 @@
       <Priority>500</Priority>
       <Start>2026-09-10T17:00:00</Start>
       <Finish>2026-09-10T17:00:00</Finish>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-10T17:00:00</ActualStart>
       <ActualFinish>2026-09-10T17:00:00</ActualFinish>
@@ -360,8 +361,8 @@
       <OutlineNumber>3</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -377,7 +378,7 @@
       <Finish>2026-09-15T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-11T08:00:00</ActualStart>
       <ActualFinish>2026-09-15T17:00:00</ActualFinish>
@@ -402,7 +403,7 @@
       <Duration>PT32H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT32H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-16T08:00:00</ActualStart>
       <ActualFinish>2026-09-21T17:00:00</ActualFinish>
@@ -426,7 +427,7 @@
       <Finish>2026-09-23T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-22T08:00:00</ActualStart>
       <ActualFinish>2026-09-23T17:00:00</ActualFinish>
@@ -448,8 +449,8 @@
       <Priority>500</Priority>
       <Start>2026-09-23T17:00:00</Start>
       <Finish>2026-09-23T17:00:00</Finish>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-23T17:00:00</ActualStart>
       <ActualFinish>2026-09-23T17:00:00</ActualFinish>
@@ -473,8 +474,8 @@
       <OutlineNumber>4</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -491,7 +492,7 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>15</PredecessorUID>
@@ -516,7 +517,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>17</PredecessorUID>
@@ -537,7 +538,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>18</PredecessorUID>
@@ -558,7 +559,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>18</PredecessorUID>
@@ -577,8 +578,8 @@
       <OutlineNumber>4.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>19</PredecessorUID>
@@ -604,8 +605,8 @@
       <OutlineNumber>5</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -622,7 +623,7 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>21</PredecessorUID>
@@ -647,7 +648,7 @@
       <Priority>500</Priority>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>23</PredecessorUID>
@@ -669,7 +670,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>23</PredecessorUID>
@@ -691,7 +692,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>25</PredecessorUID>
@@ -710,8 +711,8 @@
       <OutlineNumber>5.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>26</PredecessorUID>
@@ -732,8 +733,8 @@
       <OutlineNumber>6</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -750,7 +751,7 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>27</PredecessorUID>
@@ -771,7 +772,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>29</PredecessorUID>
@@ -793,7 +794,7 @@
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT16H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>30</PredecessorUID>
@@ -818,7 +819,7 @@
       <Priority>500</Priority>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>31</PredecessorUID>
@@ -837,8 +838,8 @@
       <OutlineNumber>6.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>32</PredecessorUID>
@@ -859,8 +860,8 @@
       <OutlineNumber>7</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Summary>true</Summary>
+      <Estimated>0</Estimated>
+      <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
     </Task>
     <Task>
@@ -877,8 +878,8 @@
       <Duration>PT40H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT40H0M0S</Work>
-      <Estimated>false</Estimated>
-      <Critical>true</Critical>
+      <Estimated>0</Estimated>
+      <Critical>1</Critical>
       <ConstraintType>4</ConstraintType>
       <CalendarUID>1</CalendarUID>
       <ConstraintDate>2026-11-02T08:00:00</ConstraintDate>
@@ -902,7 +903,7 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT12H0M0S</Work>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>35</PredecessorUID>
@@ -925,8 +926,8 @@
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT12H0M0S</Work>
-      <Estimated>false</Estimated>
-      <Critical>true</Critical>
+      <Estimated>0</Estimated>
+      <Critical>1</Critical>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>35</PredecessorUID>
@@ -947,7 +948,7 @@
       <Priority>500</Priority>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
+      <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>37</PredecessorUID>
@@ -959,7 +960,7 @@
       <UID>39</UID>
       <ID>39</ID>
       <Name>Prueba de aceptación en Project</Name>
-      <Manual>true</Manual>
+      <Manual>1</Manual>
       <Type>1</Type>
       <WBS>7.5</WBS>
       <OutlineNumber>7.5</OutlineNumber>
@@ -969,8 +970,8 @@
       <Finish>2026-11-12T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Estimated>false</Estimated>
-      <Critical>true</Critical>
+      <Estimated>0</Estimated>
+      <Critical>1</Critical>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>37</PredecessorUID>
@@ -989,9 +990,9 @@
       <OutlineNumber>7.6</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
-      <Estimated>false</Estimated>
-      <Milestone>true</Milestone>
-      <Critical>true</Critical>
+      <Estimated>0</Estimated>
+      <Milestone>1</Milestone>
+      <Critical>1</Critical>
       <CalendarUID>1</CalendarUID>
       <Deadline>2026-11-20T17:00:00</Deadline>
       <PredecessorLink>
@@ -1066,7 +1067,8 @@
       <UID>3</UID>
       <ID>3</ID>
       <Name>Licencias y servicios</Name>
-      <MaterialLabel>mes</MaterialLabel>
+      <Type>0</Type>
+      <MaterialLabel>licencia</MaterialLabel>
       <StandardRate>120</StandardRate>
       <StandardRateFormat>2</StandardRateFormat>
     </Resource>

@@ -8,6 +8,8 @@
   <StartDate>2026-10-01T08:00:00</StartDate>
   <FinishDate>2026-10-02T17:00:00</FinishDate>
   <CalendarUID>1</CalendarUID>
+  <Autolink>0</Autolink>
+  <ProjectExternallyEdited>0</ProjectExternallyEdited>
   <Calendars>
     <Calendar>
       <UID>1</UID>
