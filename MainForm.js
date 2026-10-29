@@ -6547,9 +6547,12 @@ export class MainForm extends Form {
 
         /* And here, where the plan has forty-four links, the elbow is a real
          * one and its place under the bars is asserted rather than skipped. */
-        const link = log.firstOf("Polyline", pal.link);
+        const link = log.firstOf("Stroke", pal.link);
         ok = this.styleYes("with a dependency under the bars and not over them",
                            link >= 0 && link < bar, `link ${link}, bar ${bar}`) && ok;
+        /* Its elbows are bends and not square turns, as Project draws them. */
+        const bends = log.countOf("CurveTo", pal.link);
+        ok = this.styleYes("and its elbows rounded", bends > 0, `${bends} bends`) && ok;
 
         /* The ruler is a week over a month, which is what was asked for: the two
          * bands are two label sets in the ruler's own (smaller) type, and they
@@ -8450,7 +8453,7 @@ export class MainForm extends Form {
                                  style.hasColor(style.Foreground), true);
         const pal = ganttPalette(style);
         const bar  = style.firstOf("Fill", pal.bar);
-        const link = style.firstOf("Polyline", pal.link);
+        const link = style.firstOf("Stroke", pal.link);
         /* A plan with no dependency has no elbow to place, and saying so is
          * better than a claim that passes because it had nothing to look at:
          * the fixture that does have links is asked in `check-view`, which is a
@@ -8531,6 +8534,9 @@ class CallLog {
     Stroke()         { this.note("Stroke", []); }
     Clip()           { this.note("Clip", []); }
     Arc(...a)        { this.note("Arc", a); }
+    CurveTo(...a)    { this.note("CurveTo", a); }
+    Translate(...a)  { this.note("Translate", a); }
+    Scale(...a)      { this.note("Scale", a); }
     ClosePath()      { this.note("ClosePath", []); }
     Push()           { this.note("Push", []); }
     Pop()            { this.note("Pop", []); }

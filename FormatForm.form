@@ -16,7 +16,7 @@
       "name": "Fields",
       "properties": {
         "ColumnSpacing": 8,
-        "Height": 356,
+        "Height": 476,
         "RowSpacing": 8,
         "Spacing": 8,
         "Width": 388
@@ -188,15 +188,102 @@
         },
         {
           "type": "Label",
+          "name": "LblLabelLeft",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Left of the bar"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbLabelLeft",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Nothing",
+              "Name",
+              "Resources",
+              "Percent complete",
+              "Dates",
+              "Duration",
+              "Work",
+              "Cost",
+              "WBS"
+            ],
+            "Text": "Nothing"
+          }
+        },
+        {
+          "type": "Label",
           "name": "LblLabel",
           "properties": {
             "HAlign": "End",
-            "Text": "Next to the bar"
+            "Text": "Right of the bar"
           }
         },
         {
           "type": "ComboBox",
           "name": "CmbLabel",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Nothing",
+              "Name",
+              "Resources",
+              "Percent complete",
+              "Dates",
+              "Duration",
+              "Work",
+              "Cost",
+              "WBS"
+            ],
+            "Text": "Nothing"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblLabelTop",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Above the bar"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbLabelTop",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Nothing",
+              "Name",
+              "Resources",
+              "Percent complete",
+              "Dates",
+              "Duration",
+              "Work",
+              "Cost",
+              "WBS"
+            ],
+            "Text": "Nothing"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblLabelBottom",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Below the bar"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbLabelBottom",
           "properties": {
             "HAlign": "Fill",
             "HExpand": true,

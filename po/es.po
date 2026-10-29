@@ -1334,6 +1334,18 @@ msgstr "Colores"
 msgid "Next to the bar"
 msgstr "Junto a la barra"
 
+msgid "Right of the bar"
+msgstr "A la derecha"
+
+msgid "Left of the bar"
+msgstr "A la izquierda"
+
+msgid "Above the bar"
+msgstr "Arriba"
+
+msgid "Below the bar"
+msgstr "Abajo"
+
 msgid "Bar size"
 msgstr "Tamaño de la barra"
 

@@ -236,6 +236,37 @@ function linkShape(g, cy, rows, rowOf, i, edge) {
     return { type, ends, from, to: i, x0, x1, pts };
 }
 
+/*
+ * A link's line with its elbows rounded, the way Project draws them now: each
+ * corner is a quarter curve of radius `r` instead of a square turn. The radius
+ * gives way to the stretches either side of it -- a jog of four pixels has no
+ * room for a bend of four -- and the ends stay where `linkShape` put them, so
+ * the head still lands on the bar and the pointer still finds the line.
+ */
+function roundedLine(p, pts, r) {
+    const n = pts.length;
+    if (n < 6 || !(r > 0)) { p.Polyline(pts); return; }
+    p.MoveTo(pts[0], pts[1]);
+    for (let k = 2; k + 2 < n; k += 2) {
+        const px = pts[k - 2], py = pts[k - 1];
+        const cx = pts[k],     cy = pts[k + 1];
+        const nx = pts[k + 2], ny = pts[k + 3];
+        const lin  = Math.hypot(cx - px, cy - py);
+        const lout = Math.hypot(nx - cx, ny - cy);
+        const rr = Math.min(r, lin / 2, lout / 2);
+        if (rr < 0.5) { p.LineTo(cx, cy); continue; }
+        const ax = cx - (cx - px) / lin * rr,  ay = cy - (cy - py) / lin * rr;
+        const bx = cx + (nx - cx) / lout * rr, by = cy + (ny - cy) / lout * rr;
+        p.LineTo(ax, ay);
+        /* A quarter circle as a cubic: the control points are 0.55 of the way
+         * from each end towards the corner. */
+        const kk = 0.5523;
+        p.CurveTo(ax + (cx - ax) * kk, ay + (cy - ay) * kk,
+                  bx + (cx - bx) * kk, by + (cy - by) * kk, bx, by);
+    }
+    p.LineTo(pts[n - 2], pts[n - 1]);
+}
+
 /* The head at the end of a line, pointing the way its last stretch runs. */
 function arrowHead(p, pts, size) {
     const n = pts.length;
@@ -332,7 +363,8 @@ export const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphit
 /* What the view may ask of the chart, with what it is when it asks nothing --
  * which is how the chart looked before there was a choice. A bar's *size* is
  * the share of the row it takes and the most it grows to. */
-export const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
+export const GANTT_FORMAT = { theme: "classic", size: 1,
+                       label: "", labelLeft: "", labelTop: "", labelBottom: "",
                        critical: true, progress: true, links: true, today: true,
                        rows: true, grid: true, idle: true,
                        barColor: "#1c71d8", lateColor: "#c01c28",
@@ -342,6 +374,9 @@ export const GANTT_FORMAT = { theme: "classic", label: "", size: 1,
 /* The custom theme's colours; an empty one is the palette's own shade. */
 export const GANTT_CUSTOM_COLORS = ["barColor", "lateColor", "todayColor", "progressColor",
                              "linkColor", "idleColor", "baselineColor", "selectColor"];
+/* The fields written around a bar, by where: `label` is the right, the one
+ * place there was before Project's other three. */
+export const GANTT_LABEL_SIDES = ["labelLeft", "label", "labelTop", "labelBottom"];
 const GANTT_BAR_SIZE = [{ share: 0.26, max: 9 }, { share: 0.38, max: 14 },
                         { share: 0.52, max: 20 }];
 
@@ -356,6 +391,8 @@ export function ganttFormat(fmt) {
         if (!out[key] && GANTT_FORMAT[key]) out[key] = GANTT_FORMAT[key];
     }
     if (!GANTT_BAR_SIZE[out.size]) out.size = 1;
+    for (const key of GANTT_LABEL_SIDES)
+        if (typeof out[key] !== "string") out[key] = "";
     return out;
 }
 
@@ -762,6 +799,9 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
     p.Color = c.link;
     p.LineWidth = 1;
     const head = Math.max(5, Math.round(barH * 0.6));
+    const bend = Math.max(3, Math.round(rowH / 6));
+    const join = p.LineJoin;
+    p.LineJoin = "Round";
     let chosen = null;
     const pick = geom.selLink;
     for (let i = 0; fmt.links && i < rows.length; i++) {
@@ -770,7 +810,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             if (!shape) continue;
             if (pick && pick.succ === rows[i].UID && pick.pred === edge.PredecessorUID)
                 chosen = shape;
-            p.Polyline(shape.pts);
+            roundedLine(p, shape.pts, bend);
             p.Stroke();
             arrowHead(p, shape.pts, head);
         }
@@ -780,7 +820,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
     if (chosen) {
         p.Color = c.ink;
         p.LineWidth = 2;
-        p.Polyline(chosen.pts);
+        roundedLine(p, chosen.pts, bend);
         p.Stroke();
         p.LineWidth = 1;
         arrowHead(p, chosen.pts, head + 1);
@@ -789,6 +829,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
         p.Rectangle(chosen.pts[n - 2] - 3, chosen.pts[n - 1] - 3, 6, 6);
         p.Fill();
     }
+    p.LineJoin = join;
 
     /* The bars: a summary is a bracket over its dates, a milestone a diamond, a
      * zero span a tick, the rest a bar with its PercentComplete painted over in
@@ -893,43 +934,67 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
         }
     }
 
-    /* **The extra information, beside the bar**: whatever the view chose to
-     * read there -- the application knows what a field means, so it hands the
-     * text over -- to the right of where the bar ends. A pass of its own, after
-     * the bars, because the loop above `continue`s past every kind of bar and
-     * because it sets a font the rest of the frame must not inherit. It is cut
-     * at the plot's edge: a label that runs off the pane is clipped, not
-     * wrapped under the next row. */
-    if (fmt.label && geom.labelOf) {
+    /* **The extra information, around the bar**: whatever the view chose to
+     * read at each side -- left, right, above and below, as Project's bar
+     * styles place it; the application knows what a field means, so it hands
+     * the text over. A pass of its own, after the bars, because the loop above
+     * `continue`s past every kind of bar and because it sets a font the rest of
+     * the frame must not inherit. It is cut at the plot's edge: a label that
+     * runs off the pane is clipped, not wrapped under the next row.
+     *
+     * Left and right are written at the size of the ruler, level with the bar;
+     * above and below have the few pixels between the bar and the row's edge,
+     * so they take the smallest type and sit centred over (or under) the bar. */
+    const sides = GANTT_LABEL_SIDES.filter((key) => fmt[key]);
+    if (sides.length && geom.labelOf) {
         p.Push();
         p.ClipRectangle(plotX, 0, width - plotX, height);
-        p.Font = "Sans 9";
-        p.Color = c.ink;
         const leaves = {};
         for (const row of rows)
             for (const edge of row.Links) leaves[edge.PredecessorUID] = true;
-        for (let i = 0; i < rows.length; i++) {
-            const task = rows[i];
-            const first = top(i);
-            if (first + rowH <= headH || first >= height) continue;
-            const s = whenMs(task.Start), f = whenMs(task.Finish);
-            if (s === null || f === null) continue;
-            const text = geom.labelOf(task, fmt.label);
-            if (!text) continue;
-            const end = x(Math.max(s, f)) +
-                        (task.Milestone ? msR : 0);
-            const tx = end + 6, th = p.TextHeight(text);
-            const ty = first + (rowH - th) / 2;
-            /* A task with a link leaving it has a line running through the
-             * place the label goes: the label sits on a veil of the ground's
-             * own colour so the line does not strike through the words. */
-            if (fmt.links && leaves[task.UID]) {
+        /* A task with a link leaving it has a line running through the place a
+         * label goes: the label sits on a veil of the ground's own colour so
+         * the line does not strike through the words. */
+        const write = (text, tx, ty, veil) => {
+            if (veil) {
                 p.Color = fade(c.paper, 0.88);
-                p.Rectangle(tx - 2, ty - 1, p.TextWidth(text) + 4, th + 2);
+                p.Rectangle(tx - 2, ty - 1, p.TextWidth(text) + 4, p.TextHeight(text) + 2);
                 p.Fill();
-                p.Color = c.ink;
             }
+            p.Color = c.ink;
             p.Text(text, tx, ty);
+        };
+        for (const side of sides) {
+            const level = side === "label" || side === "labelLeft";
+            /* The type follows the row down when the rows are short -- a sheet
+             * fitted to fewer pages -- and is never larger than on screen. */
+            p.Font = level ? `Sans ${Math.max(5, Math.min(9, Math.round(rowH * 0.5)))}`
+                           : `Sans ${Math.max(4, Math.min(7, Math.round(rowH * 0.38)))}`;
+            for (let i = 0; i < rows.length; i++) {
+                const task = rows[i];
+                const first = top(i);
+                if (first + rowH <= headH || first >= height) continue;
+                const s = whenMs(task.Start), f = whenMs(task.Finish);
+                if (s === null || f === null) continue;
+                const text = geom.labelOf(task, fmt[side]);
+                if (!text) continue;
+                const reach = task.Milestone ? msR : 0;
+                const x0 = x(Math.min(s, f)) - reach, x1 = x(Math.max(s, f)) + reach;
+                const tw = p.TextWidth(text), th = p.TextHeight(text);
+                const y = first + (rowH - barH) / 2;
+                if (side === "label") {
+                    write(text, x1 + 6, first + (rowH - th) / 2,
+                          fmt.links && leaves[task.UID]);
+                } else if (side === "labelLeft") {
+                    write(text, x0 - 6 - tw, first + (rowH - th) / 2, false);
+                } else {
+                    const tx = (x0 + x1) / 2 - tw / 2;
+                    const ty = side === "labelTop"
+                             ? (task.Milestone ? cy(i) - msR : y) - th
+                             : (task.Milestone ? cy(i) + msR : y + barH);
+                    write(text, tx, ty, false);
+                }
+            }
         }
         p.Pop();
     }

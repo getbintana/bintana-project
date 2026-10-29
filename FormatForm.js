@@ -1,6 +1,6 @@
 /*
  * How the chart looks, and what it says beside each bar: the colours, the one
- * field written to the right of the bar, the bar's size and what is drawn at
+ * fields written left, right, above and below the bar, the bar's size and what is drawn at
  * all -- critical colouring, progress, dependencies, today's line. It is a view
  * setting, like the columns and the timescale: it is remembered, it does not
  * touch the file, and a chart exported to a file wears it too.
@@ -19,6 +19,12 @@ const COLOR_FIELD = { barColor: "ClrBar", lateColor: "ClrLate", todayColor: "Clr
 const LABEL_KEYS = ["", "name", "resources", "percent", "dates", "duration",
                     "work", "cost", "wbs"];
 
+/* The four places a field can be written around a bar, as Project's bar styles
+ * offer them, and the combo that chooses each. `label` is the right, which was
+ * the only one before there were four, so a remembered choice keeps its place. */
+const LABEL_FIELD = { labelLeft: "CmbLabelLeft", label: "CmbLabel",
+                      labelTop: "CmbLabelTop", labelBottom: "CmbLabelBottom" };
+
 /* Where each choice is kept. */
 const FORMAT_KEY = "bintana-project.format.";
 
@@ -26,7 +32,8 @@ const FORMAT_KEY = "bintana-project.format.";
 export function loadFormat() {
     const fmt = {};
     fmt.theme    = Settings.Get(FORMAT_KEY + "theme", GANTT_FORMAT.theme);
-    fmt.label    = Settings.Get(FORMAT_KEY + "label", GANTT_FORMAT.label);
+    for (const key of GANTT_LABEL_SIDES)
+        fmt[key] = Settings.Get(FORMAT_KEY + key, GANTT_FORMAT[key]);
     fmt.size     = Number(Settings.Get(FORMAT_KEY + "size", GANTT_FORMAT.size));
     fmt.critical = Settings.Get(FORMAT_KEY + "critical", GANTT_FORMAT.critical);
     fmt.progress = Settings.Get(FORMAT_KEY + "progress", GANTT_FORMAT.progress);
@@ -50,8 +57,10 @@ export class FormatForm extends Form {
         dlg.Modal   = true;
 
         dlg.CmbTheme.Index = GANTT_THEME_IDS.indexOf(fmt.theme);
-        const label = LABEL_KEYS.indexOf(fmt.label);
-        dlg.CmbLabel.Index = label >= 0 ? label : 0;
+        for (const key of GANTT_LABEL_SIDES) {
+            const label = LABEL_KEYS.indexOf(fmt[key]);
+            dlg[LABEL_FIELD[key]].Index = label >= 0 ? label : 0;
+        }
         dlg.CmbSize.Index  = fmt.size;
         dlg.ChkCritical.Active = fmt.critical;
         dlg.ChkProgress.Active = fmt.progress;
@@ -71,9 +80,11 @@ export class FormatForm extends Form {
     values() {
         const colors = {};
         for (const key of GANTT_CUSTOM_COLORS) colors[key] = this[COLOR_FIELD[key]].Value;
+        const labels = {};
+        for (const key of GANTT_LABEL_SIDES)
+            labels[key] = LABEL_KEYS[this[LABEL_FIELD[key]].Index] || "";
         return ganttFormat({
             theme:    GANTT_THEME_IDS[this.CmbTheme.Index],
-            label:    LABEL_KEYS[this.CmbLabel.Index] || "",
             size:     this.CmbSize.Index,
             critical: this.ChkCritical.Active,
             progress: this.ChkProgress.Active,
@@ -82,6 +93,7 @@ export class FormatForm extends Form {
             rows:     this.ChkRows.Active,
             grid:     this.ChkGrid.Active,
             idle:     this.ChkIdle.Active,
+            ...labels,
             ...colors,
         });
     }
