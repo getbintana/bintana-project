@@ -54,6 +54,27 @@
                 },
                 {
                   "type": "Label",
+                  "name": "LblKind",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Print"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbKind",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Table",
+                      "Gantt chart"
+                    ],
+                    "Text": "Table"
+                  }
+                },
+                {
+                  "type": "Label",
                   "name": "LblTitle",
                   "properties": {
                     "HAlign": "Start",
@@ -222,6 +243,197 @@
                     "Max": 50,
                     "Min": 0
                   }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblGanttSetup",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Style": "heading",
+                    "Text": "Gantt chart",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkMural",
+                  "properties": {
+                    "Text": "Continuous mural (sheets to join)",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblOverlap",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Overlap to glue (mm)",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnOverlap",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 30,
+                    "Min": 0,
+                    "Value": 7,
+                    "Enabled": false,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkGuide",
+                  "properties": {
+                    "Text": "Include an assembly guide",
+                    "Active": true,
+                    "Enabled": false,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblWide",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Pages across",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnWide",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 20,
+                    "Min": 1,
+                    "Value": 1,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkTall",
+                  "properties": {
+                    "Text": "Fit to pages tall",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnTall",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 20,
+                    "Min": 1,
+                    "Value": 1,
+                    "Enabled": false,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblTable",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Table width (%)",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnTable",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 70,
+                    "Min": 15,
+                    "Value": 45,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkRepeat",
+                  "properties": {
+                    "Text": "Repeat the table on every page",
+                    "Active": true,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkPhases",
+                  "properties": {
+                    "Text": "Start each phase on a new page",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkPack",
+                  "properties": {
+                    "Text": "Join short phases on one page",
+                    "Enabled": false,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "CheckButton",
+                  "name": "ChkLegend",
+                  "properties": {
+                    "Text": "Show the legend",
+                    "Active": true,
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblFrom",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "From",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "DatePicker",
+                  "name": "DateFrom",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Value": "",
+                    "Placeholder": "Plan start",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblTo",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "To",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "DatePicker",
+                  "name": "DateTo",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Value": "",
+                    "Placeholder": "Plan finish",
+                    "Visible": false
+                  }
+                },
+                {
+                  "type": "Button",
+                  "name": "BtnWholePlan",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Whole plan",
+                    "Visible": false
+                  }
                 }
               ]
             }
@@ -245,6 +457,18 @@
                 "Expand": true,
                 "HExpand": true,
                 "VExpand": true,
+                "Width": 480,
+                "Height": 640
+              }
+            },
+            {
+              "type": "DrawingArea",
+              "name": "Sheet",
+              "properties": {
+                "Expand": true,
+                "HExpand": true,
+                "VExpand": true,
+                "Visible": false,
                 "Width": 480,
                 "Height": 640
               }

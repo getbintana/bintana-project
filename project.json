@@ -26,6 +26,7 @@
     "OptionsForm.js",
     "StatsForm.js",
     "PlanReport.js",
+    "GanttPrint.js",
     "ReportForm.js",
     "MainForm.js"
   ],

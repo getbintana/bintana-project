@@ -686,6 +686,9 @@ function roundedBar(p, x, y, w, h, r) {
     p.ClosePath();
 }
 
+/* What a painter would say of a sheet of paper, for `ganttPalette`. */
+export const GANTT_PAPER = { Dark: false, Foreground: "#000000" };
+
 export function drawGantt(p, width, height, rows, selected, step, drag, baseline, geom) {
     const g = ganttGeometry(rows, width, height, step, geom);
     rows = g.rows;
@@ -699,7 +702,10 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
     }
     const range = g.range;
     const fmt = ganttFormat(geom.format);
-    const c = ganttPalette(p, fmt.theme, fmt);
+    /* **Paper is white and ink is black, whatever the screen's theme**: a
+     * chart being printed takes the light palette even when the preview it is
+     * drawn into sits in a dark window. */
+    const c = ganttPalette(geom.print ? GANTT_PAPER : p, fmt.theme, fmt);
 
     const plotX = g.plotX, plotW = g.plotW;
     const x = g.x;
@@ -757,6 +763,15 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
         if (x1 <= plotX || x0 >= width) continue;
         p.Rectangle(x0, 0, Math.max(x1 - x0, 1), height);
         p.Fill();
+    }
+
+    /* **A printed sheet holds a slice of the rows**, and a link from a row on
+     * the sheet before arrives from above the first row -- across the ruler,
+     * on paper, where nothing scrolls it away. So the rows are kept under the
+     * heading there, until the line of today, which crosses both on purpose. */
+    if (geom.print) {
+        p.Push();
+        p.ClipRectangle(0, headH, width, Math.max(0, height - headH));
     }
 
     /* One line per step the rows are ruled by, which is a week while a week fits
@@ -1061,6 +1076,8 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             p.Text(drag.label, Math.min(drag.px + 12, width - 120), drag.py - 20);
         }
     }
+
+    if (geom.print) p.Pop();
 
     /* Today, when it is on the chart. Dashed, so it reads as a ruler rather than
      * as a task. */

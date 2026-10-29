@@ -1658,3 +1658,84 @@ msgstr "Nombres de los recursos"
 
 msgid "{0} is not a resource -- try Ana; Bruno[50%]"
 msgstr "{0} no es un recurso -- probá Ana; Bruno[50%]"
+
+msgid "Print"
+msgstr "Imprimir"
+
+msgid "Gantt chart"
+msgstr "Diagrama de Gantt"
+
+msgid "Pages across"
+msgstr "Páginas de ancho"
+
+msgid "Repeat the table on every page"
+msgstr "Repetir la tabla en cada página"
+
+msgid "Printed {0}"
+msgstr "Impreso el {0}"
+
+msgid "Row {0}, column {1}"
+msgstr "Fila {0}, columna {1}"
+
+msgid "Page {0} of {1}"
+msgstr "Página {0} de {1}"
+
+msgid "Critical task"
+msgstr "Tarea crítica"
+
+msgid "Summary task"
+msgstr "Tarea resumen"
+
+msgid "Missed deadline"
+msgstr "Fecha límite vencida"
+
+msgid "Today"
+msgstr "Hoy"
+
+msgid "Non-working time"
+msgstr "Tiempo no laborable"
+
+msgid "Fit to pages tall"
+msgstr "Ajustar a páginas de alto"
+
+msgid "Table width (%)"
+msgstr "Ancho de la tabla (%)"
+
+msgid "Start each phase on a new page"
+msgstr "Cada fase en una página nueva"
+
+msgid "Show the legend"
+msgstr "Mostrar la leyenda"
+
+msgid "Plan start"
+msgstr "Comienzo del plan"
+
+msgid "Plan finish"
+msgstr "Fin del plan"
+
+msgid "Whole plan"
+msgstr "Todo el plan"
+
+msgid "Join short phases on one page"
+msgstr "Juntar fases cortas en una página"
+
+msgid "Continuous mural (sheets to join)"
+msgstr "Mural continuo (hojas para unir)"
+
+msgid "Overlap to glue (mm)"
+msgstr "Solapamiento para pegar (mm)"
+
+msgid "Include an assembly guide"
+msgstr "Incluir guía de armado"
+
+msgid "Assembly guide"
+msgstr "Guía de armado"
+
+msgid "{0} sheets: {1} across and {2} down, in the order below."
+msgstr "{0} hojas: {1} de ancho y {2} de alto, en el orden de abajo."
+
+msgid "Trim the margins of each sheet at the corner marks."
+msgstr "Recortá los márgenes de cada hoja por las marcas de las esquinas."
+
+msgid "Glue each sheet over the strip of its neighbour, with its edge on the meeting marks (▲ ▶)."
+msgstr "Pegá cada hoja sobre la franja de su vecina, con el borde sobre las marcas de encuentro (▲ ▶)."

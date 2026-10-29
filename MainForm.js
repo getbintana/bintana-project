@@ -3330,7 +3330,9 @@ export class MainForm extends Form {
     ActReport_Execute() {
         if (!this.holder) return;
         this.reportForm = ReportForm.open(this.holder.project, this.path,
-                                          (text) => this.log(text));
+                                          (text) => this.log(text),
+                                          { format: this.format, labelOf: this.labelOf(),
+                                            calendar: this.chartCal || null });
     }
 
     /* The plan as it stands, kept so a later date can be compared with it: one
@@ -4294,11 +4296,16 @@ export class MainForm extends Form {
                   `${same ? "ok" : "FAILED"}`);
             return same;
         };
-        /* Settings are the user's: put back whatever the dialog wrote. */
+        /* Settings are the user's: put back whatever the dialog wrote -- and
+         * the dialog starts from none of them, so what it is asked below is the
+         * defaults and not whatever the last real report was. */
         const kept = {};
         for (const key of ["path", "summaries", "stripes", "paper", "orientation",
-                           "margins", "tasks", "columns", "zoom"])
+                           "margins", "tasks", "columns", "zoom", "kind", "wide", "repeat",
+                           "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide"]) {
             if (Settings.Has(REPORT_KEY + key)) kept[key] = Settings.Get(REPORT_KEY + key);
+            Settings.Delete(REPORT_KEY + key);
+        }
 
         try {
             const task = (uid, name, level, more) => new MspTask({
@@ -4402,6 +4409,156 @@ export class MainForm extends Form {
             ok = eq("what is previewed is what is saved", !!info && info.Size > 0, true) && ok;
             File.Delete(pdf);
 
+            /* --- the Gantt on paper ------------------------------------------ */
+
+            /* Across: the plan's span spread over the sheets asked for, each
+             * sheet's slice starting where the one before it ended, and as many
+             * sheets down as the rows need. */
+            const one   = ganttPrint(project, "", { kind: "gantt", summaries: true });
+            ok = eq("a short plan is one sheet", one.pages, 1) && ok;
+            const three = ganttPrint(project, "", { kind: "gantt", summaries: true, wide: 3 });
+            ok = eq("three across is three sheets", three.pages, 3) && ok;
+            ok = eq("the slices meet", three.slice(0).to === three.slice(1).from &&
+                                       three.slice(1).to === three.slice(2).from, true) && ok;
+            ok = eq("and cover the plan", three.slice(0).from === three.range.from &&
+                                          Math.abs(three.slice(2).to - three.range.to) < 1,
+                    true) && ok;
+            const bare  = ganttPrint(project, "", { kind: "gantt", wide: 3, repeat: false });
+            ok = eq("without the table repeated, later sheets give its room to the chart",
+                    bare.slice(1).to - bare.slice(1).from >
+                    bare.slice(0).to - bare.slice(0).from, true) && ok;
+            const many = new MspProject({
+                Name: "Larga", StartDate: "2026-09-07T08:00:00",
+                Tasks: Array.from({ length: 80 }, (_, i) => task(i + 1, `T${i + 1}`, 1)),
+            });
+            const tall = ganttPrint(many, "", { kind: "gantt", wide: 2 });
+            ok = eq("down, as many sheets as the rows need",
+                    tall.tall, Math.ceil(80 / tall.perPage)) && ok;
+            ok = eq("across times down", tall.pages, tall.tall * 2) && ok;
+
+            /* Down: the rows shared out evenly, a summary never left alone at
+             * the foot of a sheet, and a sheet per phase when asked. */
+            const span = (sheets) => sheets.map(([a, b]) => b - a).join(",");
+            const flat = Array.from({ length: 44 }, (_, i) => ({ Summary: false, OutlineLevel: 1 }));
+            ok = eq("44 rows at 40 a sheet are two of 22", span(ganttSheets(flat, 40, false)),
+                    "22,22") && ok;
+            const orphan = Array.from({ length: 10 }, (_, i) =>
+                ({ Summary: i === 4, OutlineLevel: i === 4 ? 1 : 2 }));
+            ok = eq("a summary is not the last row of a sheet",
+                    span(ganttSheets(orphan, 6, false)), "4,6") && ok;
+            const phased = [
+                { Summary: true, OutlineLevel: 0 },
+                { Summary: true, OutlineLevel: 1 }, { Summary: false, OutlineLevel: 2 },
+                { Summary: false, OutlineLevel: 2 },
+                { Summary: true, OutlineLevel: 1 }, { Summary: false, OutlineLevel: 2 },
+            ];
+            ok = eq("a sheet per phase, the project's summary with the first",
+                    span(ganttSheets(phased, 40, true)), "4,2") && ok;
+            ok = eq("and one sheet without", span(ganttSheets(phased, 40, false)), "6") && ok;
+            /* Joined: phases that fit whole share a sheet, and one that does
+             * not still starts its own. */
+            const trio = [
+                { Summary: true, OutlineLevel: 1 }, { Summary: false, OutlineLevel: 2 },
+                { Summary: false, OutlineLevel: 2 },
+                { Summary: true, OutlineLevel: 1 }, { Summary: false, OutlineLevel: 2 },
+                { Summary: true, OutlineLevel: 1 }, { Summary: false, OutlineLevel: 2 },
+                { Summary: false, OutlineLevel: 2 }, { Summary: false, OutlineLevel: 2 },
+            ];
+            ok = eq("short phases joined on one sheet",
+                    span(ganttSheets(trio, 5, true, true)), "5,4") && ok;
+            ok = eq("but not when not asked", span(ganttSheets(trio, 5, true, false)),
+                    "3,2,4") && ok;
+
+            /* Fit to sheets tall: the rows get shorter until they fit. */
+            const fit = ganttPrint(many, "", { kind: "gantt", tall: 2 });
+            ok = eq("fit to two sheets tall", fit.tall, 2) && ok;
+            ok = eq("by shorter rows", fit.rowH < 18, true) && ok;
+            const tiny = ganttPrint(new MspProject({ Name: "Enorme",
+                Tasks: Array.from({ length: 400 }, (_, i) => task(i + 1, `T${i + 1}`, 1)) }),
+                "", { kind: "gantt", tall: 1 });
+            ok = eq("but not shorter than can be read", tiny.rowH, 9) && ok;
+            ok = eq("so more sheets are the answer", tiny.tall > 1, true) && ok;
+
+            /* The dates printed: each end on its own, the other the plan's. */
+            const dated = ganttPrint(project, "", { kind: "gantt", from: "2026-09-08" });
+            ok = eq("a range starts where it was asked",
+                    dated.range.from, localMs(2026, 8, 8)) && ok;
+            ok = eq("and ends where the plan does", dated.range.to, one.range.to) && ok;
+            const wrong = ganttPrint(project, "", { kind: "gantt", from: "2026-09-10",
+                                                     to: "2026-09-01" });
+            ok = eq("a range backwards is the plan's", wrong.range.from, one.range.from) && ok;
+
+            /* The mural: one picture, cut into tiles that overlap, with a guide
+             * first; the picture is as wide as the tiles across less what they
+             * share. */
+            const mural = ganttPrint(many, "", { kind: "gantt", mural: true, wide: 3 });
+            ok = eq("a mural is its tiles and a guide",
+                    mural.pages, mural.wide * mural.tall + 1) && ok;
+            ok = eq("tiles share the overlap",
+                    mural.mural.W, 3 * mural.mural.stepW + mural.mural.lap) && ok;
+            ok = eq("and no guide when not asked",
+                    ganttPrint(many, "", { kind: "gantt", mural: true, wide: 3, guide: false })
+                        .pages, mural.wide * mural.tall) && ok;
+            ok = eq("nor for a mural of one sheet",
+                    ganttPrint(project, "", { kind: "gantt", mural: true }).pages, 1) && ok;
+            const muralText = (n) => {
+                const log = new CallLog();
+                mural.draw(log, n, mural.width, mural.height, false);
+                return log.calls.filter((c) => c.name === "Text")
+                                .map((c) => String(c.args[0]).trim());
+            };
+            ok = eq("the guide comes first",
+                    muralText(1).some((t) => t.endsWith(Locale.Text("Assembly guide"))), true) && ok;
+            /* The table is drawn once, at the mural's left: the first tile has
+             * the names and the second one across has none. */
+            ok = eq("the names are on the first tile", muralText(2).includes("T1"), true) && ok;
+            ok = eq("and not repeated on the next", muralText(3).includes("T1"), false) && ok;
+            ok = eq("a tile says where it goes",
+                    muralText(3).some((t) => t.startsWith(Locale.Text("Row {0}, column {1}", 1, 2))),
+                    true) && ok;
+
+            /* The legend names what is there and nothing else. */
+            ok = eq("the legend has the critical bar and summaries, no milestone",
+                    ["critical", "summary"].every((k) => one.legend.includes(k)) &&
+                    !one.legend.includes("milestone"), true) && ok;
+            ok = eq("and none when it is not wanted",
+                    ganttPrint(project, "", { kind: "gantt", legend: false }).legend.length,
+                    0) && ok;
+
+            /* Every sheet carries the table and the ruler: the name of a row
+             * is on the second sheet across as well as on the first. */
+            const sheetLog = (lay, n) => {
+                const log = new CallLog();
+                lay.draw(log, n, lay.width, lay.height, false);
+                return log.calls.filter((c) => c.name === "Text").map((c) => String(c.args[0]).trim());
+            };
+            ok = eq("the table is on the second sheet too",
+                    sheetLog(three, 2).includes("Planos"), true) && ok;
+            ok = eq("but not when it is not repeated",
+                    sheetLog(bare, 2).includes("Planos"), false) && ok;
+            ok = eq("a sheet says where it sits in the mural",
+                    sheetLog(three, 2).includes(Locale.Text("Row {0}, column {1}", 1, 2)),
+                    true) && ok;
+
+            dlg.CmbKind.Index = 1;
+            ok = eq("the dialog previews the chart", dlg.Sheet.Visible && !dlg.Preview.Visible,
+                    true) && ok;
+            dlg.SpnWide.Value = 2;
+            ok = eq("and counts its sheets", dlg.LblPage.Text, `1 / ${dlg.layout.pages}`) && ok;
+            dlg.DateFrom.Value = "2026-09-08";
+            ok = eq("a date picked reaches the chart", dlg.layout.range.from,
+                    localMs(2026, 8, 8)) && ok;
+            dlg.BtnWholePlan_Click();
+            ok = eq("and the whole plan is one button away", dlg.DateFrom.Value, "") && ok;
+            const gpdf = File.Join(Environment.TempDirectory, "bintana-project-gantt-check.pdf");
+            dlg.savePdf(gpdf);
+            const ginfo = File.Info(gpdf);
+            ok = eq("the chart's sheets are saved", !!ginfo && ginfo.Size > 0, true) && ok;
+            File.Delete(gpdf);
+            dlg.CmbKind.Index = 0;
+            ok = eq("and the table comes back", dlg.Preview.Visible && !dlg.Sheet.Visible,
+                    true) && ok;
+
             dlg.BtnClose_Click();
             ok = eq("the choices are kept", Settings.Get(REPORT_KEY + "orientation", ""),
                     "Portrait") && ok;
@@ -4410,7 +4567,8 @@ export class MainForm extends Form {
             ok = false;
         } finally {
             for (const key of ["path", "summaries", "stripes", "paper", "orientation",
-                               "margins", "tasks", "columns", "zoom"]) {
+                               "margins", "tasks", "columns", "zoom", "kind", "wide",
+                               "repeat", "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide"]) {
                 if (Dictionary.Has(kept, key)) Settings.Set(REPORT_KEY + key, kept[key]);
                 else                           Settings.Delete(REPORT_KEY + key);
             }

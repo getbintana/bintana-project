@@ -553,6 +553,56 @@ lleva y cómo:
   juntas. Sin la columna de costo no hay total.
 - **Papel**, **orientación** y **márgenes** en milímetros.
 
+Con **Imprimir: Diagrama de Gantt** la misma vista previa muestra el Gantt en
+papel, con la tabla de las columnas elegidas a la izquierda:
+
+- **Páginas de ancho**: en cuántas hojas se reparte el tiempo del plan. La
+  escala (días, semanas o meses) se recalcula para ese ancho en vez de achicar
+  la letra.
+- Hacia abajo salen las hojas que pidan las filas, siempre con filas enteras
+  y repartidas parejo (44 filas son dos hojas de 22, no una llena y otra con
+  4). Un resumen nunca queda solo al pie de una hoja: pasa a la siguiente con
+  sus tareas.
+- **Ajustar a páginas de alto**: las filas se achican hasta entrar en esa
+  cantidad de hojas, con la letra acompañando. Hay un mínimo legible (9 pt por
+  fila); si ni así entra, salen más hojas.
+- **Ancho de la tabla (%)**: cuánto de la hoja puede ocupar la tabla.
+- **Repetir la tabla en cada página**: cada hoja lleva los nombres y las
+  columnas, así cualquiera se lee suelta. Sin esto, las hojas de la derecha le
+  dan ese lugar al gráfico.
+- **Cada fase en una página nueva**: una fase es un resumen del nivel más alto
+  que tenga al menos dos; el resumen del proyecto va con la primera. Con
+  **Juntar fases cortas en una página**, las fases seguidas que entran enteras
+  comparten hoja; una fase nunca se parte para llenar una, y la que no entra
+  entera empieza hoja nueva.
+- **Mostrar la leyenda**: al pie de cada hoja, solo con lo que efectivamente
+  aparece en las fechas impresas (tarea crítica si hay alguna, hito si hay
+  alguno, hoy si cae en el rango…).
+- **Desde / Hasta**: las fechas a imprimir. Cada una sola también vale (por
+  ejemplo, solo *Desde* hoy, y el fin es el del plan). **Todo el plan** las
+  vacía. No se recuerdan entre proyectos.
+- Cada hoja trae su propia regla de tiempo, las fechas que cubre en el
+  encabezado y, al pie, la fecha de impresión, su lugar en el mural (fila y
+  columna) y el número de página. El gráfico usa el formato elegido en
+  **Formato del gráfico** (textos junto a las barras incluidos), sobre papel
+  blanco aunque la ventana esté en modo oscuro.
+
+Con **Mural continuo (hojas para unir)**, el Gantt se dibuja como una sola
+imagen —el título y la regla una vez arriba, la tabla una vez a la izquierda,
+la leyenda al pie— y se corta en hojas para pegar en la pared:
+
+- **Páginas de ancho** y **Ajustar a páginas de alto** fijan el tamaño del
+  mural; el resto de las opciones del Gantt (fechas, ancho de la tabla,
+  leyenda) valen igual. Repetir la tabla y las fases no aplican.
+- **Solapamiento para pegar (mm)**: cada hoja repite, en su borde izquierdo y
+  superior, la franja final de su vecina. Esa franja queda debajo al pegar, así
+  que nada se pierde en el corte (por defecto 7 mm; 0 para unir a tope).
+- En los márgenes de cada hoja van las **marcas de corte** en las esquinas, las
+  **marcas de encuentro** (▲ ▶) donde apoya el borde de la hoja vecina, su
+  lugar en el mural (fila, columna y página) y un mapita con la hoja marcada.
+- **Incluir guía de armado**: una primera página con el mural entero en
+  miniatura, la grilla de hojas numerada encima y cómo armarlo.
+
 Abajo están las páginas (◀ n / N ▶), el **zoom** —página entera, ancho de la
 ventana o de 50 a 200 %— y las salidas: **Guardar PDF…** e **Imprimir…**. Lo
 que se ve es lo que se guarda y se imprime. Las elecciones se recuerdan para la

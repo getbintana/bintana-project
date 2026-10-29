@@ -15,7 +15,7 @@
  * are drawn. The widths are points at their natural size; the name takes what
  * is left of the line, and on paper too narrow for all of them the rest are
  * shrunk together rather than run off the edge. */
-const REPORT_COLUMNS = [
+export const REPORT_COLUMNS = [
     { id: "start",    field: "Start",    width: 70 },
     { id: "finish",   field: "Finish",   width: 70 },
     { id: "duration", field: "Duration", width: 60, align: "Right" },
@@ -25,7 +25,7 @@ const REPORT_COLUMNS = [
 ];
 
 /* The heading of each, written at the call so the extractor finds it. */
-function reportColumnTitle(id) {
+export function reportColumnTitle(id) {
     switch (id) {
     case "start":    return Locale.Text("Start");
     case "finish":   return Locale.Text("Finish");
@@ -52,7 +52,32 @@ const REPORT_DEFAULTS = {
     paper:       "A4",
     orientation: "Landscape",
     margins:     40,
+    /* What is printed: the table alone, or the table beside the chart -- and
+     * then how many sheets across the chart takes, and whether the table is
+     * repeated on every one of them. */
+    kind:        "table",
+    wide:        1,
+    repeat:      true,
+    /* And how the chart is cut down and what it carries: how many sheets tall
+     * at most (0 is as many as the rows need), the table's share of a sheet's
+     * width in percent, a sheet per phase (and short ones together), the legend, and the days printed
+     * (ISO dates; empty is the plan's own end). */
+    tall:        0,
+    table:       45,
+    phases:      false,
+    pack:        false,
+    legend:      true,
+    from:        "",
+    to:          "",
+    /* The mural: the chart drawn once and cut into sheets that overlap by
+     * `overlap` points (7 mm) to be glued, with an assembly guide first. */
+    mural:       false,
+    overlap:     20,
+    guide:       true,
 };
+
+/* What a report can be, by the index of the dialog's combo. */
+export const REPORT_KINDS = ["table", "gantt"];
 
 const REPORT_GAP     = 8;    // between two columns
 const REPORT_NAME_W  = 120;  // the least the task's name is given
@@ -66,6 +91,13 @@ export function reportOptions(o) {
     }
     out.columns = REPORT_COLUMNS.map((c) => c.id).filter((id) => out.columns.includes(id));
     if (!REPORT_TASKS.includes(out.tasks)) out.tasks = "all";
+    if (!REPORT_KINDS.includes(out.kind)) out.kind = "table";
+    out.wide = Math.max(1, Math.min(20, Math.round(Number(out.wide) || 1)));
+    out.tall = Math.max(0, Math.min(20, Math.round(Number(out.tall) || 0)));
+    out.table = Math.max(15, Math.min(70, Math.round(Number(out.table) || 45)));
+    out.overlap = Math.max(0, Math.min(85, Math.round(Number(out.overlap) || 0)));
+    for (const key of ["from", "to"])
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(out[key]))) out[key] = "";
     return out;
 }
 
@@ -78,6 +110,12 @@ export function reportOptions(o) {
  * report's total -- a `Sum` over `Cost` -- counts every task once.
  */
 function reportRows(project, o) {
+    return reportPicks(project, o).map((pick) => pick.row);
+}
+
+/* The same rows with the task each one is of: what a printed Gantt needs, since
+ * its bars are drawn from the task and its table from the row. */
+export function reportPicks(project, o) {
     const tasks = project.Tasks.filter((t) => !t.IsNull);
     const wants = (t) => o.tasks === "critical" ? !!t.Critical
                        : o.tasks === "open"     ? Number(t.PercentComplete || 0) < 100
@@ -115,7 +153,7 @@ function reportRows(project, o) {
 
         const indent = o.summaries
             ? REPORT_INDENT.repeat(Math.max(0, Number(t.OutlineLevel || 0) - 1)) : "";
-        rows.push({
+        rows.push({ task: t, row: {
             Task:     indent + (t.Name || ""),
             Summary:  !!t.Summary,
             Start:    String(t.Start || "").slice(0, 10),
@@ -125,14 +163,14 @@ function reportRows(project, o) {
             Critical: t.Critical ? Locale.Text("Critical") : "",
             Cost:     t.Summary ? 0 : taskCost(project, t),
             RollCost: roll[i],
-        });
+        } });
     });
     return rows;
 }
 
 /* Where each column goes across the printable width: `[{ col, x, width }]`
  * with the task's name first. */
-function reportLayout(width, ids) {
+export function reportLayout(width, ids) {
     const cols  = REPORT_COLUMNS.filter((c) => ids.includes(c.id));
     const gaps  = cols.length * REPORT_GAP;
     const fixed = cols.reduce((sum, c) => sum + c.width, 0);
