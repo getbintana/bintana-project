@@ -25,8 +25,13 @@ const LABEL_KEYS = ["", "name", "resources", "percent", "dates", "duration",
 const LABEL_FIELD = { labelLeft: "CmbLabelLeft", label: "CmbLabel",
                       labelTop: "CmbLabelTop", labelBottom: "CmbLabelBottom" };
 
-/* Where each choice is kept. */
-const FORMAT_KEY = "bintana-project.format.";
+/* Where each choice is kept -- the timescale's too, which its own dialog
+ * writes under the same names. */
+export const FORMAT_KEY = "bintana-project.format.";
+
+/* The format's keys that are the timescale's. */
+export const TIMESCALE_KEYS = ["tiers", "topUnit", "topLabel", "topCount", "topAlign",
+                               "bottomUnit", "bottomLabel", "bottomCount", "bottomAlign"];
 
 /* The chart's format as the last run left it. */
 export function loadFormat() {
@@ -42,7 +47,7 @@ export function loadFormat() {
     fmt.rows     = Settings.Get(FORMAT_KEY + "rows", GANTT_FORMAT.rows);
     fmt.grid     = Settings.Get(FORMAT_KEY + "grid", GANTT_FORMAT.grid);
     fmt.idle     = Settings.Get(FORMAT_KEY + "idle", GANTT_FORMAT.idle);
-    for (const key of GANTT_CUSTOM_COLORS)
+    for (const key of [...GANTT_CUSTOM_COLORS, ...TIMESCALE_KEYS])
         fmt[key] = Settings.Get(FORMAT_KEY + key, GANTT_FORMAT[key]);
     return ganttFormat(fmt);
 }
@@ -54,6 +59,7 @@ export class FormatForm extends Form {
         const fmt = ganttFormat(current);
 
         dlg.onSaved = onSaved;
+        dlg.current = fmt;
         dlg.Modal   = true;
 
         dlg.CmbTheme.Index = GANTT_THEME_IDS.indexOf(fmt.theme);
@@ -83,7 +89,10 @@ export class FormatForm extends Form {
         const labels = {};
         for (const key of GANTT_LABEL_SIDES)
             labels[key] = LABEL_KEYS[this[LABEL_FIELD[key]].Index] || "";
+        /* Over what the chart wears already: the timescale is the format's too,
+         * and this dialog does not ask for it, so it must not reset it. */
         return ganttFormat({
+            ...this.current,
             theme:    GANTT_THEME_IDS[this.CmbTheme.Index],
             size:     this.CmbSize.Index,
             critical: this.ChkCritical.Active,

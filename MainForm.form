@@ -230,6 +230,11 @@
       "icon": "applications-graphics-symbolic"
     },
     {
+      "name": "ActTimescale",
+      "text": "Timescale…",
+      "icon": "x-office-calendar-symbolic"
+    },
+    {
       "name": "ActCopy",
       "text": "Copy Task",
       "icon": "edit-copy-symbolic",
@@ -489,6 +494,9 @@
         },
         {
           "action": "ActFormat"
+        },
+        {
+          "action": "ActTimescale"
         },
         {
           "separator": true

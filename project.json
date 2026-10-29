@@ -22,6 +22,7 @@
     "CalendarsForm.js",
     "ColumnsForm.js",
     "FormatForm.js",
+    "TimescaleForm.js",
     "InsertColumnForm.js",
     "OptionsForm.js",
     "StatsForm.js",

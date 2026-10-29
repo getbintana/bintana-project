@@ -247,7 +247,7 @@ export class MainForm extends Form {
                            this.ActExpandAll, this.ActCollapseAll,
                            this.ActLevel1, this.ActLevel2, this.ActLevel3,
                            this.ActRecalc, this.ActBaseline, this.ActProjData,
-                           this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields, this.ActFormat,
+                           this.ActProjOptions, this.ActCalendar, this.ActResources, this.ActFields, this.ActFormat, this.ActTimescale,
                            this.ActStats])
             act.Enabled = on;
         this.SldZoom.Enabled = on;
@@ -1684,10 +1684,24 @@ export class MainForm extends Form {
         FormatForm.open(this.format, (fmt) => this.setFormat(fmt));
     }
 
+    /* **The timescale, in its own dialog, as Project has it** -- and opened the
+     * way Project opens it too, by a double click on the ruler. Each change is
+     * seen on the chart as it is made; Cancel puts back what there was. */
+    ActTimescale_Execute() {
+        if (!this.holder) return;
+        this.timescaleForm = TimescaleForm.open(this.format,
+            (fmt) => this.setFormat(fmt), (fmt) => this.previewFormat(fmt));
+    }
+
+    Header_DblClick() { this.ActTimescale_Execute(); }
+
     setFormat(fmt) {
         this.format = ganttFormat(fmt);
         this.redrawChart();
     }
+
+    /* A format being tried in a dialog: drawn, not kept. */
+    previewFormat(fmt) { this.setFormat(fmt); }
 
     /* The strip's frame: the heading's height is the list's, so the marks in it
      * sit where the list's own headings do, and `strip` tells the ruler the band
@@ -2146,7 +2160,7 @@ export class MainForm extends Form {
                                 this.rulerGeom());
         p.Push();
         p.Translate(-shift, 0);
-        drawGanttRuler(p, full, g, ganttPalette(p));
+        drawGanttRuler(p, full, g, ganttPalette(p), this.format);
         p.Pop();
     }
 
@@ -4516,6 +4530,60 @@ export class MainForm extends Form {
             ok = eq("a tile says where it goes",
                     muralText(3).some((t) => t.startsWith(Locale.Text("Row {0}, column {1}", 1, 2))),
                     true) && ok;
+
+            /* --- the timescale ------------------------------------------- */
+
+            /* The labels, by example: Wednesday's initial is the translator's
+             * (X in Spanish), and the ISO week of the 1st of January 2027 is
+             * the 53rd of 2026. */
+            ok = eq("a day's initial", timescaleText("dayInitial", new Date(2026, 8, 9)),
+                    Locale.Text("MTWTFSS").charAt(2)) && ok;
+            ok = eq("the ISO week", timescaleText("weekNumber", new Date(2027, 0, 1)),
+                    Locale.Text("W{0}", 53)) && ok;
+            ok = eq("a quarter", timescaleText("quarterYear", new Date(2026, 7, 24)),
+                    Locale.Text("Q{0} {1}", 3, 2026)) && ok;
+            ok = eq("a label of another unit is not this one's",
+                    ganttFormat({ bottomUnit: "weeks", bottomLabel: "dayInitial" }).bottomLabel,
+                    "auto") && ok;
+
+            /* The ruler draws what the tiers say: the initials of the days
+             * under the months, or the months alone with one tier. */
+            const rulerText = (format) => {
+                const log  = new CallLog();
+                const rows = project.Tasks.filter((t) => !t.IsNull);
+                const g = ganttGeometry(rows, 900, 200, 0, { plotX: 0, rowH: 20, headH: 30 });
+                drawGanttRuler(log, 900, g, ganttPalette(log), ganttFormat(format));
+                return log.calls.filter((c) => c.name === "Text").map((c) => c.args[0]);
+            };
+            const initials = rulerText({ bottomUnit: "days", bottomLabel: "dayInitial" });
+            ok = eq("the days by their initials",
+                    [0, 1, 2].every((k) => initials.includes(Locale.Text("MTWTFSS").charAt(k))),
+                    true) && ok;
+            ok = eq("one tier is the top one alone",
+                    rulerText({ tiers: 1 }).some((t) => /^\d+$/.test(t)), false) && ok;
+            const everyTwo = rulerText({ bottomUnit: "days", bottomLabel: "dayNumber",
+                                         bottomCount: 2 });
+            /* Counted from where the chart starts, the day before the plan. */
+            ok = eq("every two days", everyTwo.includes("6") && !everyTwo.includes("7") &&
+                                      everyTwo.includes("8"), true) && ok;
+
+            /* The chart's format dialog does not reset the timescale, and the
+             * timescale's own shows each change and takes it back on Cancel. */
+            const chosen = ganttFormat({ bottomUnit: "days", bottomLabel: "dayShort" });
+            const fdlg = FormatForm.open(chosen, () => {});
+            ok = eq("the format dialog keeps the timescale", fdlg.values().bottomLabel,
+                    "dayShort") && ok;
+            fdlg.BtnCancel_Click();
+            let seen = null;
+            const tdlg = TimescaleForm.open(ganttFormat({}), () => {}, (f) => { seen = f; });
+            tdlg.CmbBottomUnit.Index = TIMESCALE_UNITS.indexOf("days");
+            ok = eq("a unit chosen is seen at once", seen && seen.bottomUnit, "days") && ok;
+            ok = eq("with its labels offered", tdlg.CmbBottomLabel.Items.length,
+                    TIMESCALE_LABELS.days.length) && ok;
+            tdlg.CmbBottomLabel.Index = TIMESCALE_LABELS.days.indexOf("dayInitial");
+            ok = eq("and a label", seen.bottomLabel, "dayInitial") && ok;
+            tdlg.BtnCancel_Click();
+            ok = eq("cancel puts it back", seen.bottomUnit, "auto") && ok;
 
             /* The legend names what is there and nothing else. */
             ok = eq("the legend has the critical bar and summaries, no milestone",

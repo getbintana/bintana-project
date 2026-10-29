@@ -1,0 +1,277 @@
+{
+  "format": "bintana-form/1",
+  "class": "TimescaleForm",
+  "properties": {
+    "Text": "Gantt timescale",
+    "Arrangement": "Vertical",
+    "Spacing": 12,
+    "Padding": "16",
+    "Width": 380,
+    "Resizable": false,
+    "Height": 420
+  },
+  "children": [
+    {
+      "type": "Grid",
+      "name": "Fields",
+      "properties": {
+        "ColumnSpacing": 8,
+        "RowSpacing": 8,
+        "Spacing": 8,
+        "Width": 388
+      },
+      "children": [
+        {
+          "type": "Label",
+          "name": "LblTiers",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Show"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbTiers",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "One tier (top)",
+              "Two tiers (top, bottom)"
+            ],
+            "Text": "One tier (top)"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblTopTier",
+          "properties": {
+            "HAlign": "Start",
+            "Style": "heading",
+            "Text": "Top tier",
+            "ColumnSpan": 2
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblTopUnit",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Units"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbTopUnit",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Automatic",
+              "Years",
+              "Quarters",
+              "Months",
+              "Weeks",
+              "Days"
+            ],
+            "Text": "Automatic"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblTopLabel",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Label"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbTopLabel",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Automatic"
+            ],
+            "Text": "Automatic"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblTopCount",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Count"
+          }
+        },
+        {
+          "type": "SpinBox",
+          "name": "SpnTopCount",
+          "properties": {
+            "HAlign": "Start",
+            "Min": 1,
+            "Max": 99,
+            "Value": 1
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblTopAlign",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Align"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbTopAlign",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Left",
+              "Center"
+            ],
+            "Text": "Left"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblBottomTier",
+          "properties": {
+            "HAlign": "Start",
+            "Style": "heading",
+            "Text": "Bottom tier",
+            "ColumnSpan": 2
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblBottomUnit",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Units"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbBottomUnit",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Automatic",
+              "Years",
+              "Quarters",
+              "Months",
+              "Weeks",
+              "Days"
+            ],
+            "Text": "Automatic"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblBottomLabel",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Label"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbBottomLabel",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Automatic"
+            ],
+            "Text": "Automatic"
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblBottomCount",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Count"
+          }
+        },
+        {
+          "type": "SpinBox",
+          "name": "SpnBottomCount",
+          "properties": {
+            "HAlign": "Start",
+            "Min": 1,
+            "Max": 99,
+            "Value": 1
+          }
+        },
+        {
+          "type": "Label",
+          "name": "LblBottomAlign",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Align"
+          }
+        },
+        {
+          "type": "ComboBox",
+          "name": "CmbBottomAlign",
+          "properties": {
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Index": 0,
+            "Items": [
+              "Left",
+              "Center"
+            ],
+            "Text": "Left"
+          }
+        }
+      ]
+    },
+    {
+      "type": "Panel",
+      "name": "Buttons",
+      "properties": {
+        "Arrangement": "Horizontal",
+        "Height": 34,
+        "Homogeneous": true,
+        "Spacing": 8,
+        "VAlign": "End",
+        "Width": 388
+      },
+      "children": [
+        {
+          "type": "Button",
+          "name": "BtnCancel",
+          "properties": {
+            "Cancel": true,
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Text": "Cancel"
+          }
+        },
+        {
+          "type": "Button",
+          "name": "BtnSave",
+          "properties": {
+            "Default": true,
+            "HAlign": "Fill",
+            "HExpand": true,
+            "Text": "OK"
+          }
+        }
+      ]
+    }
+  ]
+}

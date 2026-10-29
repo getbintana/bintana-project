@@ -530,6 +530,18 @@ fondo.
 - Nada se escribe hasta soltar el botón: un gesto es un Deshacer.
 - **Escala**: Ajustar a la ventana, Días, Semanas, Meses; el gráfico se
   desplaza con sus barras.
+- **Ver → Escala temporal…** (o **doble clic sobre la regla**), como el
+  diálogo de Project: una o dos escalas, y en cada una la **unidad** (años,
+  trimestres, meses, semanas, días o automática), la **etiqueta**, **cada**
+  cuántas unidades y si va **alineada** a la izquierda o centrada. Las
+  etiquetas se eligen por ejemplo: para los días, el número (24, 25, 26…), la
+  inicial (L, M, X…), «Lun», «Lun 24», «24/08» o el nombre entero; para las
+  semanas, el número de semana ISO (S35), el día que empieza, «24 ago» o el
+  rango; para los meses, «Agosto 2026», «Agosto», «Ago», «A», «08/26» o
+  «Ago '26»; trimestres «T3 2026», «T3» o «Trimestre 3»; años «2026» o «'26».
+  Cada cambio se ve en el gráfico al hacerlo y **Cancelar** lo deshace. Cuando
+  la escala inferior tiene unidad propia, la cuadrícula del gráfico sigue sus
+  líneas. Se recuerda con el formato del gráfico y la impresión la usa.
 - **Exportar** (barra o menú Archivo) escribe el gráfico como PNG o PDF -- el
   plan entero desde su primera fila y con los nombres de las tareas, porque un
   archivo no tiene una lista al lado -- para mandárselo a quien no corre la app.

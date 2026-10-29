@@ -370,7 +370,15 @@ export const GANTT_FORMAT = { theme: "classic", size: 1,
                        barColor: "#1c71d8", lateColor: "#c01c28",
                        todayColor: "#e01b24",
                        progressColor: "", linkColor: "", idleColor: "",
-                       baselineColor: "", selectColor: "" };
+                       baselineColor: "", selectColor: "",
+                       /* The timescale, as Project's dialog of that name has
+                        * it: one tier or two, each with its unit, what its
+                        * labels say, every how many units and where in the
+                        * cell. `auto` is the ruler that chooses for itself. */
+                       tiers: 2,
+                       topUnit: "auto", topLabel: "auto", topCount: 1, topAlign: "left",
+                       bottomUnit: "auto", bottomLabel: "auto", bottomCount: 1,
+                       bottomAlign: "left" };
 /* The custom theme's colours; an empty one is the palette's own shade. */
 export const GANTT_CUSTOM_COLORS = ["barColor", "lateColor", "todayColor", "progressColor",
                              "linkColor", "idleColor", "baselineColor", "selectColor"];
@@ -393,6 +401,15 @@ export function ganttFormat(fmt) {
     if (!GANTT_BAR_SIZE[out.size]) out.size = 1;
     for (const key of GANTT_LABEL_SIDES)
         if (typeof out[key] !== "string") out[key] = "";
+    out.tiers = out.tiers === 1 || out.tiers === "1" ? 1 : 2;
+    for (const tier of ["top", "bottom"]) {
+        const unit = out[`${tier}Unit`];
+        if (!TIMESCALE_UNITS.includes(unit)) out[`${tier}Unit`] = "auto";
+        const labels = TIMESCALE_LABELS[out[`${tier}Unit`]];
+        if (!labels.includes(out[`${tier}Label`])) out[`${tier}Label`] = "auto";
+        out[`${tier}Count`] = Math.max(1, Math.min(99, Math.round(Number(out[`${tier}Count`]) || 1)));
+        if (out[`${tier}Align`] !== "center") out[`${tier}Align`] = "left";
+    }
     return out;
 }
 
@@ -463,56 +480,184 @@ const RULER_FONTS = ["Sans 9", "Sans 8", "Sans 7"];
  * frame only compares numbers. */
 const RULER_LINE = [13, 12, 11];
 
-/* The bands of the heading, the way Project reads a timescale: a week over a
- * month, and a day's gridlines falling from the week's edge. A band whose labels
- * would not fit is left out rather than drawn on top of each other. */
-function ganttTimescaleBands(dayW) {
-    const bands = [];
-    /* The month above, named as long as the cell lets it be: the month and the
-     * year, the month, its first three letters, and only then the number --
-     * which is what a month squeezed to a few pixels can still say. The draw
-     * takes the first that fits. */
-    if (dayW >= 3) bands.push({ step: 30, label: (d) => {
-        const name = Locale.Text(MONTH_NAMES[d.getMonth()]);
-        return [`${name} ${d.getFullYear()}`, name, name.slice(0, 3),
-                d.getMonth() === 0 ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
-                                   : `${d.getMonth() + 1}`];
-    } });
-    /* **Under it, only the number of the day**: the month is already above, and
-     * a "24/8" is the widest thing a column of a day can be asked to hold. A
-     * number fits wherever a day is wide enough to be told apart, so it is every
-     * day while a day is wide and every week once it is not. */
-    if (dayW >= 16) bands.push({ step: 1, label: (d) => String(d.getDate()) });
-    else if (dayW >= 6) bands.push({ step: 7, label: (d) => String(d.getDate()) });
-    return bands;
-}
+/* The units a tier of the timescale steps by, in the order the timescale
+ * dialog offers them; `auto` leaves it to the ruler. */
+export const TIMESCALE_UNITS = ["auto", "years", "quarters", "months", "weeks", "days"];
+
+/* What a tier's labels can say, by unit, in the dialog's order. `auto` is the
+ * longest of the unit's spellings that fits the cell. */
+export const TIMESCALE_LABELS = {
+    auto:     ["auto"],
+    years:    ["auto", "year", "yearShort"],
+    quarters: ["auto", "quarterYear", "quarter", "quarterLong"],
+    months:   ["auto", "monthYear", "month", "monthShort", "monthInitial",
+               "monthNumber", "monthShortYear"],
+    weeks:    ["auto", "weekDay", "weekNumber", "weekStart", "weekStartMonth", "weekRange"],
+    days:     ["auto", "dayNumber", "dayInitial", "dayShort", "dayShortNumber",
+               "dayDate", "dayLong"],
+};
 
 const MONTH_NAMES = ["January", "February", "March", "April", "May", "June",
                      "July", "August", "September", "October", "November",
                      "December"];
+const DAY_NAMES   = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
+                     "Saturday", "Sunday"];
+
+/* A day of the month without its year, in the locale's own order: the
+ * locale's date with the year taken out, so "24/08" here and "8/24" where the
+ * month goes first. */
+function dayMonth(d) {
+    const full = String(Locale.Date(d.getTime()));
+    const year = String(d.getFullYear());
+    const at   = full.indexOf(year);
+    if (at < 0) return `${d.getDate()}/${d.getMonth() + 1}`;
+    /* The year and the one separator that joined it to the rest. */
+    const before = full.slice(0, at), after = full.slice(at + year.length);
+    const cut = at > 0 ? before.slice(0, -1) + after : after.slice(1);
+    return cut || `${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+/* The ISO week a day is in: the week of the year's first Thursday is 1. */
+function isoWeek(d) {
+    const t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate() + 3 - (t.getDay() + 6) % 7);
+    const jan4 = new Date(t.getFullYear(), 0, 4);
+    return 1 + Math.round(((t - jan4) / DAY_MS - 3 + (jan4.getDay() + 6) % 7) / 7);
+}
+
+/*
+ * **One label, by its id, for the cell that starts at `d`.** The day's
+ * initials are one translatable string -- "MTWTFSS" -- because they are not
+ * the first letters of the names in every language: in Spanish Wednesday is X
+ * (miércoles and martes both start with M), which is what Project writes.
+ */
+export function timescaleText(id, d) {
+    const y = d.getFullYear(), m = d.getMonth();
+    const month = Locale.Text(MONTH_NAMES[m]);
+    const wd = (d.getDay() + 6) % 7;
+    const day = Locale.Text(DAY_NAMES[wd]);
+    const q = Math.floor(m / 3) + 1;
+    switch (id) {
+    case "year":           return String(y);
+    case "yearShort":      return `'${String(y).slice(2)}`;
+    case "quarter":        return Locale.Text("Q{0}", q);
+    case "quarterYear":    return Locale.Text("Q{0} {1}", q, y);
+    case "quarterLong":    return Locale.Text("Quarter {0}", q);
+    case "monthYear":      return `${month} ${y}`;
+    case "month":          return month;
+    case "monthShort":     return month.slice(0, 3);
+    case "monthInitial":   return month.slice(0, 1);
+    case "monthNumber":    return `${String(m + 1).padStart(2, "0")}/${String(y).slice(2)}`;
+    case "monthShortYear": return `${month.slice(0, 3)} '${String(y).slice(2)}`;
+    case "weekDay":        return String(d.getDate());
+    case "weekNumber":     return Locale.Text("W{0}", isoWeek(d));
+    case "weekStart":      return dayMonth(d);
+    case "weekStartMonth": return `${d.getDate()} ${month.slice(0, 3).toLowerCase()}`;
+    case "weekRange": {
+        const end = new Date(y, m, d.getDate() + 6);
+        return `${dayMonth(d)} – ${dayMonth(end)}`;
+    }
+    case "dayNumber":      return String(d.getDate());
+    case "dayInitial":     return Locale.Text("MTWTFSS").charAt(wd) || day.slice(0, 1);
+    case "dayShort":       return day.slice(0, 3);
+    case "dayShortNumber": return `${day.slice(0, 3)} ${d.getDate()}`;
+    case "dayDate":        return dayMonth(d);
+    case "dayLong":        return day;
+    }
+    return "";
+}
+
+/* What a tier writes in a cell, longest first: the chosen spelling alone, or
+ * for `auto` the unit's own ladder -- the draw takes the first that fits, and
+ * a cell too small for any of them is left without a label. */
+function timescaleLadder(unit, id) {
+    if (id !== "auto") return (d) => [timescaleText(id, d)];
+    switch (unit) {
+    case "years":    return (d) => ["year", "yearShort"].map((k) => timescaleText(k, d));
+    case "quarters": return (d) => ["quarterYear", "quarter"].map((k) => timescaleText(k, d));
+    /* The month named as long as the cell lets it be: the month and the year,
+     * the month, its first three letters, and only then the number -- which is
+     * what a month squeezed to a few pixels can still say. */
+    case "months":   return (d) => [timescaleText("monthYear", d), timescaleText("month", d),
+                                    timescaleText("monthShort", d),
+                                    d.getMonth() === 0
+                                        ? `${d.getMonth() + 1}/${String(d.getFullYear()).slice(2)}`
+                                        : `${d.getMonth() + 1}`];
+    case "weeks":    return (d) => [timescaleText("weekDay", d)];
+    default:         return (d) => [timescaleText("dayNumber", d)];
+    }
+}
+
+/*
+ * **The tiers of the heading**, top first.
+ *
+ * Left to itself (`auto`), the ruler reads a timescale the way Project does: a
+ * month over the days -- only the number of the day, the month being already
+ * above, and every day while a day is wide and every week once it is not. A
+ * tier the view chose is that unit, every so many, with its labels, and it is
+ * drawn whatever the width: a label that does not fit its cell is left out
+ * rather than drawn on top of the next one.
+ */
+function ganttTimescaleBands(dayW, fmt) {
+    const f = fmt || GANTT_FORMAT;
+    const autoTop = dayW >= 3 ? "months" : null;
+    const autoBottom = dayW >= 16 ? "days" : dayW >= 6 ? "weeks" : null;
+    const tier = (which, fallback) => {
+        const chosen = f[`${which}Unit`];
+        const unit = chosen && chosen !== "auto" ? chosen : fallback;
+        if (!unit) return null;
+        const label = chosen && chosen !== "auto" ? f[`${which}Label`] || "auto" : "auto";
+        return { unit, count: chosen && chosen !== "auto" ? f[`${which}Count`] || 1 : 1,
+                 label: timescaleLadder(unit, label),
+                 align: f[`${which}Align`] === "center" ? "center" : "left" };
+    };
+    const bands = [tier("top", autoTop)];
+    if (f.tiers !== 1) bands.push(tier("bottom", autoBottom));
+    return bands.filter((b) => b);
+}
+
+/* The unit the rows are ruled by when the view chose one: the lowest tier
+ * shown, if it is not left to the ruler. Null leaves the grid to the width. */
+function timescaleGrid(fmt) {
+    if (!fmt) return null;
+    const which = fmt.tiers === 1 ? "top" : "bottom";
+    const unit = fmt[`${which}Unit`];
+    return unit && unit !== "auto" ? { unit, count: fmt[`${which}Count`] || 1 } : null;
+}
 
 /*
  * **The instants a ruler or a grid falls on**, stepped on the wall clock as
  * `WorkCalendar` steps its days (Schedule.js, `localMs`): every local midnight
- * for a step of one, every Monday for a week, the first of every month for a
- * month. Stepping by multiples of 24 hours from a UTC day put every tick at
- * 21:00 of the day before in Buenos Aires and drifted an hour across a clock
- * change, and thirty days is not a month -- February never got a label. `cap`
- * is the frame's guard against a corrupt range.
+ * for days, every Monday for weeks, the first of every month, quarter or year.
+ * Stepping by multiples of 24 hours from a UTC day put every tick at 21:00 of
+ * the day before in Buenos Aires and drifted an hour across a clock change,
+ * and thirty days is not a month -- February never got a label. `count` is
+ * every how many units, from the first; `cap` is the frame's guard against a
+ * corrupt range.
  */
-function ganttTicks(range, step, cap) {
+function unitTicks(range, unit, count, cap) {
     const ticks = [];
     if (!range) return ticks;
     const d = new Date(range.from);
-    const y = d.getFullYear(), m = d.getMonth();
-    let day = d.getDate();
-    if (step === 7) day -= (d.getDay() + 6) % 7;   // back to the Monday
+    const y = d.getFullYear(), m = d.getMonth(), day = d.getDate();
+    const k = Math.max(1, Math.round(count) || 1);
+    const monday = day - (d.getDay() + 6) % 7;
     for (let n = 0; n <= cap; n++) {
-        const t = step >= 28 ? localMs(y, m + n, 1) : localMs(y, m, day + n * step);
+        const t = unit === "years"    ? localMs(y + n * k, 0, 1)
+                : unit === "quarters" ? localMs(y, m - m % 3 + n * 3 * k, 1)
+                : unit === "months"   ? localMs(y, m + n * k, 1)
+                : unit === "weeks"    ? localMs(y, m, monday + n * 7 * k)
+                :                       localMs(y, m, day + n * k);
         if (t > range.to) break;
         ticks.push(t);
     }
     return ticks;
+}
+
+/* The same by a step in days, which is how the scale presets name theirs: a
+ * day, a week, and anything of 28 or more a month. */
+function ganttTicks(range, step, cap) {
+    return unitTicks(range, step >= 28 ? "months" : step === 7 ? "weeks" : "days", 1, cap);
 }
 
 /*
@@ -584,7 +729,7 @@ export function rulerHasRange(g) {
  * the band is drawn here as a shade over the ground, so it sits on the theme's
  * rather than guessing one.
  */
-export function drawGanttRuler(p, width, g, c) {
+export function drawGanttRuler(p, width, g, c, fmt) {
     const headH = g.headH;
     if (!(headH > 0)) return;
     const range = rulerRange(g);
@@ -617,7 +762,7 @@ export function drawGanttRuler(p, width, g, c) {
      * into six pixels is four labels on top of each other, which is what the
      * first ruler did at a narrow timescale. */
     const bodyFont = p.Font;
-    const bands = ganttTimescaleBands(dayW);
+    const bands = ganttTimescaleBands(dayW, fmt);
     let font = 0;
     while (font < RULER_FONTS.length - 1 &&
            bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
@@ -639,11 +784,16 @@ export function drawGanttRuler(p, width, g, c) {
         p.LineTo(width, y);
         p.Stroke();
         p.Color = c.dim;
-        const ticks = ganttTicks(range, band.step, 400);
+        const ticks = unitTicks(range, band.unit, band.count, 400);
+        let drawn = -Infinity;
         for (let i = 0; i < ticks.length; i++) {
             const t = ticks[i];
             let at = g.x(t);
             if (at > width) break;
+            /* A unit narrower than a few pixels is a smear of lines, not a
+             * ruler: the lines too close to the last one are left out. */
+            if (at - drawn < 3) continue;
+            drawn = at;
             /* The week or month the range starts in begins before it: no
              * line, and its label at the plot's edge when it fits before the
              * next one -- a short plan is otherwise a ruler with no words. */
@@ -655,12 +805,14 @@ export function drawGanttRuler(p, width, g, c) {
                 p.LineTo(at, headH);
                 p.Stroke();
             }
-            const fit = Math.min(room, band.step * dayW);
+            const fit = room;
             const label = [].concat(band.label(new Date(t)))
                 .find((text) => p.TextWidth(text) + 6 <= fit);
             if (label !== undefined) {
                 p.Color = g.strip ? c.headInk : c.ink;
-                p.Text(label, at + 3, y - bandH + 2);
+                const tx = band.align === "center"
+                         ? at + (fit - p.TextWidth(label)) / 2 : at + 3;
+                p.Text(label, tx, y - bandH + 2);
                 p.Color = c.dim;
             }
         }
@@ -753,7 +905,7 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
      * A tinted band that stops without an edge looks like two panels; a rule
      * under both is the one thing that says they are a header, and it is the
      * rule GTK draws under a column view's own. */
-    if (headH > 0) drawGanttRuler(p, width, g, c);
+    if (headH > 0) drawGanttRuler(p, width, g, c, fmt);
 
     /* The days that are not worked, behind the rows and behind the heading: the
      * same shade in both, so a shaded column reads as one column. */
@@ -777,9 +929,17 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
     /* One line per step the rows are ruled by, which is a week while a week fits
      * and whatever else does. */
     if (!step) step = g.dayW >= 16 ? 1 : g.dayW >= 6 ? 7 : 30;
+    /* A lower tier the view chose rules the rows by its own unit, as in
+     * Project: the grid falls where the ruler's lines do. */
+    const ruled = timescaleGrid(fmt);
+    const grid = !fmt.grid ? []
+               : ruled ? unitTicks(range, ruled.unit, ruled.count, 2000)
+               : ganttTicks(range, step, 2000);
     p.Color = c.dim;
-    for (const t of fmt.grid ? ganttTicks(range, step, 2000) : []) {
-        if (x(t) < plotX) continue;
+    let ruledAt = -Infinity;
+    for (const t of grid) {
+        if (x(t) < plotX || x(t) - ruledAt < 3) continue;
+        ruledAt = x(t);
         p.MoveTo(x(t), headH);
         p.LineTo(x(t), height);
         p.Stroke();

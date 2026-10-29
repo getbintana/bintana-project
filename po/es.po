@@ -1739,3 +1739,63 @@ msgstr "Recortá los márgenes de cada hoja por las marcas de las esquinas."
 
 msgid "Glue each sheet over the strip of its neighbour, with its edge on the meeting marks (▲ ▶)."
 msgstr "Pegá cada hoja sobre la franja de su vecina, con el borde sobre las marcas de encuentro (▲ ▶)."
+
+msgid "Timescale…"
+msgstr "Escala temporal…"
+
+msgid "Show"
+msgstr "Mostrar"
+
+msgid "One tier (top)"
+msgstr "Una escala (superior)"
+
+msgid "Two tiers (top, bottom)"
+msgstr "Dos escalas (superior, inferior)"
+
+msgid "Top tier"
+msgstr "Escala superior"
+
+msgid "Bottom tier"
+msgstr "Escala inferior"
+
+msgid "Label"
+msgstr "Etiqueta"
+
+msgid "Count"
+msgstr "Cada"
+
+msgid "Align"
+msgstr "Alinear"
+
+msgid "Left"
+msgstr "Izquierda"
+
+msgid "Center"
+msgstr "Centro"
+
+msgid "Automatic"
+msgstr "Automática"
+
+msgid "Years"
+msgstr "Años"
+
+msgid "Quarters"
+msgstr "Trimestres"
+
+msgid "Q{0}"
+msgstr "T{0}"
+
+msgid "Q{0} {1}"
+msgstr "T{0} {1}"
+
+msgid "Quarter {0}"
+msgstr "Trimestre {0}"
+
+msgid "W{0}"
+msgstr "S{0}"
+
+msgid "MTWTFSS"
+msgstr "LMXJVSD"
+
+msgid "Gantt timescale"
+msgstr "Escala temporal"
