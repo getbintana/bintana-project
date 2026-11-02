@@ -160,8 +160,14 @@ msgstr "Mostrar u ocultar el Gantt"
 msgid "Show or hide the properties panel"
 msgstr "Mostrar u ocultar el panel de propiedades"
 
-msgid "About bintana-project"
-msgstr "Acerca de bintana-project"
+msgid "About Bintana Project"
+msgstr "Acerca de Bintana Project"
+
+msgid "Plans and Gantt charts in MS Project's interchange format (MSPDI XML): read, edit, schedule, print, and write it back."
+msgstr "Planes y diagramas de Gantt en el formato de intercambio de MS Project (MSPDI XML): leerlos, editarlos, programarlos, imprimirlos y volver a escribirlos."
+
+msgid "Version {0}, on Bintana {1}"
+msgstr "Versión {0}, sobre Bintana {1}"
 
 msgid "Open a Project XML file"
 msgstr "Abrir un archivo XML de Project"

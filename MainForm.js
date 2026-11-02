@@ -422,9 +422,19 @@ export class MainForm extends Form {
         });
     }
 
+    /* The name and icon are `project.json`'s and `icons/`'s, which `AboutBox`
+     * reads by itself; Title and Version are passed because the library's own
+     * wording is not in this project's catalogue. */
     MnuAbout_Click() {
-        Message.Info("bintana-project {0} — MSPDI (MS Project XML) in Bintana",
-                     Application.Version);
+        AboutBox.Show({
+            Title: Locale.Text("About Bintana Project"),
+            Version: Locale.Text("Version {0}, on Bintana {1}",
+                                 Application.Version, BTA_VERSION),
+            Summary: Locale.Text(
+                "Plans and Gantt charts in MS Project's interchange format (MSPDI XML): read, edit, schedule, print, and write it back."),
+            Copyright: "Copyright © 2026 Matias De lellis — MIT License",
+            Website: "https://github.com/getbintana/bintana-project",
+        });
     }
 
     /* The bundled sample, which is one of the welcome page's three doors and the

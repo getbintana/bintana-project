@@ -33,7 +33,8 @@
   ],
   "version": "0.2.0rc1",
   "uses": [
-    "report"
+    "report",
+    "dialog"
   ],
   "description": "MS Project interchange (MSPDI XML): read, round-trip and Gantt"
 }
