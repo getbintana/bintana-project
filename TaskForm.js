@@ -483,11 +483,18 @@ export class TaskForm extends Form {
             Message.Warning("Pick a predecessor first.");
             return;
         }
+        const type = this.CmbType.Index >= 0 ? LINK_ORDER[this.CmbType.Index] : 1;
+        const problem = linkProblem(this.project, predUID, this.task.UID, type);
+        if (problem) {
+            Message.Error(Locale.Text(problem));
+            return;
+        }
+
         const old = this.links.find((l) => l.PredecessorUID === predUID);
         this.links = this.links.filter((l) => l.PredecessorUID !== predUID);
         this.links.push(new MspLink({
             PredecessorUID: predUID,
-            Type: this.CmbType.Index >= 0 ? LINK_ORDER[this.CmbType.Index] : 1,
+            Type: type,
             LinkLag: Math.round(this.SpinLag.Value * 10),
             LagFormat: old && old.LagFormat && !isPercentLagFormat(old.LagFormat)
                      ? old.LagFormat : 3,

@@ -16,6 +16,58 @@
  */
 "use strict";
 
+/*
+ * **Whether a link may be written, and if not, why** -- an empty answer is
+ * "yes". It is a function of the project and not of the history, so every door
+ * that writes a link can ask the same question: the grid, the chart, the side
+ * panel and the task dialog used to hold four copies of this decision, and the
+ * ones that forgot it could write a cycle.
+ *
+ * Four things refuse: a task linked to itself; a summary and a task of its own
+ * branch (a loop Project does not allow); a link that would close a cycle
+ * through the links already there; and a finish-bound type into a summary,
+ * which the schedule does not apply (FS and SS bound every task of the branch,
+ * FF and SF would bound only its last finish).
+ */
+export function linkProblem(project, predUID, succUID, type) {
+    const tasks = project.Tasks.filter((t) => !t.IsNull);
+    const pred = tasks.find((t) => t.UID === predUID);
+    const succ = tasks.find((t) => t.UID === succUID);
+    if (!pred || !succ) return "There is no such task.";
+    if (pred === succ) return "A task cannot depend on itself.";
+
+    const within = (outer, inner) => {
+        if (!outer.Summary) return false;
+        const i = tasks.indexOf(outer);
+        for (let k = i + 1; k < tasks.length &&
+                            tasks[k].OutlineLevel > outer.OutlineLevel; k++)
+            if (tasks[k] === inner) return true;
+        return false;
+    };
+    if (within(pred, succ) || within(succ, pred))
+        return "A summary and its own tasks cannot be linked.";
+
+    if (succ.Summary && (type === 0 || type === 2))
+        return "A finish-bound link does not schedule a summary.";
+
+    /* The pred would be reached from the succ by the links already there. */
+    const after = {};
+    for (const t of tasks)
+        for (const l of t.Links) {
+            if (!after[l.PredecessorUID]) after[l.PredecessorUID] = [];
+            after[l.PredecessorUID].push(t.UID);
+        }
+    const seen = new Set([succUID]);
+    const todo = [succUID];
+    while (todo.length) {
+        const uid = todo.pop();
+        if (uid === predUID) return "That link would close a loop.";
+        for (const next of after[uid] || [])
+            if (!seen.has(next)) { seen.add(next); todo.push(next); }
+    }
+    return "";
+}
+
 export class Edit {
 
     static LIMIT = 50;   // steps kept; a plan is not a video
@@ -189,51 +241,25 @@ export class Edit {
         return true;
     }
 
-    /*
-     * **Whether a link may be drawn, and if not, why** -- an empty answer is
-     * "yes". The reasons are sentences for the reader, and the chart shows them
-     * beside the pointer while the button is down. Four things refuse:
-     * a task linked to itself; a summary and a task of its own branch (a loop
-     * Project does not allow); a link that would close a cycle through the
-     * links already there; and a finish-bound type into a summary, which the
-     * schedule does not apply (FS and SS bound every task of the branch, FF and
-     * SF would bound only its last finish).
-     */
+    /* The same question against this document. */
     linkProblem(predUID, succUID, type) {
-        const tasks = this.holder.project.Tasks.filter((t) => !t.IsNull);
-        const pred = tasks.find((t) => t.UID === predUID);
-        const succ = tasks.find((t) => t.UID === succUID);
-        if (!pred || !succ) return "There is no such task.";
-        if (pred === succ) return "A task cannot depend on itself.";
+        return linkProblem(this.holder.project, predUID, succUID, type);
+    }
 
-        const within = (outer, inner) => {
-            if (!outer.Summary) return false;
-            const i = tasks.indexOf(outer);
-            for (let k = i + 1; k < tasks.length &&
-                                tasks[k].OutlineLevel > outer.OutlineLevel; k++)
-                if (tasks[k] === inner) return true;
-            return false;
-        };
-        if (within(pred, succ) || within(succ, pred))
-            return "A summary and its own tasks cannot be linked.";
+    /* The same question for a whole proposed list, as `setLinks` and
+     * `applyTask` receive one. A list that only reorders existing links is not
+     * a new relation, but a new or changed link is. */
+    linksProblem(uid, links) {
+        const task = this.task(uid);
+        if (!task) return "There is no such task.";
 
-        if (succ.Summary && (type === 0 || type === 2))
-            return "A finish-bound link does not schedule a summary.";
-
-        /* The pred would be reached from the succ by the links already there. */
-        const after = {};
-        for (const t of tasks)
-            for (const l of t.Links) {
-                if (!after[l.PredecessorUID]) after[l.PredecessorUID] = [];
-                after[l.PredecessorUID].push(t.UID);
-            }
-        const seen = new Set([succUID]);
-        const todo = [succUID];
-        while (todo.length) {
-            const uid = todo.pop();
-            if (uid === predUID) return "That link would close a loop.";
-            for (const next of after[uid] || [])
-                if (!seen.has(next)) { seen.add(next); todo.push(next); }
+        const before = new Map((task.Links || []).map((l) => [
+            String(l.PredecessorUID), JSON.stringify(l)]));
+        for (const link of links || []) {
+            const old = before.get(String(link.PredecessorUID));
+            if (old === JSON.stringify(link)) continue;
+            const problem = this.linkProblem(link.PredecessorUID, uid, linkKind(link));
+            if (problem) return problem;
         }
         return "";
     }
@@ -249,6 +275,7 @@ export class Edit {
         if (old.pred === next.pred && old.succ === next.succ) return false;
         const link = from.Links.find((l) => l.PredecessorUID === old.pred);
         if (!link) return false;
+        if (this.linkProblem(next.pred, next.succ, linkKind(link))) return false;
 
         from.Links = from.Links.filter((l) => l !== link);
         link.PredecessorUID = next.pred;
@@ -263,6 +290,8 @@ export class Edit {
         const task = this.task(uid);
         if (!task) return false;
         if (JSON.stringify(task.Links) === JSON.stringify(links)) return false;
+        const problem = this.linksProblem(uid, links);
+        if (problem) return false;
         task.Links = links;
         this.commit();
         return true;
@@ -643,6 +672,15 @@ export class Edit {
         const task = this.task(uid);
         if (!task) return false;
 
+        /* The links are checked before the fields are written, so a cycle
+         * refuses the whole OK instead of leaving half a command behind. */
+        const keptLinks = links
+            ? links.map((l) => new MspLink(JSON.parse(JSON.stringify(l))))
+            : null;
+        if (keptLinks && JSON.stringify(task.Links) !== JSON.stringify(keptLinks) &&
+            this.linksProblem(uid, keptLinks))
+            return false;
+
         let changed = false;
 
         if (values)
@@ -651,12 +689,9 @@ export class Edit {
                 task[name] = values[name];
             }
 
-        if (links) {
-            const kept = links.map((l) => new MspLink(JSON.parse(JSON.stringify(l))));
-            if (JSON.stringify(task.Links) !== JSON.stringify(kept)) {
-                task.Links = kept;
-                changed = true;
-            }
+        if (keptLinks && JSON.stringify(task.Links) !== JSON.stringify(keptLinks)) {
+            task.Links = keptLinks;
+            changed = true;
         }
 
         for (const op of ops || []) {

@@ -3312,6 +3312,12 @@ export class MainForm extends Form {
             Message.Warning("Pick a predecessor first.");
             return;
         }
+        const type = this.CmbType.Index >= 0 ? LINK_ORDER[this.CmbType.Index] : 1;
+        const problem = this.edit.linkProblem(predUID, task.UID, type);
+        if (problem) {
+            Message.Error(Locale.Text(problem));
+            return;
+        }
         if (this.putLink(task, predUID, this.CmbType.Index,
                          Math.round(this.SpinLag.Value * 10)))   // tenths of a minute
             this.fill(task.UID);
@@ -5488,7 +5494,11 @@ export class MainForm extends Form {
             const sequenced = readMspdi(this.resolve(File.Join("tests", "corpus",
                                         "11-unmodeled-order.xml")));
             const seqEdit = new Edit(sequenced);
-            seqEdit.setLinks(1, [new MspLink({ PredecessorUID: 5, Type: 1 })]);
+            /* A predecessor of its own: linking 5 -> 1 would close the
+             * fixture's chain and is refused now, with the rest of the cycles. */
+            const seqPred = seqEdit.addTask(1);
+            seqEdit.setLinks(1, [new MspLink({ PredecessorUID: seqPred.UID,
+                                               Type: 1 })]);
             const seqFile = File.Join(Environment.TempDirectory, "bintana-project-order.xml");
             writeMspdi(seqFile, sequenced);
             const seqTask = File.LoadXml(seqFile).Root.Find("Tasks").FindAll("Task")
@@ -5586,6 +5596,30 @@ export class MainForm extends Form {
             const fs = taskOf(this.holder.project, 2).Links.find((l) => l.PredecessorUID === 1);
             ok = eq("actualizar conserva el formato del retraso",
                     [fs.Type, fs.LinkLag, fs.LagFormat].join(" "), "1 4800 7") && ok;
+
+            /* **El ciclo se rechaza en todas las puertas.** El Gantt ya lo
+             * hacía; el panel y el diálogo lo aceptaban y el pase quedaba sin
+             * resolver. Las tres escriben por `Edit`, que ahora pregunta lo
+             * mismo antes de tocar la lista. */
+            {
+                const project = this.holder.project;
+                const one = taskOf(project, 1);
+                const linksWere = one.Links.length;
+                ok = eq("el panel no escribe un ciclo",
+                        this.putLink(one, 2, 0, 0), false) && ok;
+                ok = eq("y no dejó el vínculo", one.Links.length, linksWere) && ok;
+                ok = eq("el diálogo tampoco escribe un ciclo",
+                        this.edit.applyTask(1, null,
+                            [new MspLink({ PredecessorUID: 2, Type: 1,
+                                           LinkLag: 0, LagFormat: 7 })], []),
+                        false) && ok;
+                ok = eq("y la tarea sigue sin él", one.Links.length, linksWere) && ok;
+                ok = eq("mover una punta a sí misma se rechaza",
+                        this.edit.relink({ pred: 1, succ: 2 },
+                                         { pred: 2, succ: 2 }), false) && ok;
+                ok = eq("y el vínculo bueno sigue donde estaba",
+                        taskOf(project, 2).Links[0].PredecessorUID, 1) && ok;
+            }
 
             /* **El resumen del proyecto no es una tarea más**: no se borra, y
              * agregar después de él es agregar al final, en el nivel 1. */
@@ -8319,13 +8353,16 @@ export class MainForm extends Form {
                                  .filter((a) => a.TaskUID === 2).length;
             const asgOf    = (resUID) => edit.holder.project.Assignments
                 .find((a) => a.TaskUID === 2 && a.ResourceUID === resUID);
+            /* A task of its own to link: the fixture's 3 is already downstream
+             * of 2 by now, so 3 -> 2 would be the cycle the dialog refuses. */
+            const dlgPred = edit.addTask(null);
 
             const dlgC = this.Tasks_Activate();
             ok = dlgC.Tabs.Tabs.length === 4 &&
                  dlgC.Links.Count === linksWas &&
                  dlgC.Assignments.Count === asgWas &&
-                 dlgC.predChoices.indexOf(3) > 0 && ok;
-            dlgC.CmbPred.Index = dlgC.predChoices.indexOf(3);
+                 dlgC.predChoices.indexOf(dlgPred.UID) > 0 && ok;
+            dlgC.CmbPred.Index = dlgC.predChoices.indexOf(dlgPred.UID);
             dlgC.CmbType.Index = 1;                    // start to start
             dlgC.SpinLag.Value = 20;
             dlgC.BtnLinkAdd.Click();
@@ -8345,7 +8382,7 @@ export class MainForm extends Form {
              * devuelve a los tres -- el vínculo, el presupuesto y el alta. */
             this.fill(2);
             const dlgT = this.Tasks_Activate();
-            dlgT.CmbPred.Index = dlgT.predChoices.indexOf(3);
+            dlgT.CmbPred.Index = dlgT.predChoices.indexOf(dlgPred.UID);
             dlgT.CmbType.Index = 1;
             dlgT.SpinLag.Value = 20;
             dlgT.BtnLinkAdd.Click();
@@ -8357,7 +8394,7 @@ export class MainForm extends Form {
             dlgT.BtnAssignAdd.Click();
             dlgT.BtnOk.Click();
             ok = edit.task(2).Links.length === linksWas + 1 &&
-                 edit.task(2).Links.some((l) => l.PredecessorUID === 3 &&
+                 edit.task(2).Links.some((l) => l.PredecessorUID === dlgPred.UID &&
                                                 l.Type === 3 &&
                                                 l.LinkLag === 200) &&
                  asgOf(1).BudgetCost === 60 && asgOf(2).Units === 2 && ok;
@@ -8367,6 +8404,9 @@ export class MainForm extends Form {
                  asgOf(1).BudgetCost === 0 && asgOf(2).Units === 1 && ok;
             print(`edit dialog tabs ok links=${edit.task(2).Links.length} ` +
                   `ana=${asgOf(1).BudgetCost} bruno=${asgOf(2).Units}`);
+            /* The task made only for the dialog's link goes away again. */
+            edit.undo();
+            this.fill(2);
 
             /* A summary's dates, duration and completion are greyed in the
              * dialog, as the panel greys them: only the name is the user's. */
