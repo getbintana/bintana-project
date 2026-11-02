@@ -4332,7 +4332,9 @@ export class MainForm extends Form {
         const kept = {};
         for (const key of ["path", "summaries", "stripes", "paper", "orientation",
                            "margins", "tasks", "columns", "zoom", "kind", "wide", "repeat",
-                           "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide"]) {
+                           "tall", "table", "phases", "pack", "legend", "mural", "overlap",
+                           "guide", "notesWhere", "logo", "logos", "fontScale",
+                           "columnStyles"]) {
             if (Settings.Has(REPORT_KEY + key)) kept[key] = Settings.Get(REPORT_KEY + key);
             Settings.Delete(REPORT_KEY + key);
         }
@@ -4408,6 +4410,52 @@ export class MainForm extends Form {
                     planReport(project, "", { stripes: true }).Sections.Detail.Elements[0].When,
                     "@Odd") && ok;
 
+            /* **The masthead**: a subtitle, a note that flows once under the
+             * title, and a logo at the top right. The report's header grows to
+             * fit what was written; the logo is measured, not stretched. */
+            const logoPath = this.resolve(File.Join("icons",
+                                                     "io.github.getbintana.Project.png"));
+            const logo = reportLogo(logoPath, 120, 40);
+            ok = eq("the logo is measured", !!logo && logo.Width > 0 && logo.Height > 0,
+                    true) && ok;
+            const branded = planReport(project, "/x/obra.xml", {
+                subtitle: "Obra 2026",
+                notes: "Una nota para el cliente.\nSegunda línea.",
+                logo: logoPath,
+            });
+            const pageTexts = branded.Sections.PageHeader.Elements
+                .filter((e) => e.Kind === "Text").map((e) => e.Text);
+            ok = eq("the subtitle is in the page header",
+                    pageTexts.includes("Obra 2026"), true) && ok;
+            ok = eq("the logo is in the page header",
+                    branded.Sections.PageHeader.Elements.some(
+                        (e) => e.Kind === "Image" && e.File === logoPath), true) && ok;
+            ok = eq("the notes are a footer by default",
+                    branded.Sections.PageFooter.Elements.some(
+                        (e) => e.Kind === "Text" &&
+                               e.Text === "Una nota para el cliente.\nSegunda línea."),
+                    true) && ok;
+            const headerNotes = planReport(project, "/x/obra.xml", {
+                subtitle: "Obra 2026", notes: "Una nota arriba.",
+                notesWhere: "header" });
+            ok = eq("and the position is configurable",
+                    headerNotes.Sections.PageHeader.Elements.some(
+                        (e) => e.Kind === "Text" && e.Text === "Una nota arriba."),
+                    true) && ok;
+            ok = eq("the header grew for the masthead",
+                    branded.Sections.PageHeader.Height > plain.Sections.PageHeader.Height,
+                    true) && ok;
+
+            /* A cell wider than its column is cut, with the ellipsis that says
+             * the text goes on; the normal rows above were measured to fit. */
+            const longName = new MspProject({
+                Name: "Obra", StartDate: "2026-09-07T08:00:00",
+                Tasks: [task(1, "x".repeat(240), 1)],
+            });
+            const clipped = planReport(longName, "", { columns: [] });
+            ok = eq("a long cell is cut with an ellipsis",
+                    clipped.Data[0].Task.endsWith("…"), true) && ok;
+
             /* --- the dialog -------------------------------------------------- */
 
             const said = [];
@@ -4415,6 +4463,29 @@ export class MainForm extends Form {
             ok = eq("the dialog shows a report", dlg.Preview.PageCount >= 1, true) && ok;
             ok = eq("and says which page", dlg.LblPage.Text, `1 / ${dlg.Preview.PageCount}`) && ok;
             ok = eq("the title stands behind an empty field", dlg.TxtTitle.Placeholder, "Obra") && ok;
+
+            dlg.TxtSubtitle.Text = "Obra 2026";
+            dlg.TxtNotes.Text    = "Una nota para el cliente.";
+            dlg.TxtLogo.Text     = logoPath;
+            dlg.rebuild();
+            ok = eq("the dialog carries the subtitle",
+                    dlg.Preview.Sections.PageHeader.Elements.some(
+                        (e) => e.Kind === "Text" && e.Text === "Obra 2026"), true) && ok;
+            ok = eq("the dialog carries the notes at the foot",
+                    dlg.Preview.Sections.PageFooter.Elements.some(
+                        (e) => e.Kind === "Text" &&
+                               e.Text === "Una nota para el cliente."), true) && ok;
+            dlg.CmbNotesWhere.Index = 1;
+            dlg.rebuild();
+            ok = eq("and can move them to the header",
+                    dlg.Preview.Sections.PageHeader.Elements.some(
+                        (e) => e.Kind === "Text" &&
+                               e.Text === "Una nota para el cliente."), true) && ok;
+            dlg.CmbNotesWhere.Index = 0;
+            dlg.rebuild();
+            ok = eq("the dialog carries the logo",
+                    dlg.Preview.Sections.PageHeader.Elements.some(
+                        (e) => e.Kind === "Image"), true) && ok;
 
             dlg.ChkColCost.Active = false;
             ok = eq("a column taken out takes its total", dlg.Preview.Sections.ReportFooter,
@@ -4426,6 +4497,31 @@ export class MainForm extends Form {
             dlg.SpnMargins.Value = 20;
             ok = eq("margins in millimetres, kept in points",
                     dlg.Preview.Margins, Math.round(20 * 72 / 25.4)) && ok;
+
+            /* A column can take a width of its own and another alignment; the
+             * type size is one for the whole table. */
+            const styled = planReport(project, "", {
+                columns: ["start", "finish"], fontScale: 150,
+                columnStyles: { start: { width: 40, align: "Center" } } });
+            const startHead = styled.Sections.PageHeader.Elements.find(
+                (e) => e.Kind === "Text" && e.Text === reportColumnTitle("start"));
+            ok = eq("a column takes the width asked for",
+                    Math.abs(startHead.Width - Math.round(40 * 72 / 25.4)) <= 1, true) && ok;
+            ok = eq("and the alignment", startHead.Align, "Center") && ok;
+            ok = eq("the type size is the table's", styled.Sections.Detail.Height, 20) && ok;
+
+            dlg.CmbColumn.Index = 0;
+            dlg.SpnColWidth.Value = 30;
+            dlg.SpnColWidth_Change();
+            dlg.CmbColAlign.Index = 2;
+            dlg.CmbColAlign_Select();
+            const pick = dlg.options().columnStyles.start || {};
+            ok = eq("the dialog styles one column",
+                    `${pick.width}|${pick.align}`, "30|Center") && ok;
+            dlg.SpnFontScale.Value = 150;
+            dlg.SpnFontScale_Change();
+            ok = eq("one type size for all the columns",
+                    dlg.Preview.Sections.Detail.Height, 20) && ok;
 
             dlg.CmbZoom.Index = 4;
             ok = eq("100% is the paper at the screen's size",
@@ -4446,6 +4542,20 @@ export class MainForm extends Form {
              * sheets down as the rows need. */
             const one   = ganttPrint(project, "", { kind: "gantt", summaries: true });
             ok = eq("a short plan is one sheet", one.pages, 1) && ok;
+
+            /* The chart's PDF carries the same masthead. Drawing it is the
+             * assertion: an `Image` that does not load throws while drawing. */
+            const brandedChart = ganttPrint(project, "", {
+                kind: "gantt", subtitle: "Obra 2026", logo: logoPath });
+            const chartPdf = File.Join(Environment.TempDirectory,
+                                       "bintana-project-branded-gantt.pdf");
+            Drawing.SavePdf(chartPdf, Math.round(brandedChart.width),
+                            Math.round(brandedChart.height), brandedChart.pages,
+                            (p, page, w, h) => brandedChart.draw(p, page, w, h, false));
+            const chartInfo = File.Info(chartPdf);
+            ok = eq("the chart's masthead draws the logo",
+                    !!chartInfo && chartInfo.Size > 0, true) && ok;
+            File.Delete(chartPdf);
             const three = ganttPrint(project, "", { kind: "gantt", summaries: true, wide: 3 });
             ok = eq("three across is three sheets", three.pages, 3) && ok;
             ok = eq("the slices meet", three.slice(0).to === three.slice(1).from &&
@@ -4646,13 +4756,41 @@ export class MainForm extends Form {
             dlg.BtnClose_Click();
             ok = eq("the choices are kept", Settings.Get(REPORT_KEY + "orientation", ""),
                     "Portrait") && ok;
+            const keptStyle = Settings.Get(REPORT_KEY + "columnStyles", {}).start || {};
+            ok = eq("the column style is kept",
+                    `${keptStyle.width}|${keptStyle.align}`, "30|Center") && ok;
+            ok = eq("and the type size too", Settings.Get(REPORT_KEY + "fontScale", 0),
+                    150) && ok;
+
+            /* A logo is general with a per-project exception: choosing one for
+             * this file must not change the rest, and changing the zoom must
+             * not turn the logo on screen into an exception. */
+            Settings.Delete(REPORT_KEY + "logo");
+            Settings.Delete(REPORT_KEY + "logos");
+            ok = eq("a report without a logo has none",
+                    loadReportOptions("/x/obra.xml").logo, "") && ok;
+            Settings.Set(REPORT_KEY + "logo", "/global.png");
+            ok = eq("the global logo reaches every project",
+                    loadReportOptions("/x/otra.xml").logo, "/global.png") && ok;
+            const mine = loadReportOptions("/x/obra.xml");
+            mine.logo = "/propio.png";
+            saveReportOptions(mine, 0, "/x/obra.xml", true);
+            ok = eq("a project's own logo is remembered",
+                    loadReportOptions("/x/obra.xml").logo, "/propio.png") && ok;
+            ok = eq("and does not replace the global one",
+                    loadReportOptions("/x/otra.xml").logo, "/global.png") && ok;
+            Settings.Delete(REPORT_KEY + "logos");
+            saveReportOptions(loadReportOptions("/x/obra.xml"), 1, "/x/obra.xml", false);
+            ok = eq("changing the zoom keeps no override",
+                    Settings.Has(REPORT_KEY + "logos"), false) && ok;
         } catch (e) {
             print(`report threw: ${e.message}\n${e.stack}`);
             ok = false;
         } finally {
             for (const key of ["path", "summaries", "stripes", "paper", "orientation",
                                "margins", "tasks", "columns", "zoom", "kind", "wide",
-                               "repeat", "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide"]) {
+                               "repeat", "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide",
+                               "notesWhere", "logo", "logos", "fontScale", "columnStyles"]) {
                 if (Dictionary.Has(kept, key)) Settings.Set(REPORT_KEY + key, kept[key]);
                 else                           Settings.Delete(REPORT_KEY + key);
             }

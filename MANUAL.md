@@ -553,16 +553,30 @@ tabla de tareas con el total de costo al pie, paginada como va a salir. Las
 columnas y el título se repiten en cada página. A la izquierda se elige qué
 lleva y cómo:
 
-- **Título** (por defecto, el nombre del proyecto) y si muestra la ruta del
-  archivo.
+- **Título** (por defecto, el nombre del proyecto), **subtítulo** (por defecto,
+  el campo *Título* del proyecto) y si muestra la ruta del archivo.
+- **Notas**: un texto libre para el informe, al **pie** de cada página por
+  defecto o en la **cabecera** si se elige esa posición. Se reparte en varias
+  líneas y el pie crece para que no se corte.
+- **Logo**: una imagen en la cabecera, a la izquierda, con el texto a su lado.
+  El logo configurado en **Configuración** vale para todos los informes; el que
+  se elija acá queda como excepción de este proyecto y se recuerda con él.
 - **Tareas**: todas, solo las críticas o solo las sin terminar. Con **Incluir
   tareas resumen**, los resúmenes aparecen en negrita, con su costo sumado y
   las tareas sangradas por nivel; un resumen sin ninguna tarea elegida debajo
   no aparece.
 - **Sombrear filas alternas**.
 - **Columnas**: inicio, fin, duración, avance, críticas y costo. La tarea va
-  siempre y toma el ancho que sobra; si no entran en el papel, se achican
-  juntas. Sin la columna de costo no hay total.
+  siempre y toma el ancho que sobra. El ancho de cada columna se mide con lo
+  que realmente contiene y con los títulos, y si aun así no entran en el papel
+  se achican juntas; el texto que no cabe se corta con `…` antes que invadir
+  la columna vecina. Sin la columna de costo no hay total.
+- **Ancho y alineación por columna**: elegida una columna, su **ancho** en
+  milímetros (0 = automático, medido del contenido) y su **alineación**
+  (izquierda, centro o derecha; por defecto la de su tipo). El **tamaño de
+  letra** es uno para toda la tabla, en porcentaje (100 % = 9 pt). El ancho y
+  la alineación valen también para la tabla del Gantt; el tamaño de letra es
+  del informe de tabla.
 - **Papel**, **orientación** y **márgenes** en milímetros.
 
 Con **Imprimir: Diagrama de Gantt** la misma vista previa muestra el Gantt en
@@ -618,7 +632,9 @@ la leyenda al pie— y se corta en hojas para pegar en la pared:
 Abajo están las páginas (◀ n / N ▶), el **zoom** —página entera, ancho de la
 ventana o de 50 a 200 %— y las salidas: **Guardar PDF…** e **Imprimir…**. Lo
 que se ve es lo que se guarda y se imprime. Las elecciones se recuerdan para la
-próxima vez, salvo el título, que es de cada proyecto.
+próxima vez: las de papel, columnas y Gantt son generales, el título y el
+subtítulo se toman del proyecto, las notas son de cada informe, y el logo tiene
+un valor general con una excepción opcional por proyecto.
 
 ## Atajos
 
@@ -641,7 +657,8 @@ próxima vez, salvo el título, que es de cada proyecto.
 ## Configuración
 
 **Herramientas → Configuración…** edita lo que la app recuerda: carpeta por
-donde abre el diálogo, escala, unidad de una duración sin sufijo, y si
+donde abre el diálogo, escala, unidad de una duración sin sufijo, el **logo del
+informe** que usan todos los proyectos (salvo los que tengan uno propio), y si
 recalcula solo y si guarda la copia de recuperación. Las **columnas** también
 se recuerdan, pero se eligen en **Ver → Columnas…**, y la **barra de entrada**
 se prende y se apaga en **Ver → Mostrar la barra de entrada** (nace oculta,

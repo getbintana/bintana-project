@@ -16,7 +16,7 @@
       "name": "Fields",
       "properties": {
         "ColumnSpacing": 8,
-        "Height": 214,
+        "Height": 250,
         "RowSpacing": 8,
         "Spacing": 8,
         "Width": 428
@@ -88,6 +88,41 @@
             "Text": "Task's own",
             "Width": 160
           }
+        },
+        {
+          "type": "Label",
+          "name": "LblLogo",
+          "properties": {
+            "HAlign": "End",
+            "Text": "Report logo"
+          }
+        },
+        {
+          "type": "Panel",
+          "name": "LogoRow",
+          "properties": {
+            "Arrangement": "Horizontal",
+            "HExpand": true,
+            "Spacing": 4
+          },
+          "children": [
+            {
+              "type": "TextBox",
+              "name": "TxtLogo",
+              "properties": {
+                "HAlign": "Fill",
+                "HExpand": true
+              }
+            },
+            {
+              "type": "Button",
+              "name": "BtnLogo",
+              "properties": {
+                "Text": "Choose…",
+                "Width": 84
+              }
+            }
+          ]
         },
         {
           "type": "CheckButton",

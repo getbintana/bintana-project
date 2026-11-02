@@ -19,8 +19,10 @@
  */
 "use strict";
 
-/* Where each choice is kept. The title and the dates printed are the
- * project's and are not kept. */
+/* Where each choice is kept. The title, subtitle and notes are the
+ * report's -- they belong to the piece of paper being made -- and the dates
+ * printed are the project's; neither is kept. The logo is a file a reader
+ * chooses once for their reports, so it is. */
 export const REPORT_KEY = "bintana-project.report.";
 
 /* The zoom combo, in its order: the two fits, then a scale of the paper. */
@@ -38,26 +40,50 @@ const REPORT_CHECKS = { start: "ChkColStart", finish: "ChkColFinish",
 /* The choices that are kept, between one report and the next. */
 const REPORT_KEPT = ["path", "summaries", "stripes", "paper", "orientation", "margins",
                      "tasks", "columns", "kind", "wide", "repeat", "tall", "table",
-                     "phases", "pack", "legend", "mural", "overlap", "guide"];
+                     "phases", "pack", "legend", "mural", "overlap", "guide",
+                     "notesWhere", "logo", "fontScale", "columnStyles"];
 
 /* The chart's own controls, shown only while the chart is what is printed. */
 const GANTT_CONTROLS = ["LblGanttSetup", "ChkMural", "LblOverlap", "SpnOverlap", "ChkGuide",
                         "LblWide", "SpnWide", "ChkTall", "SpnTall",
                         "LblTable", "SpnTable", "ChkRepeat", "ChkPhases", "ChkPack", "ChkLegend",
                         "LblFrom", "DateFrom", "LblTo", "DateTo", "BtnWholePlan"];
+/* The notes flow in the table's page footer; the chart has its own foot with
+ * the printed date and its sheets, and its table keeps the chart's type, so
+ * these are only for the table. */
+const TABLE_ONLY = ["LblNotes", "TxtNotes", "LblNotesWhere", "CmbNotesWhere",
+                    "LblFontScale", "SpnFontScale"];
 
-/* What the last report was made with. */
-function loadReportOptions() {
+/* What the last report was made with. A logo is the one choice with a global
+ * default and a per-project exception: the report of a plan uses the logo
+ * remembered for that file, or the one configured for every report. */
+export function loadReportOptions(path) {
     const o = reportOptions({});
     for (const key of REPORT_KEPT)
         o[key] = Settings.Get(REPORT_KEY + key, o[key]);
+    const logos = Settings.Get(REPORT_KEY + "logos", {});
+    o.logo = path && logos[path] !== undefined
+           ? logos[path] : Settings.Get(REPORT_KEY + "logo", o.logo);
     return reportOptions(o);
 }
 
-function saveReportOptions(o, zoom) {
+export function saveReportOptions(o, zoom, path, logoChanged) {
     for (const key of REPORT_KEPT)
-        Settings.Set(REPORT_KEY + key, o[key]);
+        if (key !== "logo") Settings.Set(REPORT_KEY + key, o[key]);
     Settings.Set(REPORT_KEY + "zoom", zoom);
+
+    /* A zoom change must not freeze the current logo as a project override:
+     * only a logo the reader actually touched belongs to this project. */
+    if (!logoChanged) return;
+    const logos = Settings.Get(REPORT_KEY + "logos", {});
+    const byProject = {};
+    for (const key in logos) byProject[key] = logos[key];
+    if (path) {
+        byProject[path] = o.logo;
+        Settings.Set(REPORT_KEY + "logos", byProject);
+    } else {
+        Settings.Set(REPORT_KEY + "logo", o.logo);
+    }
 }
 
 /* The kept part of the options, as one string to compare: what moved is what
@@ -87,7 +113,7 @@ export class ReportForm extends Form {
         dlg.path    = path || "";
         dlg.log     = log || (() => {});
         dlg.Modal   = true;
-        dlg.show(loadReportOptions(),
+        dlg.show(loadReportOptions(path),
                  Number(Settings.Get(REPORT_KEY + "zoom", 0)) || 0);
 
         dlg.Show();
@@ -119,12 +145,26 @@ export class ReportForm extends Form {
         this.DateTo.Value            = o.to;
         this.TxtTitle.Text           = o.title;
         this.TxtTitle.Placeholder    = this.project.Name || File.Name(this.path) || "";
+        this.TxtSubtitle.Text        = o.subtitle !== null && o.subtitle !== undefined
+                                     ? String(o.subtitle)
+                                     : String(this.project.Title || "");
+        this.TxtNotes.Text           = o.notes || "";
+        this.CmbNotesWhere.Index     = o.notesWhere === "header" ? 1 : 0;
+        this.TxtLogo.Text            = o.logo || "";
+        this.logo0                   = o.logo || "";
         this.ChkPath.Active          = !!o.path;
         this.CmbTasks.Index          = Math.max(0, REPORT_TASKS.indexOf(o.tasks));
         this.ChkSummaries.Active     = !!o.summaries;
         this.ChkStripes.Active       = !!o.stripes;
         for (const id in REPORT_CHECKS)
             this[REPORT_CHECKS[id]].Active = o.columns.includes(id);
+        this.columnStyles            = { ...(o.columnStyles || {}) };
+        this.CmbColumn.Items         = REPORT_COLUMNS.map((c) => reportColumnTitle(c.id));
+        this.CmbColumn.Index         = 0;
+        this.CmbColAlign.Items       = REPORT_ALIGNS.map(
+            (a) => Locale.Text(a || "Default"));
+        this.CmbColAlign.Index       = 0;
+        this.SpnFontScale.Value      = o.fontScale;
         this.CmbOrientation.Index    = o.orientation === "Portrait" ? 0 : 1;
         this.SpnMargins.Value        = Math.round(o.margins / MM_POINT);
         this.CmbZoom.Index           = Math.max(0, Math.min(REPORT_ZOOMS.length - 1, zoom));
@@ -133,6 +173,7 @@ export class ReportForm extends Form {
          * writes nothing. */
         this.kept  = keptOf(o, this.CmbZoom.Index);
         this.ready = true;
+        this.pickColumnStyle();
         this.rebuild();
     }
 
@@ -140,12 +181,18 @@ export class ReportForm extends Form {
     options() {
         return reportOptions({
             title:       this.TxtTitle.Text.trim(),
+            subtitle:    this.TxtSubtitle.Text.trim(),
+            notes:       this.TxtNotes.Text.trim(),
+            notesWhere:  this.CmbNotesWhere.Index === 1 ? "header" : "footer",
+            logo:        this.TxtLogo.Text.trim(),
             path:        this.ChkPath.Active,
             tasks:       REPORT_TASKS[this.CmbTasks.Index] || "all",
             summaries:   this.ChkSummaries.Active,
             stripes:     this.ChkStripes.Active,
             columns:     Dictionary.Keys(REPORT_CHECKS)
                              .filter((id) => this[REPORT_CHECKS[id]].Active),
+            fontScale:   Number(this.SpnFontScale.Value || 100),
+            columnStyles: this.columnStyles,
             paper:       this.CmbPaper.Text || "A4",
             orientation: this.CmbOrientation.Index === 0 ? "Portrait" : "Landscape",
             margins:     Math.round(Number(this.SpnMargins.Value || 0) * MM_POINT),
@@ -153,7 +200,7 @@ export class ReportForm extends Form {
             wide:        Number(this.SpnWide.Value || 1),
             repeat:      this.ChkRepeat.Active,
             tall:        this.ChkTall.Active ? Number(this.SpnTall.Value || 1) : 0,
-            table:       Number(this.SpnTable.Value || 45),
+            table:       Number(this.SpnTable.Value || 65),
             phases:      this.ChkPhases.Active,
             pack:        this.ChkPack.Active,
             mural:       this.ChkMural.Active,
@@ -173,6 +220,7 @@ export class ReportForm extends Form {
         /* Only what the chosen kind reads is shown: the sheets across and the
          * repeated table are a chart's, and the two previews take turns. */
         for (const name of GANTT_CONTROLS) this[name].Visible = gantt;
+        for (const name of TABLE_ONLY) this[name].Visible = !gantt;
         this.SpnTall.Enabled = this.ChkTall.Active;
         /* A mural is one picture: there is no sheet of its own for a phase to
          * start, nor a table to repeat -- and only a mural has an overlap and
@@ -209,7 +257,8 @@ export class ReportForm extends Form {
         const now = keptOf(o, this.CmbZoom.Index);
         if (now === this.kept) return;
         this.kept = now;
-        saveReportOptions(o, this.CmbZoom.Index);
+        saveReportOptions(o, this.CmbZoom.Index, this.path,
+                          o.logo !== this.logo0);
     }
 
     /* --- the page on screen ------------------------------------------------ */
@@ -327,7 +376,33 @@ export class ReportForm extends Form {
         this.rebuild();
     }
     TxtTitle_Change()       { this.rebuild(); }
+    TxtSubtitle_Change()    { this.rebuild(); }
+    TxtNotes_Change()       { this.rebuild(); }
+    CmbNotesWhere_Select()  { this.rebuild(); }
+    TxtLogo_Change()        { this.rebuild(); }
     ChkPath_Click()         { this.rebuild(); }
+
+    /* A logo is a file the report can carry, not a field of the plan: the
+     * chooser validates that it really is an image before the path enters the
+     * option, so a missing or unreadable file cannot break the PDF later. */
+    BtnLogo_Click() {
+        Dialog.OpenFile(Locale.Text("Choose a logo"),
+            { Folder: this.path ? File.Directory(this.path) : Application.Directory,
+              Filters: [[Locale.Text("Images"),
+                         "*.png *.jpg *.jpeg *.webp *.bmp *.tif *.tiff"],
+                        [Locale.Text("All files"), "*"]] },
+            (path) => {
+                try {
+                    const size = Probe.Image(path);
+                    if (!size || !(size.Width > 0) || !(size.Height > 0))
+                        throw new Error(Locale.Text("that file is not an image"));
+                    this.TxtLogo.Text = path;
+                    this.rebuild();
+                } catch (e) {
+                    Message.Error("Cannot use {0} as a logo: {1}", path, e.message);
+                }
+            });
+    }
     CmbTasks_Select()       { this.rebuild(); }
     ChkSummaries_Click()    { this.rebuild(); }
     ChkStripes_Click()      { this.rebuild(); }
@@ -337,6 +412,38 @@ export class ReportForm extends Form {
     ChkColComplete_Click()  { this.rebuild(); }
     ChkColCritical_Click()  { this.rebuild(); }
     ChkColCost_Click()      { this.rebuild(); }
+
+    /* The style controls edit one column at a time: choosing another one
+     * shows what it has, and looking writes nothing. */
+    CmbColumn_Select()      { if (this.ready) this.pickColumnStyle(); }
+    SpnColWidth_Change()    { this.setColumnStyle(); }
+    CmbColAlign_Select()    { this.setColumnStyle(); }
+    SpnFontScale_Change()   { this.rebuild(); }
+
+    pickColumnStyle() {
+        const col   = REPORT_COLUMNS[this.CmbColumn.Index];
+        const style = reportColumnStyle(this.columnStyles, col && col.id);
+        this.ready = false;
+        this.SpnColWidth.Value = style.width;
+        this.CmbColAlign.Index = Math.max(0, REPORT_ALIGNS.indexOf(style.align));
+        this.ready = true;
+    }
+
+    setColumnStyle() {
+        if (!this.ready) return;
+        const col = REPORT_COLUMNS[this.CmbColumn.Index];
+        if (!col) return;
+        const width = Math.max(0, Math.min(150,
+                           Math.round(Number(this.SpnColWidth.Value) || 0)));
+        const align = REPORT_ALIGNS[this.CmbColAlign.Index] || "";
+        const styles = { ...this.columnStyles };
+        /* A column back at its own width and alignment is no exception, and
+         * does not need to be remembered as one. */
+        if (width || align) styles[col.id] = { width, align };
+        else delete styles[col.id];
+        this.columnStyles = styles;
+        this.rebuild();
+    }
     CmbPaper_Select()       { this.rebuild(); }
     CmbOrientation_Select() { this.rebuild(); }
     SpnMargins_Change()     { this.rebuild(); }

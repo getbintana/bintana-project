@@ -232,12 +232,19 @@ export function ganttPrint(project, path, options, chart) {
         return s === null || f === null || (f >= range.from && s <= range.to);
     });
     const items = o.legend ? legendItems(shown, fmt, range, calendar) : [];
-    const headH = o.path && path ? 40 : 26;
+    const title = o.title || project.Name || File.Name(path || "") || Locale.Text("Plan");
+    const subtitle = o.subtitle !== null && o.subtitle !== undefined
+                   ? String(o.subtitle).trim() : String(project.Title || "").trim();
+    const logo = reportLogo(o.logo, cw * 0.25, 36);
+    let headH = 26;
+    if (subtitle && subtitle !== title) headH += 13;
+    if (o.path && path) headH += 12;
+    if (logo) headH = Math.max(headH, logo.Height + (subtitle || path ? 14 : 8));
     const footH = PRINT_FOOT + (items.length ? PRINT_LEGEND : 0);
 
     if (o.mural)
         return ganttMural({ o, project, path, chart, fmt, pw, ph, m, cw, ch, picks, tasks,
-                            calendar, range, items, headH, footH });
+                            calendar, range, items, headH, footH, title, subtitle, logo });
     const bodyH = ch - headH - footH;
     const room  = Math.max(PRINT_MIN_ROW, bodyH - PRINT_RULER);
 
@@ -258,9 +265,11 @@ export function ganttPrint(project, path, options, chart) {
     /* The table at its natural width, unless that is more than the share of the
      * sheet it is given -- then the columns shrink together, as the report's do. */
     const chosen  = REPORT_COLUMNS.filter((c) => o.columns.includes(c.id));
-    const natural = PRINT_NAME + chosen.reduce((sum, c) => sum + c.width * 0.8 + 8, 0);
+    const widths  = reportWidths(picks.map((pick) => pick.row), o.columns, o.columnStyles);
+    const natural = PRINT_NAME + chosen.reduce(
+        (sum, c) => sum + (widths[c.id] || c.width * 0.8) + 8, 0);
     const tableW  = Math.round(Math.min(natural, cw * o.table / 100));
-    const cols    = reportLayout(tableW - 2 * PRINT_PAD, o.columns);
+    const cols    = reportLayout(tableW - 2 * PRINT_PAD, o.columns, widths, o.columnStyles);
     const tableOn = (c) => c === 0 || o.repeat ? tableW : 0;
 
     /* The chart's width on each sheet across, and where each starts in the
@@ -274,7 +283,6 @@ export function ganttPrint(project, path, options, chart) {
         to:   range.from + (starts[c] + chartW(c)) / total * (range.to - range.from),
     };
 
-    const title = o.title || project.Name || File.Name(path || "") || Locale.Text("Plan");
     const pages = wide * tall;
     const palette = ganttPalette(GANTT_PAPER, fmt.theme, fmt);
 
@@ -307,7 +315,7 @@ export function ganttPrint(project, path, options, chart) {
         }
 
         p.Translate(m, m);
-        drawHead(p, cw, headH, title, o.path ? path : "", slice(c));
+        drawHead(p, cw, headH, title, o.path ? path : "", slice(c), subtitle, logo);
 
         p.Push();
         p.Translate(0, headH);
@@ -430,18 +438,34 @@ function legendSwatch(p, kind, x, mid, c) {
 /* The head of a sheet: the title, the file it came from, and on the right the
  * dates this sheet's chart spans -- which, across several sheets, is the one
  * thing that tells two of them apart at a glance. */
-function drawHead(p, cw, headH, title, path, span) {
+function drawHead(p, cw, headH, title, path, span, subtitle, logo) {
+    const textX = logo ? logo.Width + 8 : 0;
     p.Color = PRINT_INK;
     p.Font = "Sans Bold 12";
-    p.Text(title, 0, 0);
+    p.Text(title, textX, 0);
+
+    let y = 20;
+    if (subtitle && subtitle !== title) {
+        p.Font = "Sans 9";
+        p.Text(subtitle, textX, y);
+        y += 13;
+    }
     if (path) {
         p.Font = "Sans 8";
-        p.Text(path, 0, 20);
+        p.Text(path, textX, y);
+    }
+    if (logo) {
+        try {
+            p.Image(logo.File, 0, 0, logo.Width, logo.Height);
+        } catch (e) {
+            /* A logo that cannot be read is a missing picture, not a broken
+             * sheet: the report itself does the same in its Image element. */
+        }
     }
     if (span) {
         p.Font = "Sans 8";
         const text = `${Locale.Date(span.from)} – ${Locale.Date(span.to)}`;
-        p.Text(text, cw - p.TextWidth(text), 3);
+        p.Text(text, cw - p.TextWidth(text), logo ? logo.Height + 3 : 3);
     }
 }
 
@@ -470,11 +494,14 @@ function drawFoot(p, cw, ch, n, pages, at) {
 /* The table's width and columns: at its natural width, unless that is more
  * than the share of a sheet it is given -- then the columns shrink together, as
  * the report's do. */
-function tableLayout(o, cw) {
+function tableLayout(o, cw, rows) {
     const chosen  = REPORT_COLUMNS.filter((c) => o.columns.includes(c.id));
-    const natural = PRINT_NAME + chosen.reduce((sum, c) => sum + c.width * 0.8 + 8, 0);
+    const widths  = reportWidths(rows || [], o.columns, o.columnStyles);
+    const natural = PRINT_NAME + chosen.reduce(
+        (sum, c) => sum + (widths[c.id] || c.width * 0.8) + 8, 0);
     const width   = Math.round(Math.min(natural, cw * o.table / 100));
-    return { width, cols: reportLayout(width - 2 * PRINT_PAD, o.columns) };
+    return { width, cols: reportLayout(width - 2 * PRINT_PAD, o.columns, widths,
+                                       o.columnStyles) };
 }
 
 /* The sheet itself, white, scaled to the frame and centred -- `Translate` then
@@ -517,14 +544,14 @@ function paperSheet(p, pw, ph, width, height, screen) {
  */
 function ganttMural(b) {
     const { o, project, path, chart, fmt, pw, ph, m, cw, ch, picks, tasks,
-            calendar, range, items, headH, footH } = b;
+            calendar, range, items, headH, footH, title, subtitle, logo } = b;
 
     const lap   = Math.max(0, Math.min(o.overlap, cw / 4, ch / 4));
     const stepW = cw - lap, stepH = ch - lap;
     const wide  = o.wide;
     const W     = wide * stepW + lap;
 
-    const { width: tableW, cols } = tableLayout(o, cw);
+    const { width: tableW, cols } = tableLayout(o, cw, picks.map((pick) => pick.row));
     const chartW = W - tableW;
 
     /* The rows at their full height, or shorter to fit the sheets down asked
@@ -539,7 +566,6 @@ function ganttMural(b) {
     const fonts = printFonts(rowH);
     const used  = PRINT_RULER + tasks.length * rowH;
 
-    const title   = o.title || project.Name || File.Name(path || "") || Locale.Text("Plan");
     const palette = ganttPalette(GANTT_PAPER, fmt.theme, fmt);
     const tiles   = wide * tall;
     const guide   = o.guide && tiles > 1 ? 1 : 0;
@@ -549,7 +575,7 @@ function ganttMural(b) {
      * the part being looked at starts across: a tile right of the table has
      * no table to draw, and does not record one. */
     function picture(p, from) {
-        drawHead(p, W, headH, title, o.path ? path : "", range);
+        drawHead(p, W, headH, title, o.path ? path : "", range, subtitle, logo);
         p.Push();
         p.Translate(0, headH);
         if (o.stripes) {
@@ -778,12 +804,25 @@ function cellText(row, col) {
 /* One line of text in a cell, centred on the row and cut at the cell's edge
  * rather than run into the next column. */
 function cell(p, text, x, y, w, h, align) {
-    if (!text) return;
-    const tw = p.TextWidth(text), th = p.TextHeight(text);
+    if (!text || w <= 0) return;
+    let value = String(text);
+    if (p.TextWidth(value) > w) {
+        const ellipsis = "…";
+        let low = 0, high = value.length;
+        while (low < high) {
+            const mid = Math.ceil((low + high) / 2);
+            if (p.TextWidth(value.slice(0, mid) + ellipsis) <= w)
+                low = mid;
+            else
+                high = mid - 1;
+        }
+        value = low > 0 ? value.slice(0, low) + ellipsis : ellipsis;
+    }
+    const tw = p.TextWidth(value), th = p.TextHeight(value);
     const tx = align === "Right" ? x + w - tw : x;
     p.Push();
     p.ClipRectangle(x, y, w, h);
     p.Color = PRINT_INK;
-    p.Text(text, tx, y + (h - th) / 2);
+    p.Text(value, tx, y + (h - th) / 2);
     p.Pop();
 }

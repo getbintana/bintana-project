@@ -89,11 +89,99 @@
                   }
                 },
                 {
+                  "type": "Label",
+                  "name": "LblSubtitle",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Subtitle"
+                  }
+                },
+                {
+                  "type": "TextBox",
+                  "name": "TxtSubtitle",
+                  "properties": {
+                    "HAlign": "Fill"
+                  }
+                },
+                {
                   "type": "CheckButton",
                   "name": "ChkPath",
                   "properties": {
                     "Text": "Show the file's path"
                   }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblNotes",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Notes"
+                  }
+                },
+                {
+                  "type": "TextEditor",
+                  "name": "TxtNotes",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Height": 70,
+                    "Wrap": true
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblNotesWhere",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Notes position"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbNotesWhere",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Footer",
+                      "Header"
+                    ],
+                    "Text": "Footer"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblLogo",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Logo"
+                  }
+                },
+                {
+                  "type": "Panel",
+                  "name": "LogoRow",
+                  "properties": {
+                    "Arrangement": "Horizontal",
+                    "HExpand": true,
+                    "Spacing": 4
+                  },
+                  "children": [
+                    {
+                      "type": "TextBox",
+                      "name": "TxtLogo",
+                      "properties": {
+                        "HExpand": true,
+                        "HAlign": "Fill"
+                      }
+                    },
+                    {
+                      "type": "Button",
+                      "name": "BtnLogo",
+                      "properties": {
+                        "Text": "Choose…",
+                        "Width": 84
+                      }
+                    }
+                  ]
                 },
                 {
                   "type": "Label",
@@ -180,6 +268,91 @@
                   "name": "ChkColCost",
                   "properties": {
                     "Text": "Cost"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblColumnStyle",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Style": "heading",
+                    "Text": "Column style"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbColumn",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Start",
+                      "Finish",
+                      "Duration",
+                      "Complete",
+                      "Critical",
+                      "Cost"
+                    ],
+                    "Text": "Start"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblColWidth",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Width (mm, 0 = auto)"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnColWidth",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 150,
+                    "Min": 0,
+                    "Value": 0
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblColAlign",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Alignment"
+                  }
+                },
+                {
+                  "type": "ComboBox",
+                  "name": "CmbColAlign",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Index": 0,
+                    "Items": [
+                      "Default",
+                      "Left",
+                      "Center",
+                      "Right"
+                    ],
+                    "Text": "Default"
+                  }
+                },
+                {
+                  "type": "Label",
+                  "name": "LblFontScale",
+                  "properties": {
+                    "HAlign": "Start",
+                    "Text": "Font size (%)"
+                  }
+                },
+                {
+                  "type": "SpinBox",
+                  "name": "SpnFontScale",
+                  "properties": {
+                    "HAlign": "Fill",
+                    "Max": 200,
+                    "Min": 50,
+                    "Value": 100
                   }
                 },
                 {
@@ -349,7 +522,7 @@
                     "HAlign": "Fill",
                     "Max": 70,
                     "Min": 15,
-                    "Value": 45,
+                    "Value": 65,
                     "Visible": false
                   }
                 },

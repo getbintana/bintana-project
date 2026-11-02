@@ -212,8 +212,12 @@ The chart's width is what the **Timescale** combo asks -- `Auto` fits the view,
 as a PNG or a PDF, from its first row and with the task names in a gutter, since
 a file has no list beside it; **Report…** (File menu, over `lib/report`) opens
 a preview of the plan as a banded document -- tasks with dates, duration,
-progress and cost, totalled -- with the columns, the tasks, the paper and the
-zoom chosen beside it, and saves it as a PDF or prints it. That is how any of it
+progress and cost, totalled -- with the columns, the tasks, the paper, a
+subtitle, a note at the foot (or in the header) and a logo chosen beside it,
+and saves it as a PDF or prints it. Columns are measured from what they hold,
+can take a width of their own and an alignment, and the table's type size is
+one setting for all of them; only when the paper leaves no room is a cell cut
+with an ellipsis. That is how any of it
 reaches somebody who does not run the app. The bands are `planReport`'s
 (`PlanReport.js`), a pure function of the plan and the options, and the dialog
 (`ReportForm`) holds the `Report` control: it used to be a hidden control on

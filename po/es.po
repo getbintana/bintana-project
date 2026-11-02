@@ -1805,3 +1805,51 @@ msgstr "LMXJVSD"
 
 msgid "Gantt timescale"
 msgstr "Escala temporal"
+
+msgid "Subtitle"
+msgstr "Subtítulo"
+
+msgid "Logo"
+msgstr "Logo"
+
+msgid "Choose a logo"
+msgstr "Elegir un logo"
+
+msgid "Images"
+msgstr "Imágenes"
+
+msgid "that file is not an image"
+msgstr "ese archivo no es una imagen"
+
+msgid "Cannot use {0} as a logo: {1}"
+msgstr "No se puede usar {0} como logo: {1}"
+
+msgid "Footer"
+msgstr "Pie"
+
+msgid "Header"
+msgstr "Cabecera"
+
+msgid "Notes position"
+msgstr "Ubicación de las notas"
+
+msgid "Report logo"
+msgstr "Logo del informe"
+
+msgid "Default"
+msgstr "Predeterminada"
+
+msgid "Right"
+msgstr "Derecha"
+
+msgid "Column style"
+msgstr "Estilo de columna"
+
+msgid "Width (mm, 0 = auto)"
+msgstr "Ancho (mm, 0 = automático)"
+
+msgid "Alignment"
+msgstr "Alineación"
+
+msgid "Font size (%)"
+msgstr "Tamaño de letra (%)"

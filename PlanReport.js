@@ -44,8 +44,19 @@ export const REPORT_TASKS = ["all", "critical", "open"];
  * landscape A4, and the 40 points a `ReportDocument` defaults to (14 mm). */
 const REPORT_DEFAULTS = {
     title:       "",
+    /* `null` means "the plan's own Title, when it has one": a report of a
+     * Project file opens with the subtitle the file already carries, and an
+     * empty string is how the reader takes it out. */
+    subtitle:    null,
+    notes:       "",
+    notesWhere:  "footer",
+    logo:        "",
     path:        true,
     columns:     REPORT_COLUMNS.map((c) => c.id),
+    /* All the table's type, as a percentage of 9 points, and any column that
+     * was given a width of its own (mm) or another alignment. */
+    fontScale:   100,
+    columnStyles: {},
     tasks:       "all",
     summaries:   false,
     stripes:     false,
@@ -63,7 +74,7 @@ const REPORT_DEFAULTS = {
      * width in percent, a sheet per phase (and short ones together), the legend, and the days printed
      * (ISO dates; empty is the plan's own end). */
     tall:        0,
-    table:       45,
+    table:       65,
     phases:      false,
     pack:        false,
     legend:      true,
@@ -82,6 +93,55 @@ export const REPORT_KINDS = ["table", "gantt"];
 const REPORT_GAP     = 8;    // between two columns
 const REPORT_NAME_W  = 120;  // the least the task's name is given
 const REPORT_INDENT  = "    ";
+const REPORT_MM_POINT = 72 / 25.4;
+
+/* A column's own look, when the reader changed it: a width in millimetres
+ * (0 asks for the content's), and an alignment that overrides the column's
+ * own. The type size is the report's: one size for every column. */
+export const REPORT_ALIGNS = ["", "Left", "Center", "Right"];
+
+export function reportColumnStyle(styles, id) {
+    const s = (styles && id && styles[id]) || {};
+    const width = Math.round(Number(s.width) || 0);
+    return {
+        width: width > 0 ? Math.max(5, Math.min(150, width)) : 0,
+        align: REPORT_ALIGNS.includes(s.align) ? s.align : "",
+    };
+}
+
+/* The table's type size, from the percentage the dialog asks for: 9 points at
+ * 100 %, and never smaller than a legible 6. */
+export function reportFontSize(percent) {
+    const pct = Math.max(50, Math.min(200, Math.round(Number(percent) || 100)));
+    return Math.max(6, Math.round(9 * pct / 100));
+}
+
+/* A logo's path as the report reads it: relative names resolve against the
+ * project, as every other file the app reads does, and an absolute one is
+ * already where it says. `Probe.Image` is what says how big it is -- the report
+ * places a picture, it does not measure one -- so a file that is not an image
+ * is simply no logo, rather than a report that throws while drawing. */
+function imageFile(path) {
+    const text = String(path || "").trim();
+    if (!text) return "";
+    return /^([A-Za-z]:[\\/]|\/)/.test(text)
+        ? text : File.Join(Application.Directory, text);
+}
+
+export function reportLogo(logo, maxWidth, maxHeight) {
+    if (!logo) return null;
+    const file = imageFile(logo);
+    try {
+        const size = Probe.Image(file);
+        if (!size || !(size.Width > 0) || !(size.Height > 0)) return null;
+        const scale = Math.min(maxWidth / size.Width, maxHeight / size.Height);
+        return { File: file,
+                 Width:  Math.max(1, Math.round(size.Width * scale)),
+                 Height: Math.max(1, Math.round(size.Height * scale)) };
+    } catch (e) {
+        return null;
+    }
+}
 
 /* The options with every key there, whatever was passed. */
 export function reportOptions(o) {
@@ -90,8 +150,18 @@ export function reportOptions(o) {
         out[key] = o && o[key] !== undefined ? o[key] : REPORT_DEFAULTS[key];
     }
     out.columns = REPORT_COLUMNS.map((c) => c.id).filter((id) => out.columns.includes(id));
+    out.fontScale = Math.max(50, Math.min(200, Math.round(Number(out.fontScale) || 100)));
+    const given = out.columnStyles && typeof out.columnStyles === "object"
+                ? out.columnStyles : {};
+    const styles = {};
+    for (const c of REPORT_COLUMNS) {
+        const style = reportColumnStyle(given, c.id);
+        if (style.width || style.align) styles[c.id] = style;
+    }
+    out.columnStyles = styles;
     if (!REPORT_TASKS.includes(out.tasks)) out.tasks = "all";
     if (!REPORT_KINDS.includes(out.kind)) out.kind = "table";
+    if (out.notesWhere !== "header") out.notesWhere = "footer";
     out.wide = Math.max(1, Math.min(20, Math.round(Number(out.wide) || 1)));
     out.tall = Math.max(0, Math.min(20, Math.round(Number(out.tall) || 0)));
     out.table = Math.max(15, Math.min(70, Math.round(Number(out.table) || 45)));
@@ -170,8 +240,14 @@ export function reportPicks(project, o) {
 
 /* Where each column goes across the printable width: `[{ col, x, width }]`
  * with the task's name first. */
-export function reportLayout(width, ids) {
-    const cols  = REPORT_COLUMNS.filter((c) => ids.includes(c.id));
+export function reportLayout(width, ids, preferred, styles) {
+    const cols  = REPORT_COLUMNS.filter((c) => ids.includes(c.id))
+                               .map((c) => {
+        const style = reportColumnStyle(styles, c.id);
+        return { ...c,
+                 width: preferred && preferred[c.id] ? preferred[c.id] : c.width,
+                 align: style.align || c.align };
+    });
     const gaps  = cols.length * REPORT_GAP;
     const fixed = cols.reduce((sum, c) => sum + c.width, 0);
 
@@ -192,6 +268,83 @@ export function reportLayout(width, ids) {
     return out;
 }
 
+/* The width a column wants for its own heading and values, before the paper
+ * says how much there is. Measuring the content is the first half of not
+ * cutting a column; the ellipsis is the last resort, not the plan. A width the
+ * reader set is taken as it is: that is what "manual" means. */
+export function reportWidths(rows, ids, styles, fontPercent) {
+    const out = {};
+    const pt = reportFontSize(fontPercent);
+    const normal = `Sans ${pt}`;
+    const bold   = `Sans Bold ${pt}`;
+    for (const c of REPORT_COLUMNS.filter((col) => ids.includes(col.id))) {
+        const style = reportColumnStyle(styles, c.id);
+        if (style.width > 0) {
+            out[c.id] = Math.round(style.width * REPORT_MM_POINT);
+            continue;
+        }
+        let widest = Text.Size(reportColumnTitle(c.id), bold).Width;
+        for (const row of rows) {
+            const value = c.id === "cost"
+                        ? Locale.Currency(Number(row.Summary ? row.RollCost : row.Cost) || 0, 2)
+                        : String(row[c.field] === undefined ? "" : row[c.field]);
+            widest = Math.max(widest,
+                              Text.Size(value, normal).Width,
+                              row.Summary
+                                  ? Text.Size(value, bold).Width : 0);
+        }
+        out[c.id] = Math.ceil(widest + 8);
+    }
+    return out;
+}
+
+/* A single line cut at the column's edge, with the ellipsis that says so.
+ * `Text.Size` is the same measurement the report uses to lay the line out, so
+ * the cut and the drawing agree. */
+function clipText(text, width, font) {
+    const value = String(text === undefined || text === null ? "" : text);
+    if (!value || width <= 0) return "";
+    if (Text.Size(value, font).Width <= width) return value;
+    const ellipsis = "…";
+    let low = 0, high = value.length;
+    while (low < high) {
+        const mid = Math.ceil((low + high) / 2);
+        if (Text.Size(value.slice(0, mid) + ellipsis, font).Width <= width)
+            low = mid;
+        else
+            high = mid - 1;
+    }
+    return low > 0 ? value.slice(0, low) + ellipsis : ellipsis;
+}
+
+/* The rows as the table will draw them: the values the columns can hold, with
+ * the long ones cut at their own width. A cost is left to `Format: "Money"`,
+ * which the report draws; its column is measured from the same format above. */
+function clipRows(rows, cols, fontPercent) {
+    const pt = reportFontSize(fontPercent);
+    const normal = `Sans ${pt}`;
+    const bold   = `Sans Bold ${pt}`;
+    return rows.map((row) => {
+        const out = { ...row };
+        const font = row.Summary ? bold : normal;
+        for (const { col, width } of cols) {
+            if (!col) {
+                out.Task = clipText(row.Task, width - 4, font);
+                continue;
+            }
+            if (col.id === "cost") {
+                out.CostText = clipText(
+                    Locale.Currency(Number(row.Cost) || 0, 2), width - 4, font);
+                out.RollCostText = clipText(
+                    Locale.Currency(Number(row.RollCost) || 0, 2), width - 4, font);
+                continue;
+            }
+            out[col.field] = clipText(row[col.field], width - 4, font);
+        }
+        return out;
+    });
+}
+
 /* The whole report: what a `ReportDocument` (or a `Report`) is filled with. */
 export function planReport(project, path, options) {
     const o = reportOptions(options);
@@ -200,16 +353,50 @@ export function planReport(project, path, options) {
     const [pw]  = o.orientation === "Landscape" ? [sheet.Height, sheet.Width]
                                                 : [sheet.Width, sheet.Height];
     const width = Math.max(200, pw - 2 * o.margins);
-    const cols  = reportLayout(width, o.columns);
+    const rows  = reportRows(project, o);
+    const widths = reportWidths(rows, o.columns, o.columnStyles, o.fontScale);
+    const cols  = reportLayout(width, o.columns, widths, o.columnStyles);
     const right = cols[cols.length - 1].x + cols[cols.length - 1].width;
 
-    const title = o.title || project.Name || File.Name(path || "") || Locale.Text("Plan");
-    const headY = o.path && path ? 30 : 18;
+    /* One type size for the whole table, headings included: the columns are
+     * aligned and measured against the size they will be drawn in. */
+    const fontPt = reportFontSize(o.fontScale);
+    const font   = `Sans ${fontPt}`;
+    const bold   = `Sans Bold ${fontPt}`;
+    const headRow = Math.max(16, Math.ceil(fontPt * 1.7));
 
-    const header = [
-        { Kind: "Text", Text: title, X: 0, Y: 0, Font: "Sans Bold 12" },
-    ];
-    if (o.path && path) header.push({ Kind: "Text", Text: path, X: 0, Y: 16, Font: "Sans 8" });
+    const title = o.title || project.Name || File.Name(path || "") || Locale.Text("Plan");
+    const subtitle = o.subtitle !== null && o.subtitle !== undefined
+                   ? String(o.subtitle).trim() : String(project.Title || "").trim();
+    const notes = String(o.notes || "").trim();
+    const logo = reportLogo(o.logo, width * 0.25, 40);
+    const textX = logo ? logo.Width + 16 : 0;
+    const titleW = logo ? Math.max(120, width - textX) : width;
+
+    /* The header's type is measured, not guessed: a title or a path that wraps
+     * grows the band, and the column headings start below what was actually
+     * written. The logo sits on the left, and the text keeps out of its way. */
+    const header = [];
+    let headerY = 0;
+    const headText = (text, font, color) => {
+        if (!text) return;
+        const height = Text.Size(text, font, { Width: titleW }).Height;
+        const element = { Kind: "Text", Text: text, X: textX, Y: headerY,
+                          Width: titleW, Font: font, Wrap: true };
+        if (color) element.Color = color;
+        header.push(element);
+        headerY += height + 2;
+    };
+    headText(title, "Sans Bold 12");
+    if (subtitle && subtitle !== title) headText(subtitle, "Sans 9");
+    if (o.path && path) headText(path, "Sans 8", "#555555");
+    if (notes && o.notesWhere === "header") headText(notes, "Sans 9", "#444444");
+    if (logo) {
+        header.push({ Kind: "Image", File: logo.File, X: 0,
+                      Y: 0, Width: logo.Width, Height: logo.Height });
+    }
+
+    const headY = Math.max(headerY + 2, logo ? logo.Height + 6 : 0, 18);
 
     const detail = [];
     if (o.stripes) {
@@ -218,48 +405,70 @@ export function planReport(project, path, options) {
     }
 
     for (const { col, x, width: w } of cols) {
-        const text  = col ? reportColumnTitle(col.id) : Locale.Text("Task");
+        const text  = clipText(col ? reportColumnTitle(col.id) : Locale.Text("Task"),
+                               w - 2, bold);
         const align = (col && col.align) || "Left";
         header.push({ Kind: "Text", Text: text, X: x, Y: headY, Width: w,
-                      Align: align, Font: "Sans Bold 9" });
+                      Align: align, Font: bold });
 
         const field = col ? col.field : "Task";
         const cell  = { Kind: "Field", Field: field, X: x, Y: 0, Width: w,
-                        Align: align, Format: (col && col.format) || "" };
+                        Align: align, Font: font,
+                        Format: (col && col.format) || "" };
 
         if (col && col.id === "cost") {
-            /* A summary shows what its tasks cost, a task its own. */
-            detail.push({ ...cell, When: { Field: "Summary", IsNot: true } });
-            detail.push({ ...cell, Field: "RollCost", Font: "Sans Bold 9",
-                          When: { Field: "Summary", Is: true } });
+            /* A summary shows what its tasks cost, a task its own. The text is
+             * pre-clipped, so the cell keeps its number formatting without
+             * running over the next column. */
+            detail.push({ ...cell, Field: "CostText", Format: "",
+                          When: { Field: "Summary", IsNot: true } });
+            detail.push({ ...cell, Field: "RollCostText", Format: "",
+                          Font: bold, When: { Field: "Summary", Is: true } });
         } else {
             detail.push({ ...cell, When: { Field: "Summary", IsNot: true } });
-            detail.push({ ...cell, Font: "Sans Bold 9", When: { Field: "Summary", Is: true } });
+            detail.push({ ...cell, Font: bold, When: { Field: "Summary", Is: true } });
         }
     }
-    header.push({ Kind: "Line", Y1: headY + 16, X2: right, Y2: headY + 16, Color: "#999999" });
+    header.push({ Kind: "Line", Y1: headY + headRow, X2: right, Y2: headY + headRow,
+                  Color: "#999999" });
+
+    /* The foot: a note by default, at the left, with the page number at the
+     * right. A note that wraps grows the band once, and the page numbers stay
+     * on its last line. */
+    const foot = [
+        { Kind: "Field", Field: "@Page", X: right - 70, Y: 0, Width: 30,
+          Align: "Right", Font: "Sans 8" },
+        { Kind: "Text", Text: "/", X: right - 38, Y: 0, Font: "Sans 8" },
+        { Kind: "Field", Field: "@Pages", X: right - 30, Y: 0, Width: 30, Font: "Sans 8" },
+    ];
+    let footH = 16;
+    if (notes && o.notesWhere !== "header") {
+        const noteW = Math.max(120, right - 90);
+        const noteH = Text.Size(notes, "Sans 9", { Width: noteW }).Height;
+        footH = Math.max(16, noteH + 4);
+        foot.unshift({ Kind: "Text", Text: notes, X: 0, Y: 0, Width: noteW,
+                       Font: "Sans 9", Wrap: true, Color: "#444444" });
+        for (const el of foot)
+            if (el.Kind === "Field" || (el.Kind === "Text" && el.Text === "/"))
+                el.Y = Math.max(0, footH - 12);
+    }
 
     const sections = {
         /* The page header sits at the top of every page and the rest flows
          * under it, so the title belongs here with the captions -- and it
          * repeats with them, which a plan across pages wants anyway. */
-        PageHeader: { Height: headY + 18, Elements: header },
-        Detail:     { Height: 15, Elements: detail },
-        PageFooter: { Height: 16, Elements: [
-            { Kind: "Field", Field: "@Page", X: right - 70, Y: 0, Width: 30,
-              Align: "Right", Font: "Sans 8" },
-            { Kind: "Text", Text: "/", X: right - 38, Y: 0, Font: "Sans 8" },
-            { Kind: "Field", Field: "@Pages", X: right - 30, Y: 0, Width: 30, Font: "Sans 8" },
-        ]},
+        PageHeader: { Height: headY + headRow + 2, Elements: header },
+        Detail:     { Height: Math.max(15, fontPt + 6), Elements: detail },
+        PageFooter: { Height: footH, Elements: foot },
     };
 
     const cost = cols.find((c) => c.col && c.col.id === "cost");
     if (cost) {
-        sections.ReportFooter = { Height: 22, Elements: [
+        sections.ReportFooter = { Height: Math.max(22, fontPt + 8), Elements: [
             { Kind: "Text", Text: Locale.Text("Total"), X: cost.x - 108, Y: 4,
-              Width: 100, Align: "Right", Font: "Sans Bold 9" },
+              Width: 100, Align: "Right", Font: bold },
             { Kind: "Total", Field: "Cost", Op: "Sum", Format: "Money",
-              X: cost.x, Y: 4, Width: cost.width, Align: "Right" },
+              X: cost.x, Y: 4, Width: cost.width, Align: "Right", Font: bold },
         ]};
     }
 
@@ -268,7 +477,7 @@ export function planReport(project, path, options) {
         Orientation: o.orientation,
         Margins:     o.margins,
         Sections:    sections,
-        Data:        reportRows(project, o),
+        Data:        clipRows(rows, cols, o.fontScale),
     };
 }
 
