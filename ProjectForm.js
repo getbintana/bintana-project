@@ -72,7 +72,10 @@ export function projectFormValues(dlg, project, tables) {
         values[prop] = at >= 0 && at !== left ? choices[at] : project[prop];
     }
     for (const prop in tables.NUMBER)
-        if (isNaN(values[prop]) || values[prop] < 0) return null;
+        if (isNaN(values[prop]) ||
+            (values[prop] < 0 && !(prop === "CurrencyDigits" &&
+                                   values[prop] === -1)))
+            return null;
     return values;
 }
 

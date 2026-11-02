@@ -5961,6 +5961,21 @@ export class MainForm extends Form {
             ok = eq("el fin del día es 00:00", clockText(1440), "00:00:00") && ok;
             ok = eq("un nombre con $ es ese nombre",
                     newMspdi({ Name: "A$'B $MADE $$" }).project.Name, "A$'B $MADE $$") && ok;
+
+            /* **Un archivo que no dice los decimales de la moneda** -- 08 no
+             * trae `CurrencyDigits` -- abre Project data con el campo vacío y
+             * su Aceptar tiene que conservar la ausencia como -1, no rechazarla
+             * como un número negativo. */
+            const noDigits = readMspdi(this.resolve(
+                File.Join("tests", "corpus", "08-namespace-2007.xml")));
+            ok = eq("el archivo no dice los decimales",
+                    noDigits.project.CurrencyDigits, -1) && ok;
+            const digitsDlg = ProjectForm.open(noDigits.project, () => {});
+            const digitsValues = projectFormValues(digitsDlg, noDigits.project,
+                                                   digitsDlg.tables);
+            ok = eq("y Project data los puede dejar sin decir",
+                    digitsValues !== null && digitsValues.CurrencyDigits, -1) && ok;
+            digitsDlg.Close();
             const spans = parseSpans("8:00-12:00 13:00-24:00");
             ok = eq("los horarios se leen con o sin cero",
                     spans.map((wt) => `${wt.FromTime}-${wt.ToTime}`).join(" "),
