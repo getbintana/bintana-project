@@ -1110,7 +1110,6 @@ $TITLE  <CreationDate>$MADE</CreationDate>
         <WeekDay><DayType>1</DayType><DayWorking>false</DayWorking></WeekDay>
 $WEEKDAYS
         <WeekDay><DayType>7</DayType><DayWorking>false</DayWorking></WeekDay>
-        <WeekDay><DayType>8</DayType><DayWorking>false</DayWorking></WeekDay>
       </WeekDays>
     </Calendar>
   </Calendars>
@@ -1151,7 +1150,7 @@ export function planStart(text) {
 function planWeekdays() {
     const shift = SHIFT.map(([from, to]) =>
         `<WorkingTime><FromTime>${from}</FromTime><ToTime>${to}</ToTime></WorkingTime>`).join("");
-    return [2, 3, 4, 5].map((day) =>
+    return [2, 3, 4, 5, 6].map((day) =>
         `        <WeekDay><DayType>${day}</DayType><DayWorking>true</DayWorking>` +
         `<WorkingTimes>${shift}</WorkingTimes></WeekDay>`).join("\n");
 }

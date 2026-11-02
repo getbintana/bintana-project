@@ -5062,12 +5062,26 @@ export class MainForm extends Form {
             ok = eq("named Standard", p.Calendars[0].Name, "Standard") && ok;
             ok = eq("which is the plan's own", p.CalendarUID,
                     p.Calendars[0].UID) && ok;
-            ok = eq("of a five-day week", p.Calendars[0].WeekDays.length, 7) && ok;
-            ok = eq("Monday works", p.Calendars[0].WeekDays[1].DayWorking, true) && ok;
-            ok = eq("in two shifts", p.Calendars[0].WeekDays[1].WorkingTimes.length,
-                    2) && ok;
-            ok = eq("Saturday does not", p.Calendars[0].WeekDays[5].DayWorking,
-                    false) && ok;
+            const weekDays = p.Calendars[0].WeekDays;
+            const weekDay = (type) => weekDays.find((d) => d.DayType === type) ||
+                                      { DayWorking: false, WorkingTimes: [] };
+            ok = eq("of seven day entries", weekDays.length, 7) && ok;
+            ok = eq("of a five-day week",
+                    weekDays.filter((d) => d.DayWorking).length, 5) && ok;
+            ok = eq("Monday works", weekDay(2).DayWorking, true) && ok;
+            ok = eq("in two shifts", weekDay(2).WorkingTimes.length, 2) && ok;
+            ok = eq("Friday works", weekDay(6).DayWorking, true) && ok;
+            ok = eq("Saturday does not", weekDay(7).DayWorking, false) && ok;
+            ok = eq("Sunday does not", weekDay(1).DayWorking, false) && ok;
+            ok = eq("and every day is a real day",
+                    weekDays.every((d) => d.DayType >= 1 && d.DayType <= 7), true) && ok;
+            /* **A task that crosses the week ends where Project would put
+             * it.** The old text had Monday to Thursday plus an invented
+             * DayType 8, so a five-day task finished on the next Monday. */
+            const blankWork = new WorkCalendar(p, p.CalendarUID);
+            ok = eq("five working days from Monday end Friday",
+                    isoLocal(blankWork.add(whenMs(p.StartDate), 5 * 480)),
+                    "2026-10-09T17:00:00") && ok;
             ok = eq("and the shape modelled all of it", fresh.problems.length, 0) && ok;
 
             /* **It has to survive being written and read back**, or New Project
@@ -5081,7 +5095,9 @@ export class MainForm extends Form {
                     "Un plan en blanco") && ok;
             ok = eq("its calendar", back.project.Calendars.length, 1) && ok;
             ok = eq("and Monday's two shifts",
-                    back.project.Calendars[0].WeekDays[1].WorkingTimes.length,
+                    (back.project.Calendars[0].WeekDays.find(
+                        (d) => d.DayType === 2) || { WorkingTimes: [] })
+                        .WorkingTimes.length,
                     2) && ok;
             ok = eq("with nothing not modelled", back.problems.length, 0) && ok;
 
