@@ -843,6 +843,13 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 ### El motor
 
+- **Las excepciones recurrentes cuentan en sus días** (2026-11-03): el
+  calendario leía el período de una excepción como una sola tanda, y un feriado
+  anual de 2026 a 2035 dejaba diez años sin trabajo (la plantilla de GLPI los
+  escribe así). `exceptionDays` (Schedule.js) recorre el período y marca los
+  días que nombran los tipos 1 a 6, con `Period` y `Occurrences`; un diario de
+  período 0 o 1, o un tipo 7, 8, 9 o ninguno, sigue siendo el rango. `check-cpm`
+  fija cada tipo. Falta que el diálogo del calendario pueda crearlas.
 - **Los vínculos con resúmenes, resueltos** (2026-10-07): un vínculo FS/SS
   *hacia* un resumen frena a todas sus hojas, y uno *desde* un resumen espera a
   que sus hojas estén colocadas y lee su rango en la misma pasada (el resumen se

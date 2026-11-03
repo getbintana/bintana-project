@@ -3563,6 +3563,66 @@ export class MainForm extends Form {
             ok = crossing("2026-10-22T08:00:00", "2026-10-28T17:00:00") && ok;
             ok = crossing("2026-09-03T08:00:00", "2026-09-10T17:00:00") && ok;   // the 8th is a holiday
 
+            /* **A recurring exception falls on its days, not on its whole
+             * period.** A yearly 25 December from 2026 to 2035 is one period
+             * ten years long, and read as a range it left ten years without
+             * work. Each type of the schema's, against the days it names. */
+            const fallsOn = (fields, from, to) => {
+                const ex = new MspException({
+                    TimePeriod: new MspTimePeriod({ FromDate: from, ToDate: to }),
+                    Name: "R", DayWorking: false, ...fields });
+                const cal = new MspCalendar({ UID: 1, Name: "R", IsBaseCalendar: true,
+                                              WeekDays: week, Exceptions: [ex] });
+                const marked = new WorkCalendar(new MspProject({
+                    CalendarUID: 1, Calendars: [cal] }), 1).exceptions;
+                const keys = [];
+                for (const key in marked) keys.push(key);
+                keys.sort();
+                return keys.length > 6
+                    ? `${keys.length}: ${keys.slice(0, 3).join(" ")} … ${keys[keys.length - 1]}`
+                    : keys.join(" ");
+            };
+            ok = eq("a yearly holiday is one day a year",
+                    fallsOn({ Type: 2, Period: 1, Month: 11, MonthDay: 25, Occurrences: 10 },
+                            "2026-12-25T00:00:00", "2035-12-25T23:59:00"),
+                    "10: 2026-12-25 2027-12-25 2028-12-25 … 2035-12-25") && ok;
+            ok = eq("and stops at its occurrences",
+                    fallsOn({ Type: 2, Period: 1, Month: 0, MonthDay: 1, Occurrences: 2 },
+                            "2026-01-01T00:00:00", "2035-12-31T23:59:00"),
+                    "2026-01-01 2027-01-01") && ok;
+            ok = eq("a plain range is every day of it, whatever count it writes",
+                    fallsOn({ Type: 1, Period: 0, Occurrences: 1 },
+                            "2026-12-24T00:00:00", "2026-12-26T23:59:00"),
+                    "2026-12-24 2026-12-25 2026-12-26") && ok;
+            ok = eq("every third day",
+                    fallsOn({ Type: 1, Period: 3 }, "2026-09-01T00:00:00", "2026-09-10T23:59:00"),
+                    "2026-09-01 2026-09-04 2026-09-07 2026-09-10") && ok;
+            ok = eq("the third Monday of August",
+                    fallsOn({ Type: 3, Period: 1, Month: 7, MonthItem: 4, MonthPosition: 2 },
+                            "2026-08-01T00:00:00", "2027-08-31T23:59:00"),
+                    "2026-08-17 2027-08-16") && ok;
+            ok = eq("the 15th of every other month",
+                    fallsOn({ Type: 4, Period: 2, MonthDay: 15 },
+                            "2026-01-15T00:00:00", "2026-07-31T23:59:00"),
+                    "2026-01-15 2026-03-15 2026-05-15 2026-07-15") && ok;
+            ok = eq("the last Friday of each month",
+                    fallsOn({ Type: 5, Period: 1, MonthItem: 8, MonthPosition: 4 },
+                            "2026-09-01T00:00:00", "2026-11-30T23:59:00"),
+                    "2026-09-25 2026-10-30 2026-11-27") && ok;
+            ok = eq("Mondays and Fridays of every other week",
+                    fallsOn({ Type: 6, Period: 2, DaysOfWeek: 2 | 32 },
+                            "2026-09-07T00:00:00", "2026-10-02T23:59:00"),
+                    "2026-09-07 2026-09-11 2026-09-21 2026-09-25") && ok;
+            ok = eq("a long plan schedules past a yearly holiday",
+                    isoLocal(new WorkCalendar(new MspProject({ CalendarUID: 1, Calendars: [
+                        new MspCalendar({ UID: 1, Name: "R", IsBaseCalendar: true, WeekDays: week,
+                            Exceptions: [new MspException({ Name: "Navidad", DayWorking: false,
+                                Type: 2, Period: 1, Month: 11, MonthDay: 25,
+                                TimePeriod: new MspTimePeriod({ FromDate: "2026-12-25T00:00:00",
+                                                                ToDate: "2035-12-25T23:59:00" }) })] })] }), 1)
+                        .add(whenMs("2026-12-24T08:00:00"), 960)),
+                    "2026-12-28T17:00:00") && ok;
+
             /* **A lead is working time too**: 8h before Monday 10:00 is
              * Friday 10:00, where it used to be Monday 02:00. */
             ok = eq("a lead walks back over the weekend",

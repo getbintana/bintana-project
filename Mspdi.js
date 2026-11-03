@@ -509,8 +509,8 @@ export class MspTimePeriod extends Record {
 }
 
 /* A calendar exception: a holiday (`DayWorking` false) or a special working
- * day. The recurrence is modelled but **not yet scheduled**: the engine reads
- * the dates the file writes (ROADMAP, phase 2). */
+ * day. Its recurrence is scheduled by `exceptionDays` (Schedule.js), which
+ * marks the days it names inside its period. */
 /* **Every field the schema gives an exception is modelled**, recurrence
  * included, and that is what makes an unkeyed list safe: an exception has no
  * UID, so `SaveXml` pairs records with elements by position, and deleting the

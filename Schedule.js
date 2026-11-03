@@ -99,6 +99,102 @@ export function whenMs(text) {
     return isNaN(ms) ? null : ms;
 }
 
+/*
+ * **The days a calendar exception falls on**, from its period's first day to
+ * its last: every one of them for a plain range, and only the ones its
+ * recurrence names for the rest. The period of a recurring exception is not
+ * the time it lasts but the span its occurrences are scattered over -- a
+ * yearly 25 December from 2026 to 2035 is written as one period ten years
+ * long, and read as a range it left ten years without a working day.
+ *
+ * `Type` is MSPDI's: 1 daily (every `Period` days; Project writes a plain
+ * range as a daily of period 0 or 1), 2 yearly on `MonthDay` of `Month`,
+ * 3 yearly on the `MonthPosition`-th `MonthItem` of `Month`, 4 and 5 the same
+ * two monthly every `Period` months, 6 weekly on the `DaysOfWeek` every
+ * `Period` weeks. Anything else -- 7 and 8, which the schema names and does
+ * not explain, 9 or none -- is the range it says. `Occurrences`, when it is
+ * there, stops the count. What the recurrence leaves unsaid is read off the
+ * first day: a yearly with no month falls in the month the period opens in.
+ *
+ * Days are counted on the civil calendar (`Date.UTC` of the local date), so
+ * a period that crosses a change of the clocks does not lose a day to it.
+ */
+function exceptionDays(ex, from, to) {
+    const days = [];
+    const first = new Date(from), last = new Date(to);
+    const civil = (d) => Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) / DAY_MS;
+    const start = civil(first), end = civil(last);
+    const type  = ex.Type;
+    const every = Math.max(1, ex.Period || 0);
+    const month = ex.Month >= 0 ? ex.Month : first.getMonth();
+    const mday  = ex.MonthDay > 0 ? ex.MonthDay : first.getDate();
+    const week  = ex.DaysOfWeek > 0 ? ex.DaysOfWeek : 1 << first.getDay();
+    const item  = ex.MonthItem >= 0 ? ex.MonthItem : 0;
+    const place = ex.MonthPosition >= 0 ? ex.MonthPosition : 0;
+    const monthsIn = (d) => (d.getFullYear() - first.getFullYear()) * 12 +
+                            d.getMonth() - first.getMonth();
+
+    /* MonthItem: 0 any day, 1 a weekday, 2 a weekend day, 3..9 Sunday to
+     * Saturday; MonthPosition 0..3 the first to the fourth, 4 the last. */
+    const isItem = (y, m, dd) => {
+        const wd = new Date(y, m, dd).getDay();
+        if (item === 0) return true;
+        if (item === 1) return wd !== 0 && wd !== 6;
+        if (item === 2) return wd === 0 || wd === 6;
+        return wd === item - 3;
+    };
+    const atPlace = (d) => {
+        const y = d.getFullYear(), m = d.getMonth(), dd = d.getDate();
+        if (!isItem(y, m, dd)) return false;
+        const length = new Date(y, m + 1, 0).getDate();
+        if (place === 4) {
+            for (let k = dd + 1; k <= length; k++) if (isItem(y, m, k)) return false;
+            return true;
+        }
+        let n = 0;
+        for (let k = 1; k <= dd; k++) if (isItem(y, m, k)) n++;
+        return n === place + 1;
+    };
+    const falls = (d, n) => {
+        switch (type) {
+        case 1: return (n - start) % every === 0;
+        case 2: return d.getMonth() === month && d.getDate() === mday &&
+                       (d.getFullYear() - first.getFullYear()) % every === 0;
+        case 3: return d.getMonth() === month && atPlace(d) &&
+                       (d.getFullYear() - first.getFullYear()) % every === 0;
+        case 4: return d.getDate() === mday && monthsIn(d) % every === 0;
+        case 5: return atPlace(d) && monthsIn(d) % every === 0;
+        case 6: {
+            /* Weeks counted from the Sunday of the first one, as the bits
+             * count the days: 1 Sunday, 2 Monday ... 64 Saturday. */
+            const weeks = Math.floor((n - (start - first.getDay())) / 7);
+            return (week & (1 << d.getDay())) !== 0 && weeks % every === 0;
+        }
+        default: return true;
+        }
+    };
+
+    /* A plain range is the days between its dates, whatever count it also
+     * writes: Project puts the number of days there, and a period it wrote
+     * itself is the one to trust. */
+    const plain = !(type >= 1 && type <= 6) || (type === 1 && every === 1);
+    if (plain) {
+        for (let n = start; n <= end; n++) {
+            const c = new Date(n * DAY_MS);
+            days.push(localMs(c.getUTCFullYear(), c.getUTCMonth(), c.getUTCDate()));
+        }
+        return days;
+    }
+    const limit = ex.Occurrences > 0 ? ex.Occurrences : Infinity;
+    for (let n = start; n <= end && days.length < limit; n++) {
+        const civilDay = new Date(n * DAY_MS);
+        const d = new Date(civilDay.getUTCFullYear(), civilDay.getUTCMonth(), civilDay.getUTCDate());
+        if (falls(d, n))
+            days.push(localMs(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+    return days;
+}
+
 export class WorkCalendar {
 
     days = {};        // DayType 1..7 -> [[from, to], ...], minutes from midnight
@@ -144,7 +240,7 @@ export class WorkCalendar {
                     const span = clockSpan(wt);
                     if (span) spans.push(span);
                 }
-                for (let day = this.#dayStart(from); day <= to; day = this.#nextDay(day))
+                for (const day of exceptionDays(ex, from, to))
                     this.exceptions[this.#dayKey(day)] = ex.DayWorking ? spans : null;
             }
         }

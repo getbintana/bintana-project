@@ -433,6 +433,14 @@ texto (`08:00-12:00 13:00-17:00`, porque un día puede tener más de uno) y las
 excepciones, que es como se cargan los feriados. Muestra la semana **efectiva**
 —con lo que herede de su calendario base— y al aceptar la deja escrita.
 
+Las **excepciones recurrentes** que trae un archivo —un feriado anual, el
+tercer lunes de agosto, cada lunes de por medio— cuentan solo en los días que
+nombran, no en todo el período que las abarca: el 25 de diciembre de 2026 a
+2035 son diez días sin trabajo, no diez años. Se leen los tipos de MSPDI
+diario, semanal, mensual y anual (por día del mes o por posición), con su
+período y su cantidad de ocurrencias. El diálogo las conserva al editarlas,
+pero todavía no las crea.
+
 En la pestaña **Tarea** y en el editor de recursos, **Calendario** elige cuál
 rige para esa tarea o ese recurso: **Del proyecto** o uno en particular.
 

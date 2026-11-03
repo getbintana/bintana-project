@@ -117,14 +117,14 @@
     <Task>
       <UID>0</UID>
       <Name>Desarrollo de bintana-project</Name>
-      <Start>2026-08-24T08:00:00</Start>
-      <Finish>2026-11-12T17:00:00</Finish>
-      <Duration>PT472H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>0</WBS>
       <OutlineNumber>0</OutlineNumber>
       <Priority>500</Priority>
+      <Start>2026-08-24T08:00:00</Start>
+      <Finish>2026-11-12T17:00:00</Finish>
+      <Duration>PT472H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -133,15 +133,15 @@
       <UID>1</UID>
       <ID>1</ID>
       <Name>Fase 0 — Documento y harness</Name>
-      <Start>2026-08-24T08:00:00</Start>
-      <Finish>2026-08-31T17:00:00</Finish>
-      <Duration>PT48H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>1</WBS>
       <OutlineNumber>1</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-08-24T08:00:00</Start>
+      <Finish>2026-08-31T17:00:00</Finish>
+      <Duration>PT48H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -240,15 +240,15 @@
       <UID>6</UID>
       <ID>6</ID>
       <Name>Fase 1 — Editor mínimo</Name>
-      <Start>2026-09-01T08:00:00</Start>
-      <Finish>2026-09-10T17:00:00</Finish>
-      <Duration>PT64H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>2</WBS>
       <OutlineNumber>2</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-09-01T08:00:00</Start>
+      <Finish>2026-09-10T17:00:00</Finish>
+      <Duration>PT64H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -352,15 +352,15 @@
       <UID>11</UID>
       <ID>11</ID>
       <Name>Fase 2 — Calendarios y CPM</Name>
-      <Start>2026-09-11T08:00:00</Start>
-      <Finish>2026-09-23T17:00:00</Finish>
-      <Duration>PT72H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>3</WBS>
       <OutlineNumber>3</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-09-11T08:00:00</Start>
+      <Finish>2026-09-23T17:00:00</Finish>
+      <Duration>PT72H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -465,15 +465,15 @@
       <UID>16</UID>
       <ID>16</ID>
       <Name>Fase 3 — Editor completo</Name>
-      <Start>2026-09-24T08:00:00</Start>
-      <Finish>2026-10-02T17:00:00</Finish>
-      <Duration>PT56H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>4</WBS>
       <OutlineNumber>4</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-09-24T08:00:00</Start>
+      <Finish>2026-10-02T17:00:00</Finish>
+      <Duration>PT56H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -482,13 +482,13 @@
       <UID>17</UID>
       <ID>17</ID>
       <Name>Panel de propiedades (pestañas)</Name>
-      <Start>2026-09-24T08:00:00</Start>
-      <Finish>2026-09-28T17:00:00</Finish>
       <Type>1</Type>
       <WBS>4.1</WBS>
       <OutlineNumber>4.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-09-24T08:00:00</Start>
+      <Finish>2026-09-28T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
@@ -508,13 +508,13 @@
       <UID>18</UID>
       <ID>18</ID>
       <Name>Configuración del plan y calendarios</Name>
-      <Start>2026-09-29T08:00:00</Start>
-      <Finish>2026-09-30T17:00:00</Finish>
       <Type>1</Type>
       <WBS>4.2</WBS>
       <OutlineNumber>4.2</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-09-29T08:00:00</Start>
+      <Finish>2026-09-30T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -529,13 +529,13 @@
       <UID>19</UID>
       <ID>19</ID>
       <Name>Autosave y recuperación</Name>
-      <Start>2026-10-01T08:00:00</Start>
-      <Finish>2026-10-02T17:00:00</Finish>
       <Type>1</Type>
       <WBS>4.3</WBS>
       <OutlineNumber>4.3</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-01T08:00:00</Start>
+      <Finish>2026-10-02T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -550,13 +550,13 @@
       <UID>20</UID>
       <ID>20</ID>
       <Name>Informe PDF (lib/report)</Name>
-      <Start>2026-10-01T08:00:00</Start>
-      <Finish>2026-10-02T17:00:00</Finish>
       <Type>1</Type>
       <WBS>4.4</WBS>
       <OutlineNumber>4.4</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-01T08:00:00</Start>
+      <Finish>2026-10-02T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -571,13 +571,13 @@
       <UID>21</UID>
       <ID>21</ID>
       <Name>Hito: editor usable a diario</Name>
-      <Start>2026-10-02T17:00:00</Start>
-      <Finish>2026-10-02T17:00:00</Finish>
       <Type>1</Type>
       <WBS>4.5</WBS>
       <OutlineNumber>4.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-02T17:00:00</Start>
+      <Finish>2026-10-02T17:00:00</Finish>
       <Estimated>0</Estimated>
       <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
@@ -596,15 +596,15 @@
       <UID>22</UID>
       <ID>22</ID>
       <Name>Fase 4 — Gantt interactivo</Name>
-      <Start>2026-10-05T08:00:00</Start>
-      <Finish>2026-10-13T17:00:00</Finish>
-      <Duration>PT56H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>5</WBS>
       <OutlineNumber>5</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-05T08:00:00</Start>
+      <Finish>2026-10-13T17:00:00</Finish>
+      <Duration>PT56H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -613,13 +613,13 @@
       <UID>23</UID>
       <ID>23</ID>
       <Name>Mover, estirar y enlazar</Name>
-      <Start>2026-10-05T08:00:00</Start>
-      <Finish>2026-10-07T17:00:00</Finish>
       <Type>1</Type>
       <WBS>5.1</WBS>
       <OutlineNumber>5.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-05T08:00:00</Start>
+      <Finish>2026-10-07T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
@@ -639,13 +639,13 @@
       <UID>24</UID>
       <ID>24</ID>
       <Name>Elegir el tipo al dibujar</Name>
-      <Start>2026-10-07T08:00:00</Start>
-      <Finish>2026-10-07T17:00:00</Finish>
       <Type>1</Type>
       <WBS>5.2</WBS>
       <OutlineNumber>5.2</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-07T08:00:00</Start>
+      <Finish>2026-10-07T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -661,13 +661,13 @@
       <UID>25</UID>
       <ID>25</ID>
       <Name>Línea base y seguimiento</Name>
-      <Start>2026-10-08T08:00:00</Start>
-      <Finish>2026-10-09T17:00:00</Finish>
       <Type>1</Type>
       <WBS>5.3</WBS>
       <OutlineNumber>5.3</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-08T08:00:00</Start>
+      <Finish>2026-10-09T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -682,16 +682,16 @@
       <UID>26</UID>
       <ID>26</ID>
       <Name>Varias líneas base</Name>
-      <Start>2026-10-12T08:00:00</Start>
-      <Finish>2026-10-13T17:00:00</Finish>
-      <Work>PT8H0M0S</Work>
       <Type>1</Type>
       <WBS>5.4</WBS>
       <OutlineNumber>5.4</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-12T08:00:00</Start>
+      <Finish>2026-10-13T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
+      <Work>PT8H0M0S</Work>
       <Estimated>0</Estimated>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
@@ -704,13 +704,13 @@
       <UID>27</UID>
       <ID>27</ID>
       <Name>Hito: Gantt completo</Name>
-      <Start>2026-10-13T17:00:00</Start>
-      <Finish>2026-10-13T17:00:00</Finish>
       <Type>1</Type>
       <WBS>5.5</WBS>
       <OutlineNumber>5.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-13T17:00:00</Start>
+      <Finish>2026-10-13T17:00:00</Finish>
       <Estimated>0</Estimated>
       <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
@@ -724,15 +724,15 @@
       <UID>28</UID>
       <ID>28</ID>
       <Name>Fase 5 — Recursos y costos</Name>
-      <Start>2026-10-14T08:00:00</Start>
-      <Finish>2026-10-26T17:00:00</Finish>
-      <Duration>PT72H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>6</WBS>
       <OutlineNumber>6</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-14T08:00:00</Start>
+      <Finish>2026-10-26T17:00:00</Finish>
+      <Duration>PT72H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -741,13 +741,13 @@
       <UID>29</UID>
       <ID>29</ID>
       <Name>Recursos y asignaciones</Name>
-      <Start>2026-10-14T08:00:00</Start>
-      <Finish>2026-10-16T17:00:00</Finish>
       <Type>1</Type>
       <WBS>6.1</WBS>
       <OutlineNumber>6.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-14T08:00:00</Start>
+      <Finish>2026-10-16T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT24H0M0S</Work>
@@ -763,13 +763,13 @@
       <UID>30</UID>
       <ID>30</ID>
       <Name>Costos por trabajo y material</Name>
-      <Start>2026-10-19T08:00:00</Start>
-      <Finish>2026-10-20T17:00:00</Finish>
       <Type>1</Type>
       <WBS>6.2</WBS>
       <OutlineNumber>6.2</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-19T08:00:00</Start>
+      <Finish>2026-10-20T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -784,13 +784,13 @@
       <UID>31</UID>
       <ID>31</ID>
       <Name>Tablas de tasas por fecha</Name>
-      <Start>2026-10-21T08:00:00</Start>
-      <Finish>2026-10-22T17:00:00</Finish>
       <Type>1</Type>
       <WBS>6.3</WBS>
       <OutlineNumber>6.3</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-21T08:00:00</Start>
+      <Finish>2026-10-22T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT16H0M0S</Work>
@@ -810,13 +810,13 @@
       <UID>32</UID>
       <ID>32</ID>
       <Name>Editor de tasas (RatesForm)</Name>
-      <Start>2026-10-23T08:00:00</Start>
-      <Finish>2026-10-26T17:00:00</Finish>
       <Type>1</Type>
       <WBS>6.4</WBS>
       <OutlineNumber>6.4</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-23T08:00:00</Start>
+      <Finish>2026-10-26T17:00:00</Finish>
       <Duration>PT16H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -831,13 +831,13 @@
       <UID>33</UID>
       <ID>33</ID>
       <Name>Hito: costos confiables</Name>
-      <Start>2026-10-26T17:00:00</Start>
-      <Finish>2026-10-26T17:00:00</Finish>
       <Type>1</Type>
       <WBS>6.5</WBS>
       <OutlineNumber>6.5</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-10-26T17:00:00</Start>
+      <Finish>2026-10-26T17:00:00</Finish>
       <Estimated>0</Estimated>
       <Milestone>1</Milestone>
       <CalendarUID>1</CalendarUID>
@@ -851,15 +851,15 @@
       <UID>34</UID>
       <ID>34</ID>
       <Name>Fase 6 — Distribución</Name>
-      <Start>2026-11-02T08:00:00</Start>
-      <Finish>2026-11-12T17:00:00</Finish>
-      <Duration>PT72H0M0S</Duration>
-      <DurationFormat>7</DurationFormat>
       <Type>1</Type>
       <WBS>7</WBS>
       <OutlineNumber>7</OutlineNumber>
       <OutlineLevel>1</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-02T08:00:00</Start>
+      <Finish>2026-11-12T17:00:00</Finish>
+      <Duration>PT72H0M0S</Duration>
+      <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Summary>1</Summary>
       <CalendarUID>1</CalendarUID>
@@ -868,13 +868,13 @@
       <UID>35</UID>
       <ID>35</ID>
       <Name>Port de Bintana a Windows</Name>
-      <Start>2026-11-02T08:00:00</Start>
-      <Finish>2026-11-06T17:00:00</Finish>
       <Type>1</Type>
       <WBS>7.1</WBS>
       <OutlineNumber>7.1</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-02T08:00:00</Start>
+      <Finish>2026-11-06T17:00:00</Finish>
       <Duration>PT40H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT40H0M0S</Work>
@@ -893,13 +893,13 @@
       <UID>36</UID>
       <ID>36</ID>
       <Name>Manual de uso</Name>
-      <Start>2026-11-04T08:00:00</Start>
-      <Finish>2026-11-06T17:00:00</Finish>
       <Type>1</Type>
       <WBS>7.2</WBS>
       <OutlineNumber>7.2</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-04T08:00:00</Start>
+      <Finish>2026-11-06T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT12H0M0S</Work>
@@ -916,13 +916,13 @@
       <UID>37</UID>
       <ID>37</ID>
       <Name>Bundle .bta e instalador</Name>
-      <Start>2026-11-09T08:00:00</Start>
-      <Finish>2026-11-11T17:00:00</Finish>
       <Type>1</Type>
       <WBS>7.3</WBS>
       <OutlineNumber>7.3</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-09T08:00:00</Start>
+      <Finish>2026-11-11T17:00:00</Finish>
       <Duration>PT24H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Work>PT12H0M0S</Work>
@@ -939,13 +939,13 @@
       <UID>38</UID>
       <ID>38</ID>
       <Name>Revisión final de fidelidad</Name>
-      <Start>2026-11-11T08:00:00</Start>
-      <Finish>2026-11-11T17:00:00</Finish>
       <Type>1</Type>
       <WBS>7.4</WBS>
       <OutlineNumber>7.4</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-11T08:00:00</Start>
+      <Finish>2026-11-11T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
@@ -983,13 +983,13 @@
       <UID>40</UID>
       <ID>40</ID>
       <Name>Hito: 0.1 publicado</Name>
-      <Start>2026-11-12T17:00:00</Start>
-      <Finish>2026-11-12T17:00:00</Finish>
       <Type>1</Type>
       <WBS>7.6</WBS>
       <OutlineNumber>7.6</OutlineNumber>
       <OutlineLevel>2</OutlineLevel>
       <Priority>500</Priority>
+      <Start>2026-11-12T17:00:00</Start>
+      <Finish>2026-11-12T17:00:00</Finish>
       <Estimated>0</Estimated>
       <Milestone>1</Milestone>
       <Critical>1</Critical>

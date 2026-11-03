@@ -473,7 +473,7 @@ the first upstream bug the corpus found; `tests/run.sh <name>` runs one file.
 ## What is not here yet
 
 ALAP and the "no later than" constraints as Project places them (the backward
-pass keeps their file dates), recurring calendar exceptions, percent lags,
+pass keeps their file dates), percent lags,
 remaining duration on a task in progress -- and anything `.mpp`: the binary format is deliberately out of
 scope (partial knowledge reads it, only Microsoft writes it) -- exchange goes
 through XML. The corpus measures the road to it; see `ROADMAP.md`.
