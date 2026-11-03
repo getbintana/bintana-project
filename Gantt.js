@@ -571,11 +571,43 @@ export function timescaleText(id, d) {
     return "";
 }
 
-/* What a tier writes in a cell, longest first: the chosen spelling alone, or
- * for `auto` the unit's own ladder -- the draw takes the first that fits, and
- * a cell too small for any of them is left without a label. */
+/*
+ * **What a chosen spelling gives way to**, shortest last: the same thing said
+ * in fewer letters -- a day's name down to its initial, a date down to its
+ * number, a month down to its letter -- and never something else, so a ruler
+ * of day names does not turn into one of day numbers. A spelling missing here
+ * is already as short as it goes.
+ *
+ * Without it a chosen spelling was all or nothing: "Lun" is wider than "Jue",
+ * and a ruler at a day of 23 points wrote Thursday and Friday and left the
+ * other five days blank.
+ */
+const TIMESCALE_SHORTER = {
+    year:           ["yearShort"],
+    quarterYear:    ["quarter"],
+    quarterLong:    ["quarter"],
+    monthYear:      ["month", "monthShort", "monthInitial"],
+    month:          ["monthShort", "monthInitial"],
+    monthShort:     ["monthInitial"],
+    monthShortYear: ["monthShort", "monthInitial"],
+    weekRange:      ["weekStart", "weekDay"],
+    weekStartMonth: ["weekStart", "weekDay"],
+    weekStart:      ["weekDay"],
+    dayLong:        ["dayShort", "dayInitial"],
+    dayShort:       ["dayInitial"],
+    dayShortNumber: ["dayNumber"],
+    dayDate:        ["dayNumber"],
+};
+
+/* What a tier writes in a cell, longest first: the chosen spelling and what
+ * it gives way to, or for `auto` the unit's own ladder -- the draw takes the
+ * first that fits, and a cell too small for any of them is left without a
+ * label. */
 function timescaleLadder(unit, id) {
-    if (id !== "auto") return (d) => [timescaleText(id, d)];
+    if (id !== "auto") {
+        const ids = [id, ...(TIMESCALE_SHORTER[id] || [])];
+        return (d) => ids.map((k) => timescaleText(k, d));
+    }
     switch (unit) {
     case "years":    return (d) => ["year", "yearShort"].map((k) => timescaleText(k, d));
     case "quarters": return (d) => ["quarterYear", "quarter"].map((k) => timescaleText(k, d));
@@ -767,17 +799,26 @@ export function drawGanttRuler(p, width, g, c, fmt) {
      * first ruler did at a narrow timescale. */
     const bodyFont = p.Font;
     const bands = ganttTimescaleBands(dayW, fmt);
+    /* On paper the line is measured, not read off the ladder: a file draws in
+     * points with the type at the desktop's resolution, and there a line of
+     * "Sans 9" is seventeen -- the ladder's thirteen put the letters across
+     * the band's own rule. The screen keeps the numbers measured for it. */
+    const line = g.strip ? (k) => RULER_LINE[k]
+                         : (k) => Text.Height("LMXJgy", RULER_FONTS[k]);
     let font = 0;
     while (font < RULER_FONTS.length - 1 &&
-           bands.length > 1 && headH / bands.length < RULER_LINE[font]) font++;
+           bands.length > 1 && headH / bands.length < line(font)) font++;
     /* On screen the type is in the family the list writes in (a description
      * with no family is Pango's `Sans`, not the theme's). A file keeps the
      * ladder as written. */
     const family = String(bodyFont || "").replace(/\s+[\d.]+(px)?$/, "");
     p.Font = g.strip && family
         ? RULER_FONTS[font].replace(/^Sans/, family) : RULER_FONTS[font];
-    while (bands.length > 1 && headH / bands.length < RULER_LINE[font]) bands.pop();
+    while (bands.length > 1 && headH / bands.length < line(font)) bands.pop();
     const bandH = bands.length ? headH / bands.length : 0;
+    /* The label's top in its band: two below the line on screen, as it always
+     * was; on paper the measured line centred, so it touches neither rule. */
+    const textTop = g.strip ? 2 : Math.max(0, (bandH - line(font)) / 2);
     p.LineWidth = 1;
 
     for (let b = 0; b < bands.length; b++) {
@@ -789,34 +830,59 @@ export function drawGanttRuler(p, width, g, c, fmt) {
         p.Stroke();
         p.Color = c.dim;
         const ticks = unitTicks(range, band.unit, band.count, 400);
+        /* A label's room past its own width: three on the left of one set
+         * against its line, and a point on each side of a centred one -- an
+         * "M" in a day of 14 points is otherwise the one initial missing. */
+        const pad = band.align === "center" ? 2 : 6;
+        const fits = (text, room) => p.TextWidth(text) + pad <= room;
+
+        /* The cells first, and then the words: the band says every cell the
+         * same length, the longest that fits them all -- "L M X Jue Vie" is
+         * a ruler that seems to know two days better than five. The cells cut
+         * by the plot's edges are left out of the choice, which their
+         * narrowness would otherwise make for everyone, and take what fits
+         * them from there down. */
+        const cells = [];
         let drawn = -Infinity;
         for (let i = 0; i < ticks.length; i++) {
             const t = ticks[i];
-            let at = g.x(t);
+            const at = g.x(t);
             if (at > width) break;
             /* A unit narrower than a few pixels is a smear of lines, not a
              * ruler: the lines too close to the last one are left out. */
             if (at - drawn < 3) continue;
             drawn = at;
+            const next = i + 1 < ticks.length ? g.x(ticks[i + 1]) : Infinity;
             /* The week or month the range starts in begins before it: no
              * line, and its label at the plot's edge when it fits before the
              * next one -- a short plan is otherwise a ruler with no words. */
-            const room = (i + 1 < ticks.length ? g.x(ticks[i + 1]) : width) - Math.max(at, g.plotX);
-            if (at < g.plotX) {
-                at = g.plotX;
-            } else {
+            cells.push({ at: Math.max(at, g.plotX), line: at >= g.plotX,
+                         room: Math.min(next, width) - Math.max(at, g.plotX),
+                         cut: at < g.plotX || next > width,
+                         texts: [].concat(band.label(new Date(t))) });
+        }
+        const levels = cells.reduce((n, cell) => Math.max(n, cell.texts.length), 0);
+        const whole  = cells.filter((cell) => !cell.cut);
+        let level = levels - 1;
+        for (let k = 0; k < levels; k++) {
+            if (whole.every((cell) => fits(cell.texts[Math.min(k, cell.texts.length - 1)],
+                                           cell.room))) { level = k; break; }
+        }
+
+        for (const cell of cells) {
+            const at = cell.at;
+            if (cell.line) {
                 p.MoveTo(at, y);
                 p.LineTo(at, headH);
                 p.Stroke();
             }
-            const fit = room;
-            const label = [].concat(band.label(new Date(t)))
-                .find((text) => p.TextWidth(text) + 6 <= fit);
+            const label = cell.texts.slice(Math.min(level, cell.texts.length - 1))
+                .find((text) => fits(text, cell.room));
             if (label !== undefined) {
                 p.Color = g.strip ? c.headInk : c.ink;
                 const tx = band.align === "center"
-                         ? at + (fit - p.TextWidth(label)) / 2 : at + 3;
-                p.Text(label, tx, y - bandH + 2);
+                         ? at + (cell.room - p.TextWidth(label)) / 2 : at + 3;
+                p.Text(label, tx, y - bandH + textTop);
                 p.Color = c.dim;
             }
         }

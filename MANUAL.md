@@ -548,6 +548,12 @@ fondo.
   semanas, el número de semana ISO (S35), el día que empieza, «24 ago» o el
   rango; para los meses, «Agosto 2026», «Agosto», «Ago», «A», «08/26» o
   «Ago '26»; trimestres «T3 2026», «T3» o «Trimestre 3»; años «2026» o «'26».
+  **Si la etiqueta elegida no entra, se escribe más corta, pero sin cambiar
+  de tipo**: «Lun» pasa a «L», «Agosto 2026» a «Agosto», «Ago» o «A», el
+  rango de una semana a su día de inicio; una fecha pasa a su número. Toda la
+  banda usa el mismo largo, así no quedan «L M X Jue Vie» mezclados. Si ni la
+  forma más corta entra, la celda queda sin etiqueta: en el Gantt impreso eso
+  se arregla con más **páginas de ancho**.
   Cada cambio se ve en el gráfico al hacerlo y **Cancelar** lo deshace. Cuando
   la escala inferior tiene unidad propia, la cuadrícula del gráfico sigue sus
   líneas. Se recuerda con el formato del gráfico y la impresión la usa.

@@ -4763,13 +4763,27 @@ export class MainForm extends Form {
 
             /* The ruler draws what the tiers say: the initials of the days
              * under the months, or the months alone with one tier. */
-            const rulerText = (format) => {
+            const rulerText = (format, width = 900) => {
                 const log  = new CallLog();
                 const rows = project.Tasks.filter((t) => !t.IsNull);
-                const g = ganttGeometry(rows, 900, 200, 0, { plotX: 0, rowH: 20, headH: 30 });
-                drawGanttRuler(log, 900, g, ganttPalette(log), ganttFormat(format));
+                const g = ganttGeometry(rows, width, 200, 0, { plotX: 0, rowH: 20, headH: 30 });
+                drawGanttRuler(log, width, g, ganttPalette(log), ganttFormat(format));
                 return log.calls.filter((c) => c.name === "Text").map((c) => c.args[0]);
             };
+            /* A chosen spelling that does not fit gives way to a shorter one
+             * of the same thing, and every day says it: at a day of 16
+             * (the log measures six a letter) "Mon" does not fit and its
+             * initial does. */
+            const dayW = ganttGeometry(project.Tasks.filter((t) => !t.IsNull), 900, 200, 0,
+                                       { plotX: 0, rowH: 20, headH: 30 }).dayW;
+            const squeezed = rulerText({ bottomUnit: "days", bottomLabel: "dayShort" },
+                                       Math.round(900 * 16 / dayW));
+            const short = [0, 1, 2, 3, 4, 5, 6].map((k) => timescaleText("dayShort", new Date(2026, 8, 7 + k)));
+            const initial = [0, 1, 2, 3, 4, 5, 6].map((k) => Locale.Text("MTWTFSS").charAt(k));
+            ok = eq("a day name too wide gives way to its initial",
+                    `${squeezed.some((t) => short.includes(t))}|` +
+                    `${squeezed.filter((t) => initial.includes(t)).length >= 3}`,
+                    "false|true") && ok;
             const initials = rulerText({ bottomUnit: "days", bottomLabel: "dayInitial" });
             ok = eq("the days by their initials",
                     [0, 1, 2].every((k) => initials.includes(Locale.Text("MTWTFSS").charAt(k))),
