@@ -16,7 +16,7 @@
       "name": "Fields",
       "properties": {
         "ColumnSpacing": 8,
-        "Height": 476,
+        "Height": 510,
         "RowSpacing": 8,
         "Spacing": 8,
         "Width": 388
@@ -300,6 +300,16 @@
               "WBS"
             ],
             "Text": "Nothing"
+          }
+        },
+        {
+          "type": "CheckButton",
+          "name": "ChkDatesTime",
+          "properties": {
+            "Active": true,
+            "ColumnSpan": 2,
+            "HAlign": "Start",
+            "Text": "Dates include the time"
           }
         },
         {

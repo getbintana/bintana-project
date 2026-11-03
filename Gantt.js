@@ -365,6 +365,9 @@ export const GANTT_THEME_IDS = ["classic", "forest", "amber", "violet", "graphit
  * the share of the row it takes and the most it grows to. */
 export const GANTT_FORMAT = { theme: "classic", size: 1,
                        label: "", labelLeft: "", labelTop: "", labelBottom: "",
+                       /* Whether the "Dates" label writes the time as well: a
+                        * task read to the minute, or only its days. */
+                       datesTime: true,
                        critical: true, progress: true, links: true, today: true,
                        rows: true, grid: true, idle: true,
                        barColor: "#1c71d8", lateColor: "#c01c28",
@@ -399,6 +402,7 @@ export function ganttFormat(fmt) {
         if (!out[key] && GANTT_FORMAT[key]) out[key] = GANTT_FORMAT[key];
     }
     if (!GANTT_BAR_SIZE[out.size]) out.size = 1;
+    out.datesTime = !!out.datesTime;
     for (const key of GANTT_LABEL_SIDES)
         if (typeof out[key] !== "string") out[key] = "";
     out.tiers = out.tiers === 1 || out.tiers === "1" ? 1 : 2;
@@ -1010,6 +1014,10 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
      * zero span a tick, the rest a bar with its PercentComplete painted over in
      * a darker shade. Critical is red and the rest blue, as Project reads a
      * plan. */
+    /* What a label must not cover: the bars of every visible row, gathered as
+     * it draws them. The labels are placed afterwards, and a free one is the
+     * only one written. */
+    const solids = [];
     for (let i = 0; i < rows.length; i++) {
         const task = rows[i];
         const colour = task.Critical && fmt.critical ? c.late : c.bar;
@@ -1034,6 +1042,10 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
 
         if (s === null || f === null) continue;
         const x0 = x(Math.min(s, f)), x1 = x(Math.max(s, f));
+        if (task.Milestone)
+            solids.push({ x: x0 - msR, y: cy(i) - msR, w: 2 * msR, h: 2 * msR });
+        else
+            solids.push({ x: x0, y: y, w: Math.max(1, x1 - x0), h: barH });
 
         /* The baseline the view asked for, when the file carries it: a thin bar
          * under the task's own, which is what a slip is read against. */
@@ -1114,14 +1126,18 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
      * styles place it; the application knows what a field means, so it hands
      * the text over. A pass of its own, after the bars, because the loop above
      * `continue`s past every kind of bar and because it sets a font the rest of
-     * the frame must not inherit. It is cut at the plot's edge: a label that
-     * runs off the pane is clipped, not wrapped under the next row.
+     * the frame must not inherit.
      *
-     * Left and right are written at the size of the ruler, level with the bar;
-     * above and below have the few pixels between the bar and the row's edge,
-     * so they take the smallest type and sit centred over (or under) the bar. */
+     * **In the live view a label is written only where it fits whole**: within
+     * the plot, clear of every bar and of every label already written. With
+     * four sides chosen a row cannot hold them all; the ones that do not fit
+     * are left out rather than piled on top of the chart. **The printed sheet
+     * shows every label the format asks for**, because a sheet is read on its
+     * own and a missing word is worse than a busy one. The guide's miniature
+     * passes `labels: false`: at that scale a label is a smudge, not a
+     * reading. */
     const sides = GANTT_LABEL_SIDES.filter((key) => fmt[key]);
-    if (sides.length && geom.labelOf) {
+    if (geom.labels !== false && sides.length && geom.labelOf) {
         p.Push();
         p.ClipRectangle(plotX, 0, width - plotX, height);
         const leaves = {};
@@ -1139,12 +1155,27 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
             p.Color = c.ink;
             p.Text(text, tx, ty);
         };
+        const drawn = [];
+        const hits = (a, b) => a.x < b.x + b.w + 0.5 && a.x + a.w + 0.5 > b.x &&
+                               a.y < b.y + b.h + 0.5 && a.y + a.h + 0.5 > b.y;
+        const fits = (r) => {
+            if (r.x < plotX || r.x + r.w > width ||
+                r.y < headH || r.y + r.h > height) return false;
+            for (const o of solids) if (hits(r, o)) return false;
+            for (const o of drawn)  if (hits(r, o)) return false;
+            return true;
+        };
+        const roomForRows = geom.showAll || !geom.print || rowH >= 20;
+        const zoom = geom.textScale || 1;
         for (const side of sides) {
             const level = side === "label" || side === "labelLeft";
+            if (!level && !roomForRows) continue;
             /* The type follows the row down when the rows are short -- a sheet
-             * fitted to fewer pages -- and is never larger than on screen. */
-            p.Font = level ? `Sans ${Math.max(5, Math.min(9, Math.round(rowH * 0.5)))}`
-                           : `Sans ${Math.max(4, Math.min(7, Math.round(rowH * 0.38)))}`;
+             * fitted to fewer pages -- and the label size multiplies it. The
+             * rows and the sheet grid are not touched: this is only letters. */
+            const base = level ? Math.min(9, rowH * 0.5)
+                               : Math.min(7, rowH * 0.38);
+            p.Font = `Sans ${Math.max(level ? 5 : 4, Math.round(base * zoom))}`;
             for (let i = 0; i < rows.length; i++) {
                 const task = rows[i];
                 const first = top(i);
@@ -1157,18 +1188,32 @@ export function drawGantt(p, width, height, rows, selected, step, drag, baseline
                 const x0 = x(Math.min(s, f)) - reach, x1 = x(Math.max(s, f)) + reach;
                 const tw = p.TextWidth(text), th = p.TextHeight(text);
                 const y = first + (rowH - barH) / 2;
+                let tx, ty;
                 if (side === "label") {
-                    write(text, x1 + 6, first + (rowH - th) / 2,
-                          fmt.links && leaves[task.UID]);
+                    tx = x1 + 6;
+                    ty = first + (rowH - th) / 2;
                 } else if (side === "labelLeft") {
-                    write(text, x0 - 6 - tw, first + (rowH - th) / 2, false);
+                    tx = x0 - 6 - tw;
+                    ty = first + (rowH - th) / 2;
                 } else {
-                    const tx = (x0 + x1) / 2 - tw / 2;
-                    const ty = side === "labelTop"
-                             ? (task.Milestone ? cy(i) - msR : y) - th
-                             : (task.Milestone ? cy(i) + msR : y + barH);
-                    write(text, tx, ty, false);
+                    tx = (x0 + x1) / 2 - tw / 2;
+                    ty = side === "labelTop"
+                       ? (task.Milestone ? cy(i) - msR : y) - th - 1
+                       : (task.Milestone ? cy(i) + msR : y + barH) + 1;
                 }
+                const rect = { x: tx, y: ty, w: tw, h: th };
+                /* The screen keeps the chart readable; a sheet asked for every
+                 * label keeps every word -- shifted inside the plot when it
+                 * would run off, never dropped. */
+                if (geom.showAll) {
+                    tx = Math.max(plotX, Math.min(tx, width - tw));
+                    ty = Math.max(headH, Math.min(ty, height - th));
+                } else if (!fits(rect)) {
+                    continue;
+                }
+                write(text, tx, ty, side === "label" &&
+                                     fmt.links && leaves[task.UID]);
+                drawn.push(rect);
             }
         }
         p.Pop();

@@ -118,8 +118,17 @@ los **colores** (Clásico, Bosque, Ámbar, Violeta y Grafito; en todos la tarea
 crítica se distingue de la común), el **tamaño de la barra**, y qué se dibuja:
 el color de las críticas, el avance dentro de la barra, las dependencias y la
 línea de hoy. **Junto a la barra** escribe a su derecha un dato de la tarea:
-nombre, recursos, avance, fechas, duración, trabajo, costo o EDT. Es una
+nombre, recursos, avance, fechas, duración, trabajo, costo o EDT. Con
+**Las fechas incluyen la hora**, la etiqueta de fechas dice también las horas
+de inicio y fin; sin ella, solo los días. Es una
 preferencia de la vista —se recuerda— y el gráfico exportado la lleva puesta.
+**En la vista viva, una etiqueta se escribe solo si entra entera**: con textos
+a los cuatro lados, las que no caben en la fila o en el gráfico se omiten en
+vez de pisarse o cortarse. En el **informe impreso**, en cambio, **Mostrar
+todas las etiquetas de las barras** (encendido por defecto) escribe todas las
+que pide el formato, aunque queden apretadas; apagado, la hoja también deja
+solo las que entran. Arriba y abajo piden filas más altas, y la guía de armado
+no lleva etiquetas.
 
 La lista es la mitad izquierda de la vista: a su derecha está el Gantt, las dos
 en el mismo `Split`, y **la lista es la que baja** — su barra de desplazamiento,
@@ -570,7 +579,9 @@ lleva y cómo:
   siempre y toma el ancho que sobra. El ancho de cada columna se mide con lo
   que realmente contiene y con los títulos, y si aun así no entran en el papel
   se achican juntas; el texto que no cabe se corta con `…` antes que invadir
-  la columna vecina. Sin la columna de costo no hay total.
+  la columna vecina. Sin la columna de costo no hay total. Las fechas se
+  escriben en el formato del sistema, y un hito muestra la suya una sola vez
+  (en Inicio; Fin queda vacío salvo que Inicio no se imprima).
 - **Ancho y alineación por columna**: elegida una columna, su **ancho** en
   milímetros (0 = automático, medido del contenido) y su **alineación**
   (izquierda, centro o derecha; por defecto la de su tipo). El **tamaño de
@@ -604,12 +615,19 @@ papel, con la tabla de las columnas elegidas a la izquierda:
 - **Mostrar la leyenda**: al pie de cada hoja, solo con lo que efectivamente
   aparece en las fechas impresas (tarea crítica si hay alguna, hito si hay
   alguno, hoy si cae en el rango…).
+- **Mostrar todas las etiquetas de las barras**: la hoja escribe todas las que
+  pide el formato del gráfico, aunque queden apretadas; apagado, deja solo las
+  que entran. La vista viva siempre deja solo las que entran.
+- **Tamaño de las letras de las barras (%)**: agranda solo las letras de las
+  etiquetas de las barras; no cambia las filas ni la cantidad de hojas. El
+  tamaño general del gráfico se elige con las **páginas de ancho** y de **alto**.
 - **Desde / Hasta**: las fechas a imprimir. Cada una sola también vale (por
   ejemplo, solo *Desde* hoy, y el fin es el del plan). **Todo el plan** las
   vacía. No se recuerdan entre proyectos.
 - Cada hoja trae su propia regla de tiempo, las fechas que cubre en el
   encabezado y, al pie, la fecha de impresión, su lugar en el mural (fila y
-  columna) y el número de página. El gráfico usa el formato elegido en
+  columna) y el número de página. Las fechas de la tabla y de la cabecera
+  siguen el formato del sistema. El gráfico usa el formato elegido en
   **Formato del gráfico** (textos junto a las barras incluidos), sobre papel
   blanco aunque la ventana esté en modo oscuro.
 

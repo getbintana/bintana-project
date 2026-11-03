@@ -1678,7 +1678,9 @@ export class MainForm extends Form {
             }
             case "percent":   return task.Summary || task.PercentComplete
                                    ? this.columnValue("percent", task) : "";
-            case "dates":     return `${shortDate(task.Start)} – ${shortDate(task.Finish)}`;
+            case "dates":     return dateRangeText(task.Start, task.Finish,
+                                                  task.Milestone,
+                                                  this.format.datesTime);
             case "duration":
             case "work":
             case "cost":
@@ -1795,9 +1797,9 @@ export class MainForm extends Form {
         const add = (label, value) => { if (value) lines.push(`${Locale.Text(label)}: ${value}`); };
 
         if (task.Milestone) {
-            lines.push(shortDate(task.Start));
+            lines.push(localeDateTime(task.Start));
         } else {
-            lines.push(`${shortDate(task.Start)} → ${shortDate(task.Finish)}`);
+            lines.push(`${localeDateTime(task.Start)} → ${localeDateTime(task.Finish)}`);
             add("Duration", durationText(task, project));
         }
         add("Percent complete", `${task.PercentComplete || 0}%`);
@@ -1806,7 +1808,7 @@ export class MainForm extends Form {
         add("Cost", this.columnValue("cost", task));
         if (task.Critical) lines.push(Locale.Text("Critical"));
         else add("Slack", slackText(task, project));
-        add("Deadline", task.Deadline ? shortDate(task.Deadline) : "");
+        add("Deadline", task.Deadline ? localeDate(task.Deadline) : "");
         return lines.join("\n");
     }
 
@@ -4334,7 +4336,7 @@ export class MainForm extends Form {
                            "margins", "tasks", "columns", "zoom", "kind", "wide", "repeat",
                            "tall", "table", "phases", "pack", "legend", "mural", "overlap",
                            "guide", "notesWhere", "logo", "logos", "fontScale",
-                           "columnStyles"]) {
+                           "columnStyles", "allLabels", "labelScale"]) {
             if (Settings.Has(REPORT_KEY + key)) kept[key] = Settings.Get(REPORT_KEY + key);
             Settings.Delete(REPORT_KEY + key);
         }
@@ -4371,6 +4373,44 @@ export class MainForm extends Form {
             const plain = planReport(project, "/x/obra.xml", {});
             ok = eq("tasks, and not summaries or blanks", names(plain.Data),
                     "Planos,Permisos,Cimientos,Muros") && ok;
+            ok = eq("the report writes dates as the desktop does",
+                    plain.Data[0].Start, String(Locale.Date("2026-09-07"))) && ok;
+            ok = eq("and its finish", plain.Data[0].Finish,
+                    String(Locale.Date("2026-09-08"))) && ok;
+
+            /* A milestone is one moment: the table says its date in Start and
+             * leaves Finish empty, instead of writing the same day twice. */
+            const hitoProject = new MspProject({
+                Name: "Obra", StartDate: "2026-09-07T08:00:00",
+                Tasks: [task(0, "Obra", 0, { Summary: true }),
+                        task(1, "Hito", 1, { Milestone: true,
+                                             Finish: "2026-09-07T17:00:00" })],
+            });
+            const hito = planReport(hitoProject, "", {});
+            ok = eq("a milestone writes its date once", hito.Data[0].Start,
+                    String(Locale.Date("2026-09-07"))) && ok;
+            ok = eq("and leaves the finish blank", hito.Data[0].Finish, "") && ok;
+            const soloFin = planReport(hitoProject, "", { columns: ["finish"] });
+            ok = eq("a milestone keeps its date when only Finish is shown",
+                    soloFin.Data[0].Finish, String(Locale.Date("2026-09-07"))) && ok;
+            ok = eq("a milestone's label says its day once",
+                    dateRangeText("2026-09-07T17:00:00", "2026-09-07T17:00:00"),
+                    String(Locale.Date("2026-09-07"))) && ok;
+            ok = eq("even when its stored times differ",
+                    dateRangeText("2026-09-07T17:00:00", "2026-09-08T09:00:00", true),
+                    String(Locale.Date("2026-09-07"))) && ok;
+            ok = eq("a range keeps both days",
+                    dateRangeText("2026-09-07T08:00:00", "2026-09-08T17:00:00"),
+                    `${Locale.Date("2026-09-07")} – ${Locale.Date("2026-09-08")}`) && ok;
+            const timeOf = (iso) => String(Locale.Date(whenMs(iso), "Time"));
+            ok = eq("the date label can carry the times",
+                    dateRangeText("2026-09-07T08:00:00", "2026-09-07T17:00:00",
+                                  false, true),
+                    `${Locale.Date(whenMs("2026-09-07T08:00:00"))} ` +
+                    `${timeOf("2026-09-07T08:00:00")} – ` +
+                    `${timeOf("2026-09-07T17:00:00")}`) && ok;
+            ok = eq("the chart's dates carry the time by default",
+                    ganttFormat({}).datesTime, true) && ok;
 
             const sums = planReport(project, "", { summaries: true }).Data;
             ok = eq("with the summaries, in the plan's order", names(sums),
@@ -4486,6 +4526,12 @@ export class MainForm extends Form {
             ok = eq("the dialog carries the logo",
                     dlg.Preview.Sections.PageHeader.Elements.some(
                         (e) => e.Kind === "Image"), true) && ok;
+            ok = eq("the sheet shows every label by default",
+                    dlg.ChkAllLabels.Active, true) && ok;
+            dlg.ChkAllLabels.Active = false;
+            ok = eq("and can leave out what does not fit",
+                    dlg.options().allLabels, false) && ok;
+            dlg.ChkAllLabels.Active = true;
 
             dlg.ChkColCost.Active = false;
             ok = eq("a column taken out takes its total", dlg.Preview.Sections.ReportFooter,
@@ -4542,6 +4588,39 @@ export class MainForm extends Form {
              * sheets down as the rows need. */
             const one   = ganttPrint(project, "", { kind: "gantt", summaries: true });
             ok = eq("a short plan is one sheet", one.pages, 1) && ok;
+            const bigger = ganttPrint(project, "", { kind: "gantt", labelScale: 150 });
+            ok = eq("the label size leaves the rows alone", bigger.rowH, one.rowH) && ok;
+            const labelAt = (scale) => {
+                const lay = ganttPrint(project, "", { kind: "gantt",
+                    columns: [], labelScale: scale },
+                    { format: ganttFormat({ label: "name" }),
+                      labelOf: (task) => `LBL ${task.Name}` });
+                const log = new CallLog();
+                lay.draw(log, 1, lay.width, lay.height, false);
+                const call = log.calls.find((c) => c.name === "Text" &&
+                    String(c.args[0]).startsWith("LBL "));
+                return call ? call.font : "";
+            };
+            ok = eq("the bar label at 100%", labelAt(100), "Sans 9") && ok;
+            ok = eq("and at 150%", labelAt(150), "Sans 14") && ok;
+
+            /* A row with words above and below needs the taller row; and the
+             * assembly guide's miniature carries no words, which at that scale
+             * would be a smudge. */
+            const labelRow = ganttPrint(project, "", { kind: "gantt" },
+                { format: ganttFormat({ labelTop: "percent" }),
+                  labelOf: () => "100%" });
+            ok = eq("a row with labels above and below is taller",
+                    labelRow.rowH, 34) && ok;
+            const guideLay = ganttPrint(project, "", {
+                kind: "gantt", mural: true, wide: 2, tall: 2, guide: true },
+                { format: ganttFormat({ label: "name" }),
+                  labelOf: (t) => `LBL ${t.Name}` });
+            const guideLog = new CallLog();
+            guideLay.draw(guideLog, 1, guideLay.width, guideLay.height, false);
+            ok = eq("the guide's miniature draws no labels",
+                    guideLog.calls.some((c) => c.name === "Text" &&
+                        String(c.args[0]).startsWith("LBL ")), false) && ok;
 
             /* The chart's PDF carries the same masthead. Drawing it is the
              * assertion: an `Image` that does not load throws while drawing. */
@@ -4699,6 +4778,9 @@ export class MainForm extends Form {
             const fdlg = FormatForm.open(chosen, () => {});
             ok = eq("the format dialog keeps the timescale", fdlg.values().bottomLabel,
                     "dayShort") && ok;
+            ok = eq("and the date-time choice", fdlg.values().datesTime, true) && ok;
+            fdlg.ChkDatesTime.Active = false;
+            ok = eq("which can be turned off", fdlg.values().datesTime, false) && ok;
             fdlg.BtnCancel_Click();
             let seen = null;
             const tdlg = TimescaleForm.open(ganttFormat({}), () => {}, (f) => { seen = f; });
@@ -4737,6 +4819,10 @@ export class MainForm extends Form {
             dlg.CmbKind.Index = 1;
             ok = eq("the dialog previews the chart", dlg.Sheet.Visible && !dlg.Preview.Visible,
                     true) && ok;
+            ok = eq("the chart has its own label size", dlg.SpnLabelScale.Visible, true) && ok;
+            dlg.SpnLabelScale.Value = 150;
+            dlg.SpnLabelScale_Change();
+            ok = eq("which leaves the rows alone", dlg.layout.rowH, 18) && ok;
             dlg.SpnWide.Value = 2;
             ok = eq("and counts its sheets", dlg.LblPage.Text, `1 / ${dlg.layout.pages}`) && ok;
             dlg.DateFrom.Value = "2026-09-08";
@@ -4760,6 +4846,8 @@ export class MainForm extends Form {
             ok = eq("the column style is kept",
                     `${keptStyle.width}|${keptStyle.align}`, "30|Center") && ok;
             ok = eq("and the type size too", Settings.Get(REPORT_KEY + "fontScale", 0),
+                    150) && ok;
+            ok = eq("and the label size", Settings.Get(REPORT_KEY + "labelScale", 0),
                     150) && ok;
 
             /* A logo is general with a per-project exception: choosing one for
@@ -4790,7 +4878,8 @@ export class MainForm extends Form {
             for (const key of ["path", "summaries", "stripes", "paper", "orientation",
                                "margins", "tasks", "columns", "zoom", "kind", "wide",
                                "repeat", "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide",
-                               "notesWhere", "logo", "logos", "fontScale", "columnStyles"]) {
+                               "notesWhere", "logo", "logos", "fontScale", "columnStyles",
+                               "allLabels", "labelScale"]) {
                 if (Dictionary.Has(kept, key)) Settings.Set(REPORT_KEY + key, kept[key]);
                 else                           Settings.Delete(REPORT_KEY + key);
             }
@@ -9149,6 +9238,50 @@ function pathHash(path) {
 /* "2026-10-01T17:00:00" reads better as "2026-10-01 17:00" in a row. */
 export function shortDate(when) {
     return String(when || "").slice(0, 16).replace("T", " ");
+}
+
+/* The same moment the way the desktop writes a date, for what the chart says
+ * beside a bar and in its tooltips: the file keeps ISO, the prose does not. */
+function localeDate(when) {
+    const ms = whenMs(when);
+    return ms === null ? "" : String(Locale.Date(ms));
+}
+
+/* The same, with the time the tooltip needs to say when a task really starts
+ * and ends. Both halves are the desktop's. */
+function localeDateTime(when) {
+    const ms = whenMs(when);
+    if (ms === null) return "";
+    return `${Locale.Date(ms)} ${Locale.Date(ms, "Time")}`;
+}
+
+/* The time alone, for a range that fits in one day: the date is written once
+ * and the two ends are read against it. */
+function localeTime(when) {
+    const ms = whenMs(when);
+    return ms === null ? "" : String(Locale.Date(ms, "Time"));
+}
+
+/* Two dates as one range, in the desktop's spelling. A milestone -- and any
+ * two ends that fall on the same day -- says its date once, with both times
+ * when they are asked for; `withTime` is the chart's own choice. */
+export function dateRangeText(start, finish, single, withTime) {
+    const from = localeDate(start), to = localeDate(finish);
+    const fromTime = withTime ? localeTime(start) : "";
+    const toTime   = withTime ? localeTime(finish) : "";
+    const stamp = (date, time) => time ? `${date} ${time}` : date;
+    if (!from) return stamp(to, toTime);
+    if (single) return stamp(from, fromTime);
+    if (!to) return stamp(from, fromTime);
+    if (from === to) {
+        if (!withTime) return from;
+        if (!fromTime && !toTime) return from;
+        if (!fromTime) return `${from} ${toTime}`;
+        if (!toTime || fromTime === toTime) return `${from} ${fromTime}`;
+        return `${from} ${fromTime} – ${toTime}`;
+    }
+    if (!withTime) return `${from} – ${to}`;
+    return `${stamp(from, fromTime)} – ${stamp(to, toTime)}`;
 }
 
 /* The same spelling for an instant in milliseconds, which is what the

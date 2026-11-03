@@ -40,6 +40,7 @@ export function loadFormat() {
     for (const key of GANTT_LABEL_SIDES)
         fmt[key] = Settings.Get(FORMAT_KEY + key, GANTT_FORMAT[key]);
     fmt.size     = Number(Settings.Get(FORMAT_KEY + "size", GANTT_FORMAT.size));
+    fmt.datesTime = Settings.Get(FORMAT_KEY + "datesTime", GANTT_FORMAT.datesTime);
     fmt.critical = Settings.Get(FORMAT_KEY + "critical", GANTT_FORMAT.critical);
     fmt.progress = Settings.Get(FORMAT_KEY + "progress", GANTT_FORMAT.progress);
     fmt.links    = Settings.Get(FORMAT_KEY + "links", GANTT_FORMAT.links);
@@ -68,6 +69,7 @@ export class FormatForm extends Form {
             dlg[LABEL_FIELD[key]].Index = label >= 0 ? label : 0;
         }
         dlg.CmbSize.Index  = fmt.size;
+        dlg.ChkDatesTime.Active = !!fmt.datesTime;
         dlg.ChkCritical.Active = fmt.critical;
         dlg.ChkProgress.Active = fmt.progress;
         dlg.ChkLinks.Active    = fmt.links;
@@ -95,6 +97,7 @@ export class FormatForm extends Form {
             ...this.current,
             theme:    GANTT_THEME_IDS[this.CmbTheme.Index],
             size:     this.CmbSize.Index,
+            datesTime: this.ChkDatesTime.Active,
             critical: this.ChkCritical.Active,
             progress: this.ChkProgress.Active,
             links:    this.ChkLinks.Active,

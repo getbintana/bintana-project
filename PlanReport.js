@@ -78,6 +78,12 @@ const REPORT_DEFAULTS = {
     phases:      false,
     pack:        false,
     legend:      true,
+    /* A printed sheet shows every label the format asks for; the live view is
+     * the one that leaves out what does not fit. `labelScale` is only the
+     * letters of the chart's labels; the rows and the sheet grid are the
+     * pages asked for. */
+    allLabels:   true,
+    labelScale:  100,
     from:        "",
     to:          "",
     /* The mural: the chart drawn once and cut into sheets that overlap by
@@ -161,6 +167,9 @@ export function reportOptions(o) {
     out.columnStyles = styles;
     if (!REPORT_TASKS.includes(out.tasks)) out.tasks = "all";
     if (!REPORT_KINDS.includes(out.kind)) out.kind = "table";
+    out.allLabels = out.allLabels !== false;
+    out.labelScale = Math.max(50, Math.min(200,
+                         Math.round(Number(out.labelScale) || 100)));
     if (out.notesWhere !== "header") out.notesWhere = "footer";
     out.wide = Math.max(1, Math.min(20, Math.round(Number(out.wide) || 1)));
     out.tall = Math.max(0, Math.min(20, Math.round(Number(out.tall) || 0)));
@@ -226,8 +235,12 @@ export function reportPicks(project, o) {
         rows.push({ task: t, row: {
             Task:     indent + (t.Name || ""),
             Summary:  !!t.Summary,
-            Start:    String(t.Start || "").slice(0, 10),
-            Finish:   String(t.Finish || "").slice(0, 10),
+            Start:    reportDate(t.Start),
+            /* A milestone is one moment: its date is written once, in Start,
+             * rather than twice in two columns that say the same thing. When
+             * Start is not asked for, Finish is the one that carries it. */
+            Finish:   t.Milestone && o.columns.includes("start")
+                        ? "" : reportDate(t.Finish),
             Duration: durationText(t, project),
             Complete: `${t.PercentComplete || 0}%`,
             Critical: t.Critical ? Locale.Text("Critical") : "",
@@ -236,6 +249,13 @@ export function reportPicks(project, o) {
         } });
     });
     return rows;
+}
+
+/* A date as the reader's desktop spells it. The file keeps ISO -- a date in a
+ * document is prose, and follows the locale the rest of the window does. */
+function reportDate(iso) {
+    const ms = whenMs(iso);
+    return ms === null ? "" : String(Locale.Date(ms));
 }
 
 /* Where each column goes across the printable width: `[{ col, x, width }]`

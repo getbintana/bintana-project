@@ -1853,3 +1853,21 @@ msgstr "Alineación"
 
 msgid "Font size (%)"
 msgstr "Tamaño de letra (%)"
+
+msgid "Dates include the time"
+msgstr "Las fechas incluyen la hora"
+
+msgid "Show every bar label"
+msgstr "Mostrar todas las etiquetas de las barras"
+
+msgid "Chart text size (%)"
+msgstr "Tamaño del texto del gráfico (%)"
+
+msgid "Chart zoom (%)"
+msgstr "Zoom del gráfico (%)"
+
+msgid "Label size (%)"
+msgstr "Tamaño de las letras (%)"
+
+msgid "Bar label size (%)"
+msgstr "Tamaño de las letras de las barras (%)"

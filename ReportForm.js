@@ -41,16 +41,19 @@ const REPORT_CHECKS = { start: "ChkColStart", finish: "ChkColFinish",
 const REPORT_KEPT = ["path", "summaries", "stripes", "paper", "orientation", "margins",
                      "tasks", "columns", "kind", "wide", "repeat", "tall", "table",
                      "phases", "pack", "legend", "mural", "overlap", "guide",
-                     "notesWhere", "logo", "fontScale", "columnStyles"];
+                     "notesWhere", "logo", "fontScale", "columnStyles",
+                     "allLabels", "labelScale"];
 
 /* The chart's own controls, shown only while the chart is what is printed. */
 const GANTT_CONTROLS = ["LblGanttSetup", "ChkMural", "LblOverlap", "SpnOverlap", "ChkGuide",
                         "LblWide", "SpnWide", "ChkTall", "SpnTall",
                         "LblTable", "SpnTable", "ChkRepeat", "ChkPhases", "ChkPack", "ChkLegend",
+                        "ChkAllLabels", "LblLabelScale", "SpnLabelScale",
                         "LblFrom", "DateFrom", "LblTo", "DateTo", "BtnWholePlan"];
 /* The notes flow in the table's page footer; the chart has its own foot with
- * the printed date and its sheets, and its table keeps the chart's type, so
- * these are only for the table. */
+ * the printed date and its sheets. The table's font size and the labels' size
+ * are separate settings: the first sets the table's type, the second only the
+ * letters the chart writes around the bars. */
 const TABLE_ONLY = ["LblNotes", "TxtNotes", "LblNotesWhere", "CmbNotesWhere",
                     "LblFontScale", "SpnFontScale"];
 
@@ -141,6 +144,8 @@ export class ReportForm extends Form {
         this.SpnOverlap.Value        = Math.round(o.overlap / MM_POINT);
         this.ChkGuide.Active         = !!o.guide;
         this.ChkLegend.Active        = !!o.legend;
+        this.ChkAllLabels.Active     = o.allLabels !== false;
+        this.SpnLabelScale.Value     = o.labelScale;
         this.DateFrom.Value          = o.from;
         this.DateTo.Value            = o.to;
         this.TxtTitle.Text           = o.title;
@@ -207,6 +212,8 @@ export class ReportForm extends Form {
             overlap:     Math.round(Number(this.SpnOverlap.Value || 0) * MM_POINT),
             guide:       this.ChkGuide.Active,
             legend:      this.ChkLegend.Active,
+            allLabels:   this.ChkAllLabels.Active,
+            labelScale:  Number(this.SpnLabelScale.Value || 100),
             from:        this.DateFrom.Value || "",
             to:          this.DateTo.Value || "",
         });
@@ -364,6 +371,8 @@ export class ReportForm extends Form {
     SpnOverlap_Change()     { this.rebuild(); }
     ChkGuide_Click()        { this.rebuild(); }
     ChkLegend_Click()       { this.rebuild(); }
+    ChkAllLabels_Click()    { this.rebuild(); }
+    SpnLabelScale_Change()  { this.rebuild(); }
     DateFrom_Change()       { this.rebuild(); }
     DateTo_Change()         { this.rebuild(); }
 

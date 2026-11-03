@@ -40,6 +40,10 @@
  * and the type is too small to read, and more sheets is the honest answer. */
 const PRINT_ROW     = 18;
 const PRINT_MIN_ROW = 9;
+/* A row with words above and below the bar needs the room for both: at the
+ * ordinary 18 points they would sit on the neighbouring rows. A print that is
+ * not asked to fit a number of sheets starts here when those sides are used. */
+const PRINT_LABEL_ROW = 34;
 const PRINT_RULER   = 26;  // the timescale's two bands, which `drawGantt` fits
 const PRINT_FOOT    = 14;
 const PRINT_LEGEND  = 18;
@@ -60,6 +64,13 @@ const PRINT_ZEBRA = "rgba(0,0,0,0.045)";
 function printFonts(rowH) {
     const size = rowH >= 16 ? 8 : Math.max(5, Math.round(rowH * 0.5 * 2) / 2);
     return { plain: `Sans ${size}`, bold: `Sans Bold ${size}` };
+}
+
+/* The report's label size as a multiplier for the chart's labels: 100 % is the
+ * type the row had, 150 % makes the letters half again as big. It does not
+ * touch the rows or the sheet grid. */
+function textScaleOf(percent) {
+    return Math.max(0.5, Math.min(2, (Number(percent) || 100) / 100));
 }
 
 /*
@@ -210,7 +221,10 @@ export function ganttPrint(project, path, options, chart) {
 
     const picks = reportPicks(project, o);
     const tasks = picks.map((pick) => pick.task);
-    const wide  = o.wide;
+    /* The label size is only the letters; the sheet grid is the general size
+     * and stays as the pages across and tall asked for. */
+    const textScale = textScaleOf(o.labelScale);
+    const wide = o.wide;
     const calendar = chart.calendar !== undefined ? chart.calendar
                                                   : new WorkCalendar(project, -1);
 
@@ -252,7 +266,8 @@ export function ganttPrint(project, path, options, chart) {
      * unless a number of sheets down was asked for and the rows do not fit it:
      * then the rows get shorter, half a point at a time, until they do or until
      * they would be too short to read. */
-    let rowH = PRINT_ROW, per, sheets;
+    let rowH = fmt.labelTop || fmt.labelBottom ? PRINT_LABEL_ROW : PRINT_ROW;
+    let per, sheets;
     for (;;) {
         per    = Math.max(1, Math.floor(room / rowH));
         sheets = ganttSheets(tasks, per, o.phases, o.pack);
@@ -341,6 +356,7 @@ export function ganttPrint(project, path, options, chart) {
             plotX: 0, rowH, headH: PRINT_RULER, scrollY: first * rowH,
             calendar, format: fmt, labelOf: chart.labelOf,
             range: slice(c), print: true,
+            showAll: o.allLabels, textScale,
         });
         p.Pop();
 
@@ -548,6 +564,7 @@ function ganttMural(b) {
 
     const lap   = Math.max(0, Math.min(o.overlap, cw / 4, ch / 4));
     const stepW = cw - lap, stepH = ch - lap;
+    const textScale = textScaleOf(o.labelScale);
     const wide  = o.wide;
     const W     = wide * stepW + lap;
 
@@ -558,7 +575,7 @@ function ganttMural(b) {
      * for -- the mural's height is the picture's, not a count of pages. */
     const fixed  = headH + PRINT_RULER + footH;
     const tallOf = (rh) => Math.max(1, Math.ceil((fixed + tasks.length * rh - lap) / stepH));
-    let rowH = PRINT_ROW;
+    let rowH = fmt.labelTop || fmt.labelBottom ? PRINT_LABEL_ROW : PRINT_ROW;
     while (o.tall && tallOf(rowH) > o.tall && rowH > PRINT_MIN_ROW)
         rowH = Math.max(PRINT_MIN_ROW, rowH - 0.5);
     const tall  = tallOf(rowH);
@@ -574,7 +591,7 @@ function ganttMural(b) {
     /* The whole picture, in its own points from its top left. `from` is where
      * the part being looked at starts across: a tile right of the table has
      * no table to draw, and does not record one. */
-    function picture(p, from) {
+    function picture(p, from, mini) {
         drawHead(p, W, headH, title, o.path ? path : "", range, subtitle, logo);
         p.Push();
         p.Translate(0, headH);
@@ -593,6 +610,7 @@ function ganttMural(b) {
         drawGantt(p, chartW + 8, used, tasks, null, 0, null, BASELINE, {
             plotX: 0, rowH, headH: PRINT_RULER, scrollY: 0,
             calendar, format: fmt, labelOf: chart.labelOf, range, print: true,
+            labels: !mini, showAll: o.allLabels, textScale,
         });
         p.Pop();
         p.Color = PRINT_EDGE;
@@ -729,7 +747,7 @@ function drawGuide(p, cw, ch, title, picture, W, H, wide, tall, stepW, stepH, la
     p.Scale(s);
     p.Push();
     p.ClipRectangle(0, 0, fullW, fullH);
-    picture(p, 0);
+    picture(p, 0, true);
     p.Pop();
     p.LineWidth = 1 / s;
     for (let r = 0; r < tall; r++)
@@ -757,10 +775,11 @@ function drawTable(p, picks, first, count, cols, width, rowH, fonts) {
     p.Rectangle(0, 0, width, PRINT_RULER);
     p.Fill();
 
-    p.Font = printFonts(PRINT_ROW).bold;
+    p.Font = fonts.bold;
+    const headCell = Math.min(PRINT_RULER, Math.max(PRINT_ROW, rowH));
     for (const { col, x, width: w } of cols) {
         const text = col ? reportColumnTitle(col.id) : Locale.Text("Task");
-        cell(p, text, PRINT_PAD + x, PRINT_RULER - PRINT_ROW, w, PRINT_ROW,
+        cell(p, text, PRINT_PAD + x, PRINT_RULER - headCell, w, headCell,
              (col && col.align) || "Left");
     }
 
