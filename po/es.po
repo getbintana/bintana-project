@@ -106,8 +106,17 @@ msgstr "Exportar gráfico…"
 msgid "Report…"
 msgstr "Informe…"
 
+msgid "Print Gantt Chart…"
+msgstr "Imprimir diagrama de Gantt…"
+
+msgid "Print Gantt Chart"
+msgstr "Imprimir diagrama de Gantt"
+
 msgid "Save the report"
 msgstr "Guardar el informe"
+
+msgid "Save the Gantt chart"
+msgstr "Guardar el diagrama de Gantt"
 
 msgid "Critical"
 msgstr "Crítica"
@@ -1665,9 +1674,6 @@ msgstr "Nombres de los recursos"
 msgid "{0} is not a resource -- try Ana; Bruno[50%]"
 msgstr "{0} no es un recurso -- probá Ana; Bruno[50%]"
 
-msgid "Print"
-msgstr "Imprimir"
-
 msgid "Gantt chart"
 msgstr "Diagrama de Gantt"
 
@@ -1725,8 +1731,20 @@ msgstr "Todo el plan"
 msgid "Join short phases on one page"
 msgstr "Juntar fases cortas en una página"
 
-msgid "Continuous mural (sheets to join)"
-msgstr "Mural continuo (hojas para unir)"
+msgid "Sheets"
+msgstr "Hojas"
+
+msgid "Print as"
+msgstr "Imprimir como"
+
+msgid "Separate sheets"
+msgstr "Hojas sueltas"
+
+msgid "Mural to glue"
+msgstr "Mural para pegar"
+
+msgid "Bars"
+msgstr "Barras"
 
 msgid "Overlap to glue (mm)"
 msgstr "Solapamiento para pegar (mm)"
@@ -1842,11 +1860,11 @@ msgstr "Predeterminada"
 msgid "Right"
 msgstr "Derecha"
 
-msgid "Column style"
-msgstr "Estilo de columna"
+msgid "Width (mm)"
+msgstr "Ancho (mm)"
 
-msgid "Width (mm, 0 = auto)"
-msgstr "Ancho (mm, 0 = automático)"
+msgid "A width of 0 is measured from what the column holds."
+msgstr "Con ancho 0, se mide por lo que contiene la columna."
 
 msgid "Alignment"
 msgstr "Alineación"

@@ -236,7 +236,7 @@ export class MainForm extends Form {
      * before `fill` and not after it. */
     documentCommands(on) {
         for (const act of [this.ActSave, this.ActSaveAs, this.ActExport,
-                           this.ActReport, this.ActUndo, this.ActRedo,
+                           this.ActReport, this.ActGanttPrint, this.ActUndo, this.ActRedo,
                            this.ActAdd, this.ActAddMilestone, this.ActAddSummary,
                            this.ActLink, this.ActUnlink, this.ActPct0, this.ActPct25,
                            this.ActPct50, this.ActPct75, this.ActPct100,
@@ -3362,9 +3362,18 @@ export class MainForm extends Form {
     ActReport_Execute() {
         if (!this.holder) return;
         this.reportForm = ReportForm.open(this.holder.project, this.path,
-                                          (text) => this.log(text),
-                                          { format: this.format, labelOf: this.labelOf(),
-                                            calendar: this.chartCal || null });
+                                          (text) => this.log(text));
+    }
+
+    /* The Gantt chart on paper, a dialog of its own (GanttPrintForm): the chart
+     * is handed what the window's wears -- its format, its labels, its
+     * calendar -- so the one on paper is the one on screen. */
+    ActGanttPrint_Execute() {
+        if (!this.holder) return;
+        this.ganttPrintForm = GanttPrintForm.open(this.holder.project, this.path,
+                                                  (text) => this.log(text),
+                                                  { format: this.format, labelOf: this.labelOf(),
+                                                    calendar: this.chartCal || null });
     }
 
     /* The plan as it stands, kept so a later date can be compared with it: one
@@ -4332,13 +4341,17 @@ export class MainForm extends Form {
          * the dialog starts from none of them, so what it is asked below is the
          * defaults and not whatever the last real report was. */
         const kept = {};
-        for (const key of ["path", "summaries", "stripes", "paper", "orientation",
-                           "margins", "tasks", "columns", "zoom", "kind", "wide", "repeat",
-                           "tall", "table", "phases", "pack", "legend", "mural", "overlap",
-                           "guide", "notesWhere", "logo", "logos", "fontScale",
-                           "columnStyles", "allLabels", "labelScale"]) {
-            if (Settings.Has(REPORT_KEY + key)) kept[key] = Settings.Get(REPORT_KEY + key);
-            Settings.Delete(REPORT_KEY + key);
+        const keys = [];
+        for (const prefix of [REPORT_KEY, GANTT_KEY])
+            for (const key of ["path", "summaries", "stripes", "paper", "orientation",
+                               "margins", "tasks", "columns", "zoom", "kind", "wide", "repeat",
+                               "tall", "table", "phases", "pack", "legend", "mural", "overlap",
+                               "guide", "notesWhere", "logo", "logos", "fontScale",
+                               "columnStyles", "allLabels", "labelScale"])
+                keys.push(prefix + key);
+        for (const key of keys) {
+            if (Settings.Has(key)) kept[key] = Settings.Get(key);
+            Settings.Delete(key);
         }
 
         try {
@@ -4526,12 +4539,7 @@ export class MainForm extends Form {
             ok = eq("the dialog carries the logo",
                     dlg.Preview.Sections.PageHeader.Elements.some(
                         (e) => e.Kind === "Image"), true) && ok;
-            ok = eq("the sheet shows every label by default",
-                    dlg.ChkAllLabels.Active, true) && ok;
-            dlg.ChkAllLabels.Active = false;
-            ok = eq("and can leave out what does not fit",
-                    dlg.options().allLabels, false) && ok;
-            dlg.ChkAllLabels.Active = true;
+            ok = eq("the report carries no chart", dlg.ChkAllLabels, undefined) && ok;
 
             dlg.ChkColCost.Active = false;
             ok = eq("a column taken out takes its total", dlg.Preview.Sections.ReportFooter,
@@ -4556,14 +4564,17 @@ export class MainForm extends Form {
             ok = eq("and the alignment", startHead.Align, "Center") && ok;
             ok = eq("the type size is the table's", styled.Sections.Detail.Height, 20) && ok;
 
-            dlg.CmbColumn.Index = 0;
-            dlg.SpnColWidth.Value = 30;
-            dlg.SpnColWidth_Change();
-            dlg.CmbColAlign.Index = 2;
-            dlg.CmbColAlign_Select();
+            dlg.SpnColStartWidth.Value = 30;
+            dlg.SpnColStartWidth_Change();
+            dlg.CmbColStartAlign.Index = 2;
+            dlg.CmbColStartAlign_Select();
             const pick = dlg.options().columnStyles.start || {};
-            ok = eq("the dialog styles one column",
+            ok = eq("the dialog styles one column, on its own row",
                     `${pick.width}|${pick.align}`, "30|Center") && ok;
+            ok = eq("and leaves the others as they were",
+                    Dictionary.Keys(dlg.options().columnStyles).join(), "start") && ok;
+            ok = eq("a column taken out has no width to give",
+                    dlg.SpnColCostWidth.Enabled, false) && ok;
             dlg.SpnFontScale.Value = 150;
             dlg.SpnFontScale_Change();
             ok = eq("one type size for all the columns",
@@ -4580,18 +4591,17 @@ export class MainForm extends Form {
             const info = File.Info(pdf);
             ok = eq("what is previewed is what is saved", !!info && info.Size > 0, true) && ok;
             File.Delete(pdf);
-
             /* --- the Gantt on paper ------------------------------------------ */
 
             /* Across: the plan's span spread over the sheets asked for, each
              * sheet's slice starting where the one before it ended, and as many
              * sheets down as the rows need. */
-            const one   = ganttPrint(project, "", { kind: "gantt", summaries: true });
+            const one   = ganttPrint(project, "", { summaries: true });
             ok = eq("a short plan is one sheet", one.pages, 1) && ok;
-            const bigger = ganttPrint(project, "", { kind: "gantt", labelScale: 150 });
+            const bigger = ganttPrint(project, "", { labelScale: 150 });
             ok = eq("the label size leaves the rows alone", bigger.rowH, one.rowH) && ok;
             const labelAt = (scale) => {
-                const lay = ganttPrint(project, "", { kind: "gantt",
+                const lay = ganttPrint(project, "", {
                     columns: [], labelScale: scale },
                     { format: ganttFormat({ label: "name" }),
                       labelOf: (task) => `LBL ${task.Name}` });
@@ -4607,13 +4617,13 @@ export class MainForm extends Form {
             /* A row with words above and below needs the taller row; and the
              * assembly guide's miniature carries no words, which at that scale
              * would be a smudge. */
-            const labelRow = ganttPrint(project, "", { kind: "gantt" },
+            const labelRow = ganttPrint(project, "", {},
                 { format: ganttFormat({ labelTop: "percent" }),
                   labelOf: () => "100%" });
             ok = eq("a row with labels above and below is taller",
                     labelRow.rowH, 34) && ok;
             const guideLay = ganttPrint(project, "", {
-                kind: "gantt", mural: true, wide: 2, tall: 2, guide: true },
+                mural: true, wide: 2, tall: 2, guide: true },
                 { format: ganttFormat({ label: "name" }),
                   labelOf: (t) => `LBL ${t.Name}` });
             const guideLog = new CallLog();
@@ -4625,7 +4635,7 @@ export class MainForm extends Form {
             /* The chart's PDF carries the same masthead. Drawing it is the
              * assertion: an `Image` that does not load throws while drawing. */
             const brandedChart = ganttPrint(project, "", {
-                kind: "gantt", subtitle: "Obra 2026", logo: logoPath });
+                subtitle: "Obra 2026", logo: logoPath });
             const chartPdf = File.Join(Environment.TempDirectory,
                                        "bintana-project-branded-gantt.pdf");
             Drawing.SavePdf(chartPdf, Math.round(brandedChart.width),
@@ -4635,14 +4645,14 @@ export class MainForm extends Form {
             ok = eq("the chart's masthead draws the logo",
                     !!chartInfo && chartInfo.Size > 0, true) && ok;
             File.Delete(chartPdf);
-            const three = ganttPrint(project, "", { kind: "gantt", summaries: true, wide: 3 });
+            const three = ganttPrint(project, "", { summaries: true, wide: 3 });
             ok = eq("three across is three sheets", three.pages, 3) && ok;
             ok = eq("the slices meet", three.slice(0).to === three.slice(1).from &&
                                        three.slice(1).to === three.slice(2).from, true) && ok;
             ok = eq("and cover the plan", three.slice(0).from === three.range.from &&
                                           Math.abs(three.slice(2).to - three.range.to) < 1,
                     true) && ok;
-            const bare  = ganttPrint(project, "", { kind: "gantt", wide: 3, repeat: false });
+            const bare  = ganttPrint(project, "", { wide: 3, repeat: false });
             ok = eq("without the table repeated, later sheets give its room to the chart",
                     bare.slice(1).to - bare.slice(1).from >
                     bare.slice(0).to - bare.slice(0).from, true) && ok;
@@ -4650,7 +4660,7 @@ export class MainForm extends Form {
                 Name: "Larga", StartDate: "2026-09-07T08:00:00",
                 Tasks: Array.from({ length: 80 }, (_, i) => task(i + 1, `T${i + 1}`, 1)),
             });
-            const tall = ganttPrint(many, "", { kind: "gantt", wide: 2 });
+            const tall = ganttPrint(many, "", { wide: 2 });
             ok = eq("down, as many sheets as the rows need",
                     tall.tall, Math.ceil(80 / tall.perPage)) && ok;
             ok = eq("across times down", tall.pages, tall.tall * 2) && ok;
@@ -4689,37 +4699,37 @@ export class MainForm extends Form {
                     "3,2,4") && ok;
 
             /* Fit to sheets tall: the rows get shorter until they fit. */
-            const fit = ganttPrint(many, "", { kind: "gantt", tall: 2 });
+            const fit = ganttPrint(many, "", { tall: 2 });
             ok = eq("fit to two sheets tall", fit.tall, 2) && ok;
             ok = eq("by shorter rows", fit.rowH < 18, true) && ok;
             const tiny = ganttPrint(new MspProject({ Name: "Enorme",
                 Tasks: Array.from({ length: 400 }, (_, i) => task(i + 1, `T${i + 1}`, 1)) }),
-                "", { kind: "gantt", tall: 1 });
+                "", { tall: 1 });
             ok = eq("but not shorter than can be read", tiny.rowH, 9) && ok;
             ok = eq("so more sheets are the answer", tiny.tall > 1, true) && ok;
 
             /* The dates printed: each end on its own, the other the plan's. */
-            const dated = ganttPrint(project, "", { kind: "gantt", from: "2026-09-08" });
+            const dated = ganttPrint(project, "", { from: "2026-09-08" });
             ok = eq("a range starts where it was asked",
                     dated.range.from, localMs(2026, 8, 8)) && ok;
             ok = eq("and ends where the plan does", dated.range.to, one.range.to) && ok;
-            const wrong = ganttPrint(project, "", { kind: "gantt", from: "2026-09-10",
+            const wrong = ganttPrint(project, "", { from: "2026-09-10",
                                                      to: "2026-09-01" });
             ok = eq("a range backwards is the plan's", wrong.range.from, one.range.from) && ok;
 
             /* The mural: one picture, cut into tiles that overlap, with a guide
              * first; the picture is as wide as the tiles across less what they
              * share. */
-            const mural = ganttPrint(many, "", { kind: "gantt", mural: true, wide: 3 });
+            const mural = ganttPrint(many, "", { mural: true, wide: 3 });
             ok = eq("a mural is its tiles and a guide",
                     mural.pages, mural.wide * mural.tall + 1) && ok;
             ok = eq("tiles share the overlap",
                     mural.mural.W, 3 * mural.mural.stepW + mural.mural.lap) && ok;
             ok = eq("and no guide when not asked",
-                    ganttPrint(many, "", { kind: "gantt", mural: true, wide: 3, guide: false })
+                    ganttPrint(many, "", { mural: true, wide: 3, guide: false })
                         .pages, mural.wide * mural.tall) && ok;
             ok = eq("nor for a mural of one sheet",
-                    ganttPrint(project, "", { kind: "gantt", mural: true }).pages, 1) && ok;
+                    ganttPrint(project, "", { mural: true }).pages, 1) && ok;
             const muralText = (n) => {
                 const log = new CallLog();
                 mural.draw(log, n, mural.width, mural.height, false);
@@ -4798,7 +4808,7 @@ export class MainForm extends Form {
                     ["critical", "summary"].every((k) => one.legend.includes(k)) &&
                     !one.legend.includes("milestone"), true) && ok;
             ok = eq("and none when it is not wanted",
-                    ganttPrint(project, "", { kind: "gantt", legend: false }).legend.length,
+                    ganttPrint(project, "", { legend: false }).legend.length,
                     0) && ok;
 
             /* Every sheet carries the table and the ruler: the name of a row
@@ -4816,29 +4826,6 @@ export class MainForm extends Form {
                     sheetLog(three, 2).includes(Locale.Text("Row {0}, column {1}", 1, 2)),
                     true) && ok;
 
-            dlg.CmbKind.Index = 1;
-            ok = eq("the dialog previews the chart", dlg.Sheet.Visible && !dlg.Preview.Visible,
-                    true) && ok;
-            ok = eq("the chart has its own label size", dlg.SpnLabelScale.Visible, true) && ok;
-            dlg.SpnLabelScale.Value = 150;
-            dlg.SpnLabelScale_Change();
-            ok = eq("which leaves the rows alone", dlg.layout.rowH, 18) && ok;
-            dlg.SpnWide.Value = 2;
-            ok = eq("and counts its sheets", dlg.LblPage.Text, `1 / ${dlg.layout.pages}`) && ok;
-            dlg.DateFrom.Value = "2026-09-08";
-            ok = eq("a date picked reaches the chart", dlg.layout.range.from,
-                    localMs(2026, 8, 8)) && ok;
-            dlg.BtnWholePlan_Click();
-            ok = eq("and the whole plan is one button away", dlg.DateFrom.Value, "") && ok;
-            const gpdf = File.Join(Environment.TempDirectory, "bintana-project-gantt-check.pdf");
-            dlg.savePdf(gpdf);
-            const ginfo = File.Info(gpdf);
-            ok = eq("the chart's sheets are saved", !!ginfo && ginfo.Size > 0, true) && ok;
-            File.Delete(gpdf);
-            dlg.CmbKind.Index = 0;
-            ok = eq("and the table comes back", dlg.Preview.Visible && !dlg.Sheet.Visible,
-                    true) && ok;
-
             dlg.BtnClose_Click();
             ok = eq("the choices are kept", Settings.Get(REPORT_KEY + "orientation", ""),
                     "Portrait") && ok;
@@ -4847,8 +4834,64 @@ export class MainForm extends Form {
                     `${keptStyle.width}|${keptStyle.align}`, "30|Center") && ok;
             ok = eq("and the type size too", Settings.Get(REPORT_KEY + "fontScale", 0),
                     150) && ok;
-            ok = eq("and the label size", Settings.Get(REPORT_KEY + "labelScale", 0),
-                    150) && ok;
+
+            /* --- the Gantt's own dialog -------------------------------------- */
+
+            /* The chart's choices lived with the report's while the two were one
+             * dialog: until it keeps its own, it finds them there. */
+            Settings.Set(REPORT_KEY + "wide", 3);
+            const gdlg = GanttPrintForm.open(project, "/x/obra.xml", (t) => said.push(t));
+            ok = eq("the Gantt dialog shows its sheets",
+                    gdlg.Sheet.Visible && gdlg.LblPage.Text === `1 / ${gdlg.layout.pages}`,
+                    true) && ok;
+            ok = eq("and carries no notes", gdlg.TxtNotes, undefined) && ok;
+            ok = eq("it finds what the report kept for the chart", gdlg.SpnWide.Value, 3) && ok;
+            ok = eq("the sheet shows every label by default",
+                    gdlg.ChkAllLabels.Active, true) && ok;
+            gdlg.ChkAllLabels.Active = false;
+            ok = eq("and can leave out what does not fit",
+                    gdlg.options().allLabels, false) && ok;
+            gdlg.ChkAllLabels.Active = true;
+            gdlg.SpnLabelScale.Value = 150;
+            gdlg.SpnLabelScale_Change();
+            ok = eq("the label size leaves the rows alone", gdlg.layout.rowH, 18) && ok;
+            gdlg.SpnWide.Value = 2;
+            ok = eq("and counts its sheets", gdlg.LblPage.Text, `1 / ${gdlg.layout.pages}`) && ok;
+            gdlg.DateFrom.Value = "2026-09-08";
+            ok = eq("a date picked reaches the chart", gdlg.layout.range.from,
+                    localMs(2026, 8, 8)) && ok;
+            gdlg.BtnWholePlan_Click();
+            ok = eq("and the whole plan is one button away", gdlg.DateFrom.Value, "") && ok;
+            const gpdf = File.Join(Environment.TempDirectory, "bintana-project-gantt-check.pdf");
+            gdlg.savePdf(gpdf);
+            const ginfo = File.Info(gpdf);
+            ok = eq("the chart's sheets are saved", !!ginfo && ginfo.Size > 0, true) && ok;
+            File.Delete(gpdf);
+            /* Sheets or a mural: what does not apply to the one chosen is not
+             * shown, rather than greyed. */
+            ok = eq("separate sheets show the phases and hide the overlap",
+                    `${gdlg.ChkPhases.Visible}|${gdlg.ChkRepeat.Visible}|` +
+                    `${gdlg.OverlapRow.Visible}|${gdlg.ChkGuide.Visible}`,
+                    "true|true|false|false") && ok;
+            gdlg.CmbOutput.Index = 1;
+            gdlg.CmbOutput_Select();
+            ok = eq("a mural is what the combo asks for", gdlg.options().mural, true) && ok;
+            ok = eq("and shows the overlap and the guide instead",
+                    `${gdlg.ChkPhases.Visible}|${gdlg.ChkRepeat.Visible}|` +
+                    `${gdlg.OverlapRow.Visible}|${gdlg.ChkGuide.Visible}`,
+                    "false|false|true|true") && ok;
+            gdlg.CmbOutput.Index = 0;
+            gdlg.CmbOutput_Select();
+            ok = eq("the dates come first",
+                    gdlg.Options.Children[0].Name, "LblDates") && ok;
+            gdlg.CmbOrientation.Index = 1;
+            gdlg.BtnClose_Click();
+            ok = eq("the chart keeps its own choices",
+                    `${Settings.Get(GANTT_KEY + "labelScale", 0)}|` +
+                    `${Settings.Get(GANTT_KEY + "orientation", "")}`, "150|Landscape") && ok;
+            ok = eq("and leaves the report's alone",
+                    `${Settings.Get(REPORT_KEY + "orientation", "")}|` +
+                    `${Settings.Get(REPORT_KEY + "wide", 0)}`, "Portrait|3") && ok;
 
             /* A logo is general with a per-project exception: choosing one for
              * this file must not change the rest, and changing the zoom must
@@ -4875,13 +4918,9 @@ export class MainForm extends Form {
             print(`report threw: ${e.message}\n${e.stack}`);
             ok = false;
         } finally {
-            for (const key of ["path", "summaries", "stripes", "paper", "orientation",
-                               "margins", "tasks", "columns", "zoom", "kind", "wide",
-                               "repeat", "tall", "table", "phases", "pack", "legend", "mural", "overlap", "guide",
-                               "notesWhere", "logo", "logos", "fontScale", "columnStyles",
-                               "allLabels", "labelScale"]) {
-                if (Dictionary.Has(kept, key)) Settings.Set(REPORT_KEY + key, kept[key]);
-                else                           Settings.Delete(REPORT_KEY + key);
+            for (const key of keys) {
+                if (Dictionary.Has(kept, key)) Settings.Set(key, kept[key]);
+                else                           Settings.Delete(key);
             }
         }
 
@@ -5221,6 +5260,7 @@ export class MainForm extends Form {
             ok = eq("Save As", this.ActSaveAs.Enabled, false) && ok;
             ok = eq("Export", this.ActExport.Enabled, false) && ok;
             ok = eq("and Report", this.ActReport.Enabled, false) && ok;
+            ok = eq("and Print Gantt Chart", this.ActGanttPrint.Enabled, false) && ok;
             ok = eq("while New", this.ActNew.Enabled, true) && ok;
             ok = eq("and Open", this.ActOpen.Enabled, true) && ok;
 
@@ -8819,7 +8859,7 @@ export class MainForm extends Form {
                         "ActScrollToTask",
                         "ActExpandAll", "ActCollapseAll", "ActLevel1", "ActLevel2",
                         "ActLevel3",
-                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActFilter", "ActColumns", "ActFormat",
+                        "ActRecalc", "ActSettings", "ActBaseline", "ActReport", "ActGanttPrint", "ActFilter", "ActColumns", "ActFormat",
                         "ActTaskInfo",
                         "BtnApply", "BtnLinkAdd", "BtnResManage",
                         "BtnLinkDel", "MnuRecent", "MnuLog", "MnuEntry", "MnuSummaryTask", "MnuProps", "ToolProps", "MnuTasks", "MnuChart", "ToolTasks", "ToolChart", "MnuAbout",

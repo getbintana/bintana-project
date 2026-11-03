@@ -221,7 +221,11 @@ with an ellipsis. That is how any of it
 reaches somebody who does not run the app. The bands are `planReport`'s
 (`PlanReport.js`), a pure function of the plan and the options, and the dialog
 (`ReportForm`) holds the `Report` control: it used to be a hidden control on
-the main window, which the designer drew under the welcome page.
+the main window, which the designer drew under the welcome page. **Print Gantt
+Chart…** is a dialog of its own (`GanttPrintForm`, over `ganttPrint` in
+`GanttPrint.js`): the chart cut into sheets, or a mural to glue, with the same
+header, columns and paper. What the two dialogs share is `PrintForm`
+(`PrintPreview.js`), and each keeps its own choices.
 
 The pointer edits too: click a bar to select it, **drag** it to move the task,
 drag its **end** to resize (the duration follows, measured in working time on

@@ -184,6 +184,11 @@
       "icon": "x-office-document-symbolic"
     },
     {
+      "name": "ActGanttPrint",
+      "text": "Print Gantt Chart…",
+      "icon": "document-print-symbolic"
+    },
+    {
       "name": "ActProjData",
       "text": "Project data…",
       "icon": "document-properties-symbolic"
@@ -341,6 +346,9 @@
         },
         {
           "action": "ActReport"
+        },
+        {
+          "action": "ActGanttPrint"
         },
         {
           "separator": true

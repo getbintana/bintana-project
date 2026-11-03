@@ -124,7 +124,7 @@ de inicio y fin; sin ella, solo los días. Es una
 preferencia de la vista —se recuerda— y el gráfico exportado la lleva puesta.
 **En la vista viva, una etiqueta se escribe solo si entra entera**: con textos
 a los cuatro lados, las que no caben en la fila o en el gráfico se omiten en
-vez de pisarse o cortarse. En el **informe impreso**, en cambio, **Mostrar
+vez de pisarse o cortarse. En el **Gantt impreso**, en cambio, **Mostrar
 todas las etiquetas de las barras** (encendido por defecto) escribe todas las
 que pide el formato, aunque queden apretadas; apagado, la hoja también deja
 solo las que entran. Arriba y abajo piden filas más altas, y la guía de armado
@@ -582,17 +582,30 @@ lleva y cómo:
   la columna vecina. Sin la columna de costo no hay total. Las fechas se
   escriben en el formato del sistema, y un hito muestra la suya una sola vez
   (en Inicio; Fin queda vacío salvo que Inicio no se imprima).
-- **Ancho y alineación por columna**: elegida una columna, su **ancho** en
-  milímetros (0 = automático, medido del contenido) y su **alineación**
-  (izquierda, centro o derecha; por defecto la de su tipo). El **tamaño de
-  letra** es uno para toda la tabla, en porcentaje (100 % = 9 pt). El ancho y
-  la alineación valen también para la tabla del Gantt; el tamaño de letra es
-  del informe de tabla.
+- **Ancho y alineación por columna**: cada columna es un renglón con su
+  casilla, su **ancho** en milímetros (0 = automático, medido del contenido) y
+  su **alineación** (izquierda, centro o derecha; por defecto la de su tipo).
+  Una columna que no se imprime no tiene ancho ni alineación que elegir. El **tamaño de
+  letra** es uno para toda la tabla, en porcentaje (100 % = 9 pt).
 - **Papel**, **orientación** y **márgenes** en milímetros.
 
-Con **Imprimir: Diagrama de Gantt** la misma vista previa muestra el Gantt en
-papel, con la tabla de las columnas elegidas a la izquierda:
+### El Gantt impreso
 
+**Archivo → Imprimir diagrama de Gantt…** abre otro diálogo, con la misma
+vista previa, que muestra el Gantt en papel con la tabla de las columnas
+elegidas a la izquierda. Las opciones van en el orden en que se deciden:
+
+**Fechas**
+
+- **Desde / Hasta**: las fechas a imprimir. Cada una sola también vale (por
+  ejemplo, solo *Desde* hoy, y el fin es el del plan). **Todo el plan** las
+  vacía. No se recuerdan entre proyectos.
+
+**Hojas**
+
+- **Imprimir como**: **Hojas sueltas** (cada hoja se lee sola) o **Mural para
+  pegar** (una sola imagen cortada en hojas; ver más abajo). El diálogo muestra
+  solo las opciones de la forma elegida.
 - **Páginas de ancho**: en cuántas hojas se reparte el tiempo del plan. La
   escala (días, semanas o meses) se recalcula para ese ancho en vez de achicar
   la letra.
@@ -603,15 +616,25 @@ papel, con la tabla de las columnas elegidas a la izquierda:
 - **Ajustar a páginas de alto**: las filas se achican hasta entrar en esa
   cantidad de hojas, con la letra acompañando. Hay un mínimo legible (9 pt por
   fila); si ni así entra, salen más hojas.
+- Con hojas sueltas, **Cada fase en una página nueva**: una fase es un resumen
+  del nivel más alto que tenga al menos dos; el resumen del proyecto va con la
+  primera. Con **Juntar fases cortas en una página**, las fases seguidas que
+  entran enteras comparten hoja; una fase nunca se parte para llenar una, y la
+  que no entra entera empieza hoja nueva.
+
+**Página**, **Contenido** (tareas y columnas) y **Cabecera** (título,
+subtítulo, ruta y logo) se eligen igual que en el informe; las notas y el
+tamaño de letra son solo del informe de tabla.
+
+**Tabla**
+
 - **Ancho de la tabla (%)**: cuánto de la hoja puede ocupar la tabla.
-- **Repetir la tabla en cada página**: cada hoja lleva los nombres y las
-  columnas, así cualquiera se lee suelta. Sin esto, las hojas de la derecha le
-  dan ese lugar al gráfico.
-- **Cada fase en una página nueva**: una fase es un resumen del nivel más alto
-  que tenga al menos dos; el resumen del proyecto va con la primera. Con
-  **Juntar fases cortas en una página**, las fases seguidas que entran enteras
-  comparten hoja; una fase nunca se parte para llenar una, y la que no entra
-  entera empieza hoja nueva.
+- Con hojas sueltas, **Repetir la tabla en cada página**: cada hoja lleva los
+  nombres y las columnas, así cualquiera se lee suelta. Sin esto, las hojas de
+  la derecha le dan ese lugar al gráfico.
+
+**Barras**
+
 - **Mostrar la leyenda**: al pie de cada hoja, solo con lo que efectivamente
   aparece en las fechas impresas (tarea crítica si hay alguna, hito si hay
   alguno, hoy si cae en el rango…).
@@ -621,23 +644,21 @@ papel, con la tabla de las columnas elegidas a la izquierda:
 - **Tamaño de las letras de las barras (%)**: agranda solo las letras de las
   etiquetas de las barras; no cambia las filas ni la cantidad de hojas. El
   tamaño general del gráfico se elige con las **páginas de ancho** y de **alto**.
-- **Desde / Hasta**: las fechas a imprimir. Cada una sola también vale (por
-  ejemplo, solo *Desde* hoy, y el fin es el del plan). **Todo el plan** las
-  vacía. No se recuerdan entre proyectos.
-- Cada hoja trae su propia regla de tiempo, las fechas que cubre en el
-  encabezado y, al pie, la fecha de impresión, su lugar en el mural (fila y
-  columna) y el número de página. Las fechas de la tabla y de la cabecera
-  siguen el formato del sistema. El gráfico usa el formato elegido en
-  **Formato del gráfico** (textos junto a las barras incluidos), sobre papel
-  blanco aunque la ventana esté en modo oscuro.
 
-Con **Mural continuo (hojas para unir)**, el Gantt se dibuja como una sola
-imagen —el título y la regla una vez arriba, la tabla una vez a la izquierda,
-la leyenda al pie— y se corta en hojas para pegar en la pared:
+Cada hoja trae su propia regla de tiempo, las fechas que cubre en el
+encabezado y, al pie, la fecha de impresión, su lugar en el mural (fila y
+columna) y el número de página. Las fechas de la tabla y de la cabecera siguen
+el formato del sistema. El gráfico usa el formato elegido en **Formato del
+gráfico** (textos junto a las barras incluidos), sobre papel blanco aunque la
+ventana esté en modo oscuro.
+
+Con **Mural para pegar**, el Gantt se dibuja como una sola imagen —el título y
+la regla una vez arriba, la tabla una vez a la izquierda, la leyenda al pie— y
+se corta en hojas para pegar en la pared:
 
 - **Páginas de ancho** y **Ajustar a páginas de alto** fijan el tamaño del
-  mural; el resto de las opciones del Gantt (fechas, ancho de la tabla,
-  leyenda) valen igual. Repetir la tabla y las fases no aplican.
+  mural; el resto de las opciones (fechas, ancho de la tabla, leyenda) valen
+  igual. Repetir la tabla y las fases no aplican, y no se muestran.
 - **Solapamiento para pegar (mm)**: cada hoja repite, en su borde izquierdo y
   superior, la franja final de su vecina. Esa franja queda debajo al pegar, así
   que nada se pierde en el corte (por defecto 7 mm; 0 para unir a tope).
@@ -647,12 +668,14 @@ la leyenda al pie— y se corta en hojas para pegar en la pared:
 - **Incluir guía de armado**: una primera página con el mural entero en
   miniatura, la grilla de hojas numerada encima y cómo armarlo.
 
-Abajo están las páginas (◀ n / N ▶), el **zoom** —página entera, ancho de la
-ventana o de 50 a 200 %— y las salidas: **Guardar PDF…** e **Imprimir…**. Lo
-que se ve es lo que se guarda y se imprime. Las elecciones se recuerdan para la
-próxima vez: las de papel, columnas y Gantt son generales, el título y el
-subtítulo se toman del proyecto, las notas son de cada informe, y el logo tiene
-un valor general con una excepción opcional por proyecto.
+En los dos diálogos, abajo están las páginas (◀ n / N ▶), el **zoom** —página
+entera, ancho de la ventana o de 50 a 200 %— y las salidas: **Guardar PDF…** e
+**Imprimir…**. Lo que se ve es lo que se guarda y se imprime. Las elecciones se
+recuerdan para la próxima vez, **cada diálogo las suyas** (el informe puede ir
+en A4 vertical y el Gantt en A3 apaisado): papel, columnas y opciones del Gantt
+son generales, el título y el subtítulo se toman del proyecto, las notas son de
+cada informe, y el logo es uno para los dos, con un valor general y una
+excepción opcional por proyecto.
 
 ## Atajos
 

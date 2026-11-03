@@ -54,27 +54,6 @@
                 },
                 {
                   "type": "Label",
-                  "name": "LblKind",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Print"
-                  }
-                },
-                {
-                  "type": "ComboBox",
-                  "name": "CmbKind",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Index": 0,
-                    "Items": [
-                      "Table",
-                      "Gantt chart"
-                    ],
-                    "Text": "Table"
-                  }
-                },
-                {
-                  "type": "Label",
                   "name": "LblTitle",
                   "properties": {
                     "HAlign": "Start",
@@ -229,112 +208,250 @@
                   }
                 },
                 {
-                  "type": "CheckButton",
-                  "name": "ChkColStart",
+                  "type": "Grid",
+                  "name": "ColumnsGrid",
                   "properties": {
-                    "Text": "Start"
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkColFinish",
-                  "properties": {
-                    "Text": "Finish"
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkColDuration",
-                  "properties": {
-                    "Text": "Duration"
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkColComplete",
-                  "properties": {
-                    "Text": "Complete"
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkColCritical",
-                  "properties": {
-                    "Text": "Critical"
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkColCost",
-                  "properties": {
-                    "Text": "Cost"
-                  }
+                    "ColumnSpacing": 6,
+                    "Columns": 3,
+                    "HExpand": true,
+                    "RowSpacing": 4
+                  },
+                  "children": [
+                    {
+                      "type": "Label",
+                      "name": "LblColHead",
+                      "properties": {
+                        "HAlign": "Start",
+                        "Style": "dim-label",
+                        "Text": "Column"
+                      }
+                    },
+                    {
+                      "type": "Label",
+                      "name": "LblColWidthHead",
+                      "properties": {
+                        "HAlign": "Start",
+                        "Style": "dim-label",
+                        "Text": "Width (mm)"
+                      }
+                    },
+                    {
+                      "type": "Label",
+                      "name": "LblColAlignHead",
+                      "properties": {
+                        "HAlign": "Start",
+                        "Style": "dim-label",
+                        "Text": "Alignment"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColStart",
+                      "properties": {
+                        "Text": "Start",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColStartWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColStartAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColFinish",
+                      "properties": {
+                        "Text": "Finish",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColFinishWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColFinishAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColDuration",
+                      "properties": {
+                        "Text": "Duration",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColDurationWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColDurationAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColComplete",
+                      "properties": {
+                        "Text": "Complete",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColCompleteWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColCompleteAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColCritical",
+                      "properties": {
+                        "Text": "Critical",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColCriticalWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColCriticalAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    },
+                    {
+                      "type": "CheckButton",
+                      "name": "ChkColCost",
+                      "properties": {
+                        "Text": "Cost",
+                        "HExpand": true
+                      }
+                    },
+                    {
+                      "type": "SpinBox",
+                      "name": "SpnColCostWidth",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Max": 150,
+                        "Min": 0,
+                        "Value": 0
+                      }
+                    },
+                    {
+                      "type": "ComboBox",
+                      "name": "CmbColCostAlign",
+                      "properties": {
+                        "HAlign": "Fill",
+                        "Index": 0,
+                        "Items": [
+                          "Default",
+                          "Left",
+                          "Center",
+                          "Right"
+                        ],
+                        "Text": "Default"
+                      }
+                    }
+                  ]
                 },
                 {
                   "type": "Label",
-                  "name": "LblColumnStyle",
+                  "name": "LblColHint",
                   "properties": {
                     "HAlign": "Start",
-                    "Style": "heading",
-                    "Text": "Column style"
-                  }
-                },
-                {
-                  "type": "ComboBox",
-                  "name": "CmbColumn",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Index": 0,
-                    "Items": [
-                      "Start",
-                      "Finish",
-                      "Duration",
-                      "Complete",
-                      "Critical",
-                      "Cost"
-                    ],
-                    "Text": "Start"
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblColWidth",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Width (mm, 0 = auto)"
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnColWidth",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 150,
-                    "Min": 0,
-                    "Value": 0
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblColAlign",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Alignment"
-                  }
-                },
-                {
-                  "type": "ComboBox",
-                  "name": "CmbColAlign",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Index": 0,
-                    "Items": [
-                      "Default",
-                      "Left",
-                      "Center",
-                      "Right"
-                    ],
-                    "Text": "Default"
+                    "Style": "dim-label",
+                    "Text": "A width of 0 is measured from what the column holds.",
+                    "Wrap": true
                   }
                 },
                 {
@@ -416,226 +533,6 @@
                     "Max": 50,
                     "Min": 0
                   }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblGanttSetup",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Style": "heading",
-                    "Text": "Gantt chart",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkMural",
-                  "properties": {
-                    "Text": "Continuous mural (sheets to join)",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblOverlap",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Overlap to glue (mm)",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnOverlap",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 30,
-                    "Min": 0,
-                    "Value": 7,
-                    "Enabled": false,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkGuide",
-                  "properties": {
-                    "Text": "Include an assembly guide",
-                    "Active": true,
-                    "Enabled": false,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblWide",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Pages across",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnWide",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 20,
-                    "Min": 1,
-                    "Value": 1,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkTall",
-                  "properties": {
-                    "Text": "Fit to pages tall",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnTall",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 20,
-                    "Min": 1,
-                    "Value": 1,
-                    "Enabled": false,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblTable",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Table width (%)",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnTable",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 70,
-                    "Min": 15,
-                    "Value": 65,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkRepeat",
-                  "properties": {
-                    "Text": "Repeat the table on every page",
-                    "Active": true,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkPhases",
-                  "properties": {
-                    "Text": "Start each phase on a new page",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkPack",
-                  "properties": {
-                    "Text": "Join short phases on one page",
-                    "Enabled": false,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkLegend",
-                  "properties": {
-                    "Text": "Show the legend",
-                    "Active": true,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "CheckButton",
-                  "name": "ChkAllLabels",
-                  "properties": {
-                    "Text": "Show every bar label",
-                    "Active": true,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblLabelScale",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Bar label size (%)",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "SpinBox",
-                  "name": "SpnLabelScale",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Max": 200,
-                    "Min": 50,
-                    "Value": 100,
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblFrom",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "From",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "DatePicker",
-                  "name": "DateFrom",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Value": "",
-                    "Placeholder": "Plan start",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Label",
-                  "name": "LblTo",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "To",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "DatePicker",
-                  "name": "DateTo",
-                  "properties": {
-                    "HAlign": "Fill",
-                    "Value": "",
-                    "Placeholder": "Plan finish",
-                    "Visible": false
-                  }
-                },
-                {
-                  "type": "Button",
-                  "name": "BtnWholePlan",
-                  "properties": {
-                    "HAlign": "Start",
-                    "Text": "Whole plan",
-                    "Visible": false
-                  }
                 }
               ]
             }
@@ -659,18 +556,6 @@
                 "Expand": true,
                 "HExpand": true,
                 "VExpand": true,
-                "Width": 480,
-                "Height": 640
-              }
-            },
-            {
-              "type": "DrawingArea",
-              "name": "Sheet",
-              "properties": {
-                "Expand": true,
-                "HExpand": true,
-                "VExpand": true,
-                "Visible": false,
                 "Width": 480,
                 "Height": 640
               }

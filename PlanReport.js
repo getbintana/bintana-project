@@ -63,10 +63,8 @@ const REPORT_DEFAULTS = {
     paper:       "A4",
     orientation: "Landscape",
     margins:     40,
-    /* What is printed: the table alone, or the table beside the chart -- and
-     * then how many sheets across the chart takes, and whether the table is
-     * repeated on every one of them. */
-    kind:        "table",
+    /* The chart on paper: how many sheets across it takes, and whether the
+     * table is repeated on every one of them. */
     wide:        1,
     repeat:      true,
     /* And how the chart is cut down and what it carries: how many sheets tall
@@ -92,9 +90,6 @@ const REPORT_DEFAULTS = {
     overlap:     20,
     guide:       true,
 };
-
-/* What a report can be, by the index of the dialog's combo. */
-export const REPORT_KINDS = ["table", "gantt"];
 
 const REPORT_GAP     = 8;    // between two columns
 const REPORT_NAME_W  = 120;  // the least the task's name is given
@@ -166,7 +161,6 @@ export function reportOptions(o) {
     }
     out.columnStyles = styles;
     if (!REPORT_TASKS.includes(out.tasks)) out.tasks = "all";
-    if (!REPORT_KINDS.includes(out.kind)) out.kind = "table";
     out.allLabels = out.allLabels !== false;
     out.labelScale = Math.max(50, Math.min(200,
                          Math.round(Number(out.labelScale) || 100)));
