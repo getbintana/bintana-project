@@ -30,4 +30,17 @@
       <CalendarUID>1</CalendarUID>
     </Task>
   </Tasks>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID>
+      <TaskUID>1</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-02T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-10-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+  </Assignments>
 </Project>

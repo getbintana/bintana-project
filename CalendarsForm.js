@@ -26,7 +26,9 @@ export class CalendarsForm extends Form {
 
     fill() {
         this.CalendarList.Clear();
-        this.rows = this.project.Calendars.slice();
+        /* The plan's calendars; a resource's own is the resource's. */
+        this.rows = this.project.Calendars.filter(
+            (c) => !isResourceCalendar(this.project, c));
         for (const calendar of this.rows) {
             const base = calendar.BaseCalendarUID
                        ? (this.calendar(calendar.BaseCalendarUID) || {}).Name || ""

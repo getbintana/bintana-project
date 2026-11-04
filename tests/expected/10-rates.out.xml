@@ -28,6 +28,12 @@
       <Name>Standard</Name>
       <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Ana Gómez</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
   </Calendars>
   <Tasks>
     <Task>
@@ -69,7 +75,7 @@
       <Group>Crew A</Group>
       <StandardRate>50</StandardRate>
       <OvertimeRate>75</OvertimeRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
       <Rates>
         <Rate>
           <RatesFrom>2026-01-01T00:00:00</RatesFrom>

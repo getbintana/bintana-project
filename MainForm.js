@@ -3994,6 +3994,22 @@ export class MainForm extends Form {
             ok = eq("elapsed", `${e.Tasks[0].Start}..${e.Tasks[0].Finish}`,
                     "2026-09-07T08:00:00..2026-09-09T08:00:00") && ok;
 
+            /* **An elapsed task starts at its predecessor's finish**, at 17:00
+             * and not the next working morning -- it runs on the clock, as
+             * Project places it -- and what follows it starts at the next
+             * working moment after it ends, 05:00 on Wednesday. */
+            const chain = projectOf([
+                task(1, "PT8H0M0S"),
+                task(2, "PT36H0M0S", [link(1, 1)], { DurationFormat: 6 }),
+                task(3, "PT8H0M0S", [link(2, 1)]),
+            ]);
+            recalculate(chain);
+            ok = eq("an elapsed task starts at its predecessor's finish",
+                    chain.Tasks.map((t) => `${t.Start}..${t.Finish}`).join(" "),
+                    "2026-09-07T08:00:00..2026-09-07T17:00:00 " +
+                    "2026-09-07T17:00:00..2026-09-09T05:00:00 " +
+                    "2026-09-09T08:00:00..2026-09-09T17:00:00") && ok;
+
             /* **A duration is read by the side of the T an M is on.** */
             ok = eq("P1M is a month, not a minute", mspdiMinutes("P1M"), 9600) && ok;
             ok = eq("PT30M0S is half an hour", mspdiMinutes("PT30M0S"), 30) && ok;
@@ -5896,6 +5912,12 @@ export class MainForm extends Form {
                     left.map((x) => [x.Find("Name").Text, x.Find("Month").Text,
                                      x.Find("MonthDay").Text].join("/")).join(" "),
                     "Navidad/11/25") && ok;
+            /* **Y sigue siendo un feriado para Project**: sin `DayWorking`,
+             * Project tiraba la excepción al abrir el archivo. */
+            ok = eq("el feriado escribe su DayWorking y su EnteredByOccurrences",
+                    left.map((x) => ["DayWorking", "EnteredByOccurrences"].map((n) =>
+                        (x.Find(n) || { Text: "-" }).Text).join("/")).join(" "),
+                    "0/1") && ok;
             File.Delete(calFile);
 
             /* **Volver a guardar la línea base no deja la vieja al lado.** El
@@ -5916,6 +5938,101 @@ export class MainForm extends Form {
             ok = eq("la linea base nueva tiene su duracion y no la vieja",
                     [textOf("Duration"), textOf("BCWS")].join(" "), "PT16H0M0S -") && ok;
             File.Delete(baseFile);
+
+            /* **Lo que MS Project necesita leer, escrito al guardar** (los
+             * pedidos 4, 5, 8 y 9 de las muestras de GLPI): cada recurso con su
+             * calendario, la tarea sin nadie asignada a "sin asignar", la
+             * cantidad de un material como su trabajo y las fechas propias de
+             * una tarea manual. Se escribe en una copia: el plan que se edita no
+             * cambia, y guardar dos veces da lo mismo. */
+            const forFile = File.Join(Environment.TempDirectory, "check-for-project.xml");
+            const fpDay = (n) => `2026-09-0${n}`;
+            const fpTask = (uid, name, from, to, minutes, more) =>
+                `<Task><UID>${uid}</UID><ID>${uid}</ID><Name>${name}</Name>${more || ""}` +
+                `<OutlineLevel>1</OutlineLevel><Start>${from}</Start><Finish>${to}</Finish>` +
+                `<Duration>PT${minutes / 60}H0M0S</Duration><DurationFormat>7</DurationFormat>` +
+                `<Work>PT${minutes / 60}H0M0S</Work></Task>`;
+            File.Save(forFile,
+                `<?xml version="1.0" encoding="UTF-8"?>` +
+                `<Project xmlns="http://schemas.microsoft.com/project"><Name>p</Name>` +
+                `<StartDate>${fpDay(7)}T08:00:00</StartDate><CalendarUID>1</CalendarUID>` +
+                `<Calendars><Calendar><UID>1</UID><Name>Estándar</Name>` +
+                `<IsBaseCalendar>1</IsBaseCalendar></Calendar></Calendars><Tasks>` +
+                fpTask(1, "Con Ana", `${fpDay(7)}T08:00:00`, `${fpDay(7)}T17:00:00`, 480) +
+                fpTask(2, "Sin nadie", `${fpDay(8)}T08:00:00`, `${fpDay(9)}T17:00:00`, 960) +
+                fpTask(3, "Manual", `${fpDay(8)}T08:00:00`, `${fpDay(8)}T17:00:00`, 480,
+                          "<Manual>1</Manual>") +
+                fpTask(4, "Licencias", `${fpDay(7)}T08:00:00`, `${fpDay(7)}T17:00:00`, 480) +
+                `</Tasks><Resources>` +
+                `<Resource><UID>1</UID><ID>1</ID><Name>Ana</Name><Type>1</Type>` +
+                `<CalendarUID>1</CalendarUID></Resource>` +
+                `<Resource><UID>2</UID><ID>2</ID><Name>Licencias</Name><Type>0</Type></Resource>` +
+                `<Resource><UID>3</UID><ID>3</ID><Name>Bruno</Name><Type>1</Type></Resource>` +
+                `</Resources><Assignments><Assignment><UID>1</UID><TaskUID>1</TaskUID>` +
+                `<ResourceUID>1</ResourceUID><Units>1</Units><Work>PT8H0M0S</Work>` +
+                `</Assignment></Assignments></Project>`);
+            const forHeld = readMspdi(forFile);
+            const forEdit = new Edit(forHeld);
+            forEdit.addAssignment(4, 2, 3);
+            const fpBefore = JSON.stringify(forHeld.project.Serialize(true));
+            writeMspdi(forFile, forHeld);
+            ok = eq("guardar no cambia el plan que se edita",
+                    JSON.stringify(forHeld.project.Serialize(true)) === fpBefore, true) && ok;
+
+            const fpWritten = () => {
+                const root = File.LoadXml(forFile).Root;
+                const all = (wrap, item) => root.Find(wrap) ? root.Find(wrap).FindAll(item) : [];
+                const t = (el, name) => (el.Find(name) || { Text: "-" }).Text;
+                return {
+                    cals: all("Calendars", "Calendar").map((c) =>
+                        [t(c, "UID"), t(c, "Name"), t(c, "IsBaseCalendar"),
+                         t(c, "BaseCalendarUID")].join("/")).join(" "),
+                    res: all("Resources", "Resource").map((r) =>
+                        `${t(r, "Name")}:${t(r, "CalendarUID")}`).join(" "),
+                    asg: all("Assignments", "Assignment").map((a) =>
+                        [t(a, "TaskUID"), t(a, "ResourceUID"), t(a, "Units"),
+                         t(a, "Work")].join("/")).join(" "),
+                    task: (uid) => {
+                        const el = all("Tasks", "Task").find((x) => t(x, "UID") === String(uid));
+                        return ["ManualStart", "ManualFinish", "ManualDuration", "Work"]
+                            .map((n) => t(el, n)).join(" ");
+                    },
+                };
+            };
+            let fpW = fpWritten();
+            ok = eq("cada recurso con su calendario, derivado del base", fpW.cals,
+                    "1/Estándar/1/- 2/Ana/0/1 3/Licencias/0/1 4/Bruno/0/1") && ok;
+            ok = eq("y apuntado por el recurso", fpW.res, "Ana:2 Licencias:3 Bruno:4") && ok;
+            ok = eq("relleno en las tareas sin nadie; el material, su cantidad", fpW.asg,
+                    "1/1/1/PT8H0M0S 4/2/3/PT3H0M0S 2/-65535/1/PT16H0M0S 3/-65535/1/PT8H0M0S") && ok;
+            ok = eq("la tarea con relleno no tiene trabajo propio", fpW.task(2),
+                    "- - - PT0H0M0S") && ok;
+            ok = eq("la manual escribe sus fechas", fpW.task(3),
+                    `${fpDay(8)}T08:00:00 ${fpDay(8)}T17:00:00 PT8H0M0S PT0H0M0S`) && ok;
+
+            /* Releído, lo que se escribió es del archivo: no se duplica, y
+             * sigue a lo que se edita después. */
+            const fpAgain = readMspdi(forFile);
+            const againEdit = new Edit(fpAgain);
+            againEdit.addAssignment(2, 3, 1);
+            const fpManual = fpAgain.project.Tasks.find((x) => x.UID === 3);
+            fpManual.Start  = `${fpDay(9)}T08:00:00`;
+            fpManual.Finish = `${fpDay(9)}T17:00:00`;
+            againEdit.setResource(1, { CalendarUID: -1 });
+            writeMspdi(forFile, fpAgain);
+            fpW = fpWritten();
+            ok = eq("releído, los calendarios no se duplican", fpW.cals,
+                    "1/Estándar/1/- 2/Ana/0/1 3/Licencias/0/1 4/Bruno/0/1") && ok;
+            ok = eq("elegir el base no le quita a Ana su calendario", fpW.res,
+                    "Ana:2 Licencias:3 Bruno:4") && ok;
+            ok = eq("con alguien asignado, el relleno se va", fpW.asg,
+                    "1/1/1/PT8H0M0S 4/2/3/PT3H0M0S 3/-65535/1/PT8H0M0S 2/3/1/PT16H0M0S") && ok;
+            ok = eq("la manual movida lleva sus fechas nuevas", fpW.task(3),
+                    `${fpDay(9)}T08:00:00 ${fpDay(9)}T17:00:00 PT8H0M0S PT0H0M0S`) && ok;
+            againEdit.removeResource(3);
+            ok = eq("el recurso borrado se lleva su calendario",
+                    fpAgain.project.Calendars.map((c) => c.UID).join(" "), "1 2 3") && ok;
+            File.Delete(forFile);
 
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que
@@ -8901,7 +9018,13 @@ export class MainForm extends Form {
                  saved[2].Notes === "Edited in the harness" &&
                  second.project.Resources.length === 2 &&
                  second.project.Resources[0].Rates.length === 2 &&
-                 second.project.Assignments.length === 2 &&
+                 /* The two the harness made, and Unassigned on the new
+                  * task, which has a duration and nobody on it. */
+                 second.project.Assignments.filter(
+                     (a) => a.ResourceUID !== UNASSIGNED).length === 2 &&
+                 second.project.Assignments.filter(
+                     (a) => a.ResourceUID === UNASSIGNED &&
+                            a.TaskUID === 3).length === 1 &&
                  second.project.Assignments[0].Work === "PT4H0M0S" &&
                  second.project.FieldDefs.length === 1 &&
                  saved[3].Attributes.length === 1 &&

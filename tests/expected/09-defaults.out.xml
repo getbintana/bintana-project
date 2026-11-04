@@ -29,6 +29,12 @@
       <Name>Standard</Name>
       <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Ana</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
   </Calendars>
   <Tasks>
     <Task>
@@ -70,7 +76,31 @@
       <Name>Ana</Name>
       <Type>1</Type>
       <StandardRate>50</StandardRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
     </Resource>
   </Resources>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID>
+      <TaskUID>1</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-02T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-09-02T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>2</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-02T17:00:00</Finish>
+      <RegularWork>PT4H0M0S</RegularWork>
+      <RemainingWork>PT4H0M0S</RemainingWork>
+      <Start>2026-09-02T13:00:00</Start>
+      <Units>1</Units>
+      <Work>PT4H0M0S</Work>
+    </Assignment>
+  </Assignments>
 </Project>

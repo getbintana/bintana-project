@@ -27,6 +27,24 @@
       <Name>Standard</Name>
       <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Ana Gómez</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
+    <Calendar>
+      <UID>3</UID>
+      <Name>Bruno Díaz</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
+    <Calendar>
+      <UID>4</UID>
+      <Name>Bricks</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
   </Calendars>
   <Tasks>
     <Task>
@@ -69,7 +87,7 @@
       <Group>Crew A</Group>
       <StandardRate>50</StandardRate>
       <OvertimeRate>75</OvertimeRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
     </Resource>
     <Resource>
       <UID>2</UID>
@@ -81,7 +99,7 @@
       <MaxUnits>0.5</MaxUnits>
       <StandardRate>40</StandardRate>
       <OvertimeRate>60</OvertimeRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>3</CalendarUID>
     </Resource>
     <Resource>
       <UID>3</UID>
@@ -90,6 +108,7 @@
       <Type>0</Type>
       <MaterialLabel>pallets</MaterialLabel>
       <StandardRate>120</StandardRate>
+      <CalendarUID>4</CalendarUID>
     </Resource>
   </Resources>
   <Assignments>
@@ -118,10 +137,11 @@
       <TaskUID>2</TaskUID>
       <ResourceUID>3</ResourceUID>
       <Finish>2026-09-01T17:00:00</Finish>
-      <RegularWork>PT0H0M0S</RegularWork>
+      <RegularWork>PT2H0M0S</RegularWork>
+      <RemainingWork>PT2H0M0S</RemainingWork>
       <Start>2026-09-01T08:00:00</Start>
       <Units>2</Units>
-      <Work>PT0H0M0S</Work>
+      <Work>PT2H0M0S</Work>
     </Assignment>
   </Assignments>
 </Project>

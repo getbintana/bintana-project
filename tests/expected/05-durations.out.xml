@@ -105,4 +105,39 @@
       <OutlineLevel>1</OutlineLevel>
     </Task>
   </Tasks>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID>
+      <TaskUID>1</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-01T08:30:00</Finish>
+      <RegularWork>PT30M0S</RegularWork>
+      <RemainingWork>PT30M0S</RemainingWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT30M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>2</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-12T17:00:00</Finish>
+      <RegularWork>PT80H0M0S</RegularWork>
+      <RemainingWork>PT80H0M0S</RemainingWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT80H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>3</UID>
+      <TaskUID>3</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-31T17:00:00</Finish>
+      <RegularWork>PT160H0M0S</RegularWork>
+      <RemainingWork>PT160H0M0S</RemainingWork>
+      <Start>2026-10-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT160H0M0S</Work>
+    </Assignment>
+  </Assignments>
 </Project>

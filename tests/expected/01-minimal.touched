@@ -3,13 +3,13 @@ touched: /Project/CriticalSlackLimit[1]: removed (was "0")
 touched: /Project/CurrencySymbolPosition[1]: removed (was "0")
 touched: /Project/DefaultTaskType[1]: removed (was "1")
 touched: /Project/Calendars[1]/Calendar[1]/IsBaseCalendar[1]: "true" -> "1"
-touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: removed (was "false")
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[1]/DayWorking[1]: "false" -> "0"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[2]/DayWorking[1]: "true" -> "1"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[3]/DayWorking[1]: "true" -> "1"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[4]/DayWorking[1]: "true" -> "1"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[5]/DayWorking[1]: "true" -> "1"
 touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[6]/DayWorking[1]: "true" -> "1"
-touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[7]/DayWorking[1]: removed (was "false")
+touched: /Project/Calendars[1]/Calendar[1]/WeekDays[1]/WeekDay[7]/DayWorking[1]: "false" -> "0"
 touched: /Project/Tasks[1]/Task[1]/ID[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[1]/IsNull[1]: removed (was "false")
 touched: /Project/Tasks[1]/Task[1]/OutlineLevel[1]: removed (was "0")
@@ -17,8 +17,28 @@ touched: /Project/Tasks[1]/Task[1]/Summary[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[1]/Critical[1]: "true" -> "1"
 touched: /Project/Tasks[1]/Task[1]/PercentComplete[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[2]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[2]/Work[1]: "PT8H0M0S" -> "PT0H0M0S"
 touched: /Project/Tasks[1]/Task[3]/IsNull[1]: removed (was "false")
+touched: /Project/Tasks[1]/Task[3]/Work[1]: "PT8H0M0S" -> "PT0H0M0S"
 touched: /Project/Tasks[1]/Task[3]/PercentComplete[1]: removed (was "0")
 touched: /Project/Tasks[1]/Task[3]/PredecessorLink[1]/LinkLag[1]: removed (was "0")
 touched: /Project/Autolink[1]: added ("0")
 touched: /Project/ProjectExternallyEdited[1]: added ("0")
+touched: /Project/Assignments[1]/Assignment[1]/UID[1]: added ("1")
+touched: /Project/Assignments[1]/Assignment[1]/TaskUID[1]: added ("1")
+touched: /Project/Assignments[1]/Assignment[1]/ResourceUID[1]: added ("-65535")
+touched: /Project/Assignments[1]/Assignment[1]/Finish[1]: added ("2026-09-02T17:00:00")
+touched: /Project/Assignments[1]/Assignment[1]/RegularWork[1]: added ("PT8H0M0S")
+touched: /Project/Assignments[1]/Assignment[1]/RemainingWork[1]: added ("PT0H0M0S")
+touched: /Project/Assignments[1]/Assignment[1]/Start[1]: added ("2026-09-01T08:00:00")
+touched: /Project/Assignments[1]/Assignment[1]/Units[1]: added ("1")
+touched: /Project/Assignments[1]/Assignment[1]/Work[1]: added ("PT8H0M0S")
+touched: /Project/Assignments[1]/Assignment[2]/UID[1]: added ("2")
+touched: /Project/Assignments[1]/Assignment[2]/TaskUID[1]: added ("2")
+touched: /Project/Assignments[1]/Assignment[2]/ResourceUID[1]: added ("-65535")
+touched: /Project/Assignments[1]/Assignment[2]/Finish[1]: added ("2026-09-03T17:00:00")
+touched: /Project/Assignments[1]/Assignment[2]/RegularWork[1]: added ("PT8H0M0S")
+touched: /Project/Assignments[1]/Assignment[2]/RemainingWork[1]: added ("PT8H0M0S")
+touched: /Project/Assignments[1]/Assignment[2]/Start[1]: added ("2026-09-03T08:00:00")
+touched: /Project/Assignments[1]/Assignment[2]/Units[1]: added ("1")
+touched: /Project/Assignments[1]/Assignment[2]/Work[1]: added ("PT8H0M0S")

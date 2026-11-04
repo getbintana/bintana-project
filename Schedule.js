@@ -851,6 +851,12 @@ export function recalculate(project) {
             const span = duration * MIN_MS;
             const startBefore = (finish) => elapsed ? finish - span
                                                     : work.subtract(finish, duration);
+            /* **Where a task can start from a moment**: the next working one
+             * for a task that works, the moment itself for an elapsed one --
+             * it runs on the clock, so it starts right at its predecessor's
+             * finish, at night too, as Project places it -- and for a
+             * milestone, which may sit on the instant its predecessor ends. */
+            const startAt = (t) => elapsed || duration <= 0 ? t : work.startAfter(t);
             let ready = true;
 
             /* FS and SS bound the start; FF and SF bound the finish. A task
@@ -874,7 +880,7 @@ export function recalculate(project) {
                 } else {
                     const base = lagAfter(work, kind === 1 ? pf : ps, link,
                                           mspdiMinutes(pred.Duration));
-                    const candidate = duration > 0 ? work.startAfter(base) : base;
+                    const candidate = startAt(base);
                     if (startFloor === null || candidate > startFloor) startFloor = candidate;
                 }
             }
@@ -937,8 +943,10 @@ export function recalculate(project) {
 
             /* A task starts at a working moment; a milestone is zero duration
              * and may sit on the instant its predecessor ends -- Project shows
-             * it on the finish date, not the morning after. */
-            let   from = duration > 0 ? work.startAfter(startFloor)
+             * it on the finish date, not the morning after -- and an elapsed
+             * task starts on the moment itself. */
+            let   from = elapsed && duration > 0 ? startFloor
+                       : duration > 0 ? work.startAfter(startFloor)
                                       : work.add(startFloor, 0);
             let   to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
                                       : from;
@@ -952,7 +960,8 @@ export function recalculate(project) {
              * really began. */
             const began = whenMs(task.ActualStart);
             if (began !== null) {
-                from = duration > 0 ? work.startAfter(began) : work.add(began, 0);
+                from = elapsed && duration > 0 ? began
+                     : duration > 0 ? work.startAfter(began) : work.add(began, 0);
                 to   = duration > 0 ? (elapsed ? from + span : work.add(from, duration))
                                     : from;
                 if (finishFloor !== null && to < finishFloor) to = finishFloor;

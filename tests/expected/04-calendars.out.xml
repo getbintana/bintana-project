@@ -26,6 +26,7 @@
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
@@ -79,22 +80,26 @@
         </WeekDay>
         <WeekDay>
           <DayType>7</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
       </WeekDays>
       <Exceptions>
         <Exception>
+          <EnteredByOccurrences>0</EnteredByOccurrences>
           <TimePeriod>
             <FromDate>2026-12-25T00:00:00</FromDate>
             <ToDate>2026-12-25T23:59:00</ToDate>
           </TimePeriod>
           <Name>Christmas Day</Name>
           <Type>1</Type>
+          <DayWorking>0</DayWorking>
         </Exception>
       </Exceptions>
     </Calendar>
     <Calendar>
       <UID>2</UID>
       <Name>Night shift</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
       <BaseCalendarUID>1</BaseCalendarUID>
       <WeekDays>
         <WeekDay>

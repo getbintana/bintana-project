@@ -117,6 +117,7 @@ export class ProjectForm extends Form {
     static tablesFor(project) {
         const uids = [], names = [];
         for (const calendar of project.Calendars || []) {
+            if (isResourceCalendar(project, calendar)) continue;
             uids.push(calendar.UID);
             names.push(calendar.Name);
         }

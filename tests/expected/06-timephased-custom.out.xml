@@ -35,6 +35,12 @@
       <Name>Standard</Name>
       <IsBaseCalendar>1</IsBaseCalendar>
     </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Crew</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
   </Calendars>
   <Tasks>
     <Task>
@@ -86,7 +92,7 @@
       <Type>1</Type>
       <Initials>CR</Initials>
       <StandardRate>35</StandardRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
     </Resource>
   </Resources>
   <Assignments>

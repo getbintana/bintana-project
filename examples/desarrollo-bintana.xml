@@ -36,6 +36,7 @@
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
@@ -109,8 +110,27 @@
         </WeekDay>
         <WeekDay>
           <DayType>7</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
       </WeekDays>
+    </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Matías</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
+    <Calendar>
+      <UID>3</UID>
+      <Name>Ana</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
+    <Calendar>
+      <UID>4</UID>
+      <Name>Licencias y servicios</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
     </Calendar>
   </Calendars>
   <Tasks>
@@ -969,6 +989,9 @@
       <Start>2026-11-12T08:00:00</Start>
       <Finish>2026-11-12T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
+      <ManualStart>2026-11-12T08:00:00</ManualStart>
+      <ManualFinish>2026-11-12T17:00:00</ManualFinish>
+      <ManualDuration>PT8H0M0S</ManualDuration>
       <DurationFormat>7</DurationFormat>
       <Estimated>0</Estimated>
       <Critical>1</Critical>
@@ -1023,7 +1046,7 @@
       <StandardRateFormat>2</StandardRateFormat>
       <OvertimeRate>60</OvertimeRate>
       <OvertimeRateFormat>2</OvertimeRateFormat>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
       <Rates>
         <Rate>
           <RatesFrom>2026-01-01T00:00:00</RatesFrom>
@@ -1061,7 +1084,7 @@
       <StandardRateFormat>2</StandardRateFormat>
       <OvertimeRate>35</OvertimeRate>
       <OvertimeRateFormat>2</OvertimeRateFormat>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>3</CalendarUID>
     </Resource>
     <Resource>
       <UID>3</UID>
@@ -1071,6 +1094,7 @@
       <MaterialLabel>licencia</MaterialLabel>
       <StandardRate>120</StandardRate>
       <StandardRateFormat>2</StandardRateFormat>
+      <CalendarUID>4</CalendarUID>
     </Resource>
   </Resources>
   <Assignments>
@@ -1136,9 +1160,10 @@
       <UID>8</UID>
       <TaskUID>35</TaskUID>
       <ResourceUID>3</ResourceUID>
-      <RegularWork>PT0H0M0S</RegularWork>
+      <RegularWork>PT2H0M0S</RegularWork>
+      <RemainingWork>PT2H0M0S</RemainingWork>
       <Units>2</Units>
-      <Work>PT0H0M0S</Work>
+      <Work>PT2H0M0S</Work>
     </Assignment>
     <Assignment>
       <UID>9</UID>
@@ -1155,6 +1180,193 @@
       <RegularWork>PT12H0M0S</RegularWork>
       <Units>0.5</Units>
       <Work>PT12H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>11</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-08-26T17:00:00</Finish>
+      <RegularWork>PT24H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-08-24T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT24H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>12</UID>
+      <TaskUID>3</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-08-28T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-08-27T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>13</UID>
+      <TaskUID>4</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-08-31T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-08-31T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>14</UID>
+      <TaskUID>7</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT24H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT24H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>15</UID>
+      <TaskUID>8</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-08T17:00:00</Finish>
+      <RegularWork>PT24H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-04T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT24H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>16</UID>
+      <TaskUID>9</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-10T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-09T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>17</UID>
+      <TaskUID>12</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-15T17:00:00</Finish>
+      <RegularWork>PT24H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-11T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT24H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>18</UID>
+      <TaskUID>14</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-23T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-22T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>19</UID>
+      <TaskUID>18</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-30T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-09-29T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>20</UID>
+      <TaskUID>19</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-02T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-10-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>21</UID>
+      <TaskUID>20</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-02T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-10-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>22</UID>
+      <TaskUID>24</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-07T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-10-07T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>23</UID>
+      <TaskUID>25</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-09T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-10-08T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>24</UID>
+      <TaskUID>30</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-20T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-10-19T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>25</UID>
+      <TaskUID>32</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-10-26T17:00:00</Finish>
+      <RegularWork>PT16H0M0S</RegularWork>
+      <RemainingWork>PT16H0M0S</RemainingWork>
+      <Start>2026-10-23T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT16H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>26</UID>
+      <TaskUID>38</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-11-11T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-11-11T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>27</UID>
+      <TaskUID>39</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-11-12T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-11-12T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
     </Assignment>
   </Assignments>
 </Project>

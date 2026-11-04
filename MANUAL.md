@@ -41,6 +41,14 @@ XML.
 Con un archivo nombrado en la línea de comandos no hay página de bienvenida: la
 ventana abre directamente el plan.
 
+**Al guardar se escribe lo que MS Project necesita para abrir el mismo plan**,
+aunque en la ventana no se vea: cada recurso con su calendario propio, una tarea
+con duración y sin nadie asignada a "sin asignar" (si no, Project la convierte
+en un hito), el trabajo de una asignación material igual a su cantidad (si no,
+Project la deja en cero) y las fechas de una tarea manual repetidas donde
+Project las lee (si no, le da un día). Por eso un archivo abierto y guardado sin
+cambios puede crecer la primera vez.
+
 ## La tabla
 
 Es la EDT en árbol, con los resúmenes plegables y las filas nulas salteadas.
@@ -360,6 +368,9 @@ cuántas restricciones incumplidas.
   reemplaza sin tocar las demás.
 - El **avance** mueve las fechas reales: arriba de cero hay inicio real, al
   cien por ciento hay fin real, y en cero no hay ninguno.
+- Una tarea de **duración transcurrida** (`ed`, `eh`…) corre de reloj: empieza
+  apenas termina su predecesora, aunque sea de noche o en un feriado, y no a
+  la mañana laborable siguiente, como la ubica Project.
 - Las tareas **terminadas** (con fin real) y las **programadas manualmente**
   (el tilde del panel) no se mueven al recalcular: sus fechas son las que
   tienen, y las sucesoras se enlazan a ellas. Un resumen manual fija además el
@@ -398,6 +409,13 @@ presupuesto del plan **es la suma de las asignaciones** y no hay un total que se
 escriba aparte —en el archivo el campo está en la asignación, y por eso no
 está en otro lado—. Es un Deshacer y se puede dejar en cero, que es lo mismo
 que no presupuestar.
+
+El calendario que se elige para un recurso es su **calendario base**: al
+guardar, cada recurso lleva su propio calendario derivado de ese base, que es
+como lo escribe Project (si el recurso apunta directo al base, Project convierte
+ese base en el calendario del recurso y el plan queda con otro horario). Si el
+archivo ya trae el calendario propio del recurso, se conserva, y no aparece
+entre los calendarios que se ofrecen para las tareas o el proyecto.
 
 El costo sale del trabajo por la tasa en un recurso de trabajo, de las
 unidades por la tasa en uno material, más el costo por uso; si el archivo trae

@@ -153,7 +153,8 @@ export class MspTask extends Record {
         Order: [
             "UID", "ID", "Name", "Manual", "Type", "IsNull", "CreateDate",
             "Contact", "WBS", "WBSLevel", "OutlineNumber", "OutlineLevel",
-            "Priority", "Start", "Finish", "Duration", "DurationFormat",
+            "Priority", "Start", "Finish", "Duration", "ManualStart",
+            "ManualFinish", "ManualDuration", "DurationFormat",
             "Work", "Stop", "Resume", "ResumeValid", "EffortDriven",
             "Recurring", "OverAllocated", "Estimated", "Milestone",
             "Summary", "Critical", "IsSubproject", "IsSubprojectReadOnly",
@@ -201,6 +202,16 @@ export class MspTask extends Record {
         Start:            Field.DateTime(),
         Finish:           Field.DateTime(),
         Duration:         Field.Text(),
+        /* **A manual task's own dates, where Project 2010+ reads them.**
+         * Without them Project gives a manual task its default duration, one
+         * day, whatever `Start`/`Finish`/`Duration` say. They are the same
+         * three values -- Project writes them on every task, equal to the
+         * dates on an automatic one -- and `forProject` keeps them so on the
+         * way out. Not in pj12, as `Manual` is not: right after `Duration`,
+         * where Project writes them. */
+        ManualStart:      Field.DateTime(),
+        ManualFinish:     Field.DateTime(),
+        ManualDuration:   Field.Text(),
         DurationFormat:   Field.Int(),
         Work:             Field.Text(),
         /* Effort-driven has no default in the schema; Project writes it in
@@ -494,7 +505,8 @@ export class MspWeekDay extends Record {
     };
     static Fields = {
         DayType:      Field.Int(),
-        DayWorking:   Field.Bool(),
+        /* **Written always**, as Project writes it -- see the exception's. */
+        DayWorking:   Field.Bool(false, { always: true }),
         WorkingTimes: Field.List(MspWorkingTime, { in: "WorkingTimes" }),
     };
 }
@@ -532,7 +544,11 @@ export class MspException extends Record {
         ],
     };
     static Fields = {
-        EnteredByOccurrences: Field.Bool(),
+        /* **Written always**, like `DayWorking` below: a one-day holiday
+         * without it was dropped by Project on open, whatever its
+         * `DayWorking` said (the 8/12 of the GLPI samples, 2026-11-04). Project
+         * writes both in every exception. */
+        EnteredByOccurrences: Field.Bool(false, { always: true }),
         TimePeriod:           Field.Record(MspTimePeriod),
         Occurrences:          Field.Int({ def: -1 }),
         Name:                 Field.Text(),
@@ -543,7 +559,10 @@ export class MspException extends Record {
         MonthPosition:        Field.Int({ def: -1 }),
         Month:                Field.Int({ def: -1 }),
         MonthDay:             Field.Int({ def: -1 }),
-        DayWorking:           Field.Bool(),
+        /* **Written always**, as Project writes it: `false` is the field's
+         * default and `SaveXml` dropped it, and a holiday Project throws away
+         * leaves a task across it a day longer than its assignment. */
+        DayWorking:           Field.Bool(false, { always: true }),
         WorkingTimes:         Field.List(MspWorkingTime, { in: "WorkingTimes" }),
     };
 }
@@ -1030,6 +1049,164 @@ export function summarize(project) {
  * was -- which is the whole of what makes a round trip an interchange and
  * not a rewrite.
  */
+/* Project's "Unassigned": the resource a task with no one on it is assigned
+ * to, so that it has work at all. */
+export const UNASSIGNED = -65535;
+
+/*
+ * **A resource's own calendar**: not a base calendar, and derived from one the
+ * plan has. That is what Project makes of every resource -- its working time
+ * is the base's plus the person's own days -- and the calendar pickers do not
+ * offer it, since no task and no other resource can run on it. A calendar
+ * that does not say whether it is a base, and derives from nothing, is one.
+ */
+export function isResourceCalendar(project, calendar) {
+    if (!calendar || calendar.IsBaseCalendar) return false;
+    const base = calendar.BaseCalendarUID;
+    return base !== calendar.UID && project.Calendars.some((c) => c.UID === base);
+}
+
+/* The base calendar a resource runs on, -1 for the plan's own: its own
+ * calendar's base when it has one, the one it names otherwise. */
+export function resourceBaseCalendar(project, resource) {
+    const uid = resource ? resource.CalendarUID : -1;
+    const calendar = project.Calendars.find((c) => c.UID === uid);
+    if (isResourceCalendar(project, calendar)) return calendar.BaseCalendarUID;
+    return uid > 0 && calendar ? uid : -1;
+}
+
+/*
+ * **The plan as MS Project has to read it** -- a copy, what `writeMspdi`
+ * writes. Each of these is a place where a file that says the same thing in
+ * another way opens in Project as a different plan (measured there, the GLPI
+ * samples' REQUESTS.md), and none is something the editor needs to see, so
+ * they are made on the way out and the plan being edited stays as it is:
+ *
+ *  - **Every resource has a calendar of its own**, derived from the base it
+ *    runs on. Pointed at the base itself, Project turns that base into the
+ *    resource's calendar and the plan is scheduled on working time nobody
+ *    wrote. Material resources too, as Project writes them.
+ *  - **A task with a duration and nobody on it is assigned to Unassigned**
+ *    (`UNASSIGNED`), its duration as the work: with no work at all Project
+ *    makes it a milestone. The task itself carries no work -- with it,
+ *    Project halved a manual one. A placeholder the task no longer needs
+ *    goes, and one it keeps follows its dates.
+ *  - **A material assignment's work is its quantity**, in hours: with none
+ *    Project sets the quantity to zero.
+ *  - **A manual task's dates are its `Manual*` ones too**, and so are those of
+ *    any task that already carries them.
+ *
+ * New records take UIDs after the plan's and after the template's, so none
+ * lands on an element the document already has; the same plan gets the same
+ * UIDs on every save. Answers `{ plan, ownCalendars }`: the copy, and the UIDs
+ * of the resources' calendars in it.
+ */
+export function forProject(project, doc) {
+    const out = MspProject.Load(project.Serialize(true));
+
+    /* The highest UID of a kind, in the plan and in the template. */
+    const topOf = (list, wrapper, item) => {
+        let top = list.reduce((m, r) => Math.max(m, r.UID), 0);
+        const holder = doc && doc.Root ? doc.Root.Find(wrapper) : null;
+        if (holder)
+            for (const el of holder.FindAll(item)) {
+                const uid = el.Find("UID");
+                const n = uid ? parseInt(uid.Text, 10) : NaN;
+                if (!isNaN(n) && n > top) top = n;
+            }
+        return top;
+    };
+
+    /* Resources: their own calendars. One calendar is one resource's; a
+     * second resource on it gets one of its own, derived from the same base. */
+    let calendarUID = topOf(out.Calendars, "Calendars", "Calendar");
+    const calendars = new Map(out.Calendars.map((c) => [c.UID, c]));
+    const claimed = new Set();
+    const made = [];
+    for (const resource of out.Resources) {
+        if (resource.IsNull || resource.UID === 0) continue;
+        if (resource.Type !== 0 && resource.Type !== 1) continue;
+        const calendar = calendars.get(resource.CalendarUID);
+        const own = isResourceCalendar(out, calendar);
+        if (own && !claimed.has(calendar.UID)) {
+            claimed.add(calendar.UID);
+            continue;
+        }
+        const base = own ? calendar.BaseCalendarUID
+                   : calendar ? calendar.UID : out.CalendarUID;
+        const mine = new MspCalendar({ UID: ++calendarUID, Name: resource.Name,
+                                       IsBaseCalendar: false,
+                                       BaseCalendarUID: base });
+        made.push(mine);
+        claimed.add(mine.UID);
+        resource.CalendarUID = mine.UID;
+    }
+    if (made.length) out.Calendars = out.Calendars.concat(made);
+
+    /* Assignments: who is on each task, and what a material one is worth. */
+    const onTask = new Map();
+    for (const assignment of out.Assignments) {
+        const list = onTask.get(assignment.TaskUID);
+        if (list) list.push(assignment); else onTask.set(assignment.TaskUID, [assignment]);
+
+        const resource = resourceOf(out, assignment.ResourceUID);
+        if (resource && resource.Type === 0 && assignment.Units > 0 &&
+            !(mspdiMinutes(assignment.Work) > 0)) {
+            const quantity = mspdiDuration(Math.round(assignment.Units * 60));
+            assignment.Work = quantity;
+            assignment.RegularWork = quantity;
+            if (!(mspdiMinutes(assignment.RemainingWork) > 0))
+                assignment.RemainingWork = quantity;
+        }
+    }
+
+    let assignmentUID = topOf(out.Assignments, "Assignments", "Assignment");
+    const gone = new Set();
+    const added = [];
+    for (const task of out.Tasks) {
+        if (task.IsNull || task.Summary) continue;
+
+        /* The manual dates, beside the dates. */
+        if (task.Manual || task.ManualStart !== "" || task.ManualFinish !== "" ||
+            task.ManualDuration !== "") {
+            task.ManualStart    = task.Start;
+            task.ManualFinish   = task.Finish;
+            task.ManualDuration = task.Duration;
+        }
+
+        const mine = onTask.get(task.UID) || [];
+        const placeholders = mine.filter((a) => a.ResourceUID === UNASSIGNED);
+        if (placeholders.length < mine.length) {
+            for (const a of placeholders) gone.add(a);
+            continue;
+        }
+        const minutes = mspdiMinutes(task.Duration) || 0;
+        if (!placeholders.length && minutes <= 0) continue;
+
+        let placeholder = placeholders[0];
+        for (const a of placeholders.slice(1)) gone.add(a);
+        if (!placeholder) {
+            placeholder = new MspAssignment({ UID: ++assignmentUID, TaskUID: task.UID,
+                                              ResourceUID: UNASSIGNED, Units: 1 });
+            added.push(placeholder);
+        }
+        const work = mspdiDuration(minutes);
+        const left = mspdiDuration(Math.round(
+            minutes * (100 - Math.min(100, Math.max(0, task.PercentComplete || 0))) / 100));
+        placeholder.Work          = work;
+        placeholder.RegularWork   = work;
+        placeholder.RemainingWork = left;
+        placeholder.Start         = task.Start;
+        placeholder.Finish        = task.Finish;
+        if (!(placeholder.Units > 0)) placeholder.Units = 1;
+        if (mspdiMinutes(task.Work) > 0) task.Work = "PT0H0M0S";
+    }
+    if (gone.size || added.length)
+        out.Assignments = out.Assignments.filter((a) => !gone.has(a)).concat(added);
+
+    return { plan: out, ownCalendars: claimed };
+}
+
 /*
  * **The document as it was read is the template every write starts from**, and
  * it is kept as text so each write parses a fresh copy of it. `SaveXml` edits
@@ -1049,7 +1226,21 @@ export function readMspdi(path) {
 
 export function writeMspdi(path, holder) {
     const doc = holder.source !== undefined ? Xml.Parse(holder.source) : holder.doc;
-    holder.project.SaveXml(doc.Root);
+    const ready = forProject(holder.project, doc);
+    ready.plan.SaveXml(doc.Root);
+    /* **A resource's calendar says it is not a base**, as Project writes it:
+     * `false` is the field's default, so `SaveXml` leaves it out -- and took
+     * out the `0` a file of Project's had. Only resources' calendars are told:
+     * a base calendar that never said keeps not saying. */
+    const holderEl = doc.Root.Find("Calendars");
+    if (holderEl && ready.ownCalendars.size)
+        for (const el of holderEl.FindAll("Calendar")) {
+            const uid = el.Find("UID");
+            if (!uid || !ready.ownCalendars.has(parseInt(uid.Text, 10))) continue;
+            if (el.Find("IsBaseCalendar")) continue;
+            const at = el.Children.findIndex((c) => c.Name === "Name");
+            el.Insert(at + 1, Xml.Element("IsBaseCalendar")).Text = "0";
+        }
     /* The whole document, not just the root: a comment before it is a node in
      * the tree too, and `Xml.Stringify` takes a document. */
     File.SaveXml(path, doc);

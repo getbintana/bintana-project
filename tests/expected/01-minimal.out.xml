@@ -31,6 +31,7 @@
       <WeekDays>
         <WeekDay>
           <DayType>1</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
         <WeekDay>
           <DayType>2</DayType>
@@ -104,6 +105,7 @@
         </WeekDay>
         <WeekDay>
           <DayType>7</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
       </WeekDays>
     </Calendar>
@@ -140,7 +142,7 @@
       <Finish>2026-09-02T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Work>PT8H0M0S</Work>
+      <Work>PT0H0M0S</Work>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-02T17:00:00</ActualFinish>
@@ -160,7 +162,7 @@
       <Finish>2026-09-03T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Work>PT8H0M0S</Work>
+      <Work>PT0H0M0S</Work>
       <CalendarUID>1</CalendarUID>
       <PredecessorLink>
         <PredecessorUID>1</PredecessorUID>
@@ -169,4 +171,28 @@
       </PredecessorLink>
     </Task>
   </Tasks>
+  <Assignments>
+    <Assignment>
+      <UID>1</UID>
+      <TaskUID>1</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-02T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT0H0M0S</RemainingWork>
+      <Start>2026-09-01T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>2</UID>
+      <TaskUID>2</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <Finish>2026-09-03T17:00:00</Finish>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Start>2026-09-03T08:00:00</Start>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
+    </Assignment>
+  </Assignments>
 </Project>

@@ -404,6 +404,21 @@ export class Edit {
         if (!resource) return false;
 
         let changed = false;
+        /* **A resource with a calendar of its own keeps it**: the calendar
+         * the dialog names is the base it derives from, so it is the base
+         * that changes -- pointing the resource at the base would leave the
+         * person's own days behind. */
+        const own = this.calendar(resource.CalendarUID);
+        if ("CalendarUID" in values && isResourceCalendar(this.holder.project, own)) {
+            const project = this.holder.project;
+            const base = values.CalendarUID > 0 ? values.CalendarUID : project.CalendarUID;
+            values = { ...values };
+            delete values.CalendarUID;
+            if (own.BaseCalendarUID !== base) {
+                own.BaseCalendarUID = base;
+                changed = true;
+            }
+        }
         for (const name in values) {
             if (resource[name] !== values[name]) changed = true;
             resource[name] = values[name];
@@ -437,6 +452,14 @@ export class Edit {
         const project = this.holder.project;
         const kept = project.Resources.filter((r) => r.UID !== uid);
         if (kept.length === project.Resources.length) return false;
+
+        /* Its own calendar goes with it, unless another resource runs on it
+         * too: nobody else can. */
+        const gone = this.resource(uid);
+        const own = this.calendar(gone.CalendarUID);
+        if (isResourceCalendar(project, own) &&
+            !kept.some((r) => r.CalendarUID === own.UID))
+            project.Calendars = project.Calendars.filter((c) => c !== own);
 
         project.Resources = kept;
         project.Assignments = project.Assignments.filter(
@@ -515,7 +538,11 @@ export class Edit {
 
         const minutes  = mspdiMinutes(task.Duration) || 0;
         const duration = assignmentDuration(project, task, before, after);
-        const work = resource.Type !== 1 ? "PT0H0M0S"
+        /* A material's work is its quantity, in hours -- what Project
+         * writes, and with none it reads the quantity as zero. A cost
+         * resource has none. */
+        const work = resource.Type === 0 ? mspdiDuration(Math.round(units * 60))
+                   : resource.Type !== 1 ? "PT0H0M0S"
                    : mspdiDuration(Math.round(duration * units));
 
         /* **The work moves with the regular work it was**: a file writes both,
@@ -582,6 +609,11 @@ export class Edit {
         }
         assignment.Start  = task.Start;
         assignment.Finish = task.Finish;
+
+        /* Somebody on the task now: Unassigned, which stood in for nobody,
+         * comes off -- the way Project takes it off. */
+        project.Assignments = project.Assignments.filter(
+            (a) => !(a.TaskUID === taskUID && a.ResourceUID === UNASSIGNED));
 
         return assignment;
     }

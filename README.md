@@ -440,6 +440,16 @@ baselines, timephased data, comments -- is reported in the log (`Problems`) and
 kept in the tree exactly where it was. That is the whole of what makes a round
 trip an interchange and not a rewrite; `Mspdi.js` carries the argument.
 
+**And what Project needs to read the same plan is written on the way out.**
+`writeMspdi` saves a copy prepared by `forProject`, not the plan being edited:
+every resource gets a calendar of its own derived from its base, a task with a
+duration and nobody on it is assigned to Unassigned (-65535) with its duration
+as the work, a material assignment's work is its quantity, and a manual task
+carries `ManualStart`/`ManualFinish`/`ManualDuration`. Each one was measured in
+MS Project 16.0 -- without it Project opened another plan (the wrong working
+time, a milestone, no licences, a one-day task) -- and `tests/FIDELITY.md` §E
+lists them. The editor never sees them, and two saves write the same file.
+
 ## What is modelled (cut 1)
 
 Tasks (identity, dates, durations as text, the milestone/summary/critical/

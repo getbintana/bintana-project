@@ -20,11 +20,14 @@
 
 /* The calendars a task may name, with the plan's own in front: the choices
  * (UIDs, -1 for the project's) and the labels the combo shows. **The plan's
- * own is chosen in the project dialog** -- it is a property of the file. */
+ * own is chosen in the project dialog** -- it is a property of the file. A
+ * resource's own calendar is nobody else's, so it is not offered; the
+ * resources dialog names the base it derives from with the same list. */
 export function workCalendarNames(project) {
     const choices = [-1];
     const items   = [Locale.Text("Project default")];
     for (const calendar of project.Calendars) {
+        if (isResourceCalendar(project, calendar)) continue;
         choices.push(calendar.UID);
         items.push(calendar.Name);
     }

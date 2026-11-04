@@ -19,14 +19,12 @@ export class ResourcesForm extends Form {
         dlg.actions = actions;
         dlg.Modal   = true;
 
-        /* The calendars a resource may name, the plan's own in front. */
-        dlg.calChoices = [-1];
-        const names = [Locale.Text("Project default")];
-        for (const calendar of project.Calendars) {
-            dlg.calChoices.push(calendar.UID);
-            names.push(calendar.Name);
-        }
-        dlg.CmbResCalendar.Items = names;
+        /* The base calendars a resource may run on, the plan's own in front:
+         * the ones a task may name. A resource with a calendar of its own
+         * shows the base that one derives from. */
+        const work = workCalendarNames(project);
+        dlg.calChoices = work.choices;
+        dlg.CmbResCalendar.Items = work.items;
 
         dlg.rows = [];
         dlg.selectedUID = null;
@@ -77,8 +75,7 @@ export class ResourcesForm extends Form {
         this.BtnResDel.Enabled   = !!resource;
         this.BtnResRates.Enabled = !!resource;
         const atCal = resource
-                    ? this.calChoices.indexOf(resource.CalendarUID > 0
-                                              ? resource.CalendarUID : -1)
+                    ? this.calChoices.indexOf(resourceBaseCalendar(this.project, resource))
                     : 0;
         this.CmbResCalendar.Index = atCal >= 0 ? atCal : 0;
     }

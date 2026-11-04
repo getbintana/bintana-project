@@ -95,9 +95,16 @@ la ausencia lee igual: `IsNull=false`, `LinkLag=0`, `OutlineLevel=0`,
 `PercentComplete=0`, `<Name></Name>` vacío, `ID` 0 de la tarea resumen,
 `CurrencySymbolPosition=0`, `RateTable=0` y `CostRateTable=0` (la tabla A es
 la que un lector asume, como FS en un vínculo sin `Type`), y los defaults de
-calendario: `DayWorking=false` (día no laborable), `IsBaseCalendar=false`
-(calendario de recurso), `EnteredByOccurrences=false`, `Period=0` y
-`DaysOfWeek=0`. Cada uno aparece en `touched` como `removed`. `ID` no es clave
+calendario: `Period=0` y `DaysOfWeek=0`.
+`DayWorking=false` (día no laborable) y `EnteredByOccurrences=false` se omitían
+también, y **Project descartaba el feriado**: el 8/12 de las muestras de GLPI,
+una excepción de un día escrita sin `EnteredByOccurrences`, no estaba al
+reabrir, y una tarea que lo cruzaba volvía un día más larga que su asignación
+("este recurso está asignado fuera de las fechas originales", 2026-11-04).
+Project escribe los dos en cada excepción, y desde entonces bintana también
+(`DayWorking` además en los días de la semana). `IsBaseCalendar=false` se omitía también, y desde
+el 2026-11-04 un calendario de recurso lo escribe siempre como `0`, como
+Project (sección E): `04-calendars` lo muestra como `"false" -> "0"`. Cada uno aparece en `touched` como `removed`. `ID` no es clave
 en el shape y su ausencia es posicional para Project.
 
 Una clave, en cambio, no es un default: `UID 0` se escribe siempre (arreglado
@@ -210,6 +217,47 @@ de `check-edit` suma la restricción que el panel deja al tipear un inicio
 (`ConstraintType` 4 y `ConstraintDate` para UID 1, dos elementos), y es
 deliberado -- es lo que Project escribe cuando una fecha se tipea. Los ocho
 fixtures no cambian: abrir un archivo no recalcula.
+
+## E. Lo que se escribe para que Project lea el mismo plan (2026-11-04)
+
+Cinco diferencias medidas en MS Project 16.0 con las muestras de GLPI
+(`glpi-project/dev/samples/bintana/REQUESTS.md`, pedidos 4, 5, 7, 8 y 9): un
+archivo que dice lo mismo de otra forma, Project lo abre como otro plan. Cuatro
+se escriben al guardar, en una **copia** del plan (`forProject` en `Mspdi.js`),
+de modo que lo que se edita no cambia y guardar dos veces da lo mismo:
+
+- **Cada recurso (de trabajo o material) tiene su calendario**, no base y
+  derivado del base que usa. Apuntado al base, Project convierte ese base en el
+  calendario del primer recurso y el plan se calcula con otro horario. Un
+  calendario de recurso que ya estaba se respeta (`Night shift` en
+  `04-calendars`); los selectores de calendario no lo ofrecen, y el diálogo de
+  recursos muestra y cambia su base.
+- **Una tarea con duración y sin nadie asignado va a "sin asignar"**
+  (`ResourceUID` -65535), con su duración como trabajo, `Units` 1 y sus fechas, y
+  la tarea sin trabajo propio. Sin eso Project la convierte en un hito. El
+  relleno sigue a la tarea (fechas, duración) y se va cuando entra un recurso.
+- **El trabajo de una asignación material es su cantidad**, en horas (3
+  licencias, `PT3H0M0S`); con 0, Project pone la cantidad en 0. `03-resources`
+  lo muestra en los ladrillos.
+- **Una tarea manual escribe `ManualStart`/`ManualFinish`/`ManualDuration`**,
+  iguales a sus fechas; sin ellos Project le da un día. También las tareas que
+  ya los traían. No están en pj12: la validación del XSD compara contra la
+  entrada.
+
+La quinta es del motor: **una tarea de duración transcurrida empieza al
+terminar su predecesora**, aunque sea de noche, y no a la mañana siguiente
+(`check-cpm`). Con eso `check-oracle` sobre `b7-corridas.xml` da 0 diferencias
+(antes, un día en dos tareas).
+
+Validado en MS Project 16.0 (2026-11-04, ronda 21 de las muestras de GLPI):
+los cinco planes, abiertos y guardados por bintana, abren en Project sin avisos
+y Project los guarda sin diferencias en fechas, duraciones, calendarios ni
+asignaciones.
+
+Los goldens cambian por esto: casi todos los fixtures ganan rellenos y
+calendarios de recurso, y es deliberado. `check-commands` cubre escribir,
+releer sin duplicar y editar después (asignar, mover la manual, borrar el
+recurso).
 
 ## Qué sigue
 

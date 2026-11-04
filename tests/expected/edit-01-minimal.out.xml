@@ -118,8 +118,21 @@
         </WeekDay>
         <WeekDay>
           <DayType>7</DayType>
+          <DayWorking>0</DayWorking>
         </WeekDay>
       </WeekDays>
+    </Calendar>
+    <Calendar>
+      <UID>2</UID>
+      <Name>Ana</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
+    </Calendar>
+    <Calendar>
+      <UID>3</UID>
+      <Name>Bruno</Name>
+      <IsBaseCalendar>0</IsBaseCalendar>
+      <BaseCalendarUID>1</BaseCalendarUID>
     </Calendar>
   </Calendars>
   <Tasks>
@@ -303,7 +316,7 @@
       <Name>Ana</Name>
       <Type>1</Type>
       <StandardRate>50</StandardRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>2</CalendarUID>
       <Rates>
         <Rate>
           <RatesFrom>2026-01-01T00:00:00</RatesFrom>
@@ -326,7 +339,7 @@
       <Name>Bruno</Name>
       <Type>1</Type>
       <StandardRate>40</StandardRate>
-      <CalendarUID>1</CalendarUID>
+      <CalendarUID>3</CalendarUID>
     </Resource>
   </Resources>
   <Assignments>
@@ -349,6 +362,15 @@
       <Start>2026-09-03T08:00:00</Start>
       <Units>1</Units>
       <Work>PT4H0M0S</Work>
+    </Assignment>
+    <Assignment>
+      <UID>3</UID>
+      <TaskUID>3</TaskUID>
+      <ResourceUID>-65535</ResourceUID>
+      <RegularWork>PT8H0M0S</RegularWork>
+      <RemainingWork>PT8H0M0S</RemainingWork>
+      <Units>1</Units>
+      <Work>PT8H0M0S</Work>
     </Assignment>
   </Assignments>
 </Project>
