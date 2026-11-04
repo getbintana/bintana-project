@@ -266,6 +266,33 @@ calendarios de recurso, y es deliberado. `check-commands` cubre escribir,
 releer sin duplicar y editar después (asignar, mover la manual, borrar el
 recurso).
 
+## F. Lo que guardó Project, como oráculo (2026-11-04)
+
+`tests/project/` son once planes abiertos y guardados en MS Project 16.0 por
+las rondas de muestras de glpi-project (su `README.md` dice cuál es cuál).
+`run.sh` hace con cada uno dos cosas: la vuelta de siempre contra sus goldens
+(`expected/project-*`), y `check-oracle`, que recalcula y falla si un
+comienzo, un fin o una marca de crítica no es la de Project.
+
+Armarlo encontró lo que las pruebas a mano no:
+
+- **"0d" en el cálculo hacia atrás** y en la holgura libre: una tarea
+  transcurrida tiene como fin tardío el momento mismo (miércoles 08:00), no
+  el fin laborable anterior, y su holgura se mide en reloj (de 05:00 a 08:00
+  son tres horas, no cero). Indexación salía crítica.
+- **Abrir y guardar no cambia ningún valor** de un archivo de Project: la
+  duración manual que Project escribe (16 h donde su `Duration` dice 15 h) se
+  conserva mientras la tarea no se mueva, el relleno conserva su trabajo
+  mientras las fechas de la tarea le sigan cuadrando, y sus fechas se dejan si
+  son el mismo momento de trabajo (12:00 y 13:00 con el almuerzo en el medio).
+  En los goldens `project-*` solo hay valores por omisión que no se escriben.
+- El control del Gantt "una dependencia va debajo de las barras" buscaba una
+  barra del color común; en un plan donde todo es crítico no hay ninguna.
+
+Queda, sin contar: en `p4-completo.xml` Project da a una tarea terminada
+(Licencias) un fin tardío igual a su fin real, con 4 h de holgura; bintana
+responde por sus sucesoras.
+
 ## Qué sigue
 
 1. Abrir en Project el XML que sale de acá (el archivo real ya está): contesta

@@ -89,7 +89,12 @@ run_one() {
 fail=0
 if [[ $# -ge 1 ]]; then
     base=$(basename "$1"); name=${base%.xml}
-    run_one "$name" check "$PWD/tests/corpus/$base" || fail=1
+    # A plan Project saved keeps its own folder and its goldens' prefix.
+    if [[ $1 == *tests/project/* ]]; then
+        run_one "project-$name" check "$PWD/tests/project/$base" || fail=1
+    else
+        run_one "$name" check "$PWD/tests/corpus/$base" || fail=1
+    fi
 else
     for f in tests/corpus/*.xml; do
         base=$(basename "$f"); name=${base%.xml}
@@ -122,6 +127,23 @@ else
            { echo "check cpm in $tz: FAILED"; grep 'FAILED' "$OUT/cpm-${tz//\//-}.report" 2>/dev/null; false; }; then
             echo "check cpm in $tz: ok"
         else
+            fail=1
+        fi
+    done
+
+    # **What MS Project itself saved** (tests/project/README.md): plans opened
+    # and saved in Project 16.0 by glpi-project's sample rounds, so their dates,
+    # critical flags and slack are Project's own answer. Each is round-tripped
+    # against its goldens (opening and saving moves nothing) and recalculated
+    # by the oracle, which fails on any start, finish or critical flag off.
+    for f in tests/project/*.xml; do
+        base=$(basename "$f"); name=project-${base%.xml}
+        run_one "$name" check "$PWD/$f" || fail=1
+        if "$TRY" "$PWD" check-oracle "$PWD/$f" > "$OUT/$name.oracle" 2>&1; then
+            echo "check oracle $base: ok ($(grep '^oracle .*: [0-9]* tasks' "$OUT/$name.oracle" | sed 's/.*same, //'))"
+        else
+            echo "check oracle $base: FAILED"
+            grep '^oracle ' "$OUT/$name.oracle" | tail -10
             fail=1
         fi
     done

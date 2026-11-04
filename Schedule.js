@@ -475,8 +475,11 @@ function lagAfter(work, t, link, predMinutes, clock) {
     return lag.elapsed ? t + lag.minutes * MIN_MS : work.add(t, lag.minutes);
 }
 
-function lagBefore(work, t, link, predMinutes) {
+/* The same backwards: a predecessor that runs on the clock may finish
+ * outside working time, so "0d" before its successor does not move it. */
+function lagBefore(work, t, link, predMinutes, clock) {
     const lag = lagOf(link, predMinutes);
+    if (clock && lag.minutes === 0) return t;
     return lag.elapsed ? t - lag.minutes * MIN_MS : work.subtract(t, lag.minutes);
 }
 
@@ -641,8 +644,11 @@ function freeSlack(task, links, work) {
                                                : whenMs(succ.Start);
         const ours  = kind === 2 || kind === 3 ? es : ef;
         if (until === null || ours === null) continue;
-        const room = work.between(ours, lagBefore(work, until, link,
-                                                  mspdiMinutes(task.Duration)));
+        /* An elapsed task's room is clock time, as its total slack is. */
+        const clock = isElapsed(task.DurationFormat);
+        const to    = lagBefore(work, until, link, mspdiMinutes(task.Duration), clock);
+        const room  = clock ? Math.max(0, Math.round((to - ours) / MIN_MS))
+                            : work.between(ours, to);
         if (least === null || room < least) least = room;
     }
     /* Tenths, the file's unit; the total is in them already. */
@@ -1104,16 +1110,16 @@ export function recalculate(project) {
                         const kind = linkKind(link);
                         let v;
                         if (kind === 1) {               // FS bounds the finish
-                            v = lagBefore(work, L.ls, link, duration);
+                            v = lagBefore(work, L.ls, link, duration, elapsed);
                             if (lf === null || v < lf) lf = v;
                         } else if (kind === 3) {        // SS bounds the start
-                            v = lagBefore(work, L.ls, link, duration);
+                            v = lagBefore(work, L.ls, link, duration, elapsed);
                             if (ls === null || v < ls) ls = v;
                         } else if (kind === 0) {        // FF bounds the finish
-                            v = lagBefore(work, L.lf, link, duration);
+                            v = lagBefore(work, L.lf, link, duration, elapsed);
                             if (lf === null || v < lf) lf = v;
                         } else {                        // SF bounds the start
-                            v = lagBefore(work, L.lf, link, duration);
+                            v = lagBefore(work, L.lf, link, duration, elapsed);
                             if (ls === null || v < ls) ls = v;
                         }
                     }
@@ -1169,7 +1175,12 @@ export function recalculate(project) {
              * Friday 17:00 Project shows, and not the Monday 08:00 that is the
              * same moment of work: `finishAt` steps back off a span's start
              * onto the previous end. */
-            task.LateFinish   = isoLocal(finished(task) ? L.lf : work.finishAt(L.lf));
+            /* An elapsed task runs on the clock, so its latest finish is the
+             * moment itself (Wednesday 08:00 before a successor that starts
+             * then), and its slack is clock time: 05:00 to 08:00 is three
+             * hours, not none -- as Project measures them. */
+            const clock = isElapsed(task.DurationFormat);
+            task.LateFinish   = isoLocal(finished(task) || clock ? L.lf : work.finishAt(L.lf));
             /* **Signed**: a task whose late finish is before its early one
              * -- a date it must keep that its links do not let it -- has
              * negative slack, as Project shows it (-2d for an MSO two days
@@ -1182,7 +1193,8 @@ export function recalculate(project) {
                 early = isElapsed(task.DurationFormat) ? by + duration * MIN_MS
                                                        : work.add(by, duration);
             }
-            const total       = L.lf >= early ? work.between(early, L.lf)
+            const total       = clock ? Math.round((L.lf - early) / MIN_MS)
+                              : L.lf >= early ? work.between(early, L.lf)
                                               : -work.between(L.lf, early);
             task.TotalSlack   = total * TENTHS;
             task.Critical     = total <= 0 && !finished(task);

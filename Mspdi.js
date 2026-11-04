@@ -1167,8 +1167,14 @@ export function forProject(project, doc) {
         if (task.IsNull || task.Summary) continue;
 
         /* The manual dates, beside the dates. */
-        if (task.Manual || task.ManualStart !== "" || task.ManualFinish !== "" ||
-            task.ManualDuration !== "") {
+        /* **Project's own stay** while the task keeps its dates: Project
+         * writes a manual task's `ManualDuration` from the calendar's week
+         * (16h for two days where its `Duration` says 15h, measured), and
+         * rewriting it from `Duration` would change a file nobody edited. */
+        const keepsManual = task.ManualDuration !== "" &&
+            task.ManualStart === task.Start && task.ManualFinish === task.Finish;
+        if (!keepsManual && (task.Manual || task.ManualStart !== "" ||
+            task.ManualFinish !== "" || task.ManualDuration !== "")) {
             task.ManualStart    = task.Start;
             task.ManualFinish   = task.Finish;
             task.ManualDuration = task.Duration;
@@ -1180,7 +1186,9 @@ export function forProject(project, doc) {
             for (const a of placeholders) gone.add(a);
             continue;
         }
-        const minutes = mspdiMinutes(task.Duration) || 0;
+        /* A manual task's work is its manual duration, as Project writes it. */
+        const minutes = (task.Manual && mspdiMinutes(task.ManualDuration)) ||
+                        mspdiMinutes(task.Duration) || 0;
         if (!placeholders.length && minutes <= 0) continue;
 
         let placeholder = placeholders[0];
@@ -1191,12 +1199,27 @@ export function forProject(project, doc) {
                                               ResourceUID: UNASSIGNED, Units: 1 });
             added.push(placeholder);
         }
-        /* **A started task's placeholder keeps its work**, and the task its
-         * own: its actual work is real (a report of GLPI's says so), and a
-         * task behind schedule spans more than the work it has -- its
-         * duration as the work would invent hours. Only its dates follow. */
+        /* Its dates follow the task's, unless they are already the same
+         * moments of work: Project ends an assignment at 12:00 where the task
+         * ends at 13:00, with lunch between, and both are right. */
+        const cal  = new WorkCalendar(out, task.CalendarUID > 0 ? task.CalendarUID
+                                                               : out.CalendarUID);
+        const same = (a, b) => {
+            const x = whenMs(a), y = whenMs(b);
+            if (x === null || y === null) return false;
+            return x === y || cal.between(Math.min(x, y), Math.max(x, y)) === 0;
+        };
+        const moved = fresh || !same(placeholder.Start, task.Start) ||
+                      !same(placeholder.Finish, task.Finish);
+        /* **Its work is rewritten only for a task that moved** and has not
+         * started. A placeholder the task's dates still fit keeps the work it
+         * has: Project keeps 16h on a manual task whose duration it rereads
+         * as 15h and then 14h from one save to the next. A started task's
+         * actual work is real (a report of GLPI's says so), and one behind
+         * schedule spans more than its work: its duration as the work would
+         * invent hours, so only its dates follow. */
         const started = !!task.ActualStart;
-        if (fresh || !started) {
+        if (fresh || (moved && !started)) {
             const work = mspdiDuration(minutes);
             const left = mspdiDuration(Math.round(
                 minutes * (100 - Math.min(100, Math.max(0, task.PercentComplete || 0))) / 100));
@@ -1204,8 +1227,8 @@ export function forProject(project, doc) {
             placeholder.RegularWork   = work;
             placeholder.RemainingWork = left;
         }
-        placeholder.Start         = task.Start;
-        placeholder.Finish        = task.Finish;
+        if (!same(placeholder.Start, task.Start))   placeholder.Start  = task.Start;
+        if (!same(placeholder.Finish, task.Finish)) placeholder.Finish = task.Finish;
         if (!(placeholder.Units > 0)) placeholder.Units = 1;
         if (!started && mspdiMinutes(task.Work) > 0) task.Work = "PT0H0M0S";
     }

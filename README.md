@@ -470,7 +470,9 @@ and dated rates, plus one for the `/2007` namespace the official XSD declares. T
 acceptance is a real `Save As → XML` from MS Project, opened back by Project.
 `tests/corpus/README.md` says what each one covers.
 
-`tests/run.sh` is the harness: it round-trips every fixture, and on a full run
+`tests/run.sh` is the harness: it round-trips every fixture -- and the plans
+MS Project itself saved, in `tests/project/`, recalculated against Project's
+own dates by `check-oracle` -- and on a full run
 also plays one scripted round of the editing commands over `01-minimal`, holding
 each saved output and its `touched` report against the goldens in
 `tests/expected/` (`--update` rewrites them after a deliberate change), and then

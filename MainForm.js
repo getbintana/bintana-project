@@ -9260,7 +9260,12 @@ export class MainForm extends Form {
         const ink = this.styleEq("the ink is the theme's own",
                                  style.hasColor(style.Foreground), true);
         const pal = ganttPalette(style);
-        const bar  = style.firstOf("Fill", pal.bar);
+        /* A bar is the plain colour or the critical one: in a plan where
+         * every task is critical -- a chain Project saved, as tests/project
+         * has -- no bar is painted in the plain colour at all. */
+        const firstBar = [style.firstOf("Fill", pal.bar), style.firstOf("Fill", pal.late)]
+            .filter((i) => i >= 0);
+        const bar  = firstBar.length ? Math.min(...firstBar) : -1;
         const link = style.firstOf("Stroke", pal.link);
         /* A plan with no dependency has no elbow to place, and saying so is
          * better than a claim that passes because it had nothing to look at:
