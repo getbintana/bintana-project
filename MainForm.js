@@ -4010,6 +4010,20 @@ export class MainForm extends Form {
                     "2026-09-07T17:00:00..2026-09-09T05:00:00 " +
                     "2026-09-09T08:00:00..2026-09-09T17:00:00") && ok;
 
+            /* **Even when the predecessor ends outside working time**: a "0d"
+             * lag is no move, not a step to the next working moment. A manual
+             * task ending Saturday 13:00 (on a weekend shift) and 24 elapsed
+             * hours after it: Saturday 13:00 to Sunday 13:00, not Monday. */
+            const weekend = projectOf([
+                task(1, "PT4H0M0S", [], { Manual: true, Start: "2026-09-12T09:00:00",
+                                          Finish: "2026-09-12T13:00:00" }),
+                task(2, "PT24H0M0S", [link(1, 1)], { DurationFormat: 6 }),
+            ]);
+            recalculate(weekend);
+            ok = eq("an elapsed task starts at a finish outside working time",
+                    `${weekend.Tasks[1].Start}..${weekend.Tasks[1].Finish}`,
+                    "2026-09-12T13:00:00..2026-09-13T13:00:00") && ok;
+
             /* **A duration is read by the side of the T an M is on.** */
             ok = eq("P1M is a month, not a minute", mspdiMinutes("P1M"), 9600) && ok;
             ok = eq("PT30M0S is half an hour", mspdiMinutes("PT30M0S"), 30) && ok;
@@ -6033,6 +6047,29 @@ export class MainForm extends Form {
             ok = eq("el recurso borrado se lleva su calendario",
                     fpAgain.project.Calendars.map((c) => c.UID).join(" "), "1 2 3") && ok;
             File.Delete(forFile);
+
+            /* **A started task keeps its placeholder's work**: a report of
+             * GLPI's writes a task behind schedule that spans 40 hours for 8 of
+             * work, 4 of them done. Its duration as the work would invent 32
+             * hours; only the placeholder's dates follow the task. */
+            const behind = new MspProject({
+                StartDate: "2026-09-07T08:00:00", CalendarUID: 1,
+                Calendars: [new MspCalendar({ UID: 1, Name: "Estándar", IsBaseCalendar: true })],
+                Tasks: [new MspTask({ UID: 1, ID: 1, Name: "Atrasada", OutlineLevel: 1,
+                                      Start: "2026-09-07T08:00:00", Finish: "2026-09-11T17:00:00",
+                                      Duration: "PT40H0M0S", DurationFormat: 7, Work: "PT8H0M0S",
+                                      ActualStart: "2026-09-07T08:00:00", PercentComplete: 10 })],
+                Assignments: [new MspAssignment({ UID: 1, TaskUID: 1, ResourceUID: UNASSIGNED,
+                                                  Units: 1, Work: "PT8H0M0S",
+                                                  RemainingWork: "PT4H0M0S",
+                                                  Start: "2026-09-07T08:00:00",
+                                                  Finish: "2026-09-09T17:00:00" })],
+            });
+            const behindOut = forProject(behind, null).plan;
+            ok = eq("a started task keeps its placeholder's work, and its own",
+                    [behindOut.Assignments[0].Work, behindOut.Assignments[0].RemainingWork,
+                     behindOut.Assignments[0].Finish, behindOut.Tasks[0].Work].join(" "),
+                    "PT8H0M0S PT4H0M0S 2026-09-11T17:00:00 PT8H0M0S") && ok;
 
             /* **Abrir otro plan con trabajo sin guardar pregunta**, y sin
              * trabajo no. La pregunta se intercepta: lo que se afirma es que

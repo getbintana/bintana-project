@@ -142,7 +142,7 @@
       <Finish>2026-09-02T17:00:00</Finish>
       <Duration>PT8H0M0S</Duration>
       <DurationFormat>7</DurationFormat>
-      <Work>PT0H0M0S</Work>
+      <Work>PT8H0M0S</Work>
       <PercentComplete>100</PercentComplete>
       <ActualStart>2026-09-01T08:00:00</ActualStart>
       <ActualFinish>2026-09-02T17:00:00</ActualFinish>

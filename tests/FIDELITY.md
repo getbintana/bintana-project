@@ -254,6 +254,13 @@ los cinco planes, abiertos y guardados por bintana, abren en Project sin avisos
 y Project los guarda sin diferencias en fechas, duraciones, calendarios ni
 asignaciones.
 
+El informe que exporta GLPI (`p4-completo.glpi.xml`, ronda 22) abre sin
+mover nada, y recalcularlo deja cada tarea donde está: una tarea de duración
+transcurrida con demora 0 empieza al terminar la predecesora aunque sea fuera
+del horario (antes, "0d" sumado en tiempo laborable la llevaba al lunes 08:00).
+El relleno de una tarea ya empezada conserva su trabajo, y la tarea el suyo.
+Guardado por bintana, Project lo abre sin avisos.
+
 Los goldens cambian por esto: casi todos los fixtures ganan rellenos y
 calendarios de recurso, y es deliberado. `check-commands` cubre escribir,
 releer sin duplicar y editar después (asignar, mover la manual, borrar el

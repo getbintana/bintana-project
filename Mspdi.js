@@ -1185,21 +1185,29 @@ export function forProject(project, doc) {
 
         let placeholder = placeholders[0];
         for (const a of placeholders.slice(1)) gone.add(a);
-        if (!placeholder) {
+        const fresh = !placeholder;
+        if (fresh) {
             placeholder = new MspAssignment({ UID: ++assignmentUID, TaskUID: task.UID,
                                               ResourceUID: UNASSIGNED, Units: 1 });
             added.push(placeholder);
         }
-        const work = mspdiDuration(minutes);
-        const left = mspdiDuration(Math.round(
-            minutes * (100 - Math.min(100, Math.max(0, task.PercentComplete || 0))) / 100));
-        placeholder.Work          = work;
-        placeholder.RegularWork   = work;
-        placeholder.RemainingWork = left;
+        /* **A started task's placeholder keeps its work**, and the task its
+         * own: its actual work is real (a report of GLPI's says so), and a
+         * task behind schedule spans more than the work it has -- its
+         * duration as the work would invent hours. Only its dates follow. */
+        const started = !!task.ActualStart;
+        if (fresh || !started) {
+            const work = mspdiDuration(minutes);
+            const left = mspdiDuration(Math.round(
+                minutes * (100 - Math.min(100, Math.max(0, task.PercentComplete || 0))) / 100));
+            placeholder.Work          = work;
+            placeholder.RegularWork   = work;
+            placeholder.RemainingWork = left;
+        }
         placeholder.Start         = task.Start;
         placeholder.Finish        = task.Finish;
         if (!(placeholder.Units > 0)) placeholder.Units = 1;
-        if (mspdiMinutes(task.Work) > 0) task.Work = "PT0H0M0S";
+        if (!started && mspdiMinutes(task.Work) > 0) task.Work = "PT0H0M0S";
     }
     if (gone.size || added.length)
         out.Assignments = out.Assignments.filter((a) => !gone.has(a)).concat(added);

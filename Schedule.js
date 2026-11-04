@@ -465,8 +465,13 @@ export function linkLagMinutes(project, link) {
 
 export function isPercentLagFormat(format) { return PERCENT_LAGS.includes(format); }
 
-function lagAfter(work, t, link, predMinutes) {
+/* **No lag is no move** for a successor that runs on the clock (`clock`): an
+ * elapsed task starts at its predecessor's finish even when that is outside
+ * working time, as Project places it -- a "0d" lag added in working time
+ * would carry a Sunday 13:00 finish to Monday 08:00 first. */
+function lagAfter(work, t, link, predMinutes, clock) {
     const lag = lagOf(link, predMinutes);
+    if (clock && lag.minutes === 0) return t;
     return lag.elapsed ? t + lag.minutes * MIN_MS : work.add(t, lag.minutes);
 }
 
@@ -875,11 +880,11 @@ export function recalculate(project) {
                 if (kind === 2) startsEarly = true;
                 if (kind === 0 || kind === 2) {
                     const target = lagAfter(work, kind === 0 ? pf : ps, link,
-                                            mspdiMinutes(pred.Duration));
+                                            mspdiMinutes(pred.Duration), elapsed);
                     if (finishFloor === null || target > finishFloor) finishFloor = target;
                 } else {
                     const base = lagAfter(work, kind === 1 ? pf : ps, link,
-                                          mspdiMinutes(pred.Duration));
+                                          mspdiMinutes(pred.Duration), elapsed);
                     const candidate = startAt(base);
                     if (startFloor === null || candidate > startFloor) startFloor = candidate;
                 }
