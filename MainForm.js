@@ -422,7 +422,7 @@ export class MainForm extends Form {
         });
     }
 
-    /* The name and icon are `project.json`'s and `icons/`'s, which `AboutBox`
+    /* The name and icon are `project.btp`'s and `icons/`'s, which `AboutBox`
      * reads by itself; Title and Version are passed because the library's own
      * wording is not in this project's catalogue. */
     MnuAbout_Click() {
