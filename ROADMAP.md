@@ -1054,8 +1054,8 @@ esa fecha. Ordenado por lo que cuesta no tenerlo.
 
 - El metainfo ya trae la descripción del release (en inglés y castellano) y
   valida. **Faltan `<screenshots>`** (Flathub y Software los esperan, y piden una
-  URL pública). El 0.1.0 nunca se publicó: la primera versión es la
-  `0.2.0rc1` (metainfo `type="development"`); la final cambia ese release a
-  `0.2.0` sin el tipo.
+  URL pública). El 0.1.0 nunca se publicó: la primera versión etiquetada es la
+  `0.2.0rc1` (metainfo `type="development"`), y la `0.4.0` del 2026-11-18 es el
+  primer release estable, con su propia entrada sin tipo.
 - `tests/run.sh` con `XSD=` valida los `bintana-project-check-*` y `-edit-*`
   que haya en `$OUT`, salidas viejas incluidas.

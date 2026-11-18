@@ -18,6 +18,24 @@
   </categories>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="0.4.0" date="2026-11-18">
+      <description>
+        <p>Printing, and the plan as MS Project reads it: a printable report and Gantt chart, and an MSPDI output that Project opens and saves back unchanged.</p>
+        <p xml:lang="es">Impresión, y el plan como lo lee MS Project: informe y Gantt imprimibles, y una salida MSPDI que Project abre y vuelve a guardar sin cambios.</p>
+        <ul>
+          <li>Printed Gantt: sheets with the task table and the time ruler, cuts by phase and a wall chart to join; subtitle, notes, logo and custom columns for the report and the chart</li>
+          <li xml:lang="es">Gantt impreso: hojas con la tabla de tareas y la regla temporal, cortes por fase y mural para unir; subtítulo, notas, logo y columnas a medida para el informe y el gráfico</li>
+          <li>Plans saved by Project are the tests' oracle: they open, recalculate and round-trip without moving, with resources, manual tasks and calendar exceptions written the way Project expects</li>
+          <li xml:lang="es">Los planes guardados por Project son el oráculo de las pruebas: abren, recalculan y vuelven a guardarse sin moverse, con recursos, tareas manuales y excepciones de calendario escritos como Project espera</li>
+          <li>Configurable timescale, rounded link elbows and labels around the bars, the Id column, draggable columns and resources by name</li>
+          <li xml:lang="es">Escala temporal configurable, vínculos con codos redondeados y textos alrededor de la barra, columna Id, columnas arrastrables y recursos por nombre</li>
+          <li>Lags in percent, Spanish date letters and measured slack; a typed date sets start, duration and finish</li>
+          <li xml:lang="es">Demoras en porcentaje, letras en castellano y holguras medidas; una fecha tipeada deja comienzo, duración y fin de acuerdo</li>
+          <li>Link cycles are rejected, recurring calendar exceptions count only on their days, and the About dialog shows the version</li>
+          <li xml:lang="es">Un vínculo que cierra un ciclo se rechaza, las excepciones recurrentes cuentan solo en sus días, y el About muestra la versión</li>
+        </ul>
+      </description>
+    </release>
     <release version="0.2.0rc1" date="2026-10-27" type="development">
       <description>
         <p>First release: opens, edits and writes back MS Project (MSPDI) files, with a task tree beside an interactive Gantt chart.</p>
