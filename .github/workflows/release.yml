@@ -1,0 +1,35 @@
+# The release of Bintana Project: a Flatpak bundle and a Windows setup,
+# attached to the tag's release in this repository. Everything else is
+# getbintana/actions -- its README has the inputs and what is published.
+#
+#   git tag v0.4.0 && git push origin v0.4.0
+#
+# publishes; *Actions -> release -> Run workflow* with the box unticked only
+# builds, and leaves the two files as artifacts of the run.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: "Publish the release"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  release:
+    uses: getbintana/actions/.github/workflows/app-release.yml@main
+    with:
+      # A tag push publishes; a manual run only when the box says so.
+      publish: ${{ github.ref_type == 'tag' || inputs.publish }}
+
+      # A scheduler opens and writes the user's MSPDI files, so it asks for
+      # the home directory -- the defaults (IPC, Wayland, fallback X11, DRI)
+      # would hide them. These replace the default four.
+      finish_args: "--share=ipc,--socket=wayland,--socket=fallback-x11,--device=dri,--filesystem=home"
